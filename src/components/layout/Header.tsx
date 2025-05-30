@@ -24,11 +24,12 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
 import React from 'react';
+import { SidebarNav } from './SidebarNav'; // SidebarNav is used for the mobile sheet content
 
 // Define primary and dropdown links based on the spec
 const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
-  { title: 'Generate', href: '/notes' }, // Assuming "Generate" maps to "Note Generator" page
+  { title: 'Generate', href: '/notes' }, 
   { title: 'Create Test', href: '/custom-test' },
 ];
 
@@ -36,28 +37,8 @@ const dropdownLinksSpec: { title: string; href: string }[] = [
   { title: 'Library', href: '/library' },
   { title: 'Calculator', href: '/calculator' },
   { title: 'Chatbot', href: '/chatbot' },
-  { title: 'Arcade', href: '/arcade' }, // "Game" in spec maps to "Arcade"
+  { title: 'Arcade', href: '/arcade' }, 
 ];
-
-// Helper to find NavItem from NAV_ITEMS for icons
-const findNavItemByTitleOrHref = (titleOrHref: string, searchBy: 'title' | 'href'): NavItem | undefined => {
-  for (const item of NAV_ITEMS) {
-    if (searchBy === 'title' && item.title === titleOrHref) return item;
-    if (searchBy === 'href' && item.href === titleOrHref) return item;
-    if (item.children) {
-      for (const child of item.children) {
-        if (searchBy === 'title' && child.title === titleOrHref) return child;
-        if (searchBy === 'href' && child.href === titleOrHref) return child;
-      }
-    }
-  }
-  // Specific fallbacks if titles in spec don't match NAV_ITEMS titles directly
-  if (titleOrHref === 'Generate' && searchBy === 'title') return NAV_ITEMS.flatMap(i => i.children || i).find(i => i.href === '/notes');
-  if (titleOrHref === 'Create Test' && searchBy === 'title') return NAV_ITEMS.find(i => i.href === '/custom-test');
-  if (titleOrHref === 'Arcade' && searchBy === 'title') return NAV_ITEMS.find(i => i.href === '/arcade');
-  return undefined;
-};
-
 
 export function Header() {
   const pathname = usePathname();
@@ -104,11 +85,11 @@ export function Header() {
   const allNavLinksForMobile: Array<NavItem & { isHeader?: boolean, originalTitle?: string }> = [];
   NAV_ITEMS.forEach(item => {
     if (item.children && item.children.length > 0) {
-        allNavLinksForMobile.push({ ...item, originalTitle: item.title, isHeader: true }); 
+        allNavLinksForMobile.push({ ...item, originalTitle: item.title, isHeader: true, href: '#' }); // Ensure href is present
         item.children.forEach(child => {
             allNavLinksForMobile.push({ ...child, title: child.title }); 
         });
-    } else if (item.href !== '#') { // Direct link, not a parent placeholder
+    } else if (item.href && item.href !== '#') { // Direct link, not a parent placeholder
         allNavLinksForMobile.push(item);
     }
   });
@@ -117,7 +98,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       {/* Mobile Menu Trigger */}
-      <div className="md:hidden">
+      <div className="md:hidden"> {/* Hidden on medium screens and up */}
         <Sheet>
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="rounded-lg">
@@ -125,41 +106,33 @@ export function Header() {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
-              <div className="flex items-center border-b p-4">
+          <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col bg-sidebar text-sidebar-foreground">
+              <div className="flex items-center border-b border-sidebar-border p-4">
                 <SheetClose asChild>
-                  <Link href="/" className="flex items-center gap-2 font-semibold text-lg text-primary">
+                  <Link href="/" className="flex items-center gap-2 font-semibold text-lg text-sidebar-primary">
                     <Logo />
                     <span>{APP_NAME}</span>
                   </Link>
                 </SheetClose>
               </div>
-              <nav className="flex-1 space-y-0.5 overflow-y-auto p-4">
-                {allNavLinksForMobile.map((item) => {
-                  if (item.isHeader) {
-                    return renderNavLink({ title: item.originalTitle || item.title, href: '#', icon: item.icon }, true, true);
-                  }
-                  return (
-                    <SheetClose asChild key={item.href}>
-                      {renderNavLink({ title: item.title, href: item.href, icon: item.icon }, true)}
-                    </SheetClose>
-                  );
-                })}
-              </nav>
-               <div className="mt-auto border-t p-4 space-y-1">
-                    <div className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground/80">Theme</div>
+              <div className="flex-1 overflow-y-auto">
+                 {/* Use SidebarNav directly if its dependencies on useSidebar are acceptable */}
+                 <SidebarNav items={NAV_ITEMS} />
+              </div>
+               <div className="mt-auto border-t border-sidebar-border p-4 space-y-1">
+                    <div className="px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground/80">Theme</div>
                     <SheetClose asChild>
-                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-accent hover:text-accent-foreground" onClick={() => setTheme('light')}>
+                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={() => setTheme('light')}>
                             <Sun className="h-5 w-5" /> Light
                         </Button>
                     </SheetClose>
                     <SheetClose asChild>
-                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-accent hover:text-accent-foreground" onClick={() => setTheme('dark')}>
+                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={() => setTheme('dark')}>
                             <Moon className="h-5 w-5" /> Dark
                         </Button>
                     </SheetClose>
                     <SheetClose asChild>
-                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-accent hover:text-accent-foreground" onClick={() => setTheme('system')}>
+                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={() => setTheme('system')}>
                             <Laptop className="h-5 w-5" /> System
                         </Button>
                     </SheetClose>
@@ -200,7 +173,8 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {dropdownLinksSpec.map(link => {
-                const navItem = findNavItemByTitleOrHref(link.href, 'href');
+                // Find the corresponding NavItem to get its icon
+                const navItem = NAV_ITEMS.flatMap(item => item.children ? item.children : item).find(i => i.href === link.href);
                 const Icon = navItem?.icon;
                 return (
                   <DropdownMenuItem key={link.href} asChild>
@@ -234,4 +208,3 @@ export function Header() {
     </header>
   );
 }
-
