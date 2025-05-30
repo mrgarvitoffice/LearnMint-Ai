@@ -11,7 +11,18 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { GenerateQuizOutput } from './generate-quiz'; // Reuse existing output type
-import { GenerateQuizOutputSchema } from './generate-quiz'; // Reuse existing output schema
+
+// Define GenerateQuizOutputSchema locally for this flow's prompt
+const GenerateQuizOutputSchema = z.object({
+  quiz: z.array(
+    z.object({
+      question: z.string().describe('The quiz question.'),
+      options: z.array(z.string()).describe('The possible answers.'),
+      answer: z.string().describe('The correct answer.'),
+      explanation: z.string().optional().describe('A brief explanation for why the answer is correct.'),
+    })
+  ).describe('The generated quiz, including explanations for answers.'),
+});
 
 const GenerateQuizFromNotesInputSchema = z.object({
   notesContent: z.string().describe('The study notes content in markdown format to base the quiz on.'),
@@ -26,7 +37,7 @@ export async function generateQuizFromNotes(input: GenerateQuizFromNotesInput): 
 const prompt = ai.definePrompt({
   name: 'generateQuizFromNotesPrompt',
   input: {schema: GenerateQuizFromNotesInputSchema},
-  output: {schema: GenerateQuizOutputSchema}, // Use the same output schema as the topic-based quiz
+  output: {schema: GenerateQuizOutputSchema}, // Use the locally defined output schema
   prompt: `You are an expert quiz generator. Your task is to create a quiz with {{numQuestions}} multiple-choice questions based *solely* on the provided study notes. Each question must have several options, one correct answer, and a brief explanation for why the answer is correct.
 
 Study Notes Content:

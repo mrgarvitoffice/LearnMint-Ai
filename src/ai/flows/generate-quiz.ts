@@ -16,7 +16,7 @@ const GenerateQuizInputSchema = z.object({
 });
 export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
 
-export const GenerateQuizOutputSchema = z.object({ // Added export here
+const GenerateQuizOutputSchema = z.object({ // Removed export from const
   quiz: z.array(
     z.object({
       question: z.string().describe('The quiz question.'),

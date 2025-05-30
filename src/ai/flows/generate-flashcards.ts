@@ -16,7 +16,7 @@ const GenerateFlashcardsInputSchema = z.object({
 });
 export type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
-export const GenerateFlashcardsOutputSchema = z.object({ // Added export here
+const GenerateFlashcardsOutputSchema = z.object({ // Removed export from const
   flashcards: z
     .array(
       z.object({
