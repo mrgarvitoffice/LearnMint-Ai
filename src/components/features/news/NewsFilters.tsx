@@ -28,7 +28,9 @@ interface NewsFiltersProps {
 
 export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFilters, isLoading }: NewsFiltersProps) {
   const isSpecificCountrySelected = !!filters.country && filters.country !== ANY_COUNTRY_VALUE;
-  const availableRegions = isSpecificCountrySelected ? COUNTRY_SPECIFIC_REGIONS[filters.country] : null;
+  const availableRegions = isSpecificCountrySelected && COUNTRY_SPECIFIC_REGIONS[filters.country] 
+    ? COUNTRY_SPECIFIC_REGIONS[filters.country] 
+    : null;
 
   return (
     <div className="space-y-6 p-4 border rounded-lg bg-card shadow-md">
@@ -48,7 +50,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         <div className="space-y-1.5">
           <Label htmlFor="country-select">Country</Label>
           <Select
-            value={filters.country || ANY_COUNTRY_VALUE}
+            value={filters.country || ANY_COUNTRY_VALUE} // Ensure select shows "World / Any" if filter.country is ""
             onValueChange={(value) => onFilterChange('country', value === ANY_COUNTRY_VALUE ? "" : value)}
             disabled={isLoading}
           >
@@ -65,7 +67,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="stateOrRegion">State/Region</Label>
+          <Label htmlFor="stateOrRegion">{availableRegions ? "State/Region (Select)" : "State/Region (Type)"}</Label>
           {availableRegions ? (
             <Select
               value={filters.stateOrRegion || ANY_REGION_VALUE}
@@ -111,7 +113,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         <div className="space-y-1.5">
           <Label htmlFor="category-select">Category</Label>
           <Select
-            value={filters.category || ALL_CATEGORIES_VALUE}
+            value={filters.category || ALL_CATEGORIES_VALUE} // Ensure select shows "All Categories" if filter.category is ""
             onValueChange={(value) => onFilterChange('category', value === ALL_CATEGORIES_VALUE ? "" : value)}
             disabled={isLoading}
           >
@@ -137,9 +139,10 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
       </div>
       <p className="text-xs text-muted-foreground/80 mt-2">
         <strong>Filter Behavior:</strong> Selecting "World / Any Country" fetches global news.
-        If a specific country is chosen, you can further refine by State/Region (dropdown for US, text input for others) and City (text input).
-        These terms are used as additional keywords for the search.
+        If a specific country is chosen, you can refine by State/Region. For the US, a dropdown of states is available. For other countries, State/Region is a text input.
+        City is always a text input. State/Region and City terms are used as keywords to refine your search within the selected country.
       </p>
     </div>
   );
 }
+

@@ -89,9 +89,6 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
   { value: "de", label: "Germany" },
   { value: "fr", label: "France" },
   { value: "jp", label: "Japan" },
-  // { value: "cn", label: "China" }, // Commented out as newsdata.io might have restrictions
-  // { value: "br", label: "Brazil" },
-  // { value: "za", label: "South Africa" },
 ];
 
 export const US_STATES: { value: string; label: string }[] = [
@@ -128,3 +125,4 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Mitosis", definition: "A type of cell division that results in two daughter cells each having the same number and kind of chromosomes as the parent nucleus.", hint: "Cellular reproduction, not meiosis." },
   { term: "Ecosystem", definition: "A biological community of interacting organisms and their physical environment.", hint: "Includes living and non-living components in an area." },
 ];
+

@@ -12,25 +12,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+// These constants are also defined in NewsFilters.tsx, consider moving to constants.ts if used more broadly
 const ALL_CATEGORIES_VALUE = "_all_categories_"; 
 const ANY_COUNTRY_VALUE = "_any_country_";
-const ANY_REGION_VALUE = "_any_region_";
-
+// const ANY_REGION_VALUE = "_any_region_"; // This one is used internally in NewsFilters
 
 interface NewsPageFilters {
   query: string;
-  country: string;
+  country: string; // Empty string means "Any Country" / World
   stateOrRegion: string;
   city: string;
-  category: string;
+  category: string; // Empty string means "All Categories" (for API)
 }
 
 const initialFilters: NewsPageFilters = {
   query: '',
-  country: '', // Default to Any Country (represented by empty string for API)
-  stateOrRegion: '', // Default to Any State/Region
+  country: '', // Default to Any Country (world news)
+  stateOrRegion: '', 
   city: '',
-  category: 'top', // Default to top headlines
+  category: 'top', // Default to top headlines (which can also be an empty string for "all")
 };
 
 export default function NewsPage() {
@@ -49,10 +49,10 @@ export default function NewsPage() {
     queryKey: ['news', appliedFilters],
     queryFn: ({ pageParam }) => fetchNews({
         query: appliedFilters.query,
-        country: appliedFilters.country,
+        country: appliedFilters.country, // Will be "" if "World / Any Country" is selected
         stateOrRegion: appliedFilters.stateOrRegion,
         city: appliedFilters.city,
-        category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category,
+        category: appliedFilters.category, // Will be "" if "All Categories" is selected
         page: pageParam
     }),
     initialPageParam: undefined as string | undefined,
@@ -64,12 +64,8 @@ export default function NewsPage() {
       const newFilters = { ...prev, [name]: value };
       
       if (name === 'country') {
-        // If country changes, reset state/region and city
-        newFilters.stateOrRegion = '';
-        newFilters.city = '';
-      }
-      // If country is cleared, also clear state/region and city
-      if (name === 'country' && !value) {
+        // If country changes (or is set to "Any Country" which results in value=""), 
+        // reset state/region and city as they depend on a specific country context.
         newFilters.stateOrRegion = '';
         newFilters.city = '';
       }
@@ -158,3 +154,4 @@ export default function NewsPage() {
     </div>
   );
 }
+
