@@ -34,24 +34,25 @@ const prompt = ai.definePrompt({
   name: 'generateStudyNotesPrompt',
   input: {schema: GenerateStudyNotesInputSchema},
   output: {schema: GenerateStudyNotesOutputSchema},
-  prompt: `You are an expert educator tasked with creating high-quality, comprehensive study notes similar to those a top student would prepare.
+  prompt: `You are an expert educator tasked with creating high-quality, comprehensive study notes similar to those a top student would prepare. The notes should be visually engaging and easy to scan.
 
 Topic: {{{topic}}}
 
 Please generate study notes on this topic with the following characteristics:
 1.  **Format:** Use Markdown.
 2.  **Structure:**
-    *   Start with a concise summary (2-3 sentences) of the entire topic.
-    *   Use clear, big headings (e.g., ## Main Section, ### Sub-section) to organize the content logically.
-    *   Under each heading, provide detailed information in a point-wise manner (using bullet points '-' or numbered lists '1.').
+    *   Start with a concise **Summary** (2-3 sentences) of the entire topic.
+    *   Use **BIG, clear headings** for main sections (e.g., using '# Main Section Title') and **Sub-headings** for sub-topics (e.g., '## Key Concept', '### Detailed Point') to organize the content logically.
+    *   Under each heading, provide detailed information in a **point-wise manner** (using bullet points '-' or numbered lists '1.').
     *   Ensure the notes are comprehensive and cover key concepts, definitions, important facts, and examples where relevant.
 3.  **Content Style:**
     *   Write in clear, easy-to-understand language.
     *   Be accurate and thorough.
+    *   Emphasize **key terms and definitions by making them bold**. Use *italics* for important nuances or examples. Use \`blockquotes\` for highlighting critical pieces of information or direct definitions.
 4.  **Visuals (Placeholders):**
-    *   Where a diagram, chart, or image would significantly enhance understanding, insert a placeholder in the format: [Image: descriptive query for the image]. For example: [Image: diagram of a plant cell] or [Image: timeline of World War 2 major events]. Do NOT generate actual images.
+    *   Where a diagram, chart, or image would significantly enhance understanding, insert a placeholder in the exact format: [VISUAL_PROMPT: descriptive query for the image]. For example: [VISUAL_PROMPT: diagram of a plant cell's organelles] or [VISUAL_PROMPT: timeline of World War 2 major European events]. Do NOT generate actual images yourself. This placeholder will be used to suggest an image search.
 
-Aim for notes that are well-organized, informative, and easy to study from.
+Aim for notes that are well-organized, informative, and easy to study from – like "topper notes".
 The entire output, including the summary, headings, points, and image placeholders, should be a single markdown string.
 `,
 });
@@ -67,3 +68,4 @@ const generateStudyNotesFlow = ai.defineFlow(
     return output!;
   }
 );
+

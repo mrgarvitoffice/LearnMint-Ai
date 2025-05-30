@@ -2,6 +2,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } // Removed useSearchParams as it's not used in this version
+from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,9 +23,9 @@ import { useToast } from '@/hooks/use-toast';
 
 import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from '@/ai/flows/generate-study-notes';
 import { generateQuizFromNotes, type GenerateQuizFromNotesInput } from '@/ai/flows/generate-quiz-from-notes';
-import type { GenerateQuizOutput } from '@/ai/flows/generate-quiz'; // Using the shared output type
+import type { GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import { generateFlashcardsFromNotes, type GenerateFlashcardsFromNotesInput } from '@/ai/flows/generate-flashcards-from-notes';
-import type { GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards'; // Using the shared output type
+import type { GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards';
 
 const PAGE_TITLE = "Generate Topper Notes";
 const LOCAL_STORAGE_RECENT_TOPICS_KEY = "recentLearnMintTopics";
@@ -34,27 +36,34 @@ interface AiGeneratedImageProps {
 
 function AiGeneratedImage({ promptText }: AiGeneratedImageProps) {
   const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(promptText)}`;
-  const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(promptText.substring(0,30))}`;
+  // Using a more descriptive placeholder text if prompt is long
+  const placeholderText = promptText.length > 40 ? promptText.substring(0, 37) + "..." : promptText;
+  const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(placeholderText)}`;
+  
+  // Generate a simple 2-word hint for data-ai-hint
+  const hintKeywords = promptText.toLowerCase().split(/\s+/).slice(0, 2).join(" ");
+
   return (
-    <div className="my-4 p-4 border rounded-lg bg-muted/30 text-center">
-      <p className="text-sm text-muted-foreground mb-2">Visual Prompt:</p>
-      <p className="font-semibold mb-3">{promptText}</p>
-      <div className="aspect-video bg-muted rounded overflow-hidden flex items-center justify-center mb-3">
-        <img 
-            src={placeholderUrl} 
-            alt={`Placeholder for: ${promptText}`} 
+    <div className="my-6 p-4 border border-dashed border-primary/50 rounded-lg bg-card/50 text-center shadow-md">
+      <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Visual Aid Suggested</p>
+      <p className="font-semibold text-primary mb-3">{promptText}</p>
+      <div className="aspect-video bg-muted rounded overflow-hidden flex items-center justify-center mb-3 ring-1 ring-border">
+        <img
+            src={placeholderUrl}
+            alt={`Placeholder: ${promptText}`}
             className="max-w-full max-h-full object-contain"
-            data-ai-hint={promptText.toLowerCase().split(" ").slice(0,2).join(" ")}
+            data-ai-hint={hintKeywords}
         />
       </div>
-      <Button variant="outline" size="sm" asChild>
+      <Button variant="outline" size="sm" asChild className="text-sm">
         <a href={googleImagesUrl} target="_blank" rel="noopener noreferrer">
-          Search on Google Images <Sparkles className="ml-2 h-4 w-4" />
+          <Sparkles className="mr-2 h-3.5 w-3.5" /> Search on Google Images
         </a>
       </Button>
     </div>
   );
 }
+
 
 export default function NotesPage() {
   const [topic, setTopic] = useState<string>("");
@@ -69,18 +78,11 @@ export default function NotesPage() {
   const [isLoadingFlashcardsFromNotes, setIsLoadingFlashcardsFromNotes] = useState<boolean>(false);
   const [generatedFlashcardsData, setGeneratedFlashcardsData] = useState<GenerateFlashcardsOutput['flashcards'] | null>(null);
   const [errorFlashcardsFromNotes, setErrorFlashcardsFromNotes] = useState<string | null>(null);
-  
-  const [activeTab, setActiveTab] = useState<string>("notes");
 
-
-  const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
-  const generatingNotesSpokenRef = useRef(false);
-  const notesReadySpokenRef = useRef(false);
-  const notesContentRef = useRef<HTMLDivElement>(null); // For TTS content
-
+  const router = useRouter();
   const { toast } = useToast();
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+
   const { 
     speak, 
     cancel: cancelTTS, 
@@ -100,7 +102,14 @@ export default function NotesPage() {
     error: voiceError,
   } = useVoiceRecognition();
 
-  // Effect to set default TTS voice preference
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+  const generatingNotesMessageSpokenRef = useRef(false);
+  const notesReadyMessageSpokenRef = useRef(false);
+  const notesContentRef = useRef<HTMLDivElement>(null);
+  const [speechState, setSpeechState] = useState<'idle' | 'playing' | 'paused'>('idle');
+
+
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
       setVoicePreference('zia'); 
@@ -108,22 +117,28 @@ export default function NotesPage() {
     }
   }, [supportedVoices, setVoicePreference]);
 
-  // Effect to speak page title
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoadingNotes && !generatedNotesContent) {
+    let isMounted = true;
+    if (isMounted && selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoadingNotes && !generatedNotesContent) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak, isLoadingNotes, generatedNotesContent]);
+    return () => {
+      isMounted = false;
+      // Optional: Cancel speech if this specific announcement was playing and component unmounts
+      // if (isTTSSpeaking && pageTitleSpokenRef.current && !isLoadingNotes && !generatedNotesContent) {
+      //  cancelTTS();
+      // }
+    };
+  }, [selectedVoice, speak, isTTSSpeaking, isLoadingNotes, generatedNotesContent]);
 
-  // Effect to update topic from voice transcript
+
   useEffect(() => {
     if (transcript) {
       setTopic(transcript);
     }
   }, [transcript]);
 
-  // Effect to show voice recognition errors
   useEffect(() => {
     if (voiceError) {
       toast({ title: "Voice Error", description: voiceError, variant: "destructive" });
@@ -150,25 +165,24 @@ export default function NotesPage() {
     }
     setErrorNotes(null);
     setGeneratedNotesContent(null);
-    setGeneratedQuizData(null);
-    setGeneratedFlashcardsData(null);
+    setGeneratedQuizData(null); // Clear previous quiz
+    setGeneratedFlashcardsData(null); // Clear previous flashcards
     setIsLoadingNotes(true);
-    generatingNotesSpokenRef.current = false;
-    notesReadySpokenRef.current = false;
+    generatingNotesMessageSpokenRef.current = false;
+    notesReadyMessageSpokenRef.current = false;
 
-    if (selectedVoice && !isTTSSpeaking && !generatingNotesSpokenRef.current) {
-      speak("Generating study materials, please wait.");
-      generatingNotesSpokenRef.current = true;
+    if (selectedVoice && !isTTSSpeaking && !generatingNotesMessageSpokenRef.current) {
+      speak("Generating study materials. Please wait.");
+      generatingNotesMessageSpokenRef.current = true;
     }
 
     try {
       const result = await generateStudyNotes({ topic: topic.trim() });
       if (result && result.notes) {
         setGeneratedNotesContent(result.notes);
-        setActiveTab("notes"); // Switch to notes tab
-        if (selectedVoice && !isTTSSpeaking && !notesReadySpokenRef.current) {
+        if (selectedVoice && !isTTSSpeaking && !notesReadyMessageSpokenRef.current) {
           speak("Notes ready!");
-          notesReadySpokenRef.current = true;
+          notesReadyMessageSpokenRef.current = true;
         }
         toast({ title: "Notes Generated!", description: "Your study notes are ready." });
 
@@ -177,11 +191,10 @@ export default function NotesPage() {
           const storedTopics = localStorage.getItem(LOCAL_STORAGE_RECENT_TOPICS_KEY);
           let recentTopicsArray: string[] = storedTopics ? JSON.parse(storedTopics) : [];
           const trimmedTopic = topic.trim();
-          if (!recentTopicsArray.includes(trimmedTopic)) {
-            recentTopicsArray.unshift(trimmedTopic);
-            recentTopicsArray = recentTopicsArray.slice(0, 10); // Keep last 10
-            localStorage.setItem(LOCAL_STORAGE_RECENT_TOPICS_KEY, JSON.stringify(recentTopicsArray));
-          }
+          // Add to front and ensure no duplicates before slicing
+          recentTopicsArray = [trimmedTopic, ...recentTopicsArray.filter(t => t !== trimmedTopic)];
+          recentTopicsArray = recentTopicsArray.slice(0, 10); // Keep last 10
+          localStorage.setItem(LOCAL_STORAGE_RECENT_TOPICS_KEY, JSON.stringify(recentTopicsArray));
         } catch (e) {
           console.error("Failed to save recent topic to localStorage", e);
         }
@@ -196,9 +209,10 @@ export default function NotesPage() {
       if(selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating notes.");
     } finally {
       setIsLoadingNotes(false);
-      generatingNotesSpokenRef.current = false; 
+      generatingNotesMessageSpokenRef.current = false; 
     }
   }, [topic, toast, playClickSound, speak, selectedVoice, isTTSSpeaking]);
+
 
   const handleGenerateQuizFromNotes = async () => {
     playClickSound();
@@ -209,20 +223,19 @@ export default function NotesPage() {
     setIsLoadingQuizFromNotes(true);
     setErrorQuizFromNotes(null);
     setGeneratedQuizData(null);
-    if(selectedVoice && !isTTSSpeaking) speak("Generating quiz from notes...");
+    if(selectedVoice && !isTTSSpeaking) speak("Generating quiz from your notes...");
 
     try {
         const input: GenerateQuizFromNotesInput = { notesContent: generatedNotesContent, numQuestions: 30 };
         const result = await generateQuizFromNotes(input);
         setGeneratedQuizData(result.quiz);
-        setActiveTab("quiz");
         toast({ title: "Quiz Generated!", description: "Quiz based on your notes is ready." });
         if(selectedVoice && !isTTSSpeaking) speak("Quiz from notes is ready!");
     } catch (err: any) {
         const errorMessage = err.message || "Failed to generate quiz from notes.";
         setErrorQuizFromNotes(errorMessage);
         toast({ title: "Quiz Generation Error", description: errorMessage, variant: "destructive" });
-        if(selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating the quiz.");
+        if(selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating the quiz from notes.");
     } finally {
         setIsLoadingQuizFromNotes(false);
     }
@@ -237,26 +250,27 @@ export default function NotesPage() {
     setIsLoadingFlashcardsFromNotes(true);
     setErrorFlashcardsFromNotes(null);
     setGeneratedFlashcardsData(null);
-    if(selectedVoice && !isTTSSpeaking) speak("Generating flashcards from notes...");
+    if(selectedVoice && !isTTSSpeaking) speak("Generating flashcards from your notes...");
     
     try {
         const input: GenerateFlashcardsFromNotesInput = { notesContent: generatedNotesContent, numFlashcards: 20 };
         const result = await generateFlashcardsFromNotes(input);
         setGeneratedFlashcardsData(result.flashcards);
-        setActiveTab("flashcards");
         toast({ title: "Flashcards Generated!", description: "Flashcards based on your notes are ready." });
         if(selectedVoice && !isTTSSpeaking) speak("Flashcards from notes are ready!");
     } catch (err: any) {
         const errorMessage = err.message || "Failed to generate flashcards from notes.";
         setErrorFlashcardsFromNotes(errorMessage);
         toast({ title: "Flashcard Generation Error", description: errorMessage, variant: "destructive" });
-        if(selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating flashcards.");
+        if(selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating flashcards from notes.");
     } finally {
         setIsLoadingFlashcardsFromNotes(false);
     }
   };
-  
+
   const renderMarkdownWithPlaceholders = (markdownContent: string) => {
+    // This is a simplified placeholder. A more robust solution would parse the Markdown AST.
+    // For now, we'll use a regex-based approach which might have limitations.
     const parts = markdownContent.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
     return parts.map((part, index) => {
       if (part.startsWith('[VISUAL_PROMPT:')) {
@@ -298,18 +312,22 @@ export default function NotesPage() {
     if(selectedVoice && !isTTSSpeaking) speak("Notes downloaded!");
   };
 
-  const [speechState, setSpeechState] = useState<'idle' | 'playing' | 'paused'>('idle');
 
   const handleSpeakNotes = () => {
     playClickSound();
     if (!generatedNotesContent) return;
 
     if (speechState === 'playing') {
-        cancelTTS();
-        setSpeechState('paused');
+        cancelTTS(); // This should also trigger onend/onerror which sets isSpeaking to false
+        setSpeechState('paused'); // Manually set our local state
     } else if (speechState === 'paused') {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.resume();
+            // The Web Speech API doesn't have a 'resume' for a specific utterance if it was fully cancelled.
+            // We need to restart the speech from the current point or from the beginning.
+            // For simplicity, let's restart from the beginning.
+            // A more complex solution would track the last spoken position.
+            const textToSpeak = notesContentRef.current?.innerText || generatedNotesContent;
+            speak(textToSpeak);
             setSpeechState('playing');
         }
     } else { // 'idle'
@@ -327,7 +345,7 @@ export default function NotesPage() {
 
   useEffect(() => {
     // Update speechState if TTS finishes naturally or is cancelled by another source
-    if (!isTTSSpeaking && speechState === 'playing') {
+    if (!isTTSSpeaking && (speechState === 'playing' || speechState === 'paused')) {
         setSpeechState('idle');
     }
   }, [isTTSSpeaking, speechState]);
@@ -336,13 +354,13 @@ export default function NotesPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card className="w-full shadow-xl">
-        <CardHeader>
-          <div className="flex items-center justify-center mb-4">
-            <GraduationCap className="h-10 w-10 text-primary" />
+        <CardHeader className="text-center">
+          <div className="inline-block p-3 bg-primary/80 rounded-full mb-4 mx-auto">
+            <GraduationCap className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-center text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
-          <CardDescription className="text-center text-sm sm:text-base text-muted-foreground">
-            Enter an academic topic. LearnMint AI will generate notes, and then you can create quizzes and flashcards.
+          <CardTitle className="text-3xl md:text-4xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+          <CardDescription className="text-lg text-muted-foreground">
+            Enter an academic topic. LearnMint AI will generate "topper" notes, and then you can create a quiz or flashcards.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-6">
@@ -370,7 +388,7 @@ export default function NotesPage() {
               </Button>
             )}
           </div>
-          {errorNotes && <Alert variant="destructive" className="mt-4"><AlertTriangle className="h-4 w-4"/><AlertTitle>Error</AlertTitle><AlertDescription>{errorNotes}</AlertDescription></Alert>}
+          {errorNotes && <Alert variant="destructive" className="mt-4"><AlertTriangle className="h-4 w-4"/><AlertTitle>Error Generating Notes</AlertTitle><AlertDescription>{errorNotes}</AlertDescription></Alert>}
           <Button
             onClick={handleGenerateNotes}
             disabled={isLoadingNotes || topic.trim().length < 3}
@@ -389,11 +407,15 @@ export default function NotesPage() {
 
       {isLoadingNotes && (
         <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4" />
+          </CardHeader>
           <CardContent className="p-6 space-y-4">
-            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full mt-4" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
           </CardContent>
@@ -401,10 +423,12 @@ export default function NotesPage() {
       )}
 
       {generatedNotesContent && !isLoadingNotes && (
-        <Card className="mt-8">
+        <Card className="mt-8 shadow-lg">
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <CardTitle className="text-xl text-primary">Study Materials for: {topic}</CardTitle>
+              <CardTitle className="text-xl md:text-2xl text-primary font-semibold flex items-center gap-2">
+                <BookOpenText className="w-6 h-6"/> Study Notes for: {topic}
+              </CardTitle>
               <div className="flex items-center gap-2 flex-wrap">
                 <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')} defaultValue={selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai')? 'kai' : selectedVoice?.name.toLowerCase().includes('female') ? 'female' : 'male'}>
                     <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Type" /> </SelectTrigger>
@@ -423,7 +447,7 @@ export default function NotesPage() {
                     )) : <SelectItem value="no-voices" disabled className="text-xs">No voices</SelectItem>}
                     </SelectContent>
                 </Select>
-                <Button onClick={handleSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title={speechState === 'playing' ? "Pause Notes" : speechState === 'paused' ? "Resume Notes" : "Speak Notes"}>
+                 <Button onClick={handleSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title={speechState === 'playing' ? "Pause Notes" : speechState === 'paused' ? "Resume Notes" : "Speak Notes"}>
                     {speechState === 'playing' ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
                 </Button>
                 <Button onClick={handleStopSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={speechState === 'idle'}>
@@ -449,26 +473,26 @@ export default function NotesPage() {
               </Button>
             </div>
             
-            {errorQuizFromNotes && <Alert variant="destructive" className="mt-4"><AlertTriangle className="h-4 w-4"/><AlertTitle>Quiz Error</AlertTitle><AlertDescription>{errorQuizFromNotes}</AlertDescription></Alert>}
-            {errorFlashcardsFromNotes && <Alert variant="destructive" className="mt-4"><AlertTriangle className="h-4 w-4"/><AlertTitle>Flashcard Error</AlertTitle><AlertDescription>{errorFlashcardsFromNotes}</AlertDescription></Alert>}
-
+            {errorQuizFromNotes && <Alert variant="destructive" className="mt-4"><AlertTriangle className="h-4 w-4"/><AlertTitle>Quiz Generation Error</AlertTitle><AlertDescription>{errorQuizFromNotes}</AlertDescription></Alert>}
+            {errorFlashcardsFromNotes && <Alert variant="destructive" className="mt-4"><AlertTriangle className="h-4 w-4"/><AlertTitle>Flashcard Generation Error</AlertTitle><AlertDescription>{errorFlashcardsFromNotes}</AlertDescription></Alert>}
           </CardContent>
         </Card>
       )}
 
+      {/* Conditional rendering for Quiz */}
       {generatedQuizData && !isLoadingQuizFromNotes && (
-        <Card className="mt-6">
-          <CardHeader><CardTitle className="text-lg text-accent">Generated Quiz (30 Questions)</CardTitle></CardHeader>
+        <Card className="mt-6 shadow-lg">
+          <CardHeader><CardTitle className="text-lg md:text-xl text-accent font-semibold flex items-center gap-2"><Brain className="w-5 h-5"/>Generated Quiz (Up to 30 Questions)</CardTitle></CardHeader>
           <CardContent>
-            <ScrollArea className="h-[400px] p-3 border rounded">
+            <ScrollArea className="h-[400px] p-3 border rounded-md bg-muted/20">
               {generatedQuizData.map((q, index) => (
-                <div key={index} className="mb-4 p-3 border-b">
-                  <p className="font-semibold">Q{index + 1}: {q.question}</p>
-                  <ul className="list-disc list-inside ml-4 text-sm">
-                    {q.options.map((opt, i) => <li key={i} className={opt === q.answer ? 'text-green-400 font-medium' : ''}>{opt}</li>)}
+                <div key={index} className="mb-4 p-3 border-b border-border/50">
+                  <p className="font-semibold text-primary">Q{index + 1}: {q.question}</p>
+                  <ul className="list-disc list-inside ml-4 text-sm space-y-1 mt-1">
+                    {q.options.map((opt, i) => <li key={i} className={opt === q.answer ? 'text-green-400 font-medium' : 'text-foreground/80'}>{opt}</li>)}
                   </ul>
-                  <p className="text-xs text-muted-foreground mt-1">Answer: {q.answer}</p>
-                  {q.explanation && <p className="text-xs text-amber-300/80 mt-1">Explanation: {q.explanation}</p>}
+                  <p className="text-xs text-muted-foreground mt-1">Correct Answer: <span className="text-green-500">{q.answer}</span></p>
+                  {q.explanation && <p className="text-xs text-amber-400/90 mt-1">Explanation: {q.explanation}</p>}
                 </div>
               ))}
             </ScrollArea>
@@ -476,16 +500,17 @@ export default function NotesPage() {
         </Card>
       )}
       
+      {/* Conditional rendering for Flashcards */}
       {generatedFlashcardsData && !isLoadingFlashcardsFromNotes && (
-         <Card className="mt-6">
-          <CardHeader><CardTitle className="text-lg text-accent">Generated Flashcards (20 Cards)</CardTitle></CardHeader>
+         <Card className="mt-6 shadow-lg">
+          <CardHeader><CardTitle className="text-lg md:text-xl text-accent font-semibold flex items-center gap-2"><ListChecks className="w-5 h-5"/>Generated Flashcards (Up to 20 Cards)</CardTitle></CardHeader>
           <CardContent>
-             <ScrollArea className="h-[400px] p-3 border rounded">
+             <ScrollArea className="h-[400px] p-3 border rounded-md bg-muted/20">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {generatedFlashcardsData.map((fc, index) => (
-                    <Card key={index} className="p-4 bg-secondary/30">
-                    <p className="font-semibold text-primary">{fc.term}</p>
-                    <p className="text-sm mt-1">{fc.definition}</p>
+                    <Card key={index} className="p-4 bg-card/80 border border-border/50">
+                      <p className="font-semibold text-primary text-base">{fc.term}</p>
+                      <p className="text-sm mt-1 text-foreground/90">{fc.definition}</p>
                     </Card>
                 ))}
                 </div>
@@ -497,6 +522,3 @@ export default function NotesPage() {
     </div>
   );
 }
-
-
-    
