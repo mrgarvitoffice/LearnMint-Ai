@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react'; // Added useEffect here
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +13,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateStudyNotes, type GenerateStudyNotesOutput } from '@/ai/flows/generate-study-notes';
-import { Loader2, FileText, Search, Volume2, Mic, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { generateQuizFromNotes } from '@/ai/flows/generate-quiz-from-notes';
+import { generateFlashcardsFromNotes } from '@/ai/flows/generate-flashcards-from-notes';
+import type { GenerateQuizOutput } from '@/ai/flows/generate-quiz';
+import type { GenerateFlashcardsOutput as GenerateFlashcardsOutputFromNotes } from '@/ai/flows/generate-flashcards';
+import { Loader2, FileText, Search, Volume2, Mic, PlayCircle, PauseCircle, StopCircle, HelpCircleIcon, ListChecksIcon } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useTTS } from '@/hooks/useTTS';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +31,13 @@ type FormData = z.infer<typeof formSchema>;
 export default function NotesPage() {
   const [notes, setNotes] = useState<GenerateStudyNotesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+  
+  // Placeholders for generated content from notes - full display can be a next step
+  const [quizFromNotes, setQuizFromNotes] = useState<GenerateQuizOutput | null>(null);
+  const [flashcardsFromNotes, setFlashcardsFromNotes] = useState<GenerateFlashcardsOutputFromNotes | null>(null);
+
   const { toast } = useToast();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { speak, cancel, isSpeaking, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference } = useTTS();
@@ -37,15 +48,9 @@ export default function NotesPage() {
   });
   
   const topicValue = watch('topic');
-
-  // This useEffect was causing an error due to a missing import, but was also incorrectly placed.
-  // It should be inside the component body, not where it was before (which was also a useState call).
-  // The original intent seems to have been to update the 'topic' field when 'transcript' changes.
-  // I've corrected its placement and usage below.
   
-   // Effect to update topic input when transcript changes from voice input
   useEffect(() => {
-    if (transcript) { // Only update if transcript is not empty
+    if (transcript) {
       setValue('topic', transcript);
     }
   }, [transcript, setValue]);
@@ -54,6 +59,8 @@ export default function NotesPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     setIsLoading(true);
     setNotes(null);
+    setQuizFromNotes(null); // Reset quiz if new notes are generated
+    setFlashcardsFromNotes(null); // Reset flashcards if new notes are generated
     try {
       const result = await generateStudyNotes({ topic: data.topic });
       setNotes(result);
@@ -100,6 +107,37 @@ export default function NotesPage() {
     });
   };
 
+  const handleGenerateQuizFromNotes = async () => {
+    if (!notes?.notes) return;
+    setIsGeneratingQuiz(true);
+    try {
+      const result = await generateQuizFromNotes({ notesContent: notes.notes, numQuestions: 30 });
+      setQuizFromNotes(result); // Store for potential future display
+      console.log("Generated Quiz from Notes:", result);
+      toast({ title: "Quiz Generated from Notes!", description: `${result.quiz.length} questions created.` });
+    } catch (error) {
+      console.error("Error generating quiz from notes:", error);
+      toast({ title: "Quiz Generation Error", description: "Failed to generate quiz from notes.", variant: "destructive" });
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
+  };
+
+  const handleGenerateFlashcardsFromNotes = async () => {
+    if (!notes?.notes) return;
+    setIsGeneratingFlashcards(true);
+    try {
+      const result = await generateFlashcardsFromNotes({ notesContent: notes.notes, numFlashcards: 20 });
+      setFlashcardsFromNotes(result); // Store for potential future display
+      console.log("Generated Flashcards from Notes:", result);
+      toast({ title: "Flashcards Generated from Notes!", description: `${result.flashcards.length} flashcards created.` });
+    } catch (error) {
+      console.error("Error generating flashcards from notes:", error);
+      toast({ title: "Flashcard Generation Error", description: "Failed to generate flashcards from notes.", variant: "destructive" });
+    } finally {
+      setIsGeneratingFlashcards(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -143,34 +181,36 @@ export default function NotesPage() {
 
       {notes && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-xl">Generated Study Notes</CardTitle>
               <CardDescription>Topic: {topicValue}</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-               <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female')}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Voice Gender" />
+            <div className="flex flex-wrap items-center gap-2">
+               <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Voice Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="female">Female Voice</SelectItem>
-                  <SelectItem value="male">Male Voice</SelectItem>
+                  <SelectItem value="female">Female (Default)</SelectItem>
+                  <SelectItem value="male">Male (Default)</SelectItem>
+                  <SelectItem value="zia">Zia (Female)</SelectItem>
+                  <SelectItem value="kai">Kai (Male)</SelectItem>
                 </SelectContent>
               </Select>
               <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select Voice" />
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Select Voice Engine" />
                 </SelectTrigger>
                 <SelectContent>
-                  {supportedVoices.map(voice => (
+                  {supportedVoices.length > 0 ? supportedVoices.map(voice => (
                     <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
                       {voice.name} ({voice.lang})
                     </SelectItem>
-                  ))}
+                  )) : <SelectItem value="no-voices" disabled>No voices available</SelectItem>}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={handleSpeakNotes} disabled={!notes?.notes}>
+              <Button variant="outline" size="icon" onClick={handleSpeakNotes} disabled={!notes?.notes || isSpeaking && !window.speechSynthesis.paused}>
                 {isSpeaking ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
               </Button>
               {isSpeaking && (
@@ -183,6 +223,24 @@ export default function NotesPage() {
           <CardContent className="prose dark:prose-invert max-w-none">
             {renderMarkdownWithPlaceholders(notes.notes)}
           </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Button 
+              onClick={handleGenerateQuizFromNotes} 
+              disabled={isGeneratingQuiz || !notes?.notes}
+              className="w-full sm:w-auto"
+            >
+              {isGeneratingQuiz ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <HelpCircleIcon className="w-4 h-4 mr-2"/>}
+              Generate 30-Question Quiz from Notes
+            </Button>
+            <Button 
+              onClick={handleGenerateFlashcardsFromNotes} 
+              disabled={isGeneratingFlashcards || !notes?.notes}
+              className="w-full sm:w-auto"
+            >
+              {isGeneratingFlashcards ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ListChecksIcon className="w-4 h-4 mr-2"/>}
+              Generate 20 Flashcards from Notes
+            </Button>
+          </CardFooter>
         </Card>
       )}
     </div>
