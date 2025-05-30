@@ -1,4 +1,3 @@
-
 # LearnMint - AI Powered Learning
 
 LearnMint is a versatile AI-powered learning assistant designed to help users transform academic topics into structured study materials. It leverages AI to generate notes, quizzes, and flashcards. The application also includes utility features like a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a daily news digest, a library section for exploring educational resources, and a simple word game.
@@ -6,6 +5,27 @@ LearnMint is a versatile AI-powered learning assistant designed to help users tr
 User accounts and server-side data persistence for test results have been removed to simplify the application for this version.
 
 To get started, take a look at `src/app/page.tsx`.
+
+## LearnMint UI and Frontend Overview
+
+This section provides details about the application's user interface, frontend technologies, and key features from a UI/UX perspective.
+
+### Overall Design Philosophy
+*   **Theme**: Dark theme by default, with a user-toggleable Light theme. Theme switching is powered by `next-themes`.
+*   **Color Scheme**: Uses HSL CSS variables defined in `src/app/globals.css`. The primary color is a dark teal, with an electric lime accent.
+*   **Fonts**: Uses `GeistSans` for general text and `GeistMono` for monospaced text (like calculator displays), imported via `geist/font`.
+*   **Icons**: Primarily uses `lucide-react` for a consistent and modern icon set.
+*   **Styling**: Tailwind CSS is used for utility-first styling, along with ShadCN UI components.
+*   **Responsiveness**: The application is designed to be responsive, adapting to various screen sizes from mobile to desktop.
+
+### Core Layout (`src/app/layout.tsx`)
+*   A global layout wraps all pages.
+*   It includes:
+    *   `ThemeProvider` for light/dark mode.
+    *   `ReactQueryProvider` for data fetching and caching with TanStack Query.
+    *   `AppHeader` (consistent across all pages).
+    *   A main content area with responsive padding.
+    *   `Toaster` for displaying notifications.
 
 ## Core Features
 
