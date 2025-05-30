@@ -84,7 +84,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=1:your-sender-id:web:your-app-id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional: For Firebase Analytics
 
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
@@ -229,7 +229,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
         *   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
         *   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
         *   `NEXT_PUBLIC_FIREBASE_APP_ID`
-        *   `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` (if you use it)
+        *   `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` (if you use it - it's optional)
         *   `GOOGLE_API_KEY`
         *   `NEWSDATA_API_KEY`
         *   `YOUTUBE_API_KEY`
