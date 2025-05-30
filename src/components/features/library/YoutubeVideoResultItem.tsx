@@ -28,8 +28,9 @@ export function YoutubeVideoResultItem({ video, onPlay }: YoutubeVideoResultItem
           <Image
             src={video.thumbnailUrl || placeholderImage}
             alt={`Thumbnail for ${video.title}`}
-            layout="fill"
-            objectFit="cover"
+            fill={true}
+            style={{ objectFit: 'cover' }}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" // Basic sizes, adjust as needed
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => { (e.target as HTMLImageElement).src = placeholderImage; }}
           />
