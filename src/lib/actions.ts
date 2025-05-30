@@ -115,7 +115,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
 }
 
 export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Promise<GoogleBooksSearchOutput> {
-  console.log(`[Server Action] directGoogleBooksSearch called for query: ${input.query}, maxResults: ${input.maxResults}`);
+  console.log(`[Server Action] directGoogleBooksSearch called for query: ${input.query}, maxResults: ${input.maxResults}, country: ${input.country}`);
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
   if (!apiKey) {
     console.error("GOOGLE_BOOKS_API_KEY is not configured for direct search.");
@@ -124,14 +124,15 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
 
   const params = new URLSearchParams({
     q: input.query,
-    maxResults: (input.maxResults || 9).toString(), // Default to 9 results
+    maxResults: (input.maxResults || 9).toString(),
   });
-  // The Google Books API key can be appended if it's required by all requests.
-  // Some endpoints might not need it or have different auth methods.
-  // For public search, it's often optional but good for quota tracking.
   if (apiKey) {
     params.append('key', apiKey);
   }
+  if (input.country) {
+    params.append('country', input.country);
+  }
+
 
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`);
@@ -151,7 +152,7 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
       publishedDate: item.volumeInfo?.publishedDate,
       pageCount: item.volumeInfo?.pageCount,
       infoLink: item.volumeInfo?.infoLink,
-    })).filter((book: any) => book.title) || []; // Ensure books have a title
+    })).filter((book: any) => book.title) || [];
 
     return { books };
   } catch (error: any) {
@@ -159,3 +160,4 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
     throw new Error(error.message || "Failed to fetch Google Books directly.");
   }
 }
+

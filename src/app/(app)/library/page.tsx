@@ -123,7 +123,8 @@ export default function LibraryPage() {
     if (googleBooksSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
-      googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
+      // Defaulting to 'US' to potentially avoid geo-restriction errors
+      googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9, country: 'US' });
     }
   };
 
@@ -315,3 +316,4 @@ export default function LibraryPage() {
     </div>
   );
 }
+
