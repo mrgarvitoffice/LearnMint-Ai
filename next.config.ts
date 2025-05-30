@@ -54,6 +54,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'bloximages.newyork1.vip.townnews.com',
+        port: '',
+        pathname: '/**',
+      },
       // Add other news image hostnames here as they appear. For example:
       // {
       //   protocol: 'https',
