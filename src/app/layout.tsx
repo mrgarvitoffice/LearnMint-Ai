@@ -4,8 +4,9 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppProviders } from '@/components/providers/AppProviders';
 import { Toaster } from "@/components/ui/toaster";
-import { TopProgressBar } from '@/components/layout/TopProgressBar'; 
-import { Suspense } from 'react'; 
+import { TopProgressBar } from '@/components/layout/TopProgressBar';
+import { Suspense } from 'react';
+import { ClerkProvider } from '@clerk/nextjs';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,20 +30,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Theme color for browser UI - typically matches manifest.json's theme_color */}
-        <meta name="theme-color" content="#00FFFF" />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <AppProviders>
-          <Suspense fallback={null}> 
-            <TopProgressBar />
-          </Suspense>
-          {children}
-          <Toaster />
-        </AppProviders>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          {/* Theme color for browser UI - typically matches manifest.json's theme_color */}
+          <meta name="theme-color" content="#00FFFF" />
+        </head>
+        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+          <AppProviders>
+            <Suspense fallback={null}>
+              <TopProgressBar />
+            </Suspense>
+            {children}
+            <Toaster />
+          </AppProviders>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

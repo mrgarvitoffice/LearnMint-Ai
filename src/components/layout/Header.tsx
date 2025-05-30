@@ -19,13 +19,13 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
-import { LayoutGrid, PanelLeft, UserCircle, Moon, Sun, Laptop, Palette, type LucideIcon } from 'lucide-react';
+import { LayoutGrid, PanelLeft, UserCircle, Moon, Sun, Laptop, Palette, LogIn, UserPlus, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
 import React from 'react';
 import { SidebarNav } from './SidebarNav';
 import { useSound } from '@/hooks/useSound';
+import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
@@ -42,29 +42,18 @@ const dropdownLinksSpec: { title: string; href: string }[] = [
 
 export function Header() {
   const pathname = usePathname();
-  const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
-
-
-  const handleProfileClick = () => {
-    playClickSound();
-    toast({
-      title: 'Profile Coming Soon!',
-      description: 'User profile features are under development.',
-    });
-  };
 
   const handleThemeToggle = () => {
     playClickSound();
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-  
+
   const handleDropdownItemClick = (action?: () => void) => {
     playClickSound();
     action?.();
   };
-
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
@@ -146,11 +135,24 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
-        <Button variant="ghost" size="icon" onClick={handleProfileClick} className="rounded-full">
-          <UserCircle className="h-6 w-6" />
-          <span className="sr-only">User Profile</span>
-        </Button>
+
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
+        <SignedOut>
+          <Button variant="ghost" size="sm" asChild onClick={() => playClickSound()}>
+            <Link href="/sign-in">
+              <LogIn className="mr-1.5 h-4 w-4" />
+              Sign In
+            </Link>
+          </Button>
+          <Button variant="default" size="sm" asChild onClick={() => playClickSound()}>
+            <Link href="/sign-up">
+              <UserPlus className="mr-1.5 h-4 w-4" />
+              Sign Up
+            </Link>
+          </Button>
+        </SignedOut>
       </div>
     </header>
   );

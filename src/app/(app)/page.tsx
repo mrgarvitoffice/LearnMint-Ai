@@ -11,10 +11,11 @@ import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
+import { useUser } from '@clerk/nextjs';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
-const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
+const PAGE_TITLE_BASE = `Welcome to ${APP_NAME}`; // Base title
 
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Quickly create notes, quizzes, & flashcards.",
@@ -54,12 +55,24 @@ export default function DashboardPage() {
   const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
+  const { user, isLoaded } = useUser();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
   
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
+  const [pageTitle, setPageTitle] = useState(PAGE_TITLE_BASE);
+
+
+  useEffect(() => {
+    if (isLoaded && user && user.firstName) {
+      setPageTitle(`Welcome back, ${user.firstName}!`);
+    } else {
+      setPageTitle(PAGE_TITLE_BASE);
+    }
+  }, [isLoaded, user]);
+
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
@@ -88,15 +101,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      console.log(`Dashboard: Attempting to speak PAGE_TITLE ("${PAGE_TITLE}") with voice: ${selectedVoice.name}`);
-      speak(PAGE_TITLE);
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && isLoaded) {
+      console.log(`Dashboard: Attempting to speak pageTitle ("${pageTitle}") with voice: ${selectedVoice.name}`);
+      speak(pageTitle);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, pageTitle, isLoaded]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -125,7 +138,7 @@ export default function DashboardPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <header className="text-center relative">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
-          {PAGE_TITLE}
+          {pageTitle}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
@@ -251,5 +264,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
