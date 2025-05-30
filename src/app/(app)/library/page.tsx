@@ -83,12 +83,12 @@ export default function LibraryPage() {
         toast({ title: "YouTube Search Complete", description: `${data.videos.length} videos found.` });
       } else {
         setYoutubeResults([]);
-        toast({ title: "No YouTube Videos Found", description: "Try a different search term." });
+        toast({ title: "No YouTube Videos Found", description: "Try a different search term, or check API key configuration if issues persist." });
       }
     },
     onError: (error) => {
       console.error("YouTube search error:", error);
-      toast({ title: "YouTube Search Error", description: error.message || "Could not fetch videos.", variant: "destructive" });
+      toast({ title: "YouTube Search Error", description: error.message || "Could not fetch videos. Ensure YOUTUBE_API_KEY is valid and YouTube Data API v3 is enabled.", variant: "destructive" });
       setYoutubeResults([]);
     }
   });
@@ -101,12 +101,12 @@ export default function LibraryPage() {
         toast({ title: "Google Books Search Complete", description: `${data.books.length} books found.` });
       } else {
         setGoogleBooksResults([]);
-        toast({ title: "No Books Found", description: "Try a different search term." });
+        toast({ title: "No Books Found", description: "Try a different search term, or check API key configuration." });
       }
     },
     onError: (error) => {
       console.error("Google Books search error:", error);
-      toast({ title: "Google Books Search Error", description: error.message || "Could not fetch books.", variant: "destructive" });
+      toast({ title: "Google Books Search Error", description: error.message || "Could not fetch books. Ensure GOOGLE_BOOKS_API_KEY is valid.", variant: "destructive" });
       setGoogleBooksResults([]);
     }
   });
@@ -117,7 +117,7 @@ export default function LibraryPage() {
     if (youtubeSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); // Clear previous results
-      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 20 });
+      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 9 });
     }
   };
 
@@ -181,6 +181,11 @@ export default function LibraryPage() {
               </Button>
             </CardContent>
           </form>
+          {youtubeSearchMutation.isPending && youtubeResults.length === 0 && (
+             <div className="px-6 pb-6 flex items-center justify-center space-x-2 text-muted-foreground h-40">
+                <Loader2 className="h-6 w-6 animate-spin" /><span>Searching YouTube...</span>
+             </div>
+          )}
           {youtubeResults.length > 0 && (
             <div className="px-6 pb-6">
               <h3 className="text-lg font-semibold mb-3 mt-4">Results:</h3>
@@ -195,6 +200,12 @@ export default function LibraryPage() {
                   ))}
                 </div>
               </ScrollArea>
+            </div>
+          )}
+          {!youtubeSearchMutation.isPending && youtubeSearchMutation.isSuccess && youtubeResults.length === 0 && (
+             <div className="px-6 pb-6 text-center text-muted-foreground h-40 flex flex-col justify-center items-center">
+                <Video className="w-10 h-10 mb-2 opacity-50" />
+                <p>No videos found for "{youtubeSearchTerm}". Try a different search.</p>
             </div>
           )}
         </Card>
@@ -242,6 +253,11 @@ export default function LibraryPage() {
               </Button>
             </CardContent>
           </form>
+          {googleBooksSearchMutation.isPending && googleBooksResults.length === 0 && (
+             <div className="px-6 pb-6 flex items-center justify-center space-x-2 text-muted-foreground h-40">
+                <Loader2 className="h-6 w-6 animate-spin" /><span>Searching Google Books...</span>
+             </div>
+          )}
            {googleBooksResults.length > 0 && (
             <div className="px-6 pb-6">
               <h3 className="text-lg font-semibold mb-3 mt-4">Book Results:</h3>
@@ -270,6 +286,12 @@ export default function LibraryPage() {
                   ))}
                 </div>
               </ScrollArea>
+            </div>
+          )}
+           {!googleBooksSearchMutation.isPending && googleBooksSearchMutation.isSuccess && googleBooksResults.length === 0 && (
+             <div className="px-6 pb-6 text-center text-muted-foreground h-40 flex flex-col justify-center items-center">
+                <BookOpen className="w-10 h-10 mb-2 opacity-50" />
+                <p>No books found for "{googleBooksSearchTerm}". Try a different search.</p>
             </div>
           )}
         </Card>

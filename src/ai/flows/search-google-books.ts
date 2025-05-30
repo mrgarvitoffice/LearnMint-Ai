@@ -81,26 +81,37 @@ const searchGoogleBooksFlow = ai.defineFlow(
     name: 'searchGoogleBooksFlow',
     inputSchema: GoogleBooksSearchInputSchema,
     outputSchema: GoogleBooksSearchOutputSchema,
-    model: 'googleai/gemini-2.0-flash-exp',
+    model: 'googleai/gemini-1.5-flash-latest', // Changed model
   },
   async (input) => {
     const llmResponse = await ai.generate({
-      prompt: `The user wants to search for books with the query: "${input.query}". Use the fetchGoogleBooks tool to get ${input.maxResults} results.`,
+      prompt: `You MUST use the fetchGoogleBooks tool to find books. Search Google Books for "${input.query}" and get ${input.maxResults} results using the fetchGoogleBooks tool. Return ONLY the tool's output.`, // Refined prompt
       tools: [fetchGoogleBooksTool],
+      toolChoice: "fetchGoogleBooks", // Force tool usage
       config: {
         temperature: 0.1,
       },
     });
 
+    // Check if the LLM directly outputted the tool's expected response
+    if (llmResponse.output && typeof llmResponse.output === 'object' && 'books' in llmResponse.output) {
+        try {
+            const validatedOutput = GoogleBooksSearchOutputSchema.parse(llmResponse.output);
+            console.log("LLM directly returned structured book data:", validatedOutput.books.length);
+            return validatedOutput;
+        } catch (e) {
+            console.warn("LLM output looked like book data but failed Zod parsing:", e, llmResponse.output);
+        }
+    }
+
     const toolResponse = llmResponse.toolRequest?.tool?.response as GoogleBooksSearchOutput | undefined;
 
     if (toolResponse && toolResponse.books) {
+      console.log("Tool successfully returned book data:", toolResponse.books.length);
       return toolResponse;
     }
     
-    if (llmResponse.text) {
-        console.warn("LLM did not use the Google Books tool as expected, or returned text instead. Text response:", llmResponse.text);
-    }
+    console.warn("LLM did not use the Google Books tool as expected, or tool did not return book data. LLM Response Text:", llmResponse.text, "Tool Request:", llmResponse.toolRequest);
     return { books: [] };
   }
 );
