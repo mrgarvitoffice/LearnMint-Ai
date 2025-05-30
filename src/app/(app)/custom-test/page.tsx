@@ -36,7 +36,7 @@ const formSchema = z.object({
   selectedRecentTopics: z.array(z.string()).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   numQuestions: z.coerce.number().min(1, 'Min 1 question').max(20, 'Max 20 questions').default(5),
-  timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0), 
+  timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0),
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'topic' && (!data.topics || data.topics.trim().length < 3)) {
     ctx.addIssue({
@@ -77,7 +77,7 @@ interface CustomTestState {
   currentQuestionIndex: number;
   showResults: boolean;
   score: number;
-  timeLeft?: number; 
+  timeLeft?: number;
   timerId?: NodeJS.Timeout;
   isAutoSubmitting?: boolean;
 }
@@ -87,10 +87,10 @@ export default function CustomTestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('correct'); 
-  const { playSound: playIncorrectSound } = useSound('incorrect'); 
+  const { playSound: playCorrectSound } = useSound('correct');
+  const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, isSpeaking: isTTSSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const { speak, isSpeaking: isTTSSpeaking, supportedVoices, setVoicePreference, selectedVoice, cancel: cancelTTS } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
   const pageTitleSpokenRef = useRef(false);
@@ -112,18 +112,25 @@ export default function CustomTestPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('female'); 
+      setVoicePreference('female');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
-  
+
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !testState) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak]);
-  
+    // Cleanup TTS on unmount or if test starts
+    return () => {
+      if (pageTitleSpokenRef.current) { // Only cancel if it might have spoken
+          cancelTTS();
+          pageTitleSpokenRef.current = false; // Reset for next potential mount
+      }
+    };
+  }, [selectedVoice, isTTSSpeaking, speak, cancelTTS, testState]);
+
   useEffect(() => {
     if (transcript) {
       setValue('topics', transcript);
@@ -150,9 +157,52 @@ export default function CustomTestPage() {
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading) {
-      generatingMessageSpokenRef.current = false; 
+      generatingMessageSpokenRef.current = false;
     }
   }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
+
+
+  const handleSubmitTest = useCallback((autoSubmitted = false) => {
+    playClickSound();
+    setTestState(prevTestState => {
+      if (!prevTestState || prevTestState.showResults) return prevTestState;
+      if (prevTestState.timerId) {
+        clearInterval(prevTestState.timerId);
+      }
+
+      let score = 0;
+      const updatedQuestions = prevTestState.questions.map((q, index) => {
+        const userAnswer = prevTestState.userAnswers[index];
+        const isCorrect = userAnswer === q.answer;
+        if (isCorrect) {
+          score += 4;
+          playCorrectSound();
+        } else if (userAnswer !== undefined) {
+          score -= 1;
+          playIncorrectSound();
+        }
+        return { ...q, userAnswer, isCorrect };
+      });
+
+      const resultMessage = `Your score is ${score}. Review your answers below.`;
+      if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) {
+         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: resultMessage});
+         if (selectedVoice && !isTTSSpeaking) {
+           speak(autoSubmitted ? "Test auto-submitted! Please review your answers." : "Test submitted! Please review your answers.");
+         }
+      }
+
+      return {
+        ...prevTestState,
+        questions: updatedQuestions,
+        score,
+        showResults: true,
+        timerId: undefined,
+        isAutoSubmitting: autoSubmitted,
+        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft
+      };
+    });
+  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]);
 
   useEffect(() => {
     let currentTimerId: NodeJS.Timeout | undefined;
@@ -162,7 +212,7 @@ export default function CustomTestPage() {
     if (testState?.timeLeft === 0 && !testState.isAutoSubmitting && !testState.showResults) {
       setTestState(prev => prev ? { ...prev, isAutoSubmitting: true } : null);
       toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-      handleSubmitTest(true); 
+      handleSubmitTest(true);
     }
     return () => {
       if (currentTimerId) clearInterval(currentTimerId);
@@ -172,7 +222,7 @@ export default function CustomTestPage() {
 
   const startTimer = (durationMinutes: number) => {
     if (durationMinutes <= 0) return;
-    
+
     setTestState(prev => {
       if (!prev) return null;
       if (prev.timerId) clearInterval(prev.timerId);
@@ -184,7 +234,7 @@ export default function CustomTestPage() {
           }
           if (currentTestState?.timerId && (currentTestState.timeLeft === 0 || currentTestState.showResults || currentTestState.isAutoSubmitting)) {
              clearInterval(currentTestState.timerId);
-             return {...currentTestState, timerId: undefined}; 
+             return {...currentTestState, timerId: undefined};
           }
           return currentTestState;
         });
@@ -196,7 +246,7 @@ export default function CustomTestPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
     setIsLoading(true);
-    setTestState(null); 
+    setTestState(null);
 
     try {
       let topicForAI = "general knowledge";
@@ -226,9 +276,9 @@ export default function CustomTestPage() {
         sourceTopicsForSettings = data.selectedRecentTopics;
         selectedRecentTopicsForSettings = data.selectedRecentTopics;
       }
-      
+
       const result: GenerateQuizOutput = await generateQuiz({ topic: topicForAI, numQuestions: data.numQuestions });
-      
+
       if (result.quiz && result.quiz.length > 0) {
         const testSettings: TestSettings = {
           topics: sourceTopicsForSettings,
@@ -267,7 +317,7 @@ export default function CustomTestPage() {
       setIsLoading(false);
     }
   };
-  
+
   const handleAnswerSelect = (answer: string) => {
     playClickSound();
     if (!testState || testState.showResults || testState.isAutoSubmitting) return;
@@ -288,53 +338,11 @@ export default function CustomTestPage() {
     setTestState({ ...testState, currentQuestionIndex: testState.currentQuestionIndex - 1 });
   };
 
-  const handleSubmitTest = useCallback((autoSubmitted = false) => {
-    playClickSound();
-    setTestState(prevTestState => {
-      if (!prevTestState || prevTestState.showResults) return prevTestState;
-      if (prevTestState.timerId) {
-        clearInterval(prevTestState.timerId);
-      }
-
-      let score = 0;
-      const updatedQuestions = prevTestState.questions.map((q, index) => {
-        const userAnswer = prevTestState.userAnswers[index];
-        const isCorrect = userAnswer === q.answer;
-        if (isCorrect) {
-          score += 4;
-          playCorrectSound();
-        } else if (userAnswer !== undefined) { 
-          score -= 1;
-          playIncorrectSound();
-        }
-        return { ...q, userAnswer, isCorrect };
-      });
-      
-      const resultMessage = `Your score is ${score}. Review your answers below.`;
-      if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) {
-         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: resultMessage});
-         if (selectedVoice && !isTTSSpeaking) {
-           speak(autoSubmitted ? "Test auto-submitted! Please review your answers." : "Test submitted! Please review your answers.");
-         }
-      }
-      
-      return { 
-        ...prevTestState, 
-        questions: updatedQuestions, 
-        score, 
-        showResults: true, 
-        timerId: undefined, 
-        isAutoSubmitting: autoSubmitted,
-        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft 
-      };
-    });
-  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]); 
-  
   const handleRetakeTest = () => {
      playClickSound();
      if (!testState) return;
-     setIsLoading(true); 
-     onSubmit({ 
+     setIsLoading(true);
+     onSubmit({
         sourceType: testState.settings.sourceType || 'topic',
         topics: testState.settings.sourceType === 'topic' ? testState.settings.topics.join(',') : undefined,
         notes: testState.settings.sourceType === 'notes' ? testState.settings.notes : undefined,
@@ -344,7 +352,7 @@ export default function CustomTestPage() {
         timer: testState.settings.timer || 0,
      }).finally(() => setIsLoading(false));
   }
-  
+
   const handleNewTest = () => {
     playClickSound();
     if (testState?.timerId) clearInterval(testState.timerId);
@@ -373,7 +381,7 @@ export default function CustomTestPage() {
 
   const currentQuestionData = testState?.questions[testState.currentQuestionIndex];
 
-  if (isLoading && !testState) { 
+  if (isLoading && !testState) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -421,10 +429,10 @@ export default function CustomTestPage() {
               <div className="space-y-2">
                 <Label htmlFor="topics">Topic(s)</Label>
                  <div className="flex gap-2">
-                    <Input 
-                        id="topics" 
-                        placeholder="e.g., Calculus, World History (comma-separated)" 
-                        {...register('topics')} 
+                    <Input
+                        id="topics"
+                        placeholder="e.g., Calculus, World History (comma-separated)"
+                        {...register('topics')}
                         className={cn(errors.topics ? 'border-destructive' : '', "transition-colors duration-200 ease-in-out")}
                     />
                     {browserSupportsSpeechRecognition && (
@@ -465,7 +473,7 @@ export default function CustomTestPage() {
                                   field.onChange([...currentSelection, topic]);
                                 } else {
                                   toast({ title: "Limit Reached", description: `You can only select up to ${MAX_RECENT_TOPICS_SELECT} topics.`, variant: "destructive"});
-                                  return false; 
+                                  return false;
                                 }
                               } else {
                                 field.onChange(currentSelection.filter(t => t !== topic));
@@ -523,7 +531,7 @@ export default function CustomTestPage() {
       </Card>
     );
   }
-  
+
   if (!testState.showResults && currentQuestionData) {
      return (
         <Card>
@@ -633,4 +641,3 @@ export default function CustomTestPage() {
     </Alert>
   );
 }
-
