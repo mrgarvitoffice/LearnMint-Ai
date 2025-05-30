@@ -14,7 +14,7 @@ interface TTSHook {
   selectedVoice: SpeechSynthesisVoice | null;
   setSelectedVoiceURI: (uri: string) => void;
   setVoicePreference: (preference: 'male' | 'female' | 'kai' | 'zia' | null) => void;
-  voicePreference: 'male' | 'female' | 'kai' | 'zia' | null; // Expose current preference
+  voicePreference: 'male' | 'female' | 'kai' | 'zia' | null;
 }
 
 export function useTTS(): TTSHook {
@@ -31,37 +31,64 @@ export function useTTS(): TTSHook {
 
       if (voices.length > 0) {
         let preferredVoice: SpeechSynthesisVoice | undefined;
-        const currentLang = selectedVoice?.lang || 'en'; // Use current lang or default to English for preference matching
+        const currentLangPrefix = selectedVoice?.lang.split('-')[0] || 'en';
 
-        // Prioritize specific names if preference is set
         if (voicePreference === 'zia') {
-          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('zia') && voice.lang.startsWith(currentLang.split('-')[0]));
+          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('zia') && voice.lang.startsWith(currentLangPrefix));
         }
         if (!preferredVoice && voicePreference === 'kai') {
-          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(currentLang.split('-')[0]));
+          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(currentLangPrefix));
         }
 
-        // General female preference if Zia not found or not preferred
+        // General female preference if Zia not found or not preferred OR if preference is just 'female'
         if (!preferredVoice && (voicePreference === 'female' || voicePreference === 'zia')) {
-          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.startsWith(currentLang.split('-')[0]));
+          // Prioritize US English female voices if available
+          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.startsWith('en-US'));
+          // If no US female, try any English female (excluding UK one if possible)
+          if (!preferredVoice) {
+            preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.startsWith('en') && !voice.name.toLowerCase().includes('google uk english female'));
+          }
+          // Removed the explicit fallback to *any* English female voice here to avoid selecting "Google UK English Female" if it's the only one.
+          // It will now fall through to broader non-gender-specific English fallbacks if the above conditions aren't met.
         }
-        // General male preference if Kai not found or not preferred
+        // General male preference if Kai not found or not preferred OR if preference is just 'male'
         if (!preferredVoice && (voicePreference === 'male' || voicePreference === 'kai')) {
-          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('male') && voice.lang.startsWith(currentLang.split('-')[0]));
+          preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('male') && voice.lang.startsWith('en-US'));
+          if (!preferredVoice) {
+            preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('male') && voice.lang.startsWith('en'));
+          }
         }
 
-        // Broader fallbacks if specific names or general preferences aren't found
+        // Broader fallbacks if still no preference match
+        if (!preferredVoice && voicePreference) {
+            if (voicePreference === 'zia' || voicePreference === 'female') {
+                preferredVoice = voices.find(v => v.lang.startsWith('en-US') && v.name.toLowerCase().includes('female') && !v.name.toLowerCase().includes('google uk english female'));
+                 if (!preferredVoice) { // If still no match, try any US female
+                    preferredVoice = voices.find(v => v.lang.startsWith('en-US') && v.name.toLowerCase().includes('female'));
+                }
+            } else if (voicePreference === 'kai' || voicePreference === 'male') {
+                preferredVoice = voices.find(v => v.lang.startsWith('en-US') && v.name.toLowerCase().includes('male'));
+            }
+        }
+
         if (!preferredVoice) {
-            preferredVoice = voices.find(v => v.lang.startsWith('en-US') && (voicePreference === 'female' || voicePreference === 'zia' ? v.name.toLowerCase().includes('female') : true) && (voicePreference === 'male' || voicePreference === 'kai' ? v.name.toLowerCase().includes('male') : true) );
+            preferredVoice = voices.find(v => v.lang.startsWith('en-US') && !v.name.toLowerCase().includes('google uk english female'));
         }
         if (!preferredVoice) {
-             preferredVoice = voices.find(v => v.lang.startsWith('en') && (voicePreference === 'female' || voicePreference === 'zia' ? v.name.toLowerCase().includes('female') : true) && (voicePreference === 'male' || voicePreference === 'kai' ? v.name.toLowerCase().includes('male') : true) );
+            preferredVoice = voices.find(v => v.lang.startsWith('en-US'));
         }
-        if (!preferredVoice) { // If still no preference match, try any English voice
+        if (!preferredVoice) {
+             preferredVoice = voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('google uk english female'));
+        }
+        if (!preferredVoice) {
             preferredVoice = voices.find(v => v.lang.startsWith('en'));
         }
         
-        setSelectedVoice(preferredVoice || voices[0]);
+        if (preferredVoice) {
+          setSelectedVoice(preferredVoice);
+        } else if (voices.length > 0) {
+          setSelectedVoice(voices[0]); // Absolute fallback to the first available voice
+        }
       }
     }
   }, [voicePreference, selectedVoice?.lang]);
@@ -82,8 +109,7 @@ export function useTTS(): TTSHook {
   const speak = useCallback((text: string) => {
     if (typeof window !== 'undefined' && window.speechSynthesis && text) {
       window.speechSynthesis.cancel(); // Cancel any ongoing or queued speech first
-      setIsSpeaking(false); // Reset states
-      setIsPaused(false);
+      setIsPaused(false); // Reset pause state
 
       const utterance = new SpeechSynthesisUtterance(text);
       if (selectedVoice) {
@@ -102,30 +128,29 @@ export function useTTS(): TTSHook {
         setIsSpeaking(false);
         setIsPaused(false);
       };
-      utterance.onpause = () => { // Though we don't expose browser's onpause directly
+      utterance.onpause = () => {
+        // This is for browser-initiated pauses, our state should align
         setIsSpeaking(false);
         setIsPaused(true);
       };
-       utterance.onresume = () => { // Though we don't expose browser's onresume directly
+       utterance.onresume = () => {
         setIsSpeaking(true);
         setIsPaused(false);
       };
 
-
-      // Adding a small delay can sometimes help prevent "interrupted" errors on some browsers
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             window.speechSynthesis.speak(utterance);
         }
       }, 50);
     }
-  }, [selectedVoice, setIsSpeaking, setIsPaused]);
+  }, [selectedVoice]);
 
   const pauseTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && isSpeaking && !isPaused) {
       window.speechSynthesis.pause();
       setIsPaused(true);
-      setIsSpeaking(false); // Speech is paused, so not actively 'speaking'
+      setIsSpeaking(false);
     }
   }, [isSpeaking, isPaused]);
 
@@ -133,7 +158,7 @@ export function useTTS(): TTSHook {
     if (typeof window !== 'undefined' && window.speechSynthesis && isPaused) {
       window.speechSynthesis.resume();
       setIsPaused(false);
-      setIsSpeaking(true); // Speech resumes, so actively 'speaking'
+      setIsSpeaking(true);
     }
   }, [isPaused]);
 
@@ -143,7 +168,7 @@ export function useTTS(): TTSHook {
       setIsSpeaking(false);
       setIsPaused(false);
     }
-  }, [setIsSpeaking, setIsPaused]);
+  }, []);
 
   const setSelectedVoiceURI = useCallback((uri: string) => {
     const voice = supportedVoices.find(v => v.voiceURI === uri);
@@ -154,7 +179,7 @@ export function useTTS(): TTSHook {
       else if (voiceNameLower.includes('kai')) setVoicePreference('kai');
       else if (voiceNameLower.includes('female')) setVoicePreference('female');
       else if (voiceNameLower.includes('male')) setVoicePreference('male');
-      else setVoicePreference(null); // Or keep current preference if no match
+      else setVoicePreference(null);
     }
   }, [supportedVoices]);
 
