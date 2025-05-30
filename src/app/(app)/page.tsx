@@ -1,13 +1,19 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS, APP_NAME } from "@/lib/constants";
-import { ArrowRight, Lightbulb, FileText, TestTubeDiagonal, HelpCircle, ListChecks, Calculator, Bot, Newspaper, BookMarked, Gamepad2 } from "lucide-react";
+import { ArrowRight, Lightbulb } from "lucide-react";
 import Link from "next/link";
-import { useSound } from '@/hooks/useSound';
+import { useTTS } from '@/hooks/useTTS'; // Import useTTS
+
+// Helper to get a specific icon if available, otherwise a default
+const getIcon = (title: string) => {
+  const item = NAV_ITEMS.flatMap(navItem => navItem.children ? navItem.children : navItem).find(i => i.title === title);
+  return item?.icon || Lightbulb; // Default to Lightbulb if not found
+};
 
 const coreFeaturesList = [
   "AI Content Generation: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI (powered by Genkit and Google AI).",
@@ -15,29 +21,27 @@ const coreFeaturesList = [
   "Interactive AI Chatbot (Megumin): Engage with \"Megumin,\" a witty AI assistant, for small talk, questions, and even \"singing\" (text-based). Supports voice input and user image uploads.",
   "Scientific Calculator & Unit Converter: Perform basic and scientific calculations. Includes a Unit Converter (Length, Temperature, Weight/Mass, Volume, Area, Speed) and a history of the last 3 calculations.",
   "Daily News Digest: Browse news articles filtered by country, state/region (text input), city (text input), and general categories, powered by Newsdata.io.",
-  "Resource Library: Explore a sample catalog of OpenStax textbooks, search Google Books & YouTube (redirects), and view a \"Math Fact of the Day\".",
+  "Resource Library: Explore a sample catalog of OpenStax textbooks (links to external site). Search Google Books & YouTube (redirects to Google Books search results for full reading). View a \"Math Fact of the Day\" (from a static list after attempting live fetch).",
   "Educational Game: Play \"Word Game\" (a definition/term guessing game with hints and streak scoring). Placeholders for \"Dino Runner\"",
   "Theme Toggle: Switch between light and dark modes.",
   "Responsive UI: Designed to adapt to various screen sizes, including mobile (with drawer navigation).",
   "Auditory Feedback: Click sounds and vocal announcements for a more engaging experience.",
 ];
 
+
 const keyTools = [
-  { title: "Generate Study Notes", href: "/notes", description: "Craft comprehensive notes on any subject with AI assistance.", icon: FileText },
-  { title: "Custom Test Creator", href: "/custom-test", description: "Design personalized tests from topics or your own notes.", icon: TestTubeDiagonal },
+  { title: "Generate Study Notes", href: "/notes", description: "Craft comprehensive notes on any subject with AI assistance.", icon: getIcon("Note Generator") },
+  { title: "Custom Test Creator", href: "/custom-test", description: "Design personalized tests from topics or your own notes.", icon: getIcon("Custom Test") },
 ];
 
-// Filter out Dashboard, parent AI Tools, and already listed keyTools for "Explore More"
 const otherFeaturesRaw = NAV_ITEMS.flatMap(item =>
   item.title === 'AI Tools' && item.children ? 
   item.children.map(child => ({ ...child, parentIcon: item.icon })) : 
-  (item.href !== '/' && item.href !== '#' ? [{ ...item, parentIcon: item.icon }] : [])
+  (item.href !== '/' && item.href !== '#' && item.title !== 'Dashboard' ? [{ ...item, parentIcon: item.icon }] : [])
 ).filter(item => 
-  !keyTools.find(kt => kt.title === item.title) && 
-  item.title !== 'Dashboard' // Explicitly remove Dashboard from here
+  !keyTools.find(kt => kt.title === item.title) && item.title !== 'Dashboard'
 );
 
-// Deduplicate based on href, preferring items that might have specific icons if NavItem structure varies
 const uniqueOtherFeaturesMap = new Map();
 otherFeaturesRaw.forEach(item => {
   if (!uniqueOtherFeaturesMap.has(item.href)) {
@@ -48,15 +52,25 @@ const otherFeatures = Array.from(uniqueOtherFeaturesMap.values());
 
 
 export default function DashboardPage() {
-  const { playSound: playWelcomeSound, audio: welcomeAudioReady } = useSound('/sounds/welcome-learnmint.mp3', 0.6);
+  const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const [hasWelcomed, setHasWelcomed] = useState(false);
 
   useEffect(() => {
-    // Play welcome sound once when the component mounts and audio is ready
-    if (welcomeAudioReady) {
-      playWelcomeSound();
+    // Set the voice preference once when the component is ready and hasn't welcomed yet
+    if (!hasWelcomed && supportedVoices.length > 0) {
+      setVoicePreference('zia');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playWelcomeSound, welcomeAudioReady]); // Re-run if playWelcomeSound or audio readiness changes
+  }, [setVoicePreference, hasWelcomed, supportedVoices.length]); // Rerun if supportedVoices length changes (voices load)
+
+  useEffect(() => {
+    // Attempt to speak when voices are ready, preference might have been set, and not already spoken
+    // Check selectedVoice to ensure preference has been processed by useTTS
+    if (supportedVoices.length > 0 && !isSpeaking && !hasWelcomed && selectedVoice) {
+      speak("Welcome to LearnMint!");
+      setHasWelcomed(true);
+    }
+  }, [supportedVoices, isSpeaking, hasWelcomed, speak, selectedVoice]);
+
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-12">
@@ -124,7 +138,7 @@ export default function DashboardPage() {
            <h2 className="text-2xl font-semibold text-primary mb-4">Explore More Features</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {otherFeatures.map((item) => {
-              if (!item.icon) return null; // Should not happen with current NAV_ITEMS structure but good for safety
+              if (!item.icon) return null; 
               const Icon = item.icon;
               return (
                 <Link href={item.href} key={item.href} legacyBehavior>
