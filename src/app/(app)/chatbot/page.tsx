@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
-import { kazumaChatbot, type KazumaChatbotInput } from '@/ai/flows/ai-chatbot'; // Updated import
+import { kazumaChatbot, type KazumaChatbotInput } from '@/ai/flows/ai-chatbot';
 import { Bot, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -15,7 +14,7 @@ import { useTTS } from '@/hooks/useTTS';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 
-const PAGE_TITLE = "Kazuma AI: Your (Reluctant) Companion"; // Updated title
+const PAGE_TITLE = "Kazuma AI: Your (Reluctant) Companion";
 const TYPING_INDICATOR_ID = 'typing-indicator';
 
 export default function ChatbotPage() {
@@ -40,22 +39,23 @@ export default function ChatbotPage() {
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
-  const chatbotVoicePreferenceSetRef = useRef(false);
+  const chatbotReplyVoicePreferenceSetRef = useRef(false);
   const initialGreetingSpokenRef = useRef(false);
   const currentSpokenMessageRef = useRef<string | null>(null);
 
-  useEffect(() => {
+ useEffect(() => {
+    // Set voice preference for general page announcements
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); // Page title still uses default (female-implied) preference
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    // Set the voice preference for Kazuma's replies specifically
-    if (supportedVoices.length > 0 && !chatbotVoicePreferenceSetRef.current) {
-        setVoicePreference('kai'); // Kazuma's replies should default to Kai (male)
-        chatbotVoicePreferenceSetRef.current = true;
+    // Set voice preference for Kazuma's replies specifically to 'kai'
+    if (supportedVoices.length > 0 && !chatbotReplyVoicePreferenceSetRef.current) {
+        setVoicePreference('kai'); 
+        chatbotReplyVoicePreferenceSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
@@ -63,13 +63,22 @@ export default function ChatbotPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
+      // Page title should use the 'zia' preference if it's the initial load before chatbot preference is set
+      const preferenceForTitle = chatbotReplyVoicePreferenceSetRef.current ? voicePreference : 'zia';
+      if(preferenceForTitle === 'zia' && (!voicePreference || voicePreference === 'zia')){
+        speak(PAGE_TITLE);
+        pageTitleSpokenRef.current = true;
+      } else if (preferenceForTitle === 'kai' && voicePreference === 'kai'){
+        // If by some chance chatbotReplyVoicePreferenceSetRef is true and preference is already kai
+        // (less likely for page title on first load)
+        speak(PAGE_TITLE);
+        pageTitleSpokenRef.current = true;
+      }
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, voicePreference]);
 
 
   useEffect(() => {
@@ -82,23 +91,24 @@ export default function ChatbotPage() {
   useEffect(() => {
     const initialGreeting: ChatMessageType = {
       id: 'initial-greeting', role: 'assistant',
-      content: "Yo. Kazuma here. Don't expect too much, but I guess I can answer your questions or whatever. Just try not to get us into too much trouble, okay?", // Updated greeting
+      content: "Yo. Kazuma here. Don't expect too much, but I guess I can answer your questions or whatever. Just try not to get us into too much trouble, okay?",
       timestamp: new Date()
     };
     setMessages([initialGreeting]);
 
-    // Speak initial greeting only if voice is 'kai' and conditions met
+    // Speak initial greeting only if voice preference is 'kai' and conditions met
     if (selectedVoice && voicePreference === 'kai' && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
       currentSpokenMessageRef.current = initialGreeting.content;
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, []); 
 
   useEffect(() => {
+    // This effect ensures the initial greeting is spoken once Kazuma's voice (kai preference) is ready
     if (messages.length === 1 && messages[0].id === 'initial-greeting' &&
-        selectedVoice && voicePreference === 'kai' && 
+        selectedVoice && voicePreference === 'kai' && // Check for 'kai' preference specifically
         !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
       
       currentSpokenMessageRef.current = messages[0].content;
@@ -121,14 +131,13 @@ export default function ChatbotPage() {
     try {
       const input: KazumaChatbotInput = { message: messageText };
       if (image) input.image = image;
-      const response = await kazumaChatbot(input); // Use kazumaChatbot
+      const response = await kazumaChatbot(input); 
 
       const assistantMessage: ChatMessageType = { id: Date.now().toString() + '-assistant', role: 'assistant', content: response.response, timestamp: new Date() };
 
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Speak assistant's message using Kazuma's voice preference
       if (selectedVoice && voicePreference === 'kai' && !isSpeaking && !isPaused) { 
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
@@ -161,19 +170,21 @@ export default function ChatbotPage() {
 
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
   
-  const handleChatbotVoicePreferenceChange = (value: string) => {
+  const handleChatbotVoicePreferenceChange = (value: 'zia' | 'kai' | null) => {
     playClickSound();
-    setVoicePreference(value as 'luma' | 'kai' | null);
+    setVoicePreference(value);
   };
 
   const getSelectedDropdownValue = () => {
-    if (voicePreference) return voicePreference;
-    // Infer preference from selectedVoice name if voicePreference is null for Kazuma's context
+    // Kazuma's replies should primarily use 'kai' preference
+    if (voicePreference === 'kai') return 'kai';
+    if (voicePreference === 'zia') return 'zia';
+    
+    // Fallback if voicePreference is somehow null, try to infer from selectedVoice for UI consistency
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma'; // Should be 'kai' if that's the intended character voice
+    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
     return 'kai'; // Default UI selection to Kai for Kazuma
   };
-
 
   return (
     <Card className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] flex flex-col">
@@ -189,12 +200,12 @@ export default function ChatbotPage() {
             <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
               <Select
                 value={getSelectedDropdownValue()} 
-                onValueChange={handleChatbotVoicePreferenceChange}
+                onValueChange={(val) => handleChatbotVoicePreferenceChange(val as 'zia' | 'kai')}
               >
                 <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="zia">Zia</SelectItem>
                   <SelectItem value="kai">Kai</SelectItem>
-                  <SelectItem value="luma">Luma</SelectItem>
                 </SelectContent>
               </Select>
 

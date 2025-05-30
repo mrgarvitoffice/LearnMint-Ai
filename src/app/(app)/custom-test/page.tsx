@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
 const PAGE_TITLE = "Advanced Test Configuration";
-const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics'; 
+const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 
 const formSchema = z.object({
   sourceType: z.enum(['topic', 'notes', 'recent']).default('topic'),
@@ -78,7 +78,7 @@ export default function CustomTestPage() {
   const { playSound: playCorrectSound } = useSound('correct');
   const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  
+
   const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
@@ -86,7 +86,7 @@ export default function CustomTestPage() {
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
   const resultAnnouncementSpokenRef = useRef(false);
-  
+
   const currentQuestionTimerIdRef = useRef<NodeJS.Timeout | null>(null);
   const overallTestTimerIdRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -123,7 +123,7 @@ export default function CustomTestPage() {
     if (!autoSubmitted) playClickSound();
     clearCurrentQuestionTimer();
     clearOverallTestTimer();
-    
+
     setTestState(prevTestState => {
       if (!prevTestState || prevTestState.showResults) return prevTestState;
 
@@ -132,8 +132,8 @@ export default function CustomTestPage() {
         const userAnswer = prevTestState.userAnswers[index];
         const isCorrect = userAnswer !== undefined && q.answer !== undefined && userAnswer.toLowerCase().trim() === q.answer.toLowerCase().trim();
         if (isCorrect) currentScore += 4;
-        else if (userAnswer !== undefined && userAnswer.trim() !== "") currentScore -= 1; 
-        
+        else if (userAnswer !== undefined && userAnswer.trim() !== "") currentScore -= 1;
+
         if (!autoSubmitted && index === prevTestState.currentQuestionIndex) {
           if (isCorrect) playCorrectSound(); else if (userAnswer !== undefined && userAnswer.trim() !== "") playIncorrectSound();
         }
@@ -143,23 +143,23 @@ export default function CustomTestPage() {
       const totalPossibleScore = prevTestState.questions.length * 4;
       const percentage = totalPossibleScore > 0 ? Math.max(0, (currentScore / totalPossibleScore) * 100) : 0;
       const calculatedPerformanceTag = getPerformanceTag(percentage);
-      
+
       if (!resultAnnouncementSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
-         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
-         speak(ttsMessage);
-         resultAnnouncementSpokenRef.current = true;
+        const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
+        speak(ttsMessage);
+        resultAnnouncementSpokenRef.current = true;
       }
       if (!autoSubmitted || (autoSubmitted && !prevTestState.isAutoSubmitting)) {
-         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Score: ${currentScore}/${totalPossibleScore} (${percentage.toFixed(1)}%). Performance: ${calculatedPerformanceTag}`});
+        toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Score: ${currentScore}/${totalPossibleScore} (${percentage.toFixed(1)}%). Performance: ${calculatedPerformanceTag}` });
       }
-      
+
       return {
         ...prevTestState, questions: updatedQuestions, score: currentScore, showResults: true, isAutoSubmitting: autoSubmitted,
         timeLeft: autoSubmitted && prevTestState.timeLeft !== undefined ? 0 : prevTestState.timeLeft,
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast, clearCurrentQuestionTimer, clearOverallTestTimer]);
+  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, selectedVoice, isSpeaking, isPaused, speak, toast]);
 
 
   const handleNextQuestion = useCallback(() => {
@@ -173,16 +173,19 @@ export default function CustomTestPage() {
   }, [playClickSound, clearCurrentQuestionTimer]);
 
 
-  useEffect(() => { 
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); 
+  useEffect(() => {
+    let isMounted = true;
+    if (isMounted && supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia');
       voicePreferenceWasSetRef.current = true;
     }
+    return () => { isMounted = false; };
   }, [supportedVoices, setVoicePreference]);
 
-  useEffect(() => { 
+
+  useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading ) {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
@@ -191,19 +194,19 @@ export default function CustomTestPage() {
     };
   }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
       speak("Creating custom test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
   }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     if (transcript && sourceType === 'topic') setValue('topics', transcript);
   }, [transcript, setValue, sourceType]);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedTopics = localStorage.getItem(RECENT_TOPICS_LS_KEY);
       if (storedTopics) {
@@ -213,7 +216,7 @@ export default function CustomTestPage() {
     }
   }, []);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
     if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft > 0 && !testState.showResults && !testState.isAutoSubmitting) {
       overallTestTimerIdRef.current = setInterval(() => {
@@ -225,7 +228,7 @@ export default function CustomTestPage() {
           if (newTimeLeftVal <= 0) {
             if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-            handleSubmitTest(true); 
+            handleSubmitTest(true);
             return { ...currentTestState, timeLeft: 0, isAutoSubmitting: true };
           }
           return { ...currentTestState, timeLeft: newTimeLeftVal };
@@ -237,12 +240,11 @@ export default function CustomTestPage() {
     };
   }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, handleSubmitTest, toast]);
 
-
-  useEffect(() => { 
+  useEffect(() => {
     clearCurrentQuestionTimer();
     if (testState && !testState.showResults && !testState.isAutoSubmitting && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
       const perQuestionDuration = testState.settings.perQuestionTimer;
-      if (testState.currentQuestionTimeLeft === undefined || testState.currentQuestionTimeLeft > perQuestionDuration || testState.currentQuestionTimeLeft <=0 ) {
+      if (testState.currentQuestionTimeLeft === undefined || testState.currentQuestionTimeLeft > perQuestionDuration || testState.currentQuestionTimeLeft <= 0) {
         setTestState(prev => prev ? { ...prev, currentQuestionTimeLeft: perQuestionDuration } : null);
       }
       currentQuestionTimerIdRef.current = setInterval(() => {
@@ -264,13 +266,13 @@ export default function CustomTestPage() {
     }
     return () => clearCurrentQuestionTimer();
   }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, testState?.isAutoSubmitting, handleNextQuestion, handleSubmitTest, toast, clearCurrentQuestionTimer]);
-  
+
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
-    pageTitleSpokenRef.current = true; // Assume title might have been spoken if config was visible long enough
-    generatingMessageSpokenRef.current = false; // Reset
+    pageTitleSpokenRef.current = true;
+    generatingMessageSpokenRef.current = false;
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Creating custom test. Please wait.");
@@ -288,11 +290,11 @@ export default function CustomTestPage() {
       notes: data.notes, difficulty: data.difficulty, numQuestions: data.numQuestions,
       timer: data.timer, perQuestionTimer: data.perQuestionTimer
     };
-    
+
     try {
       const quizInputTopic = data.sourceType === 'notes' ? `questions based on the following notes: ${data.notes}` : topicForAI;
       const result: GenerateQuizQuestionsOutput = await generateQuizAction({ topic: `${quizInputTopic}`, numQuestions: settings.numQuestions, difficulty: settings.difficulty });
-      
+
       if (result.questions && result.questions.length > 0) {
         setTestState({
           settings, questions: result.questions, userAnswers: Array(result.questions.length).fill(undefined),
@@ -338,18 +340,18 @@ export default function CustomTestPage() {
     const originalSettings = testState.settings;
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
-    pageTitleSpokenRef.current = true; // Keep true, as config is skipped
+    pageTitleSpokenRef.current = true;
     generatingMessageSpokenRef.current = false;
-    
+
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
-        speak("Recreating test. Please wait.");
-        generatingMessageSpokenRef.current = true;
+      speak("Recreating test. Please wait.");
+      generatingMessageSpokenRef.current = true;
     }
     let topicForAI = "";
     if (originalSettings.sourceType === 'topic' && originalSettings.topics.length > 0) topicForAI = originalSettings.topics.join(', ');
     else if (originalSettings.sourceType === 'notes' && originalSettings.notes) topicForAI = `questions based on the following notes: ${originalSettings.notes}`;
     else if (originalSettings.sourceType === 'recent' && originalSettings.selectedRecentTopics && originalSettings.selectedRecentTopics.length > 0) topicForAI = originalSettings.selectedRecentTopics.join(', ');
-    
+
     generateQuizAction({ topic: `${topicForAI}`, numQuestions: originalSettings.numQuestions, difficulty: originalSettings.difficulty })
       .then(result => {
         if (result.questions && result.questions.length > 0) {
@@ -359,16 +361,16 @@ export default function CustomTestPage() {
             timeLeft: originalSettings.timer && originalSettings.timer > 0 ? originalSettings.timer * 60 : undefined,
             currentQuestionTimeLeft: originalSettings.perQuestionTimer && originalSettings.perQuestionTimer > 0 ? originalSettings.perQuestionTimer : undefined,
           });
-           if (selectedVoice && !isSpeaking && !isPaused) speak("Test ready for retake!");
+          if (selectedVoice && !isSpeaking && !isPaused) speak("Test ready for retake!");
         } else {
           toast({ title: 'Retake Error', description: 'Could not regenerate questions for retake.', variant: 'destructive' });
-           if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, could not regenerate the test.");
+          if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, could not regenerate the test.");
         }
       })
       .catch(error => { console.error('Error retaking test:', error); const errorMessage = error instanceof Error ? error.message : 'Failed to retake test.'; toast({ title: 'Error', description: errorMessage, variant: 'destructive' }); })
       .finally(() => { setIsLoading(false); generatingMessageSpokenRef.current = false; });
   };
-  
+
   const handleNewTest = () => {
     playClickSound(); setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
     pageTitleSpokenRef.current = false; resultAnnouncementSpokenRef.current = false;
@@ -402,32 +404,31 @@ export default function CustomTestPage() {
   const handlePlaybackControl = () => {
     playClickSound();
     let textToPlay = "";
-       if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
-       else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
-        textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Your performance is ${testState.performanceTag}!`;
-      } else if (isLoading && !generatingMessageSpokenRef.current) {
-        textToPlay = "Creating custom test. Please wait.";
-      }
-      if (textToPlay && selectedVoice && !isSpeaking && !isPaused) {
-        speak(textToPlay);
-        if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
-        else if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
-        else if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
-      } else if (isSpeaking && !isPaused) {
-        pauseTTS();
-      } else if (isPaused) {
-        resumeTTS();
-      }
+    if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
+    else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
+      textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Your performance is ${testState.performanceTag}!`;
+    } else if (isLoading && !generatingMessageSpokenRef.current) {
+      textToPlay = "Creating custom test. Please wait.";
+    }
+    if (textToPlay && selectedVoice && !isSpeaking && !isPaused) {
+      speak(textToPlay);
+      if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
+      else if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
+      else if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
+    } else if (isSpeaking && !isPaused) {
+      pauseTTS();
+    } else if (isPaused) {
+      resumeTTS();
+    }
   };
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
-  
+
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'luma'; 
+    return 'zia';
   };
-
 
   if (!testState) {
     return (
@@ -435,26 +436,26 @@ export default function CustomTestPage() {
         <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-12 w-12 text-primary" /></div>
-             <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
-                <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
-                 <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
-                     <Select 
-                        value={getSelectedDropdownValue()} 
-                        onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'luma' | 'kai' | null);}}
-                      >
-                        <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="luma">Luma</SelectItem>
-                          <SelectItem value="kai">Kai</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
-                        {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
-                      </Button>
-                      <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}>
-                        <StopCircle className="h-4 w-4" />
-                      </Button>
-                </div>
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
+              <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
+                <Select
+                  value={getSelectedDropdownValue()}
+                  onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'zia' | 'kai' | null); }}
+                >
+                  <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="zia">Zia</SelectItem>
+                    <SelectItem value="kai">Kai</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
+                  {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                </Button>
+                <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}>
+                  <StopCircle className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">Configure your test parameters. Generate questions from topics, notes, or recent studies.</CardDescription>
           </CardHeader>
@@ -463,12 +464,12 @@ export default function CustomTestPage() {
               <div>
                 <Label className="text-base font-semibold mb-2 block">Test Source</Label>
                 <Controller name="sourceType" control={control} render={({ field }) => (
-                    <RadioGroup onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value} className="flex flex-col sm:flex-row gap-4">
-                      <Label htmlFor="source-topic" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="topic" id="source-topic" /> <span>Topic(s)</span></Label>
-                      <Label htmlFor="source-notes" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="notes" id="source-notes" /> <span>My Notes</span></Label>
-                      <Label htmlFor="source-recent" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="recent" id="source-recent" /> <span>Recent Topics</span></Label>
-                    </RadioGroup>
-                )}/>
+                  <RadioGroup onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value} className="flex flex-col sm:flex-row gap-4">
+                    <Label htmlFor="source-topic" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="topic" id="source-topic" /> <span>Topic(s)</span></Label>
+                    <Label htmlFor="source-notes" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="notes" id="source-notes" /> <span>My Notes</span></Label>
+                    <Label htmlFor="source-recent" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="recent" id="source-recent" /> <span>Recent Topics</span></Label>
+                  </RadioGroup>
+                )} />
               </div>
               {sourceType === 'topic' && (
                 <div className="space-y-2 animate-in fade-in-50">
@@ -495,7 +496,7 @@ export default function CustomTestPage() {
                     <div className="space-y-2 max-h-48 overflow-y-auto p-2 border rounded-md bg-muted/30">
                       {recentTopics.map(topic => (
                         <Label key={topic} htmlFor={`recent-${topic}`} className="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer has-[:checked]:bg-primary/10 transition-colors">
-                          <Checkbox id={`recent-${topic}`} checked={(selectedRecentTopicsWatch || []).includes(topic)} onCheckedChange={() => handleRecentTopicChange(topic)} disabled={(selectedRecentTopicsWatch || []).length >= MAX_RECENT_TOPICS_SELECT && !(selectedRecentTopicsWatch || []).includes(topic)}/>
+                          <Checkbox id={`recent-${topic}`} checked={(selectedRecentTopicsWatch || []).includes(topic)} onCheckedChange={() => handleRecentTopicChange(topic)} disabled={(selectedRecentTopicsWatch || []).length >= MAX_RECENT_TOPICS_SELECT && !(selectedRecentTopicsWatch || []).includes(topic)} />
                           <span className="text-sm">{topic}</span>
                         </Label>
                       ))}
@@ -508,11 +509,11 @@ export default function CustomTestPage() {
                 <div className="space-y-2">
                   <Label htmlFor="difficulty" className="text-base">Difficulty</Label>
                   <Controller name="difficulty" control={control} render={({ field }) => (
-                      <Select onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value}>
-                        <SelectTrigger id="difficulty" className="text-base"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
-                        <SelectContent><SelectItem value="easy">Easy</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="hard">Hard</SelectItem></SelectContent>
-                      </Select>
-                  )}/>
+                    <Select onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value}>
+                      <SelectTrigger id="difficulty" className="text-base"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+                      <SelectContent><SelectItem value="easy">Easy</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="hard">Hard</SelectItem></SelectContent>
+                    </Select>
+                  )} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="numQuestions" className="text-base">Number of Questions (1-50)</Label>
@@ -527,13 +528,13 @@ export default function CustomTestPage() {
                   {errors.timer && <p className="text-sm text-destructive">{errors.timer.message}</p>}
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="perQuestionTimer" className="text-base">Time per Question (sec, 0 for none)</Label>
-                    <Input id="perQuestionTimer" type="number" {...register('perQuestionTimer')} className="transition-colors duration-200 ease-in-out text-base" />
-                    {errors.perQuestionTimer && <p className="text-sm text-destructive">{errors.perQuestionTimer.message}</p>}
-                     <p className="text-xs text-muted-foreground/80">Per-question timer will auto-advance if time expires.</p>
+                  <Label htmlFor="perQuestionTimer" className="text-base">Time per Question (sec, 0 for none)</Label>
+                  <Input id="perQuestionTimer" type="number" {...register('perQuestionTimer')} className="transition-colors duration-200 ease-in-out text-base" />
+                  {errors.perQuestionTimer && <p className="text-sm text-destructive">{errors.perQuestionTimer.message}</p>}
+                  <p className="text-xs text-muted-foreground/80">Per-question timer will auto-advance if time expires.</p>
                 </div>
               </div>
-               <p className="text-xs text-muted-foreground/80 text-center">Marking: +4 correct, -1 incorrect (for answered questions).</p>
+              <p className="text-xs text-muted-foreground/80 text-center">Marking: +4 correct, -1 incorrect (for answered questions).</p>
             </CardContent>
             <CardFooter className="justify-center p-6">
               <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px] transition-all duration-300 ease-in-out group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-primary/50 active:scale-95">
@@ -549,10 +550,10 @@ export default function CustomTestPage() {
 
   if (isLoading && !testState) {
     return (
-        <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-            <Loader2 className="w-16 h-16 animate-spin text-primary mb-6" />
-            <p className="text-2xl text-muted-foreground font-semibold">Generating your custom test...</p><p className="text-lg text-muted-foreground">Please wait a moment.</p>
-        </div>
+      <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="w-16 h-16 animate-spin text-primary mb-6" />
+        <p className="text-2xl text-muted-foreground font-semibold">Generating your custom test...</p><p className="text-lg text-muted-foreground">Please wait a moment.</p>
+      </div>
     );
   }
 
@@ -563,7 +564,7 @@ export default function CustomTestPage() {
           <>
             <CardHeader className="border-b pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                <CardTitle className="text-xl sm:text-2xl text-primary font-bold truncate max-w-md">Test: {testState.settings.topics.join(', ').substring(0,50)}{testState.settings.topics.join(', ').length > 50 ? "..." : ""} (Difficulty: {testState.settings.difficulty})</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl text-primary font-bold truncate max-w-md">Test: {testState.settings.topics.join(', ').substring(0, 50)}{testState.settings.topics.join(', ').length > 50 ? "..." : ""} (Difficulty: {testState.settings.difficulty})</CardTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   {overallTimeLeft !== undefined && (<span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Total: {formatTime(overallTimeLeft)}</span>)}
                   {perQuestionTimeLeft !== undefined && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0 && (<span className="flex items-center gap-1"><TimerIcon className="w-4 h-4 text-destructive animate-pulse" /> Q Time: {formatTime(perQuestionTimeLeft)}</span>)}
@@ -575,7 +576,7 @@ export default function CustomTestPage() {
             <CardContent className="p-6 space-y-6">
               <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
               <RadioGroup onValueChange={(value) => { playClickSound(); handleAnswerSelect(value); }} value={testState.userAnswers[testState.currentQuestionIndex]} className="space-y-3">
-                {currentQuestionData.options?.map((option, i) => ( <Label key={i} htmlFor={`option-${i}-${testState.currentQuestionIndex}`} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer transition-all"><RadioGroupItem value={option} id={`option-${i}-${testState.currentQuestionIndex}`} /><span className="text-base">{option}</span></Label>))}
+                {currentQuestionData.options?.map((option, i) => (<Label key={i} htmlFor={`option-${i}-${testState.currentQuestionIndex}`} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer transition-all"><RadioGroupItem value={option} id={`option-${i}-${testState.currentQuestionIndex}`} /><span className="text-base">{option}</span></Label>))}
               </RadioGroup>
             </CardContent>
             <CardFooter className="flex justify-between p-6 border-t">
@@ -584,11 +585,11 @@ export default function CustomTestPage() {
             </CardFooter>
           </>
         ) : testState.showResults ? (
-           <Card className="w-full">
+          <Card className="w-full">
             <CardHeader className="text-center border-b pb-4">
               <CardTitle className="text-3xl font-bold text-primary">Test Results</CardTitle>
               <CardDescription className="text-lg">You scored {testState.score} out of {testState.questions.length * 4} ({((testState.score / (testState.questions.length * 4 || 1)) * 100).toFixed(1)}%)</CardDescription>
-              {testState.performanceTag && (<Badge variant={ testState.performanceTag === "Conqueror" || testState.performanceTag === "Ace" ? "default" : testState.performanceTag === "Diamond" || testState.performanceTag === "Gold" ? "secondary" : testState.performanceTag === "Bronze" ? "outline" : "destructive" } className="mx-auto mt-2 text-base px-4 py-1.5 shadow-md"><Award className="w-5 h-5 mr-2" /> {testState.performanceTag}</Badge>)}
+              {testState.performanceTag && (<Badge variant={testState.performanceTag === "Conqueror" || testState.performanceTag === "Ace" ? "default" : testState.performanceTag === "Diamond" || testState.performanceTag === "Gold" ? "secondary" : testState.performanceTag === "Bronze" ? "outline" : "destructive"} className="mx-auto mt-2 text-base px-4 py-1.5 shadow-md"><Award className="w-5 h-5 mr-2" /> {testState.performanceTag}</Badge>)}
             </CardHeader>
             <CardContent className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               <h3 className="text-xl font-semibold text-center mb-4 text-muted-foreground">Review Your Answers</h3>
@@ -604,7 +605,7 @@ export default function CustomTestPage() {
               ))}
             </CardContent>
             <CardFooter className="flex flex-col sm:flex-row justify-center gap-3 p-6 border-t">
-              <Button onClick={handleRetakeTest} disabled={isLoading} size="lg"><RotateCcw className="w-4 h-4 mr-2"/>Retake Test</Button>
+              <Button onClick={handleRetakeTest} disabled={isLoading} size="lg"><RotateCcw className="w-4 h-4 mr-2" />Retake Test</Button>
               <Button variant="outline" onClick={handleNewTest} size="lg">Create New Test</Button>
             </CardFooter>
           </Card>

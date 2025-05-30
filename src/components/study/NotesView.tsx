@@ -40,23 +40,22 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-        // Default preference (e.g., 'luma') is typically set by the parent page (StudyPage)
-        // This component just reacts to the selectedVoice or allows overriding via its own dropdown
-        voicePreferenceWasSetRef.current = true; 
+        setVoicePreference('zia'); // Default to Zia for notes reading
+        voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices]);
+  }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     if (notesContent) {
       const textForSpeech = notesContent
-        .replace(/\[VISUAL_PROMPT:[^\]]+\]/gi, "(A visual aid is suggested here in the notes.)") 
-        .replace(/#+\s*/g, '') 
-        .replace(/(\*\*|__)(.*?)\1/g, '$2') 
+        .replace(/\[VISUAL_PROMPT:[^\]]+\]/gi, "(A visual aid is suggested here in the notes.)")
+        .replace(/#+\s*/g, '')
+        .replace(/(\*\*|__)(.*?)\1/g, '$2')
         .replace(/(\*|_)(.*?)\1/g, '$2')
-        .replace(/---|===/g, ''); 
+        .replace(/---|===/g, '');
       setCleanedNotesForTTS(textForSpeech);
     } else {
-      setCleanedNotesForTTS(""); // Clear if notesContent is null
+      setCleanedNotesForTTS("");
     }
   }, [notesContent]);
 
@@ -92,7 +91,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       .replace(/<[^>]+>/g, '')
       .replace(/(\r\n|\n|\r)/gm, "\n")
       .replace(/\n{3,}/g, "\n\n")
-      .replace(/---|===/g, ''); 
+      .replace(/---|===/g, '');
 
     const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8;' });
     const link = document.createElement("a");
@@ -107,20 +106,14 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     toast({ title: "Notes Downloaded", description: "Notes saved as a .txt file." });
     if (selectedVoice && !isSpeaking && !isPaused) speak("Notes downloaded!");
   };
-  
+
   const customRenderers = {
     p: (props: any) => {
       const childrenArray = React.Children.toArray(props.children);
       const newChildren = childrenArray.map((child, index) => {
-        if (typeof child === 'string' && child.includes('[VISUAL_PROMPT:')) {
-          const parts = child.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
-          return parts.map((part, partIndex) => {
-            if (part.startsWith('[VISUAL_PROMPT:')) {
-              const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1).trim();
-              return <AiGeneratedImage key={`vis-${index}-${partIndex}`} promptText={promptText} />;
-            }
-            return part;
-          });
+        if (typeof child === 'string' && child.startsWith('[VISUAL_PROMPT:')) {
+          const promptText = child.substring('[VISUAL_PROMPT:'.length, child.length - 1).trim();
+          return <AiGeneratedImage key={`vis-${index}`} promptText={promptText} />;
         }
         return child;
       }).flat();
@@ -129,6 +122,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     h1: (props: any) => <h1 className="text-3xl font-bold mt-6 mb-3 pb-2 border-b border-primary/30 text-primary">{props.children}</h1>,
     h2: (props: any) => <h2 className="text-2xl font-semibold mt-5 mb-2.5 pb-1 border-b border-primary/20 text-primary/90">{props.children}</h2>,
     h3: (props: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80">{props.children}</h3>,
+    h4: (props: any) => <h4 className="text-lg font-semibold mt-3 mb-1.5 text-primary/70">{props.children}</h4>,
     ul: (props: any) => <ul className="list-disc pl-5 my-2 space-y-1">{props.children}</ul>,
     ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ol>,
     li: (props: any) => <li className="mb-1">{props.children}</li>,
@@ -149,10 +143,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
-    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'luma'; // Map Zia to Luma UI
+    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'luma'; 
+    return 'zia'; // Default UI selection
   };
 
   return (
@@ -165,11 +158,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
           <div className="flex items-center gap-2 flex-wrap">
             <Select
               value={getSelectedDropdownValue()}
-              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'luma' | 'kai' | null);}}
+              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'zia' | 'kai' | null);}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
               <SelectContent>
-                <SelectItem value="luma">Luma</SelectItem>
+                <SelectItem value="zia">Zia</SelectItem>
                 <SelectItem value="kai">Kai</SelectItem>
               </SelectContent>
             </Select>
@@ -186,7 +179,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-1 sm:p-4 bg-muted/20" >
            <div>
-            <ReactMarkdown 
+            <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={customRenderers}
                 className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words"
