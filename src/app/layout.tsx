@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppProviders } from '@/components/providers/AppProviders';
 import { Toaster } from "@/components/ui/toaster";
+import { TopProgressBar } from '@/components/layout/TopProgressBar'; // Added import
+import { Suspense } from 'react'; // Added import for Suspense if TopProgressBar needs it
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,6 +32,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <AppProviders>
+          <Suspense fallback={null}> {/* Suspense for client components like TopProgressBar */}
+            <TopProgressBar />
+          </Suspense>
           {children}
           <Toaster />
         </AppProviders>

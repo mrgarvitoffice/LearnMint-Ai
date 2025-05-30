@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -20,6 +21,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { ChevronDown } from 'lucide-react';
+import { useSound } from '@/hooks/useSound';
 
 
 interface SidebarNavProps {
@@ -28,11 +30,20 @@ interface SidebarNavProps {
 
 export function SidebarNav({ items }: SidebarNavProps) {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { setOpenMobile, isMobile: isSidebarHookMobile } = useSidebar(); // Renamed isMobile from hook
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
 
   if (!items?.length) {
     return null;
   }
+
+  const handleItemClick = () => {
+    playClickSound();
+    if (isSidebarHookMobile) { // Use the renamed variable
+      setOpenMobile(false);
+    }
+  };
+
 
   const renderNavItem = (item: NavItem, isSubItem = false) => {
     const Icon = item.icon;
@@ -41,9 +52,15 @@ export function SidebarNav({ items }: SidebarNavProps) {
     if (item.children?.length) {
       return (
         <AccordionItem value={item.title} key={item.title} className="border-b-0">
-          <AccordionTrigger className={cn(
+          <AccordionTrigger 
+            onClick={() => playClickSound()}
+            className={cn(
             "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>svg:last-child]:group-data-[collapsible=icon]:hidden",
-            isActive && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+            // Note: AccordionTrigger doesn't directly track active state based on child paths.
+            // If any child is active, we might want to indicate the parent group is active.
+            // This requires more complex logic to check children paths.
+            // For now, it highlights if the parent itself has an href and is active.
+            item.href && pathname.startsWith(item.href) && item.href !== '#' && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
             "group-data-[collapsible=icon]:justify-center"
           )}>
             <Icon className="size-4 shrink-0" />
@@ -67,11 +84,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
       isActive,
       tooltip: item.title,
       className: cn(isSubItem && "h-7 text-xs", "group-data-[collapsible=icon]:justify-center"),
-      onClick: () => {
-        if (useSidebar().isMobile) {
-          setOpenMobile(false);
-        }
-      }
+      onClick: handleItemClick
     };
 
     const buttonContent = (

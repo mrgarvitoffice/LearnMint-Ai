@@ -5,11 +5,12 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
-import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
+import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote, Smile } from "lucide-react"; // Added Smile
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
+import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement'; // Added import
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -95,8 +96,6 @@ export default function DashboardPage() {
     }
     return () => {
       isMounted = false;
-      // No need to cancelTTS() here for page title if it has already played.
-      // If it was queued but not played, useTTS's own cleanup or next speak call will cancel.
     };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
@@ -125,13 +124,22 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
-      <header className="text-center">
+      <header className="text-center relative"> {/* Added relative for positioning */}
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
           {PAGE_TITLE}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant. Explore tools designed to generate study materials, create custom assessments, and make learning more interactive and efficient.
         </p>
+        {/* Example Interactive Element */}
+        <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-75 hover:opacity-100 transition-opacity hidden sm:block">
+          <InteractiveCharacterElement
+            characterName="LearnMint Mascot"
+            Icon={Sparkles}
+            containerClassName="p-2"
+            dataAiHint="mascot sparkle"
+          />
+        </div>
       </header>
 
       <Card className="bg-card/80 border-primary/30 shadow-xl backdrop-blur-sm">
