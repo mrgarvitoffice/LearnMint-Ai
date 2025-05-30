@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -13,6 +14,7 @@ import { generateFlashcards, type GenerateFlashcardsOutput } from '@/ai/flows/ge
 import { Loader2, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FlashcardComponent } from '@/components/features/flashcards/Flashcard';
 import { Progress } from '@/components/ui/progress';
+import { useSound } from '@/hooks/useSound';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -24,6 +26,7 @@ export default function FlashcardsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const { toast } = useToast();
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -31,6 +34,7 @@ export default function FlashcardsPage() {
   const topicValue = watch('topic');
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    playClickSound();
     setIsLoading(true);
     setFlashcardsData(null);
     setCurrentCardIndex(0);
@@ -51,16 +55,24 @@ export default function FlashcardsPage() {
   };
 
   const handleNextCard = () => {
+    playClickSound();
     if (flashcardsData && currentCardIndex < flashcardsData.flashcards.length - 1) {
       setCurrentCardIndex(prev => prev + 1);
     }
   };
 
   const handlePrevCard = () => {
+    playClickSound();
     if (currentCardIndex > 0) {
       setCurrentCardIndex(prev => prev - 1);
     }
   };
+  
+  const handleCreateNewSet = () => {
+    playClickSound();
+    setFlashcardsData(null); 
+    setCurrentCardIndex(0);
+  }
 
   return (
     <div className="space-y-8">
@@ -90,7 +102,7 @@ export default function FlashcardsPage() {
           </form>
         ) : (
            <CardFooter>
-             <Button onClick={() => { setFlashcardsData(null); setCurrentCardIndex(0); }} variant="outline">
+             <Button onClick={handleCreateNewSet} variant="outline">
                 Create New Set
               </Button>
            </CardFooter>

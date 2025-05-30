@@ -22,6 +22,7 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useTTS } from '@/hooks/useTTS';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from 'next/link';
+import { useSound } from '@/hooks/useSound';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters long.' }),
@@ -34,13 +35,13 @@ export default function NotesPage() {
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
   
-  // Placeholders for generated content from notes - full display can be a next step
   const [quizFromNotes, setQuizFromNotes] = useState<GenerateQuizOutput | null>(null);
   const [flashcardsFromNotes, setFlashcardsFromNotes] = useState<GenerateFlashcardsOutputFromNotes | null>(null);
 
   const { toast } = useToast();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { speak, cancel, isSpeaking, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference } = useTTS();
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
@@ -57,10 +58,11 @@ export default function NotesPage() {
 
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    playClickSound();
     setIsLoading(true);
     setNotes(null);
-    setQuizFromNotes(null); // Reset quiz if new notes are generated
-    setFlashcardsFromNotes(null); // Reset flashcards if new notes are generated
+    setQuizFromNotes(null); 
+    setFlashcardsFromNotes(null); 
     try {
       const result = await generateStudyNotes({ topic: data.topic });
       setNotes(result);
@@ -74,6 +76,7 @@ export default function NotesPage() {
   };
   
   const handleSpeakNotes = () => {
+    playClickSound();
     if (notes?.notes) {
       if (isSpeaking) {
         cancel();
@@ -82,6 +85,11 @@ export default function NotesPage() {
       }
     }
   };
+
+  const handleCancelSpeak = () => {
+    playClickSound();
+    cancel();
+  }
 
   const renderMarkdownWithPlaceholders = (markdownText: string) => {
     const parts = markdownText.split(/(\[Image: [^\]]+\])/g);
@@ -108,11 +116,12 @@ export default function NotesPage() {
   };
 
   const handleGenerateQuizFromNotes = async () => {
+    playClickSound();
     if (!notes?.notes) return;
     setIsGeneratingQuiz(true);
     try {
       const result = await generateQuizFromNotes({ notesContent: notes.notes, numQuestions: 30 });
-      setQuizFromNotes(result); // Store for potential future display
+      setQuizFromNotes(result); 
       console.log("Generated Quiz from Notes:", result);
       toast({ title: "Quiz Generated from Notes!", description: `${result.quiz.length} questions created.` });
     } catch (error) {
@@ -124,11 +133,12 @@ export default function NotesPage() {
   };
 
   const handleGenerateFlashcardsFromNotes = async () => {
+    playClickSound();
     if (!notes?.notes) return;
     setIsGeneratingFlashcards(true);
     try {
       const result = await generateFlashcardsFromNotes({ notesContent: notes.notes, numFlashcards: 20 });
-      setFlashcardsFromNotes(result); // Store for potential future display
+      setFlashcardsFromNotes(result); 
       console.log("Generated Flashcards from Notes:", result);
       toast({ title: "Flashcards Generated from Notes!", description: `${result.flashcards.length} flashcards created.` });
     } catch (error) {
@@ -136,6 +146,15 @@ export default function NotesPage() {
       toast({ title: "Flashcard Generation Error", description: "Failed to generate flashcards from notes.", variant: "destructive" });
     } finally {
       setIsGeneratingFlashcards(false);
+    }
+  };
+
+  const handleMicClick = () => {
+    playClickSound();
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
   };
 
@@ -161,7 +180,7 @@ export default function NotesPage() {
                   className={errors.topic ? 'border-destructive' : ''}
                 />
                 {browserSupportsSpeechRecognition && (
-                  <Button type="button" variant="outline" size="icon" onClick={isListening ? stopListening : startListening} disabled={isLoading}>
+                  <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading}>
                     <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
                   </Button>
                 )}
@@ -187,7 +206,7 @@ export default function NotesPage() {
               <CardDescription>Topic: {topicValue}</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-               <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}>
+               <Select onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia'); }}>
                 <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Voice Type" />
                 </SelectTrigger>
@@ -198,7 +217,7 @@ export default function NotesPage() {
                   <SelectItem value="kai">Kai (Male)</SelectItem>
                 </SelectContent>
               </Select>
-              <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
+              <Select onValueChange={(uri) => {playClickSound(); setSelectedVoiceURI(uri);}} value={selectedVoice?.voiceURI}>
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="Select Voice Engine" />
                 </SelectTrigger>
@@ -214,7 +233,7 @@ export default function NotesPage() {
                 {isSpeaking ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
               </Button>
               {isSpeaking && (
-                <Button variant="outline" size="icon" onClick={cancel}>
+                <Button variant="outline" size="icon" onClick={handleCancelSpeak}>
                   <StopCircle className="w-5 h-5" />
                 </Button>
               )}

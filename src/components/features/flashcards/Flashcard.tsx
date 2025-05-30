@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSound } from '@/hooks/useSound';
 
 interface FlashcardProps {
   term: string;
@@ -14,8 +16,10 @@ interface FlashcardProps {
 
 export function FlashcardComponent({ term, definition, className }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const { playSound: playFlipSound } = useSound('/sounds/ting.mp3', 0.2);
 
   const handleFlip = () => {
+    playFlipSound();
     setIsFlipped(!isFlipped);
   };
 

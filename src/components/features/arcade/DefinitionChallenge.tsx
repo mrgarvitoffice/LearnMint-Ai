@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -22,11 +23,11 @@ export function DefinitionChallenge() {
   const [streak, setStreak] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   
-  const { playSound: playCorrectSound } = useSound('/sounds/ting.mp3', 0.5); // Example correct sound
-  const { playSound: playIncorrectSound } = useSound('/sounds/ting.mp3', 0.3); // Example incorrect sound (use different sounds ideally)
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5); 
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.4); 
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   const shuffleArray = (array: DefinitionChallengeWord[]) => {
-    // Create a copy to avoid modifying the original array if it's imported directly
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -36,6 +37,7 @@ export function DefinitionChallenge() {
   };
   
   const initializeGame = useCallback(() => {
+    playClickSound(); // Sound for new game / reset
     setWords(shuffleArray(DEFINITION_CHALLENGE_WORDS));
     setCurrentWordIndex(0);
     setGuess('');
@@ -44,8 +46,14 @@ export function DefinitionChallenge() {
     setHintsUsed(0);
     setShowHint(false);
     setGameOver(false);
-    // Streak is intentionally not reset here, or could be reset if desired
-  }, []);
+    // Streak is intentionally not reset here for "New Game", but is for "Reset Streak"
+  }, [playClickSound]);
+
+  const handleResetGameAndStreak = () => {
+    playClickSound();
+    setStreak(0); // Reset streak
+    initializeGame(); // Then initialize a new game
+  }
 
   useEffect(() => {
     initializeGame();
@@ -53,8 +61,9 @@ export function DefinitionChallenge() {
 
   const currentWord = words[currentWordIndex];
 
-  const handleGuess = (e: React.FormEvent) => {
+  const handleGuessSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    playClickSound();
     if (!currentWord || gameOver) return;
 
     if (guess.trim().toLowerCase() === currentWord.term.toLowerCase()) {
@@ -62,12 +71,11 @@ export function DefinitionChallenge() {
       setIsCorrect(true);
       setStreak(prev => prev + 1);
       playCorrectSound();
-      // Automatically move to next word after a short delay
       setTimeout(nextWord, 1500);
     } else {
       setFeedback('Incorrect. Try again or use a hint!');
       setIsCorrect(false);
-      setStreak(0); // Reset streak on incorrect guess
+      setStreak(0); 
       playIncorrectSound();
     }
   };
@@ -87,13 +95,13 @@ export function DefinitionChallenge() {
   };
 
   const handleUseHint = () => {
-    if (!currentWord || hintsUsed >= 2 || gameOver) return; // Max 2 hints
+    playClickSound();
+    if (!currentWord || hintsUsed >= 2 || gameOver) return; 
     setShowHint(true);
     setHintsUsed(prev => prev + 1);
     if (hintsUsed === 0) {
       setFeedback(`Hint: ${currentWord.hint}`);
     } else if (hintsUsed === 1) {
-      // Show first few letters, e.g., 1/3 of the word
       const lettersToShow = Math.ceil(currentWord.term.length / 3);
       setFeedback(`Hint: Starts with "${currentWord.term.substring(0, lettersToShow)}..."`);
     }
@@ -138,7 +146,7 @@ export function DefinitionChallenge() {
                 <AlertDescription>{feedback.replace("Hint: ", "")}</AlertDescription>
               </Alert>
             )}
-            <form onSubmit={handleGuess} className="space-y-3">
+            <form onSubmit={handleGuessSubmit} className="space-y-3">
               <div>
                 <Label htmlFor="guess">Your Guess</Label>
                 <Input
@@ -178,7 +186,7 @@ export function DefinitionChallenge() {
         >
           <Lightbulb className="w-4 h-4 mr-2" /> Use Hint ({2 - hintsUsed} left)
         </Button>
-        <Button onClick={initializeGame} variant="secondary" className="w-full sm:w-auto">
+        <Button onClick={handleResetGameAndStreak} variant="secondary" className="w-full sm:w-auto">
           <RotateCcw className="w-4 h-4 mr-2" /> New Game / Reset Streak
         </Button>
       </CardFooter>

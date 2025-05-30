@@ -1,12 +1,14 @@
+
 "use client";
 
-import { useState, useRef, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useRef, type ChangeEvent, type FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Paperclip, Send, Mic, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { useSound } from '@/hooks/useSound';
 
 
 interface ChatInputProps {
@@ -20,20 +22,22 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const [imageData, setImageData] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   
-  useState(() => {
+  useEffect(() => { // Correctly use useEffect for side effects
     if (transcript) {
       setInputValue(transcript);
     }
-  });
+  }, [transcript]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    playClickSound();
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) { // 2MB limit
@@ -43,7 +47,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
-        setImageData(reader.result as string); // This will be the base64 data URI
+        setImageData(reader.result as string); 
       };
       reader.readAsDataURL(file);
     }
@@ -51,17 +55,19 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    playClickSound();
     if (isLoading || (!inputValue.trim() && !imageData)) return;
     onSendMessage(inputValue.trim(), imageData || undefined);
     setInputValue('');
     setImageData(null);
     setImagePreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Reset file input
+      fileInputRef.current.value = ""; 
     }
   };
 
   const toggleListening = () => {
+    playClickSound();
     if (isListening) {
       stopListening();
     } else {
@@ -71,6 +77,18 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   
   if (voiceError) {
     toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
+  }
+
+  const handleRemoveImage = () => {
+    playClickSound();
+    setImagePreview(null); 
+    setImageData(null); 
+    if(fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  const handleImageIconClick = () => {
+    playClickSound();
+    fileInputRef.current?.click();
   }
 
   return (
@@ -83,14 +101,14 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
             variant="ghost" 
             size="icon" 
             className="absolute -top-2 -right-2 h-6 w-6 bg-destructive/80 text-destructive-foreground rounded-full"
-            onClick={() => { setImagePreview(null); setImageData(null); if(fileInputRef.current) fileInputRef.current.value = ""; }}
+            onClick={handleRemoveImage}
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
       )}
       <div className="flex items-center gap-2">
-        <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+        <Button type="button" variant="ghost" size="icon" onClick={handleImageIconClick} disabled={isLoading}>
           <ImageIcon className="w-5 h-5" />
           <span className="sr-only">Upload Image</span>
         </Button>
