@@ -9,7 +9,7 @@ import { BookOpen, ExternalLink, BookText } from 'lucide-react';
 
 interface BookResultItemProps {
   book: GoogleBookItem;
-  onPreviewRequest: (book: GoogleBookItem) => void; // This will now trigger fullscreen or new tab
+  onPreviewRequest: (book: GoogleBookItem) => void;
 }
 
 export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) {
@@ -17,7 +17,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
   const dataAiHintKeywords = book.title.toLowerCase().split(' ').slice(0, 2).join(' ');
 
   const handlePrimaryAction = () => {
-    onPreviewRequest(book); // Parent (LibraryPage) will handle if it's embeddable (fullscreen) or opens new tab
+    onPreviewRequest(book); 
   };
 
   return (
@@ -28,7 +28,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             src={book.thumbnailUrl || placeholderImage}
             alt={`Cover of ${book.title}`}
             fill={true}
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
+            sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 30vw" // Adjusted sizes
             style={{ objectFit: book.thumbnailUrl ? 'cover' : 'contain' }}
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => {
@@ -37,9 +37,9 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
               target.src = placeholderImage;
               target.style.objectFit = 'contain';
             }}
-            quality={85}
+            quality={85} 
           />
-           {book.embeddable && (
+           {(book.embeddable || !book.thumbnailUrl) && ( // Show icon if embeddable or if it's a placeholder
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <BookText className="w-10 h-10 text-white/80" />
             </div>
@@ -59,11 +59,12 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             <BookText className="mr-1.5 h-3.5 w-3.5" /> Read in App
           </Button>
         ) : (
-          <Button variant="outline" size="sm" onClick={handlePrimaryAction} className="w-full text-xs">
-            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> View on Google Books
+          <Button variant="outline" size="sm" asChild className="w-full text-xs">
+            <a href={book.webReaderLink || book.infoLink} target="_blank" rel="noopener noreferrer">
+             <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> View on Google Books
+            </a>
           </Button>
         )}
-        {/* Always show "More Info" as a secondary option if infoLink exists and is different from primary action if not embeddable */}
         {book.infoLink && (book.embeddable || (!book.embeddable && book.infoLink !== (book.webReaderLink || book.infoLink))) && (
            <Button variant="link" size="sm" asChild className="w-full text-xs justify-center h-auto py-1 px-2">
             <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
@@ -75,3 +76,4 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
     </Card>
   );
 }
+
