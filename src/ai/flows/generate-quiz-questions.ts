@@ -19,13 +19,14 @@ const QuizQuestionSchema = z.object({
   explanation: z.string().optional().describe('A brief explanation for why the answer is correct or relevant context.'),
 });
 
-const GenerateQuizQuestionsInputSchema = z.object({
+export const GenerateQuizQuestionsInputSchema = z.object({
   topic: z.string().describe('The academic topic for which to generate quiz questions.'),
   numQuestions: z.number().min(1).max(50).describe('The number of quiz questions to generate.'),
+  difficulty: z.enum(['easy', 'medium', 'hard']).optional().describe('The difficulty level of the quiz questions.'),
 });
 export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
 
-const GenerateQuizQuestionsOutputSchema = z.object({
+export const GenerateQuizQuestionsOutputSchema = z.object({
   questions: z.array(QuizQuestionSchema).describe('An array of generated quiz questions.'),
 });
 export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
@@ -36,9 +37,10 @@ const generateQuizQuestionsPrompt = ai.definePrompt({
   output: {schema: GenerateQuizQuestionsOutputSchema},
   model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are an expert quiz designer for educational content.
-  Generate {{numQuestions}} diverse quiz questions about the topic: {{{topic}}}.
+  Generate {{numQuestions}} diverse quiz questions about the topic: {{{topic}}}{{#if difficulty}} (Difficulty: {{{difficulty}}}){{/if}}.
   The questions should cover key concepts and test understanding effectively.
   Include a mix of 'multiple-choice' and 'short-answer' question types.
+  If generating 30 questions, aim for approximately 26 multiple-choice and 4 short-answer questions. Adjust the mix proportionally if a different number of questions is requested.
   For 'multiple-choice' questions, provide exactly 4 distinct options, with one being the correct answer. Ensure options are plausible.
   For 'short-answer' questions, the answer should be concise (typically 1-5 words).
   For ALL questions, provide the correct 'answer'.
@@ -87,7 +89,7 @@ const generateQuizQuestionsFlow = ai.defineFlow(
 );
 
 export async function generateQuizQuestions(input: GenerateQuizQuestionsInput): Promise<GenerateQuizQuestionsOutput> {
-  console.log(`[AI Flow] generateQuizQuestions called for topic: ${input.topic}, num: ${input.numQuestions}`);
+  console.log(`[AI Flow] generateQuizQuestions called for topic: ${input.topic}, num: ${input.numQuestions}, difficulty: ${input.difficulty}`);
   try {
     return await generateQuizQuestionsFlow(input);
   } catch (error: any) {

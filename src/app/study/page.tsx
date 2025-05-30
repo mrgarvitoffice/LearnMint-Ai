@@ -23,12 +23,11 @@ import type { GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards';
 import NotesView from '@/components/study/NotesView';
 import QuizView from '@/components/study/QuizView';
 import FlashcardsView from '@/components/study/FlashcardsView';
-import { Skeleton } from '@/components/ui/skeleton'; // Added Skeleton import
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Added Card imports
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const PAGE_TITLE_BASE = "Study Hub";
 
-// Basic Skeleton components for loading states
 const NotesLoadingSkeleton = () => (
   <div className="p-4 space-y-3">
     <Skeleton className="h-8 w-3/4" />
@@ -167,8 +166,8 @@ function StudyPageContent() {
     queryKey: ["quizQuestions", topic],
     queryFn: async () => {
       if (!topic || topic === "No topic provided") throw new Error("A valid topic is required.");
-      toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${topic}.`})
-      return generateQuizAction({ topic, numQuestions: 30 });
+      toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${topic}. Difficulty: Medium.`})
+      return generateQuizAction({ topic, numQuestions: 30, difficulty: 'medium' });
     },
     ...commonQueryOptions,
     enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || initialFetchTriggeredRef.current),
@@ -237,24 +236,24 @@ function StudyPageContent() {
     }
 
     return (
-      <Tabs defaultValue="notes" value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col min-h-0"> {/* Added min-h-0 */}
+      <Tabs defaultValue="notes" value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col min-h-0">
         <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 mx-auto md:max-w-md sticky top-[calc(theme(spacing.16)_+_1px)] sm:top-0 z-10 bg-background/80 backdrop-blur-sm py-1.5">
           <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes</TabsTrigger>
           <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz</TabsTrigger>
           <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0"> {/* Added min-h-0 for flex child */}
+        <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
           {isLoadingNotes || (isFetchingNotes && !notesData) ? <NotesLoadingSkeleton /> :
            isErrorNotes ? <ErrorDisplay error={notesError} onRetry={refetchNotes} contentType="notes" /> :
            notesData?.notes ? <NotesView notesContent={notesData.notes} topic={topic} /> : <p className="text-muted-foreground p-4 text-center">No notes generated.</p>}
         </TabsContent>
-        <TabsContent value="quiz" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0"> {/* Added min-h-0 */}
+        <TabsContent value="quiz" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
            {isLoadingQuiz || (isFetchingQuiz && !quizData) ? <QuizLoadingSkeleton /> :
             isErrorQuiz ? <ErrorDisplay error={quizError} onRetry={refetchQuiz} contentType="quiz questions" /> :
             quizData?.questions ? <QuizView questions={quizData.questions} topic={topic} /> : <p className="text-muted-foreground p-4 text-center">No quiz questions generated.</p>}
         </TabsContent>
-        <TabsContent value="flashcards" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0"> {/* Added min-h-0 */}
+        <TabsContent value="flashcards" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
            {isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData) ? <FlashcardsLoadingSkeleton /> :
             isErrorFlashcards ? <ErrorDisplay error={flashcardsError} onRetry={refetchFlashcards} contentType="flashcards" /> :
             flashcardsData?.flashcards ? <FlashcardsView flashcards={flashcardsData.flashcards} topic={topic} /> : <p className="text-muted-foreground p-4 text-center">No flashcards generated.</p>}
@@ -301,3 +300,4 @@ export default function StudyPage() {
     </Suspense>
   );
 }
+
