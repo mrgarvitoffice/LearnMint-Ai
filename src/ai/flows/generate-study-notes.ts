@@ -8,7 +8,7 @@
  * - GenerateStudyNotesOutput - The return type for the generateStudyNotes function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai}from '@/ai/genkit';
 import {z} from 'zod';
 
 // Input Schema (NOT EXPORTED as an object)
@@ -43,11 +43,11 @@ Please generate study notes on this topic with the following characteristics:
 2.  **Structure & Formatting (Markdown):**
     *   Start with a brief, **exciting introductory paragraph** that hooks the reader.
     *   Employ a clear hierarchy of headings:
-        *   A **main, attention-grabbing title** for the overall topic, perhaps with emojis (e.g., using '# Main Topic Title 🚀✨').
-        *   **Prominent major section headings** (e.g., using '## Key Concept Unveiled! 🤔' or '# Another Big Section! 💡'). Make these visually distinct from sub-headings.
-        *   **Clearly distinct sub-headings** for sub-topics, making them smaller but still clear (e.g., '### Diving Deeper: ...' or '#### Specific Examples:'). Create a "big text, small text" visual flow.
+        *   A **main, attention-grabbing title** for the overall topic (using '# Main Topic Title 🚀✨'). This should be the largest and most prominent.
+        *   **Prominent major section headings** (using '## Key Concept Unveiled! 🤔' or '## Another Big Section! 💡'). Make these visually distinct and larger than sub-headings.
+        *   **Clearly distinct sub-headings** for sub-topics (using '### Diving Deeper: ...' or '#### Specific Examples:'). These should be smaller than major section headings, creating a "big text, small text" visual flow.
     *   Provide detailed information in a **point-wise manner** using bullet points ('- ') or numbered lists ('1. ').
-    *   Pay meticulous attention to **spacing and layout** throughout the document. Use line breaks effectively to separate ideas and make the notes scannable and easy on the eyes. Make the notes look good and visually appealing through excellent Markdown formatting.
+    *   Pay meticulous attention to **spacing and layout** throughout the document. Use blank lines effectively between paragraphs, headings, and list items to ensure the notes are scannable and easy on the eyes. Make the notes look good and visually appealing through excellent Markdown formatting.
 
 3.  **Content & Emphasis:**
     *   Ensure the information is accurate, comprehensive, and clearly explained.
@@ -63,14 +63,16 @@ Please generate study notes on this topic with the following characteristics:
 5.  **Conclusion:**
     *   End with a **concluding summary or a section to remember key facts**, perhaps with a fun, thematic title (e.g., "Remember These CELL-ebrated Facts! 🥳").
 
-Your goal is to produce notes that are not only informative but exceptionally well-organized, visually engaging, and a genuine pleasure to study from – the kind of notes a top student would create to ace their exams.
+Your goal is to produce notes that are not only informative but exceptionally well-organized, visually engaging, and a genuine pleasure to study from – the kind of notes a top student would create to ace their exams. Ensure there's good visual separation (space) between headings and the text that follows them.
 The entire output, including all Markdown formatting, emojis, and image placeholders, should be a single JSON object with a key "notes" containing the complete Markdown string.
 Example of a desired style snippet for a section:
 \`\`\`markdown
 ## MEET THE CELL SUPERSTARS: Prokaryotic vs. Eukaryotic 🌟🕰️
+
 Not all cells are the same! There are two major types you must know!
 
 ### PROKARYOTIC CELLS (Think SIMPLE & ANCIENT! 🕰️)
+
 - These are the original life forms!
 - **No nucleus!** Their genetic material (DNA) is just chillin' in the cytoplasm.
 - *Examples:* All Bacteria and Archaea.

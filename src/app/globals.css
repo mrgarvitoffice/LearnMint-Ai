@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -102,4 +103,54 @@ body {
     @apply bg-background text-foreground;
     @apply min-h-screen flex flex-col;
   }
+
+  /* Custom styles for prose content (e.g., generated notes) */
+  .prose h1,
+  .dark .prose h1,
+  .prose h2,
+  .dark .prose h2,
+  .prose h3,
+  .dark .prose h3,
+  .prose h4,
+  .dark .prose h4 {
+    color: hsl(var(--primary)); /* Make headings use the primary color */
+  }
+
+  /* Tailwind's prose plugin handles font-weight and sizing for h1,h2,h3,h4 quite well.
+     It also handles margins. If more specific control is needed, it can be added here.
+     For example, to ensure H1 is very prominent:
+  */
+  .prose h1, .dark .prose h1 {
+    @apply text-3xl sm:text-4xl font-extrabold mt-0 mb-6; /* Reset top margin for first H1, ensure bottom margin */
+  }
+   .prose h2, .dark .prose h2 {
+    @apply text-2xl sm:text-3xl font-bold mt-8 mb-4;
+  }
+   .prose h3, .dark .prose h3 {
+    @apply text-xl sm:text-2xl font-semibold mt-6 mb-3;
+  }
+   .prose h4, .dark .prose h4 {
+    @apply text-lg sm:text-xl font-semibold mt-4 mb-2;
+  }
+
+
+  /* Styling for blockquotes to make them stand out */
+  .prose blockquote,
+  .dark .prose blockquote {
+    @apply border-l-4 border-accent bg-accent/10 px-4 py-2 my-4 rounded-r-md shadow;
+    color: hsl(var(--accent-foreground) / 0.9); /* Using accent foreground for text in blockquote */
+  }
+  .dark .prose blockquote {
+     color: hsl(var(--accent-foreground) / 0.95);
+  }
+   .prose blockquote p { /* Target paragraphs inside blockquote for specific styling */
+    @apply text-base; 
+  }
+
+
+  /* Ensure good spacing around AiGeneratedImage components if prose margins aren't enough */
+  .prose div[data-ai-hint] { /* This targets the root div of AiGeneratedImage component */
+    @apply my-6; /* my-6 is already on the component, this is a fallback/ensure */
+  }
 }
+
