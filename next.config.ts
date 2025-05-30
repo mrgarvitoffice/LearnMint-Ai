@@ -19,19 +19,19 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'images.mktw.net', // Added for MarketWatch news images
+        hostname: 'images.mktw.net',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'cdn.mos.cms.futurecdn.net', // Added for this news source
+        hostname: 'cdn.mos.cms.futurecdn.net',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'assets3.cbsnewsstatic.com', // Added for CBS News images
+        hostname: 'assets3.cbsnewsstatic.com', // Ensured this is present
         port: '',
         pathname: '/**',
       },

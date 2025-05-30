@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
@@ -12,17 +12,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const ALL_CATEGORIES_VALUE = "_all_categories_";
+const ALL_CATEGORIES_VALUE = "_all_categories_"; // Consistent with NewsFilters
 
-const initialFilters = {
+interface NewsPageFilters {
+  query: string;
+  country: string;
+  stateOrRegion: string;
+  city: string;
+  category: string;
+}
+
+const initialFilters: NewsPageFilters = {
   query: '',
   country: 'us', // Default to US
+  stateOrRegion: '',
+  city: '',
   category: 'top', // Default to top headlines
 };
 
 export default function NewsPage() {
-  const [filters, setFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
 
   const {
     data,
@@ -34,22 +44,32 @@ export default function NewsPage() {
     error,
   } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
-    queryFn: ({ pageParam }) => fetchNews({ ...appliedFilters, category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category, page: pageParam }),
+    queryFn: ({ pageParam }) => fetchNews({ 
+        query: appliedFilters.query,
+        country: appliedFilters.country,
+        stateOrRegion: appliedFilters.stateOrRegion,
+        city: appliedFilters.city,
+        category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category, 
+        page: pageParam 
+    }),
     initialPageParam: undefined as string | undefined, 
     getNextPageParam: (lastPage) => lastPage.nextPage, 
   });
 
-  const handleFilterChange = (name: keyof typeof filters, value: string) => {
-    if (name === 'category' && value === ALL_CATEGORIES_VALUE) {
-      setFilters(prev => ({ ...prev, category: '' })); // Store empty string internally for 'All Categories'
-    } else {
-      setFilters(prev => ({ ...prev, [name]: value }));
-    }
+  const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, [name]: value };
+      // If country is cleared, also clear state/region and city
+      if (name === 'country' && !value) {
+        newFilters.stateOrRegion = '';
+        newFilters.city = '';
+      }
+      return newFilters;
+    });
   };
+  
 
   const handleApplyFilters = () => {
-    // When applying, if category is stored as '', it means 'All Categories' was selected.
-    // The fetchNews queryFn will handle converting '' for category if needed.
     setAppliedFilters(filters);
   };
   
@@ -68,7 +88,7 @@ export default function NewsPage() {
             <Newspaper className="w-7 h-7 text-primary" />
             Daily News Digest
           </CardTitle>
-          <CardDescription>Stay updated with the latest news from around the world.</CardDescription>
+          <CardDescription>Stay updated with the latest news from around the world. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
         <CardContent>
           <NewsFilters 
@@ -93,7 +113,8 @@ export default function NewsPage() {
           <AlertTriangle className="h-5 w-5" />
           <AlertDescription>
             Error fetching news: {error instanceof Error ? error.message : "An unknown error occurred."} 
-            Please ensure your NEWSDATA_API_KEY is correctly configured in your .env file and has not expired or hit its limit.
+            This could be due to an invalid or rate-limited API key for Newsdata.io, or a network issue. 
+            Please check your NEWSDATA_API_KEY in your .env file.
           </AlertDescription>
         </Alert>
       )}
@@ -101,7 +122,7 @@ export default function NewsPage() {
       {!isLoading && !isError && articles.length === 0 && (
         <div className="text-center py-10">
           <p className="text-xl text-muted-foreground">No news articles found for your current filters.</p>
-          <p className="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
+          <p className="text-sm text-muted-foreground">Try adjusting your search or filters, or check if the Newsdata.io API key is working.</p>
         </div>
       )}
 

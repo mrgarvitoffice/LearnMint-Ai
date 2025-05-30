@@ -77,7 +77,33 @@ export const NEWS_CATEGORIES = [
   { value: "sports", label: "Sports" },
   { value: "science", label: "Science" },
   { value: "health", label: "Health" },
+  // { value: "politics", label: "Politics" }, // Example: Add more as needed
+  // { value: "entertainment", label: "Entertainment" },
+  // { value: "world", label: "World" },
+  // { value: "environment", label: "Environment" },
+  // { value: "food", label: "Food" },
+  // { value: "tourism", label: "Tourism" },
+  // { value: "education", label: "Education" },
+  // { value: "crime", label: "Crime" },
+  // { value: "domestic", label: "Domestic" },
+  // { value: "other", label: "Other" },
 ];
+
+export const NEWS_COUNTRIES = [
+  { value: "us", label: "United States" },
+  { value: "gb", label: "United Kingdom" },
+  { value: "ca", label: "Canada" },
+  { value: "au", label: "Australia" },
+  { value: "in", label: "India" },
+  { value: "de", label: "Germany" },
+  { value: "fr", label: "France" },
+  { value: "jp", label: "Japan" },
+  { value: "cn", label: "China" },
+  { value: "br", label: "Brazil" },
+  { value: "za", label: "South Africa" },
+  // Add more countries as needed
+];
+
 
 export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Photosynthesis", definition: "The process by which green plants use sunlight, water, and carbon dioxide to create their own food and release oxygen.", hint: "Starts with 'P', essential for plant life." },
