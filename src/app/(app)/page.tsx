@@ -11,7 +11,6 @@ import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
-import { useUser } from '@clerk/nextjs';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -55,7 +54,6 @@ export default function DashboardPage() {
   const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
-  const { user, isLoaded } = useUser();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
@@ -66,12 +64,8 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    if (isLoaded && user && user.firstName) {
-      setPageTitle(`Welcome back, ${user.firstName}!`);
-    } else {
-      setPageTitle(PAGE_TITLE_BASE);
-    }
-  }, [isLoaded, user]);
+    setPageTitle(PAGE_TITLE_BASE); // Always set to base title
+  }, []);
 
 
   useEffect(() => {
@@ -101,7 +95,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && isLoaded) {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       console.log(`Dashboard: Attempting to speak pageTitle ("${pageTitle}") with voice: ${selectedVoice.name}`);
       speak(pageTitle);
       pageTitleSpokenRef.current = true;
@@ -109,7 +103,7 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, pageTitle, isLoaded]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, pageTitle]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {

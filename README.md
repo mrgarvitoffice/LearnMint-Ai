@@ -3,7 +3,7 @@
 
 LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a Daily News Digest feature, and placeholders for future library and game features.
 
-Authentication is handled by Clerk. Firebase is used for potential future database and storage needs.
+Firebase is used for potential future database and storage needs.
 
 To get started, take a look at `src/app/(app)/page.tsx`.
 
@@ -22,7 +22,6 @@ This section provides details about the application's user interface, frontend t
 ### Core Layout (`src/app/layout.tsx`)
 *   A global layout wraps all pages.
 *   It includes:
-    *   `ClerkProvider` for authentication.
     *   `ThemeProvider` for light/dark mode.
     *   `ReactQueryProvider` for data fetching and caching with TanStack Query.
     *   `AppHeader` (consistent across all pages).
@@ -31,7 +30,6 @@ This section provides details about the application's user interface, frontend t
 
 ## Core Features
 
-*   **User Authentication**: Secure sign-up, sign-in, and session management powered by Clerk.
 *   **AI Content Generation**: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI (powered by Genkit and Google Gemini models).
 *   **Custom Test Creation**: Build tests based on specific topics (single or multiple recent), difficulty levels, number of questions, optional custom notes, and timer settings.
 *   **Interactive AI Chatbot (Megumin)**: Engage with "Megumin," a witty AI assistant, for small talk, questions, and even "singing" (text-based). Supports voice input and user image uploads.
@@ -52,7 +50,6 @@ This section provides details about the application's user interface, frontend t
 *   Next.js (App Router)
 *   React
 *   TypeScript
-*   Clerk (for Authentication)
 *   Tailwind CSS
 *   ShadCN UI Components
 *   Genkit (for AI flows using Google Gemini models)
@@ -73,17 +70,6 @@ This section provides details about the application's user interface, frontend t
 Create a file named `.env` in the root of your project. Add the following content:
 
 ```env
-# For Clerk Authentication
-# Get your keys from your Clerk Dashboard: https://dashboard.clerk.com
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY
-CLERK_SECRET_KEY=sk_test_YOUR_SECRET_KEY
-
-# Configure these to your desired authentication flow paths
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
-
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
 # Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
@@ -116,7 +102,6 @@ GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 ```
 
 *   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes.
-*   Set up your Clerk account and replace the placeholder keys with your actual Clerk Publishable Key and Secret Key.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
 ### 3. Install Dependencies
@@ -191,7 +176,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Clerk, Google AI, Newsdata.io, YouTube, Google Books).
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books).
     *   Use `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you have configured separate keys for those features.
     *   Without these, the deployed app's features will not work.
 
@@ -222,36 +207,30 @@ This project is configured for deployment using Firebase Hosting with its `frame
     *   Edit the service configuration (usually "Edit & Deploy New Revision").
     *   Navigate to the "Variables & Secrets" or "Environment Variables" section.
     *   Add ALL your required production environment variables:
-        *   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-        *   `CLERK_SECRET_KEY`
-        *   `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
-        *   `NEXT_PUBLIC_CLERK_SIGN_UP_URL`
-        *   `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
-        *   `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`
         *   `GOOGLE_API_KEY`
         *   `NEWSDATA_API_KEY`
         *   `YOUTUBE_API_KEY`
         *   `GOOGLE_BOOKS_API_KEY`
         *   (If used) `GOOGLE_API_KEY_NOTES`, `GOOGLE_API_KEY_CHATBOT`
-    *   Deploy the new revision with these environment variables. This step is crucial for authentication, Genkit AI features, and other API-dependent features to work in the deployed environment.
+    *   Deploy the new revision with these environment variables. This step is crucial for Genkit AI features and other API-dependent features to work in the deployed environment.
 
 ## Customization
 
 *   **Styling**: Modify `src/app/globals.css` and Tailwind configuration in `tailwind.config.ts`. ShadCN components can be customized as per their documentation.
 *   **AI Prompts**: Adjust the prompts in `src/ai/flows/` to change the style, content, or structure of the generated materials.
 *   **Sound Effects**: Replace sound files in `/public/sounds/` and update paths in components if necessary.
-*   **Clerk Appearance**: Customize the look and feel of Clerk components via the Clerk Dashboard or by overriding CSS.
 
 ## Future Enhancements (Potential Ideas)
 
 *   **Advanced PWA Features**: Implement a service worker for offline caching of assets and basic content.
+*   **User Authentication**: Integrate an authentication solution (e.g., Clerk, Firebase Authentication, NextAuth.js) to manage users.
 *   **Full Library Content Integration**: Fully integrate YouTube video search & embedding, and Google Books search & display.
 *   **Multilingual Support**:
     *   UI Internationalization: Add support for multiple languages in the application's interface.
     *   AI Content Localization: Update Genkit prompts to accept a target language.
 *   **Educational Games (Tetris, Dino Runner)**: Develop the planned "LearnMint Arcade" Tetris and Dino Runner games.
-*   **User Progress Tracking (Requires Backend Database)**:
-    *   Integrate a backend database (e.g., Firebase Firestore) to store user profiles, test scores, and learning progress linked to Clerk user IDs.
+*   **User Progress Tracking (Requires Backend Database & Auth)**:
+    *   Integrate a backend database (e.g., Firebase Firestore) to store user profiles, test scores, and learning progress (linked to user IDs if auth is implemented).
     *   Develop profile pages with features like progress charts, performance analysis, notification settings, etc.
 *   **Enhanced Test Features**: More detailed result breakdowns and answer explanations.
 *   **Direct AI Image Generation in Notes**: Replace visual prompt placeholders in notes with actual AI-generated images.

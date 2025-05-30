@@ -25,7 +25,6 @@ import { useTheme } from 'next-themes';
 import React from 'react';
 import { SidebarNav } from './SidebarNav';
 import { useSound } from '@/hooks/useSound';
-import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
@@ -135,24 +134,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        <SignedIn>
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
-        <SignedOut>
-          <Button variant="ghost" size="sm" asChild onClick={() => playClickSound()}>
-            <Link href="/sign-in">
-              <LogIn className="mr-1.5 h-4 w-4" />
-              Sign In
-            </Link>
-          </Button>
-          <Button variant="default" size="sm" asChild onClick={() => playClickSound()}>
-            <Link href="/sign-up">
-              <UserPlus className="mr-1.5 h-4 w-4" />
-              Sign Up
-            </Link>
-          </Button>
-        </SignedOut>
+        {/* UserButton and Sign In/Up buttons removed */}
       </div>
     </header>
   );
