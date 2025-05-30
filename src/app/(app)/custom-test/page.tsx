@@ -119,6 +119,7 @@ export default function CustomTestPage() {
     overallTestTimerIdRef.current = null;
   }, []);
 
+
   const handleNextQuestion = useCallback(() => {
     playClickSound();
     clearCurrentQuestionTimer();
@@ -170,8 +171,48 @@ export default function CustomTestPage() {
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast, resultAnnouncementSpokenRef]);
+  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast]);
 
+
+  useEffect(() => { 
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('luma'); // Default announcements to Luma
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => { 
+    let isMounted = true;
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading ) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+    return () => { 
+      isMounted = false;
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
+
+  useEffect(() => { 
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
+      speak("Creating custom test. Please wait.");
+      generatingMessageSpokenRef.current = true;
+    }
+    if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
+  }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
+  
+  useEffect(() => { 
+    if (transcript && sourceType === 'topic') setValue('topics', transcript);
+  }, [transcript, setValue, sourceType]);
+
+  useEffect(() => { 
+    if (typeof window !== 'undefined') {
+      const storedTopics = localStorage.getItem(RECENT_TOPICS_LS_KEY);
+      if (storedTopics) {
+        try { setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY)); }
+        catch (e) { console.error("Failed to parse recent topics", e); localStorage.removeItem(RECENT_TOPICS_LS_KEY); }
+      }
+    }
+  }, []);
 
   useEffect(() => { 
     let currentTimerId: NodeJS.Timeout | null = null;
@@ -185,7 +226,7 @@ export default function CustomTestPage() {
           if (newTimeLeftVal <= 0) {
             if (currentTimerId) clearInterval(currentTimerId);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-            handleSubmitTest(true);
+            handleSubmitTest(true); // Call the memoized version
             return { ...currentTestState, timeLeft: 0, isAutoSubmitting: true };
           }
           return { ...currentTestState, timeLeft: newTimeLeftVal };
@@ -194,7 +235,7 @@ export default function CustomTestPage() {
       overallTestTimerIdRef.current = currentTimerId;
     } else if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft <= 0 && !testState.showResults && !testState.isAutoSubmitting) {
         toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-        handleSubmitTest(true);
+        handleSubmitTest(true); // Call the memoized version
     }
     return () => {
       if (currentTimerId) clearInterval(currentTimerId);
@@ -228,49 +269,6 @@ export default function CustomTestPage() {
     }
     return () => clearCurrentQuestionTimer();
   }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, testState?.isAutoSubmitting, handleNextQuestion, handleSubmitTest, toast, clearCurrentQuestionTimer]);
-
-  useEffect(() => { 
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin');
-      voicePreferenceWasSetRef.current = true;
-    }
-  }, [supportedVoices, setVoicePreference]);
-
-  useEffect(() => { 
-    let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading ) {
-      speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
-    }
-    return () => { 
-      isMounted = false;
-      if (isMounted && isSpeaking && (pageTitleSpokenRef.current || generatingMessageSpokenRef.current || resultAnnouncementSpokenRef.current) ) {
-        // cancelTTS(); // Avoid abrupt stop on re-renders unless specifically desired
-      }
-    };
-  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
-
-  useEffect(() => { 
-    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
-      speak("Creating custom test. Please wait.");
-      generatingMessageSpokenRef.current = true;
-    }
-    if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
-  }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
-  
-  useEffect(() => { 
-    if (transcript && sourceType === 'topic') setValue('topics', transcript);
-  }, [transcript, setValue, sourceType]);
-
-  useEffect(() => { 
-    if (typeof window !== 'undefined') {
-      const storedTopics = localStorage.getItem(RECENT_TOPICS_LS_KEY);
-      if (storedTopics) {
-        try { setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY)); }
-        catch (e) { console.error("Failed to parse recent topics", e); localStorage.removeItem(RECENT_TOPICS_LS_KEY); }
-      }
-    }
-  }, []);
   
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
@@ -406,10 +404,7 @@ export default function CustomTestPage() {
 
   const handlePlaybackControl = () => {
     playClickSound();
-    if (isSpeaking && !isPaused) pauseTTS();
-    else if (isPaused) resumeTTS();
-    else {
-      let textToPlay = "";
+    let textToPlay = "";
        if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
        else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
         textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
@@ -421,10 +416,21 @@ export default function CustomTestPage() {
         if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
         else if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
         else if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
+      } else if (isSpeaking && !isPaused) {
+        pauseTTS();
+      } else if (isPaused) {
+        resumeTTS();
       }
-    }
   };
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
+  
+  const getSelectedDropdownValue = () => {
+    if (voicePreference) return voicePreference;
+    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia') || selectedVoice?.name.toLowerCase().includes('female')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('kai') || selectedVoice?.name.toLowerCase().includes('male')) return 'kai';
+    return 'luma'; // Default if no preference and selected voice doesn't match
+  };
+
 
   if (!testState) {
     return (
@@ -435,10 +441,13 @@ export default function CustomTestPage() {
              <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
                 <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
                  <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
-                     <Select value={voicePreference || 'megumin'} onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'megumin' | 'kai' | null);}}>
+                     <Select 
+                        value={getSelectedDropdownValue()} 
+                        onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'luma' | 'kai' | null);}}
+                      >
                         <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="megumin">Megumin</SelectItem>
+                          <SelectItem value="luma">Luma</SelectItem>
                           <SelectItem value="kai">Kai</SelectItem>
                         </SelectContent>
                       </Select>
@@ -609,3 +618,4 @@ export default function CustomTestPage() {
     </div>
   );
 }
+

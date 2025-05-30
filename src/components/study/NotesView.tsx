@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage';
+import AiGeneratedImage from './AiGeneratedImage'; // Ensure this path is correct
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -35,13 +35,12 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
 
-  const notesContentRef = useRef<HTMLDivElement>(null);
   const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-        setVoicePreference('megumin'); // Default to female for reading notes
+        setVoicePreference('luma'); 
         voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -49,10 +48,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   useEffect(() => {
     if (notesContent) {
       const textForSpeech = notesContent
-        .replace(/\[VISUAL_PROMPT:[^\]]+\]/gi, "(visual aid suggested)") 
+        .replace(/\[VISUAL_PROMPT:[^\]]+\]/gi, "(A visual aid is suggested here in the notes.)") 
         .replace(/#+\s*/g, '') 
         .replace(/(\*\*|__)(.*?)\1/g, '$2') 
-        .replace(/(\*|_)(.*?)\1/g, '$2'); 
+        .replace(/(\*|_)(.*?)\1/g, '$2')
+        .replace(/---|===/g, ''); // Remove horizontal rules
       setCleanedNotesForTTS(textForSpeech);
     }
   }, [notesContent]);
@@ -63,14 +63,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         toast({title: "No Content", description: "Nothing to speak.", variant: "destructive"});
         return;
     }
-    
-    if (isSpeaking && !isPaused) {
-      pauseTTS();
-    } else if (isPaused) {
-      resumeTTS();
-    } else {
-      speak(cleanedNotesForTTS);
-    }
+    if (isSpeaking && !isPaused) pauseTTS();
+    else if (isPaused) resumeTTS();
+    else speak(cleanedNotesForTTS);
   }, [playClickSound, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
   const handleStopTTS = useCallback(() => {
@@ -93,7 +88,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       .replace(/`{1,3}(.*?)`{1,3}/g, '$1')
       .replace(/<[^>]+>/g, '')
       .replace(/(\r\n|\n|\r)/gm, "\n")
-      .replace(/\n{3,}/g, "\n\n");
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/---|===/g, ''); // Remove horizontal rules
 
     const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8;' });
     const link = document.createElement("a");
@@ -109,32 +105,33 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     if (selectedVoice && !isSpeaking && !isPaused) speak("Notes downloaded!");
   };
   
-  const renderMarkdownWithPlaceholders = (markdownContent: string) => {
-    if (!markdownContent) return null;
-    const parts = markdownContent.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
-
-    return parts.map((part, index) => {
-      if (part.startsWith('[VISUAL_PROMPT:')) {
-        const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1).trim();
-        return <AiGeneratedImage key={`vis-${index}`} promptText={promptText} />;
-      }
-      return <ReactMarkdown key={`md-${index}`} remarkPlugins={[remarkGfm]} className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words">{part}</ReactMarkdown>;
-    });
+  const customRenderers = {
+    p: (props: any) => {
+      const childrenArray = React.Children.toArray(props.children);
+      const newChildren = childrenArray.map((child, index) => {
+        if (typeof child === 'string' && child.includes('[VISUAL_PROMPT:')) {
+          const parts = child.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
+          return parts.map((part, partIndex) => {
+            if (part.startsWith('[VISUAL_PROMPT:')) {
+              const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1).trim();
+              return <AiGeneratedImage key={`vis-${index}-${partIndex}`} promptText={promptText} />;
+            }
+            return part;
+          });
+        }
+        return child;
+      }).flat();
+      return <p {...props} className="my-2">{newChildren}</p>;
+    },
+    // Basic styling for headings, lists, etc. can be enhanced in globals.css with .prose
   };
 
-
-  if (!notesContent) {
-    return (
-      <Card className="shadow-lg flex-1 flex flex-col min-h-0">
-        <CardHeader>
-          <CardTitle className="text-lg md:text-xl text-primary font-semibold">Study Notes for: {topic}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">No notes available for this topic yet, or an error occurred.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getSelectedDropdownValue = () => {
+    if (voicePreference) return voicePreference;
+    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia') || selectedVoice?.name.toLowerCase().includes('female')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('kai') || selectedVoice?.name.toLowerCase().includes('male')) return 'kai';
+    return 'luma';
+  };
 
   return (
     <Card className="shadow-lg flex-1 flex flex-col min-h-0">
@@ -145,12 +142,12 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Select
-              value={voicePreference || 'megumin'}
-              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'megumin' | 'kai' | null);}}
+              value={getSelectedDropdownValue()}
+              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'luma' | 'kai' | null);}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
               <SelectContent>
-                <SelectItem value="megumin">Megumin</SelectItem>
+                <SelectItem value="luma">Luma</SelectItem>
                 <SelectItem value="kai">Kai</SelectItem>
               </SelectContent>
             </Select>
@@ -166,8 +163,14 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-1 sm:p-4 bg-muted/20" >
-           <div ref={notesContentRef}>
-            {renderMarkdownWithPlaceholders(notesContent)}
+           <div>
+            <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={customRenderers}
+                className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words"
+            >
+                {notesContent || "No notes to display."}
+            </ReactMarkdown>
            </div>
         </ScrollArea>
       </CardContent>

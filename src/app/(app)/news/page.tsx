@@ -36,7 +36,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -49,7 +49,6 @@ export default function NewsPage() {
     }
     return () => { 
       isMounted = false;
-      // Optional: cancelTTS() if speech should stop on unmount
     };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
@@ -60,7 +59,7 @@ export default function NewsPage() {
         stateOrRegion: appliedFilters.stateOrRegion, city: appliedFilters.city,
         category: appliedFilters.category, page: pageParam
     }),
-    initialPageParam: undefined as string | undefined, // Ensure initialPageParam is correct type
+    initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     refetchOnWindowFocus: false, 
   });

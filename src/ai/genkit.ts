@@ -8,20 +8,24 @@ const knownDemoKeys = [
   "YOUR_GOOGLE_AI_API_KEY_HERE",
   "YOUR_GOOGLE_API_KEY_HERE",
   "AIzaSy*********************************",
-  "AIzaSyDm10sKA-u4Ivzy88KUlUIzV11akoz1XsQ",
-  "AIzaSyC4x6Mj70HoAGF1_wYZ80ZsjiKeljBewb4",
-  "AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo",
+  "AIzaSyDm10sKA-u4Ivzy88KUlUIzV11akoz1XsQ", // Example Placeholder 1
+  "AIzaSyC4x6Mj70HoAGF1_wYZ80ZsjiKeljBewb4", // Example Placeholder 2
+  "AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo", // Example Placeholder 3 (used in user's document)
+  "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M", // User provided as main
 ];
 
-const isMainApiKeyPlaceholder = !GOOGLE_API_KEY ||
-  knownDemoKeys.some(key => {
-    if (key.includes('*')) {
-      return GOOGLE_API_KEY?.startsWith(key.substring(0, key.indexOf('*')));
+const isApiKeyPlaceholder = (keyToCheck?: string) => {
+  if (!keyToCheck) return true;
+  return knownDemoKeys.some(demoKey => {
+    if (demoKey.includes('*')) {
+      return keyToCheck.startsWith(demoKey.substring(0, demoKey.indexOf('*')));
     }
-    return GOOGLE_API_KEY === key;
+    return keyToCheck === demoKey;
   });
+};
 
-if (isMainApiKeyPlaceholder) {
+
+if (isApiKeyPlaceholder(GOOGLE_API_KEY)) {
   console.warn(
     `\n****************************************************************************************\n` +
     `CRITICAL WARNING: GOOGLE_API_KEY in .env is a PLACEHOLDER, a KNOWN DEMO KEY, or MISSING.\n` +
@@ -59,8 +63,7 @@ let aiForNotesInstance;
 
 if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '' && GOOGLE_API_KEY_NOTES !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_NOTES for study notes generation.`);
-  const isNotesApiKeyPlaceholder = knownDemoKeys.some(key => GOOGLE_API_KEY_NOTES.startsWith(key.substring(0, key.indexOf('*')) || key));
-  if (isNotesApiKeyPlaceholder) {
+  if (isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES)) {
     console.warn(
       `\nWARNING: GOOGLE_API_KEY_NOTES in .env appears to be a PLACEHOLDER or DEMO key: "${GOOGLE_API_KEY_NOTES}". Notes generation might fail or use main key quotas.\n`
     );
@@ -82,8 +85,7 @@ let aiForChatbotInstance;
 
 if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT.trim() !== '' && GOOGLE_API_KEY_CHATBOT !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_CHATBOT for AI Chatbot.`);
-  const isChatbotApiKeyPlaceholder = knownDemoKeys.some(key => GOOGLE_API_KEY_CHATBOT.startsWith(key.substring(0, key.indexOf('*')) || key));
-   if (isChatbotApiKeyPlaceholder) {
+   if (isApiKeyPlaceholder(GOOGLE_API_KEY_CHATBOT)) {
     console.warn(
       `\nWARNING: GOOGLE_API_KEY_CHATBOT in .env appears to be a PLACEHOLDER or DEMO key: "${GOOGLE_API_KEY_CHATBOT}". Chatbot might fail or use main key quotas.\n`
     );

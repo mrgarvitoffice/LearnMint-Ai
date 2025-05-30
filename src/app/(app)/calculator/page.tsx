@@ -55,7 +55,7 @@ export default function CalculatorPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -68,7 +68,6 @@ export default function CalculatorPage() {
     }
     return () => { 
       isMounted = false;
-      // Optional: cancelTTS() if speech should stop on unmount
     };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 

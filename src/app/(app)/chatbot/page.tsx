@@ -40,27 +40,24 @@ export default function ChatbotPage() {
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false); 
-  const meguminVoicePreferenceSetRef = useRef(false); 
+  const chatbotVoicePreferenceSetRef = useRef(false); 
   const initialGreetingSpokenRef = useRef(false);
   const currentSpokenMessageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); // Default page title announcement to Luma
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !meguminVoicePreferenceSetRef.current) {
-        // The UI dropdown for Megumin's voice will default to 'megumin' preference
-        // We ensure a general voice preference is set first for the page title
-        if (voicePreference !== 'megumin' && voicePreference !== 'kai') { // if not already set by user for Megumin specifically
-             // This is handled by the main page title preference logic below.
-        }
-        meguminVoicePreferenceSetRef.current = true;
+    if (supportedVoices.length > 0 && !chatbotVoicePreferenceSetRef.current) {
+        // The UI dropdown for Megumin's voice will default to 'luma' preference for her replies
+        // It will be set by the Select component's defaultValue or value prop.
+        chatbotVoicePreferenceSetRef.current = true;
     }
-  }, [supportedVoices, voicePreference, setVoicePreference]);
+  }, [supportedVoices]);
 
 
   useEffect(() => {
@@ -90,12 +87,13 @@ export default function ChatbotPage() {
     };
     setMessages([initialGreeting]);
 
-    if (selectedVoice && voicePreference === 'megumin' && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
+    // Only speak if a voice is selected AND the current preference for chatbot replies is luma
+    if (selectedVoice && voicePreference === 'luma' && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
       currentSpokenMessageRef.current = initialGreeting.content;
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
-  }, [selectedVoice, voicePreference, speak, isSpeaking, isPaused]); // Dependencies for initial greeting
+  }, [selectedVoice, voicePreference, speak, isSpeaking, isPaused]);
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
@@ -117,7 +115,7 @@ export default function ChatbotPage() {
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      if (selectedVoice && voicePreference === 'megumin' && !isSpeaking && !isPaused) { 
+      if (selectedVoice && voicePreference === 'luma' && !isSpeaking && !isPaused) { 
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
@@ -149,9 +147,16 @@ export default function ChatbotPage() {
 
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
   
-  const handleMeguminVoicePreferenceChange = (value: string) => {
+  const handleChatbotVoicePreferenceChange = (value: string) => {
     playClickSound();
-    setVoicePreference(value as 'megumin' | 'kai' | null);
+    setVoicePreference(value as 'luma' | 'kai' | null);
+  };
+
+  const getSelectedDropdownValue = () => {
+    if (voicePreference) return voicePreference;
+    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia') || selectedVoice?.name.toLowerCase().includes('female')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('kai') || selectedVoice?.name.toLowerCase().includes('male')) return 'kai';
+    return 'luma'; // Default if no preference and selected voice doesn't match
   };
 
 
@@ -168,12 +173,12 @@ export default function ChatbotPage() {
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
               <Select
-                value={voicePreference || 'megumin'} 
-                onValueChange={handleMeguminVoicePreferenceChange}
+                value={getSelectedDropdownValue()} 
+                onValueChange={handleChatbotVoicePreferenceChange}
               >
                 <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="megumin">Megumin</SelectItem>
+                  <SelectItem value="luma">Luma</SelectItem>
                   <SelectItem value="kai">Kai</SelectItem>
                 </SelectContent>
               </Select>

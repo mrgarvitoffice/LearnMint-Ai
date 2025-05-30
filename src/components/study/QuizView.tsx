@@ -25,7 +25,6 @@ interface QuizViewProps {
 const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'medium' }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Array<string | undefined>>([]);
-  // To track if an answer for the current question has been submitted & finalized for feedback
   const [isAnswerFinalized, setIsAnswerFinalized] = useState<boolean>(false); 
   const [quizFinished, setQuizFinished] = useState(false);
   const [score, setScore] = useState(0);
@@ -40,7 +39,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -85,7 +84,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     playClickSound();
     setSelectedMcqOption(optionValue);
     finalizeAnswer(optionValue);
-  }, [isAnswerFinalized, currentQuestion, finalizeAnswer, playClickSound]);
+  }, [isAnswerFinalized, currentQuestion, finalizeAnswer, playClickSound, setSelectedMcqOption]);
 
   const handleShortAnswerSubmit = useCallback(() => {
     if (isAnswerFinalized || !currentQuestion || currentQuestion.type !== 'short-answer' || !shortAnswerValue.trim()) return;
@@ -105,7 +104,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     const nextQuestionData = questions[nextIndex];
     const nextUserAnswer = userAnswers[nextIndex];
 
-    setIsAnswerFinalized(!!nextUserAnswer); // If there's an answer, it was finalized
+    setIsAnswerFinalized(!!nextUserAnswer); 
     setSelectedMcqOption(nextQuestionData?.type === 'multiple-choice' && nextUserAnswer ? nextUserAnswer : null);
     setShortAnswerValue(nextQuestionData?.type === 'short-answer' && nextUserAnswer ? nextUserAnswer : ''); 
   };
@@ -221,7 +220,8 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
                     isAnswerFinalized && isThisOptionSelected && isCorrectAnswer && "bg-green-500/20 border-green-600 text-green-700 dark:text-green-400 ring-2 ring-green-500",
                     isAnswerFinalized && isThisOptionSelected && !isCorrectAnswer && "bg-destructive/20 border-destructive text-destructive-foreground ring-2 ring-destructive",
                     isAnswerFinalized && !isThisOptionSelected && isCorrectAnswer && "border-green-600 bg-green-500/10", 
-                    !isAnswerFinalized && "hover:bg-muted cursor-pointer"
+                    !isAnswerFinalized && "hover:bg-muted cursor-pointer",
+                    isAnswerFinalized && "cursor-default"
                   )}>
                   <RadioGroupItem 
                     value={option} 

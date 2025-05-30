@@ -66,5 +66,3 @@ export async function generateFlashcardsAction(input: GenerateFlashcardsInput): 
     throw new Error(clientErrorMessage);
   }
 }
-
-    

@@ -89,6 +89,7 @@ function StudyPageContent() {
     if (decodedTopic && decodedTopic !== activeTopic) { 
         setActiveTopic(decodedTopic);
         pageTitleSpokenRef.current = false; 
+        // Invalidate queries to refetch for the new topic
         queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
         queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
         queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
@@ -101,7 +102,7 @@ function StudyPageContent() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin');
+      setVoicePreference('luma');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -120,9 +121,9 @@ function StudyPageContent() {
 
   const commonQueryOptions = {
     enabled: !!activeTopic && activeTopic !== "No topic provided",
-    staleTime: 1000 * 60 * 1, 
-    gcTime: 1000 * 60 * 5,   
-    retry: 1,
+    staleTime: 1000 * 60 * 1, // 1 minute before considering stale
+    gcTime: 1000 * 60 * 5,   // 5 minutes before garbage collecting
+    retry: 1, // Retry once on failure
   };
 
   const {
@@ -136,7 +137,7 @@ function StudyPageContent() {
     queryKey: ["studyNotes", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A valid topic is required to generate notes.");
-      toast({title: "Generating Notes...", description: `Fetching notes for ${activeTopic}.`})
+      // toast({title: "Generating Notes...", description: `Fetching notes for ${activeTopic}.`}) // Toast can be noisy on auto-refetch
       return generateNotesAction({ topic: activeTopic });
     },
     ...commonQueryOptions,
@@ -153,11 +154,11 @@ function StudyPageContent() {
     queryKey: ["quizQuestions", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
-      toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${activeTopic}. Difficulty: Medium.`})
+      // toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${activeTopic}. Difficulty: Medium.`})
       return generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (!notesData && isLoadingNotes)), 
+    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (!notesData && isLoadingNotes)), // Fetch if tab is active or if notes are still loading (initial load)
   });
 
   const {
@@ -171,11 +172,11 @@ function StudyPageContent() {
     queryKey: ["flashcards", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
-      toast({title: "Generating Flashcards...", description: `Fetching 20 flashcards for ${activeTopic}.`})
+      // toast({title: "Generating Flashcards...", description: `Fetching 20 flashcards for ${activeTopic}.`})
       return generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (!notesData && isLoadingNotes)), 
+    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (!notesData && isLoadingNotes)), // Fetch if tab is active or if notes are still loading
   });
 
 
@@ -183,17 +184,18 @@ function StudyPageContent() {
     playClickSound();
     if (activeTopic && activeTopic !== "No topic provided") {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
-      pageTitleSpokenRef.current = false; 
+      pageTitleSpokenRef.current = false; // Allow title to be spoken again if needed
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
+      // Explicitly call refetch if immediate re-fetch is desired, invalidateQueries alone might wait for staleness
       refetchNotes();
-      refetchQuiz();
-      refetchFlashcards();
+      if(activeTab === 'quiz') refetchQuiz();
+      if(activeTab === 'flashcards') refetchFlashcards();
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, queryClient, toast, playClickSound, refetchNotes, refetchQuiz, refetchFlashcards]);
+  }, [activeTopic, queryClient, toast, playClickSound, refetchNotes, refetchQuiz, refetchFlashcards, activeTab]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
@@ -272,4 +274,3 @@ export default function StudyPage() {
     </Suspense>
   );
 }
-

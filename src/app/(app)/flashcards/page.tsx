@@ -48,7 +48,7 @@ export default function FlashcardsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -61,9 +61,6 @@ export default function FlashcardsPage() {
     }
     return () => { 
       isMounted = false;
-       if (isMounted && isSpeaking && (pageTitleSpokenRef.current || generatingMessageSpokenRef.current)) {
-        // cancelTTS(); // Only cancel if this effect instance initiated the speech
-      }
      };
   }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
 

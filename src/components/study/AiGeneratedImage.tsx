@@ -31,7 +31,7 @@ const AiGeneratedImage: React.FC<AiGeneratedImageProps> = ({ promptText }) => {
             width={600} 
             height={400} 
             className="max-w-full max-h-full object-contain"
-            data-ai-hint={hintKeywords}
+            data-ai-hint={hintKeywords} // For potential future real image fetching
         />
       </div>
       <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm">

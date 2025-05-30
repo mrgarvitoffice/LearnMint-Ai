@@ -1,21 +1,32 @@
 
-// Matches the more detailed QuizQuestionSchema from generate-quiz-questions.ts
+// For AI Generated Content
 export interface QuizQuestion {
   question: string;
-  options?: string[]; // Optional: only for multiple-choice (e.g. 4 options)
+  options?: string[]; // Optional: only for multiple-choice (e.g., 3-4 options)
   answer: string;
   type: 'multiple-choice' | 'short-answer'; // To distinguish question types
-  explanation?: string;
-  userAnswer?: string; // For Custom Test review
-  isCorrect?: boolean; // For Custom Test review
+  explanation?: string; // Optional explanation for the answer
+  userAnswer?: string; 
+  isCorrect?: boolean; 
 }
 
-// Matches FlashcardSchema from generate-flashcards.ts
 export interface Flashcard {
   term: string;
   definition: string; // Can include bullet points or formulas
 }
 
+// Input/Output types for AI flows (matching Zod schemas in flows)
+export type GenerateStudyNotesInput = { topic: string };
+export type GenerateStudyNotesOutput = { notes: string };
+
+export type GenerateQuizQuestionsInput = { topic: string, numQuestions: number, difficulty?: 'easy' | 'medium' | 'hard' };
+export type GenerateQuizQuestionsOutput = { questions: QuizQuestion[] };
+
+export type GenerateFlashcardsInput = { topic: string, numFlashcards: number };
+export type GenerateFlashcardsOutput = { flashcards: Flashcard[] };
+
+
+// For News API
 export interface NewsArticle {
   article_id: string;
   title: string;
@@ -44,6 +55,7 @@ export interface NewsApiResponse {
   nextPage?: string;
 }
 
+// For Math Fact API
 export interface MathFact {
   text: string;
   number?: number; 
@@ -51,6 +63,7 @@ export interface MathFact {
   type?: string; 
 }
 
+// For Calculator
 export type CalculatorButtonType = 
   | 'digit' 
   | 'operator' 
@@ -85,6 +98,7 @@ export interface UnitConverterState {
   category: UnitCategory;
 }
 
+// For Chatbot
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -94,6 +108,7 @@ export interface ChatMessage {
   type?: 'typing_indicator';
 }
 
+// For Custom Test
 export interface TestSettings {
   topics: string[];
   notes?: string;
@@ -105,11 +120,6 @@ export interface TestSettings {
   perQuestionTimer?: number;
 }
 
-// For the /study page, using types from the AI flows
-export type { GenerateStudyNotesOutput, GenerateStudyNotesInput } from '@/ai/flows/generate-study-notes';
-export type { GenerateQuizQuestionsOutput, GenerateQuizQuestionsInput } from '@/ai/flows/generate-quiz-questions';
-export type { GenerateFlashcardsOutput, GenerateFlashcardsInput } from '@/ai/flows/generate-flashcards';
-
 
 // For Definition Challenge Game in /arcade
 export interface DefinitionChallengeWord {
@@ -117,5 +127,3 @@ export interface DefinitionChallengeWord {
   definition: string;
   hint: string; 
 }
-
-    

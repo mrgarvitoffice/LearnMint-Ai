@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
-import FlashcardItem from './FlashcardItem'; // Assuming FlashcardItem is in the same directory or adjust path
+import FlashcardItem from './FlashcardItem';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import type { Flashcard as FlashcardType } from '@/lib/types';
@@ -33,7 +33,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   const handlePrevCard = () => {
     playClickSound();
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev - 1); // Corrected from prev + 1
+      setCurrentCardIndex(prev => prev - 1);
     }
   };
 
@@ -95,4 +95,3 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 };
 
 export default FlashcardsView;
-

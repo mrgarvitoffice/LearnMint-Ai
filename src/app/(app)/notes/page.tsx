@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // For redirection if needed in future
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, Mic, Sparkles, Loader2, BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Download, Volume2, PlayCircle, PauseCircle, StopCircle } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
@@ -16,18 +17,18 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 
-import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
-import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QuizQuestion, Flashcard } from '@/lib/types'; 
+import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
+import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
+import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
 
 import AiGeneratedImage from '@/components/study/AiGeneratedImage';
-import NotesView from '@/components/study/NotesView';
-import QuizView from '@/components/study/QuizView';
-import FlashcardsView from '@/components/study/FlashcardsView';
+import NotesView from '@/components/study/NotesView'; // Will be used in TabsContent
+import QuizView from '@/components/study/QuizView'; // Will be used in TabsContent
+import FlashcardsView from '@/components/study/FlashcardsView'; // Will be used in TabsContent
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const PAGE_TITLE = "Generate Topper Notes";
-const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
+const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics"; // Updated key
 
 export default function GenerateNotesPage() {
   const router = useRouter();
@@ -39,15 +40,16 @@ export default function GenerateNotesPage() {
   
   const [generatedNotesContent, setGeneratedNotesContent] = useState<string | null>(null);
   const [notesError, setNotesError] = useState<string | null>(null);
-  const [isLoadingNotes, setIsLoadingNotes] = useState<boolean>(false);
+  const [isLoadingNotes, setIsLoadingNotes] = useState<boolean>(false); // Individual loading state
 
   const [generatedQuizData, setGeneratedQuizData] = useState<GenerateQuizQuestionsOutput | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState<boolean>(false);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState<boolean>(false); // Individual loading state
 
   const [generatedFlashcardsData, setGeneratedFlashcardsData] = useState<GenerateFlashcardsOutput | null>(null);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
-  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState<boolean>(false);
+  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState<boolean>(false); // Individual loading state
+
 
   const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
@@ -59,7 +61,7 @@ export default function GenerateNotesPage() {
   
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -72,7 +74,6 @@ export default function GenerateNotesPage() {
     }
     return () => { 
       isMounted = false;
-      // Optional: cancelTTS() if speech should stop on unmount
     };
   }, [selectedVoice, isSpeaking, isPaused, speak, isLoadingAll, generatedNotesContent]);
 
@@ -102,8 +103,11 @@ export default function GenerateNotesPage() {
     setGeneratedNotesContent(null); setNotesError(null);
     setGeneratedQuizData(null); setQuizError(null);
     setGeneratedFlashcardsData(null); setFlashcardsError(null);
+    
     setIsLoadingAll(true);
-    setIsLoadingNotes(true); setIsLoadingQuiz(true); setIsLoadingFlashcards(true);
+    setIsLoadingNotes(true); 
+    setIsLoadingQuiz(true); 
+    setIsLoadingFlashcards(true);
     pageTitleSpokenRef.current = true; 
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
@@ -122,17 +126,20 @@ export default function GenerateNotesPage() {
       }
     } catch (e) { console.error("Failed to save recent topic to localStorage", e); }
 
-    const notesPromise = generateNotesAction({ topic: topic.trim() })
-      .then(data => { setGeneratedNotesContent(data.notes); setIsLoadingNotes(false); return { status: 'fulfilled', value: 'Notes' }; })
-      .catch(err => { setNotesError(err.message); setIsLoadingNotes(false); return { status: 'rejected', reason: 'Notes' }; });
+    const notesPromise = generateStudyNotes({ topic: topic.trim() })
+      .then(data => { setGeneratedNotesContent(data.notes); return { status: 'fulfilled', value: 'Notes' } as const; })
+      .catch(err => { setNotesError(err.message); return { status: 'rejected', reason: 'Notes', error: err } as const; })
+      .finally(() => setIsLoadingNotes(false));
 
-    const quizPromise = generateQuizAction({ topic: topic.trim(), numQuestions: 30, difficulty: 'medium' })
-      .then(data => { setGeneratedQuizData(data); setIsLoadingQuiz(false); return { status: 'fulfilled', value: 'Quiz' }; })
-      .catch(err => { setQuizError(err.message); setIsLoadingQuiz(false); return { status: 'rejected', reason: 'Quiz' }; });
+    const quizPromise = generateQuizQuestions({ topic: topic.trim(), numQuestions: 30, difficulty: 'medium' })
+      .then(data => { setGeneratedQuizData(data); return { status: 'fulfilled', value: 'Quiz' } as const; })
+      .catch(err => { setQuizError(err.message); return { status: 'rejected', reason: 'Quiz', error: err } as const; })
+      .finally(() => setIsLoadingQuiz(false));
 
-    const flashcardsPromise = generateFlashcardsAction({ topic: topic.trim(), numFlashcards: 20 })
-      .then(data => { setGeneratedFlashcardsData(data); setIsLoadingFlashcards(false); return { status: 'fulfilled', value: 'Flashcards' }; })
-      .catch(err => { setFlashcardsError(err.message); setIsLoadingFlashcards(false); return { status: 'rejected', reason: 'Flashcards' }; });
+    const flashcardsPromise = generateFlashcards({ topic: topic.trim(), numFlashcards: 20 })
+      .then(data => { setGeneratedFlashcardsData(data); return { status: 'fulfilled', value: 'Flashcards' } as const; })
+      .catch(err => { setFlashcardsError(err.message); return { status: 'rejected', reason: 'Flashcards', error: err } as const; })
+      .finally(() => setIsLoadingFlashcards(false));
     
     const results = await Promise.allSettled([notesPromise, quizPromise, flashcardsPromise]);
     
@@ -140,8 +147,10 @@ export default function GenerateNotesPage() {
     generatingMessageSpokenRef.current = false;
 
     const successfulGenerations = results.filter(r => r.status === 'fulfilled' && r.value.status === 'fulfilled').length;
+    const failedGenerations = results.filter(r => r.status === 'fulfilled' && r.value.status === 'rejected').map(r => (r.value as {reason: string}).reason);
+    
     if (successfulGenerations > 0) {
-        toast({ title: 'Content Generated!', description: `${successfulGenerations} section(s) generated. Some sections may have failed.` });
+        toast({ title: 'Content Generation Complete!', description: `${successfulGenerations} section(s) generated.${failedGenerations.length > 0 ? ` Failed: ${failedGenerations.join(', ')}.` : ''}` });
         if (selectedVoice && !isSpeaking && !isPaused) speak("Study materials are ready! Check the tabs for details.");
     } else {
         toast({ title: 'Generation Failed', description: 'Could not generate any study materials. Please check errors below.', variant: 'destructive' });
@@ -198,42 +207,48 @@ export default function GenerateNotesPage() {
             ) : (
               <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" />
             )}
-            {isLoadingAll ? "Generating All Materials..." : "Generate Study Materials"}
+            {isLoadingAll ? "Generating All Materials..." : "Generate All Study Materials"}
           </Button>
         </CardContent>
       </Card>
 
-      {(generatedNotesContent || generatedQuizData || generatedFlashcardsData || notesError || quizError || flashcardsError) && (
+      {(generatedNotesContent || generatedQuizData || generatedFlashcardsData || notesError || quizError || flashcardsError || isLoadingAll) && (
         <Tabs defaultValue="notes" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="notes" onClick={() => playClickSound()}>
-              <BookOpenText className="mr-2 h-4 w-4"/>Notes {isLoadingNotes && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
+              <BookOpenText className="mr-2 h-4 w-4"/>Notes {(isLoadingNotes && !generatedNotesContent) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
             </TabsTrigger>
             <TabsTrigger value="quiz" onClick={() => playClickSound()}>
-              <Brain className="mr-2 h-4 w-4"/>Quiz {isLoadingQuiz && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
+              <Brain className="mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz && !generatedQuizData) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
             </TabsTrigger>
             <TabsTrigger value="flashcards" onClick={() => playClickSound()}>
-              <Layers className="mr-2 h-4 w-4"/>Flashcards {isLoadingFlashcards && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
+              <Layers className="mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards && !generatedFlashcardsData) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="notes" className="mt-4">
-            {isLoadingNotes && !generatedNotesContent && <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Notes...</p></CardContent></Card>}
+            {isLoadingNotes && !generatedNotesContent && (
+              <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Notes...</p></CardContent></Card>
+            )}
             {notesError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error Generating Notes</AlertTitle><AlertDescription>{notesError}</AlertDescription></Alert>}
             {generatedNotesContent && <NotesView notesContent={generatedNotesContent} topic={topic} />}
-             {!isLoadingNotes && !generatedNotesContent && !notesError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Notes will appear here after generation.</p>}
+            {!isLoadingNotes && !generatedNotesContent && !notesError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Notes will appear here after generation.</p>}
           </TabsContent>
           
           <TabsContent value="quiz" className="mt-4">
-            {isLoadingQuiz && !generatedQuizData && <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Quiz...</p></CardContent></Card>}
+            {isLoadingQuiz && !generatedQuizData && (
+              <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Quiz...</p></CardContent></Card>
+            )}
             {quizError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error Generating Quiz</AlertTitle><AlertDescription>{quizError}</AlertDescription></Alert>}
             {generatedQuizData?.questions && generatedQuizData.questions.length > 0 && <QuizView questions={generatedQuizData.questions} topic={topic} difficulty="medium" />}
             {generatedQuizData && (!generatedQuizData.questions || generatedQuizData.questions.length === 0) && !isLoadingQuiz && !quizError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Quiz will appear here after generation.</p>}
-             {!isLoadingQuiz && !generatedQuizData && !quizError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Quiz will appear here after generation.</p>}
+            {!isLoadingQuiz && !generatedQuizData && !quizError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Quiz will appear here after generation.</p>}
           </TabsContent>
 
           <TabsContent value="flashcards" className="mt-4">
-            {isLoadingFlashcards && !generatedFlashcardsData && <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Flashcards...</p></CardContent></Card>}
+            {isLoadingFlashcards && !generatedFlashcardsData && (
+               <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Flashcards...</p></CardContent></Card>
+            )}
             {flashcardsError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error Generating Flashcards</AlertTitle><AlertDescription>{flashcardsError}</AlertDescription></Alert>}
             {generatedFlashcardsData?.flashcards && generatedFlashcardsData.flashcards.length > 0 && <FlashcardsView flashcards={generatedFlashcardsData.flashcards} topic={topic} />}
             {generatedFlashcardsData && (!generatedFlashcardsData.flashcards || generatedFlashcardsData.flashcards.length === 0) && !isLoadingFlashcards && !flashcardsError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Flashcards will appear here after generation.</p>}
@@ -244,4 +259,3 @@ export default function GenerateNotesPage() {
     </div>
   );
 }
-
