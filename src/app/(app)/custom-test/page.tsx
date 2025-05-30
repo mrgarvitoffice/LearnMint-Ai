@@ -75,8 +75,8 @@ export default function CustomTestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('correct');
-  const { playSound: playIncorrectSound } = useSound('incorrect');
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference } = useTTS();
@@ -616,3 +616,5 @@ export default function CustomTestPage() {
     </div>
   );
 }
+
+    
