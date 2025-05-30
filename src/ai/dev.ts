@@ -8,7 +8,7 @@ import './genkit'; // Ensures genkit is configured via genkit() call
 import '@/ai/flows/generate-study-notes';
 import '@/ai/flows/generate-quiz-questions'; 
 import '@/ai/flows/generate-flashcards';   
-import '@/ai/flows/ai-chatbot'; 
+import '@/ai/flows/ai-chatbot'; // This now exports kazumaChatbot
 import '@/ai/flows/generate-quiz-from-notes';
 import '@/ai/flows/generate-flashcards-from-notes';
 import '@/ai/flows/search-youtube-videos';

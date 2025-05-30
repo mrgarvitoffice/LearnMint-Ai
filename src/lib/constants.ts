@@ -40,7 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
       { title: 'Note Generator', href: '/notes', icon: FileText, label: 'AI' },
       { title: 'Quiz Creator', href: '/quiz', icon: HelpCircle, label: 'AI' },
       { title: 'Flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
-      { title: 'AI Chatbot (Megumin)', href: '/chatbot', icon: Bot, label: 'AI' },
+      { title: 'AI Chatbot (Kazuma)', href: '/chatbot', icon: Bot, label: 'AI' }, // Updated label
     ],
   },
   { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal },
@@ -125,4 +125,3 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Mitosis", definition: "A type of cell division that results in two daughter cells each having the same number and kind of chromosomes as the parent nucleus.", hint: "Cellular reproduction, not meiosis." },
   { term: "Ecosystem", definition: "A biological community of interacting organisms and their physical environment.", hint: "Includes living and non-living components in an area." },
 ];
-

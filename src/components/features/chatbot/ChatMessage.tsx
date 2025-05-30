@@ -20,12 +20,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div className={cn('flex flex-col gap-2 py-3', alignment)}>
         <div className={cn('flex gap-3 items-start', isUser ? 'flex-row-reverse' : 'flex-row')}>
           <Avatar className="h-8 w-8">
-            <AvatarImage src={`https://placehold.co/40x40.png?text=AI`} />
+            <AvatarImage src={`https://placehold.co/40x40.png?text=Kz`} data-ai-hint="anime boy" />
             <AvatarFallback><Bot /></AvatarFallback>
           </Avatar>
           <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md flex items-center gap-2', bubbleColor)}>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm italic">{message.content || "Megumin is thinking..."}</span>
+            <span className="text-sm italic">{message.content || "Kazuma is thinking... (probably about how much effort this is)"}</span>
           </div>
         </div>
       </div>
@@ -36,7 +36,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
     <div className={cn('flex flex-col gap-2 py-3', alignment)}>
       <div className={cn('flex gap-3 items-start', isUser ? 'flex-row-reverse' : 'flex-row')}>
         <Avatar className="h-8 w-8">
-          <AvatarImage src={isUser ? undefined : `https://placehold.co/40x40.png?text=AI`} />
+          <AvatarImage src={isUser ? undefined : `https://placehold.co/40x40.png?text=Kz`} data-ai-hint="anime boy"/>
           <AvatarFallback>{isUser ? <User /> : <Bot />}</AvatarFallback>
         </Avatar>
         <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md', bubbleColor)}>

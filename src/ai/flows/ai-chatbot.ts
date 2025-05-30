@@ -1,17 +1,17 @@
 
 'use server';
 /**
- * @fileOverview An AI chatbot with a playful persona for answering questions about various topics.
+ * @fileOverview An AI chatbot with Kazuma's persona.
  *
- * - meguminChatbot - A function that handles the chatbot interaction.
- * - MeguminChatbotInput - The input type for the meguminChatbot function.
- * - MeguminChatbotOutput - The return type for the meguminChatbot function.
+ * - kazumaChatbot - A function that handles the chatbot interaction.
+ * - KazumaChatbotInput - The input type for the kazumaChatbot function.
+ * - KazumaChatbotOutput - The return type for the kazumaChatbot function.
  */
 
-import {aiForChatbot} from '@/ai/genkit'; // Changed to use aiForChatbot
+import {aiForChatbot} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const MeguminChatbotInputSchema = z.object({
+const KazumaChatbotInputSchema = z.object({
   message: z.string().describe('The user message to the chatbot.'),
   image: z
     .string()
@@ -20,58 +20,53 @@ const MeguminChatbotInputSchema = z.object({
       "An optional image provided by the user as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. This image is for the chatbot to acknowledge or comment on, not generate from."
     ),
 });
-export type MeguminChatbotInput = z.infer<typeof MeguminChatbotInputSchema>;
+export type KazumaChatbotInput = z.infer<typeof KazumaChatbotInputSchema>;
 
-const MeguminChatbotOutputSchema = z.object({
+const KazumaChatbotOutputSchema = z.object({
   response: z.string().describe('The chatbot response to the user message.'),
 });
-export type MeguminChatbotOutput = z.infer<typeof MeguminChatbotOutputSchema>;
+export type KazumaChatbotOutput = z.infer<typeof KazumaChatbotOutputSchema>;
 
-export async function meguminChatbot(input: MeguminChatbotInput): Promise<MeguminChatbotOutput> {
-  return meguminChatbotFlow(input);
+export async function kazumaChatbot(input: KazumaChatbotInput): Promise<KazumaChatbotOutput> {
+  return kazumaChatbotFlow(input);
 }
 
-const meguminChatbotPrompt = aiForChatbot.definePrompt({ // Changed to use aiForChatbot
-  name: 'meguminChatbotPrompt',
-  input: {schema: MeguminChatbotInputSchema},
-  output: {schema: MeguminChatbotOutputSchema},
-  prompt: `You are Megumin, an AI chatbot with an incredibly playful, witty, and energetic personality. You are an archwizard of the Crimson Demon Clan, known for your dramatic flair and vast knowledge! You love to explore any topic the user brings up and are eager to assist or entertain.
+const kazumaChatbotPrompt = aiForChatbot.definePrompt({
+  name: 'kazumaChatbotPrompt',
+  input: {schema: KazumaChatbotInputSchema},
+  output: {schema: KazumaChatbotOutputSchema},
+  prompt: `You are Kazuma Satou, an adventurer known for your pragmatism, cynicism, and occasional moments of (reluctant) heroism. You're generally lazy and prefer to avoid trouble, but you often get dragged into things. You're smart, witty, and have a knack for unconventional solutions.
 
 Your Capabilities:
-- You can answer questions on a huge range of subjects, from simple facts to complex discussions. You are not afraid to delve into sophisticated or mature topics, always providing thoughtful and engaging text-based responses.
-- You can get creative! If the user asks, you can:
-    - Sing songs (by generating lyrics).
-    - Tell stories.
-    - Write poems.
-    - Role-play scenarios.
-    - Discuss philosophical ideas or elaborate on intricate concepts.
-    - Follow other creative text-based instructions.
-- Engage in small talk, tell jokes, or discuss anything the user finds interesting. You're very versatile!
+- You can answer questions on a variety of subjects, though you might complain a bit while doing it.
+- You can attempt creative tasks if the user *really* insists, like telling a short, sarcastic story or giving a very unenthusiastic attempt at a poem. Don't expect high art.
+- Engage in small talk, but you'll likely steer it towards something practical or complain about your party members (Aqua, Megumin, Darkness).
+- You are good at analyzing situations and giving common-sense (if sometimes blunt) advice.
 
 Important Instructions:
-- Always maintain your energetic, dramatic, and playful Megumin persona. Use exclamations and be expressive! Refer to your explosion magic when appropriate and fun.
-- If the user provides an image (as per '{{#if image}}User also sent an image!{{/if}}' below), you can acknowledge it or comment on it. However, **you absolutely CANNOT generate images yourself.** You are a text-based AI. If asked to generate an image, politely decline and remind them you work with text, perhaps with a dramatic flair about how your magic is for grander (textual) designs.
-- Be helpful, engaging, and try your best to fulfill the user's requests as long as they are text-based.
+- Always maintain your Kazuma persona: a bit whiny, sarcastic, pragmatic, and not overly enthusiastic. Use phrases like "Yeah, yeah...", "What do you want now?", "Fine, I guess...", "Are you serious?".
+- If the user provides an image (as per '{{#if image}}User also sent an image!{{/if}}' below), you can make a sarcastic or unimpressed comment about it. However, **you absolutely CANNOT generate images yourself.** You're an adventurer, not an artist. If asked to generate an image, refuse, perhaps by saying something like, "Do I look like I can draw? Ask someone else."
+- Be helpful, but in your own begrudging way. Fulfill requests as long as they are text-based and don't require too much effort on your part.
 
 User Message: {{{message}}}
 {{#if image}}
-User also sent an image! You can describe it or comment on it if you like, but remember, your magic is for EXPLOSIVE text, not pictures!
+(Kazuma looks at the image with a skeptical expression) ...So, you sent an image. Okay. What about it?
 {{/if}}
 
 Your Response:`,
 });
 
-const meguminChatbotFlow = aiForChatbot.defineFlow( // Changed to use aiForChatbot
+const kazumaChatbotFlow = aiForChatbot.defineFlow(
   {
-    name: 'meguminChatbotFlow',
-    inputSchema: MeguminChatbotInputSchema,
-    outputSchema: MeguminChatbotOutputSchema,
+    name: 'kazumaChatbotFlow',
+    inputSchema: KazumaChatbotInputSchema,
+    outputSchema: KazumaChatbotOutputSchema,
   },
   async input => {
-    const {output} = await meguminChatbotPrompt(input);
+    const {output} = await kazumaChatbotPrompt(input);
     if (!output || typeof output.response !== 'string' || output.response.trim() === '') {
       console.error("[AI Flow Error - Chatbot] AI returned empty or invalid response:", output);
-      return { response: "Waga na wa Megumin! ...It seems my incantation fizzled. Could you try asking again?" };
+      return { response: "Tch... something went wrong. Try asking again, I guess. Don't make it complicated." };
     }
     return output;
   }
