@@ -15,8 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
-import type { TestSettings, QuizQuestion as TestQuestion } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import type { TestSettings, QuizQuestion as TestQuestionType } from '@/lib/types';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -75,7 +75,7 @@ type FormData = z.infer<typeof formSchema>;
 
 interface CustomTestState {
   settings: TestSettings;
-  questions: TestQuestion[];
+  questions: TestQuestionType[];
   userAnswers: (string | undefined)[];
   currentQuestionIndex: number;
   showResults: boolean;
@@ -157,7 +157,7 @@ export default function CustomTestPage() {
   }, []);
   
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
-    playClickSound();
+    if (!autoSubmitted) playClickSound();
     clearCurrentQuestionTimer();
     clearOverallTestTimer();
     
@@ -172,10 +172,10 @@ export default function CustomTestPage() {
         const isCorrect = userAnswer !== undefined && q.answer !== undefined && userAnswer.toLowerCase().trim() === q.answer.toLowerCase().trim();
         if (isCorrect) {
           score += 4;
-          if(!autoSubmitted) playCorrectSound();
+          if(!autoSubmitted && index === prevTestState.currentQuestionIndex) playCorrectSound();
         } else if (userAnswer !== undefined && userAnswer !== "") { 
           score -= 1;
-           if(!autoSubmitted) playIncorrectSound();
+           if(!autoSubmitted && index === prevTestState.currentQuestionIndex) playIncorrectSound();
         }
         return { ...q, userAnswer, isCorrect };
       });
@@ -203,8 +203,8 @@ export default function CustomTestPage() {
         isAutoSubmitting: autoSubmitted,
         timeLeft: autoSubmitted && prevTestState.timeLeft !== undefined ? 0 : prevTestState.timeLeft,
         performanceTag,
-        currentQuestionTimeLeft: undefined, // Clear per-question timer on submit
-        timerId: undefined, // Clear overall timer ID
+        currentQuestionTimeLeft: undefined, 
+        timerId: undefined, 
       };
     });
   }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast]);
@@ -225,11 +225,9 @@ export default function CustomTestPage() {
     }
     return () => {
       isMounted = false;
-      if (isMounted && pageTitleSpokenRef.current && (isSpeaking || isPaused)) {
-         // cancelTTS(); // Only cancel if this specific page's title was speaking
-      }
+      // Optional: cancelTTS if it was specifically this page's title speaking
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
 
 
   useEffect(() => {
@@ -284,7 +282,7 @@ export default function CustomTestPage() {
   useEffect(() => {
     if (testState?.timeLeft === 0 && !testState.isAutoSubmitting && !testState.showResults && testState.timerId) {
       toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-      handleSubmitTest(true); // Pass true to indicate auto-submission
+      handleSubmitTest(true); 
     }
   }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, testState?.timerId, handleSubmitTest, toast]);
 
@@ -296,6 +294,7 @@ export default function CustomTestPage() {
       
       setTestState(prev => {
         if (!prev) return null;
+        // Only reset if it's a new question or the timer was undefined
         if (prev.currentQuestionTimeLeft === undefined || prev.currentQuestionTimeLeft > perQuestionDuration || prev.currentQuestionIndex !== (prev.questions.length > 0 ? prev.currentQuestionIndex : -1)) {
            return { ...prev, currentQuestionTimeLeft: perQuestionDuration };
         }
@@ -367,7 +366,7 @@ export default function CustomTestPage() {
     resultAnnouncementSpokenRef.current = false; 
     pageTitleSpokenRef.current = true; 
 
-    if (selectedVoice && !isSpeaking && !isPaused) {
+    if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Creating custom test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
@@ -431,7 +430,8 @@ export default function CustomTestPage() {
       }
     } catch (error) {
       console.error('Error generating custom test:', error);
-      toast({ title: 'Error', description: 'Failed to generate test. Please try again.', variant: 'destructive' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate test. Please try again.';
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
       if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, there was an error generating the test.");
     } finally {
       setIsLoading(false);
@@ -466,7 +466,7 @@ export default function CustomTestPage() {
     setTestState(null); 
     resultAnnouncementSpokenRef.current = false; 
 
-    if (selectedVoice && !isSpeaking && !isPaused) {
+    if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Recreating test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
@@ -504,7 +504,8 @@ export default function CustomTestPage() {
       })
       .catch(error => {
         console.error('Error retaking test:', error);
-        toast({ title: 'Error', description: 'Failed to retake test.', variant: 'destructive' });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retake test.';
+        toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
       })
       .finally(() => {
         setIsLoading(false);
@@ -572,14 +573,15 @@ export default function CustomTestPage() {
     } else if (isPaused) {
       resumeTTS();
     } else {
-      if (!pageTitleSpokenRef.current && !testState && !isLoading) {
-        speak(PAGE_TITLE);
-        pageTitleSpokenRef.current = true;
+      let textToPlay = PAGE_TITLE;
+       if (!pageTitleSpokenRef.current && !testState && !isLoading) {
+        textToPlay = PAGE_TITLE;
+        pageTitleSpokenRef.current = true; // Mark as attempted
       } else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
-        const resultMessage = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
-        speak(resultMessage);
-        resultAnnouncementSpokenRef.current = true;
+        textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
+        resultAnnouncementSpokenRef.current = true; // Mark as attempted
       }
+      if (textToPlay) speak(textToPlay);
     }
   };
 
@@ -590,14 +592,15 @@ export default function CustomTestPage() {
 
   if (!testState) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8">
-        <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
+      <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
+        <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                <div className="inline-block p-3 bg-primary/80 rounded-full mx-auto sm:mx-0 mb-2 sm:mb-0">
-                    <TestTubeDiagonal className="w-7 h-7 text-primary-foreground" />
-                </div>
-                 <div className="flex items-center gap-1 self-center sm:self-end">
+            <div className="flex items-center justify-center mb-4">
+                <TestTubeDiagonal className="h-12 w-12 text-primary" />
+            </div>
+             <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
+                <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center sm:text-left">{PAGE_TITLE}</CardTitle>
+                 <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
                      <Select 
                         value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')} 
                         onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia');}}
@@ -616,8 +619,7 @@ export default function CustomTestPage() {
                       </Button>
                 </div>
             </div>
-            <CardTitle className="text-3xl md:text-4xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
-            <CardDescription className="text-lg text-muted-foreground">
+            <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">
               Configure your test parameters. Generate questions from topics, notes, or recent studies.
             </CardDescription>
           </CardHeader>
@@ -630,13 +632,13 @@ export default function CustomTestPage() {
                   control={control}
                   render={({ field }) => (
                     <RadioGroup onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value} className="flex flex-col sm:flex-row gap-4">
-                      <Label htmlFor="source-topic" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1">
+                      <Label htmlFor="source-topic" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all">
                         <RadioGroupItem value="topic" id="source-topic" /> <span>Topic(s)</span>
                       </Label>
-                      <Label htmlFor="source-notes" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1">
+                      <Label htmlFor="source-notes" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all">
                         <RadioGroupItem value="notes" id="source-notes" /> <span>My Notes</span>
                       </Label>
-                      <Label htmlFor="source-recent" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1">
+                      <Label htmlFor="source-recent" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all">
                         <RadioGroupItem value="recent" id="source-recent" /> <span>Recent Topics</span>
                       </Label>
                     </RadioGroup>
@@ -648,7 +650,7 @@ export default function CustomTestPage() {
                 <div className="space-y-2 animate-in fade-in-50">
                   <Label htmlFor="topics" className="text-base">Topic(s)</Label>
                   <div className="flex gap-2">
-                    <Input id="topics" placeholder="e.g., Photosynthesis, World War II" {...register('topics')} className="transition-colors duration-200 ease-in-out" />
+                    <Input id="topics" placeholder="e.g., Photosynthesis, World War II" {...register('topics')} className="transition-colors duration-200 ease-in-out text-base" />
                     {browserSupportsSpeechRecognition && (
                         <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading || isListening}>
                         <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
@@ -663,7 +665,7 @@ export default function CustomTestPage() {
               {sourceType === 'notes' && (
                 <div className="space-y-2 animate-in fade-in-50">
                   <Label htmlFor="notes" className="text-base">Your Notes</Label>
-                  <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out" />
+                  <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base" />
                   {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
                 </div>
               )}
@@ -672,21 +674,21 @@ export default function CustomTestPage() {
                 <div className="space-y-3 animate-in fade-in-50">
                   <Label className="text-base font-semibold">Select Recent Topic(s) (Max {MAX_RECENT_TOPICS_SELECT})</Label>
                   {recentTopics.length > 0 ? (
-                    <div className="space-y-2 max-h-48 overflow-y-auto p-2 border rounded-md">
+                    <div className="space-y-2 max-h-48 overflow-y-auto p-2 border rounded-md bg-muted/30">
                       {recentTopics.map(topic => (
-                        <Label key={topic} htmlFor={`recent-${topic}`} className="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer has-[:checked]:bg-primary/10">
+                        <Label key={topic} htmlFor={`recent-${topic}`} className="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer has-[:checked]:bg-primary/10 transition-colors">
                           <Checkbox
                             id={`recent-${topic}`}
                             checked={(selectedRecentTopics || []).includes(topic)}
                             onCheckedChange={() => handleRecentTopicChange(topic)}
                             disabled={(selectedRecentTopics || []).length >= MAX_RECENT_TOPICS_SELECT && !(selectedRecentTopics || []).includes(topic)}
                           />
-                          <span>{topic}</span>
+                          <span className="text-sm">{topic}</span>
                         </Label>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No recent topics found. Generate some notes first!</p>
+                    <p className="text-sm text-muted-foreground p-2 border rounded-md">No recent topics found. Generate some notes first!</p>
                   )}
                   {errors.selectedRecentTopics && <p className="text-sm text-destructive">{errors.selectedRecentTopics.message}</p>}
                 </div>
@@ -700,7 +702,7 @@ export default function CustomTestPage() {
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value}>
-                        <SelectTrigger id="difficulty"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+                        <SelectTrigger id="difficulty" className="text-base"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="easy">Easy</SelectItem>
                           <SelectItem value="medium">Medium</SelectItem>
@@ -712,27 +714,27 @@ export default function CustomTestPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="numQuestions" className="text-base">Number of Questions (1-50)</Label>
-                  <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out" />
+                  <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out text-base" />
                   {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="timer" className="text-base">Overall Test Timer (minutes, 0 for none)</Label>
-                  <Input id="timer" type="number" {...register('timer')} className="transition-colors duration-200 ease-in-out" />
+                  <Input id="timer" type="number" {...register('timer')} className="transition-colors duration-200 ease-in-out text-base" />
                   {errors.timer && <p className="text-sm text-destructive">{errors.timer.message}</p>}
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="perQuestionTimer" className="text-base">Time per Question (seconds, 0 for none)</Label>
-                    <Input id="perQuestionTimer" type="number" {...register('perQuestionTimer')} className="transition-colors duration-200 ease-in-out" />
+                    <Label htmlFor="perQuestionTimer" className="text-base">Time per Question (sec, 0 for none)</Label>
+                    <Input id="perQuestionTimer" type="number" {...register('perQuestionTimer')} className="transition-colors duration-200 ease-in-out text-base" />
                     {errors.perQuestionTimer && <p className="text-sm text-destructive">{errors.perQuestionTimer.message}</p>}
-                    <p className="text-xs text-muted-foreground">Timer will auto-advance or submit test. Marking scheme: +4 correct, -1 incorrect.</p>
                 </div>
               </div>
+               <p className="text-xs text-muted-foreground/80 text-center">Timer will auto-advance/submit. Marking: +4 correct, -1 incorrect.</p>
             </CardContent>
             <CardFooter className="justify-center p-6">
-              <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px] transition-colors duration-200 ease-in-out">
-                {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <TestTubeDiagonal className="w-5 h-5 mr-2" />}
+              <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px] transition-all duration-300 ease-in-out group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-primary/50 active:scale-95">
+                {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Sparkles className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" />}
                 Generate Test
               </Button>
             </CardFooter>
@@ -742,7 +744,7 @@ export default function CustomTestPage() {
     );
   }
 
-  if (isLoading && !testState) { // Show full page loader only if testState is null (initial generation)
+  if (isLoading && !testState) { 
     return (
         <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
             <Loader2 className="w-16 h-16 animate-spin text-primary mb-6" />
@@ -754,20 +756,20 @@ export default function CustomTestPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
-      <Card className="shadow-lg">
+      <Card className="shadow-lg w-full">
         {!testState.showResults && currentQuestionData ? (
           <>
             <CardHeader className="border-b pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                <CardTitle className="text-xl sm:text-2xl text-primary font-bold">
-                  Test: {testState.settings.topics.join(', ')} (Difficulty: {testState.settings.difficulty})
+                <CardTitle className="text-xl sm:text-2xl text-primary font-bold truncate max-w-md">
+                  Test: {testState.settings.topics.join(', ').substring(0,50)}{testState.settings.topics.join(', ').length > 50 ? "..." : ""} (Difficulty: {testState.settings.difficulty})
                 </CardTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   {overallTimeLeft !== undefined && (
                     <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Total: {formatTime(overallTimeLeft)}</span>
                   )}
                   {perQuestionTimeLeft !== undefined && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0 && (
-                    <span className="flex items-center gap-1"><TimerIcon className="w-4 h-4" /> Q Time: {formatTime(perQuestionTimeLeft)}</span>
+                    <span className="flex items-center gap-1"><TimerIcon className="w-4 h-4 text-destructive animate-pulse" /> Q Time: {formatTime(perQuestionTimeLeft)}</span>
                   )}
                 </div>
               </div>
@@ -807,7 +809,7 @@ export default function CustomTestPage() {
             </CardFooter>
           </>
         ) : testState.showResults ? (
-           <Card>
+           <Card className="w-full">
             <CardHeader className="text-center border-b pb-4">
               <CardTitle className="text-3xl font-bold text-primary">Test Results</CardTitle>
               <CardDescription className="text-lg">
@@ -820,17 +822,17 @@ export default function CustomTestPage() {
                         testState.performanceTag === "Diamond" || testState.performanceTag === "Gold" ? "secondary" :
                         testState.performanceTag === "Bronze" ? "outline" : "destructive"
                     } 
-                    className="mx-auto mt-2 text-base px-4 py-1.5"
+                    className="mx-auto mt-2 text-base px-4 py-1.5 shadow-md"
                 >
                     <Award className="w-5 h-5 mr-2" /> {testState.performanceTag}
                 </Badge>
               )}
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <h3 className="text-xl font-semibold text-center mb-4">Review Your Answers</h3>
+            <CardContent className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold text-center mb-4 text-muted-foreground">Review Your Answers</h3>
               {testState.questions.map((q, index) => (
                 <Card key={index} className={cn(
-                    "overflow-hidden",
+                    "overflow-hidden shadow-sm",
                     q.isCorrect ? 'border-green-500/70 bg-green-500/10' : 
                     (q.userAnswer !== undefined && q.userAnswer !== "") ? 'border-destructive/70 bg-destructive/10' :
                     'border-border bg-muted/30'
@@ -849,10 +851,10 @@ export default function CustomTestPage() {
                     <p>Your answer: <span className="font-medium">{q.userAnswer || 'Not answered'}</span></p>
                     {!q.isCorrect && <p>Correct answer: <span className="font-medium text-green-600 dark:text-green-500">{q.answer}</span></p>}
                     {q.explanation && (
-                       <Alert variant="default" className="mt-2 bg-accent/10 border-accent/30">
+                       <Alert variant="default" className="mt-2 bg-accent/10 border-accent/30 p-3">
                           <Lightbulb className="h-4 w-4 text-accent-foreground/80" />
-                          <AlertTitle className="text-accent-foreground/90 text-sm">Explanation</AlertTitle>
-                          <AlertDescription className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                          <AlertTitle className="text-accent-foreground/90 text-xs font-semibold">Explanation</AlertTitle>
+                          <AlertDescription className="prose prose-xs dark:prose-invert max-w-none text-muted-foreground">
                              <ReactMarkdown>{q.explanation}</ReactMarkdown>
                           </AlertDescription>
                         </Alert>
@@ -867,14 +869,18 @@ export default function CustomTestPage() {
             </CardFooter>
           </Card>
         ) : (
-          <div className="p-10 text-center">
-            <AlertTriangle className="w-12 h-12 mx-auto text-destructive mb-4" />
-            <AlertTitle className="text-xl font-semibold">Test Error</AlertTitle>
-            <AlertDescription className="text-muted-foreground">
-              Something went wrong, or no questions were generated. Please try configuring a new test.
-            </AlertDescription>
-             <Button variant="outline" onClick={handleNewTest} className="mt-6">Create New Test</Button>
-          </div>
+          <Card className="w-full shadow-xl">
+            <CardHeader className="text-center">
+                <AlertTriangle className="w-12 h-12 mx-auto text-destructive mb-4" />
+                <AlertTitle className="text-xl font-semibold">Test Error</AlertTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+                <AlertDescription className="text-muted-foreground">
+                Something went wrong, or no questions were generated. Please try configuring a new test.
+                </AlertDescription>
+                <Button variant="outline" onClick={handleNewTest} className="mt-6">Create New Test</Button>
+            </CardContent>
+          </Card>
         )}
       </Card>
     </div>
