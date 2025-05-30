@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import type { TestSettings, TestQuestion } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { Badge } from '@/components/ui/badge'; // Import Badge
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -35,7 +36,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
   selectedRecentTopics: z.array(z.string()).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
-  numQuestions: z.coerce.number().min(1, 'Min 1 question').max(20, 'Max 20 questions').default(5),
+  numQuestions: z.coerce.number().min(1, 'Min 1 question').max(50, 'Max 50 questions').default(5), // Updated max to 50
   timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0),
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'topic' && (!data.topics || data.topics.trim().length < 3)) {
@@ -80,6 +81,7 @@ interface CustomTestState {
   timeLeft?: number;
   timerId?: NodeJS.Timeout;
   isAutoSubmitting?: boolean;
+  performanceTag?: string; // Added for performance tag
 }
 
 export default function CustomTestPage() {
@@ -122,11 +124,10 @@ export default function CustomTestPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    // Cleanup TTS on unmount or if test starts
     return () => {
-      if (pageTitleSpokenRef.current) { // Only cancel if it might have spoken
+      if (pageTitleSpokenRef.current) {
           cancelTTS();
-          pageTitleSpokenRef.current = false; // Reset for next potential mount
+          pageTitleSpokenRef.current = false;
       }
     };
   }, [selectedVoice, isTTSSpeaking, speak, cancelTTS, testState]);
@@ -156,11 +157,20 @@ export default function CustomTestPage() {
       speak("Creating custom test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
-    if (!isLoading) {
+    if (!isLoading && generatingMessageSpokenRef.current) { // Reset when loading finishes
       generatingMessageSpokenRef.current = false;
     }
   }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
+
+  const getPerformanceTag = (percentage: number): string => {
+    if (percentage === 100) return "Conqueror";
+    if (percentage >= 90) return "Ace";
+    if (percentage >= 80) return "Diamond";
+    if (percentage >= 70) return "Gold";
+    if (percentage >= 50) return "Bronze";
+    return "Keep Practicing!";
+  };
 
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     playClickSound();
@@ -177,18 +187,22 @@ export default function CustomTestPage() {
         if (isCorrect) {
           score += 4;
           playCorrectSound();
-        } else if (userAnswer !== undefined) {
+        } else if (userAnswer !== undefined && userAnswer !== "") { // Check if an answer was actually given
           score -= 1;
           playIncorrectSound();
         }
         return { ...q, userAnswer, isCorrect };
       });
 
-      const resultMessage = `Your score is ${score}. Review your answers below.`;
+      const totalPossibleScore = prevTestState.questions.length * 4;
+      const percentage = totalPossibleScore > 0 ? Math.max(0, (score / totalPossibleScore) * 100) : 0;
+      const performanceTag = getPerformanceTag(percentage);
+
+      const resultMessage = `Your score is ${score} out of ${totalPossibleScore}. Your performance: ${performanceTag}! Review your answers below.`;
       if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) {
-         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: resultMessage});
+         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Score: ${score}/${totalPossibleScore}. Performance: ${performanceTag}.`});
          if (selectedVoice && !isTTSSpeaking) {
-           speak(autoSubmitted ? "Test auto-submitted! Please review your answers." : "Test submitted! Please review your answers.");
+           speak(autoSubmitted ? `Test auto-submitted! ${resultMessage}` : `Test submitted! ${resultMessage}`);
          }
       }
 
@@ -199,10 +213,11 @@ export default function CustomTestPage() {
         showResults: true,
         timerId: undefined,
         isAutoSubmitting: autoSubmitted,
-        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft
+        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft,
+        performanceTag, // Store the tag
       };
     });
-  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]);
+  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking, setVoicePreference]); // Added setVoicePreference to dep array if used in speak
 
   useEffect(() => {
     let currentTimerId: NodeJS.Timeout | undefined;
@@ -246,7 +261,7 @@ export default function CustomTestPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
     setIsLoading(true);
-    setTestState(null);
+    setTestState(null); // Reset previous test state
 
     try {
       let topicForAI = "general knowledge";
@@ -277,7 +292,14 @@ export default function CustomTestPage() {
         selectedRecentTopicsForSettings = data.selectedRecentTopics;
       }
 
+      if (selectedVoice && !isTTSSpeaking && !generatingMessageSpokenRef.current) { // Use ref here
+          speak("Creating custom test. Please wait.");
+          generatingMessageSpokenRef.current = true;
+      }
+
       const result: GenerateQuizOutput = await generateQuiz({ topic: topicForAI, numQuestions: data.numQuestions });
+
+      generatingMessageSpokenRef.current = false; // Reset after generation
 
       if (result.quiz && result.quiz.length > 0) {
         const testSettings: TestSettings = {
@@ -311,6 +333,7 @@ export default function CustomTestPage() {
       }
     } catch (error) {
       console.error('Error generating test:', error);
+      generatingMessageSpokenRef.current = false;
       toast({ title: 'Error', description: 'Failed to generate test. Please try again.', variant: 'destructive' });
       if (selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating the test.");
     } finally {
@@ -342,6 +365,7 @@ export default function CustomTestPage() {
      playClickSound();
      if (!testState) return;
      setIsLoading(true);
+     setTestState(null); // Clear current test state before retrying
      onSubmit({
         sourceType: testState.settings.sourceType || 'topic',
         topics: testState.settings.sourceType === 'topic' ? testState.settings.topics.join(',') : undefined,
@@ -361,6 +385,11 @@ export default function CustomTestPage() {
     setValue('notes', '');
     setValue('selectedRecentTopics', []);
     setValue('sourceType', 'topic');
+    pageTitleSpokenRef.current = false; // Allow page title to be spoken again
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) { // Re-speak title if conditions met
+        speak(PAGE_TITLE);
+        pageTitleSpokenRef.current = true;
+    }
   }
 
   const formatTime = (seconds: number): string => {
@@ -473,7 +502,7 @@ export default function CustomTestPage() {
                                   field.onChange([...currentSelection, topic]);
                                 } else {
                                   toast({ title: "Limit Reached", description: `You can only select up to ${MAX_RECENT_TOPICS_SELECT} topics.`, variant: "destructive"});
-                                  return false;
+                                  return false; // Prevent checking
                                 }
                               } else {
                                 field.onChange(currentSelection.filter(t => t !== topic));
@@ -510,7 +539,7 @@ export default function CustomTestPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="numQuestions">Number of Questions (1-20)</Label>
+                <Label htmlFor="numQuestions">Number of Questions (1-50)</Label>
                 <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out" />
                 {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
               </div>
@@ -588,35 +617,58 @@ export default function CustomTestPage() {
   if (testState.showResults) {
     const totalPossibleScore = testState.questions.length * 4;
     const percentage = totalPossibleScore > 0 ? Math.max(0, (testState.score / totalPossibleScore) * 100) : 0;
+    // Performance tag is now available in testState.performanceTag
+
+    let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default";
+    if (testState.performanceTag === "Conqueror" || testState.performanceTag === "Ace") {
+        badgeVariant = "default"; // Primary color
+    } else if (testState.performanceTag === "Diamond" || testState.performanceTag === "Gold") {
+        badgeVariant = "secondary";
+    } else if (testState.performanceTag === "Bronze") {
+        badgeVariant = "outline";
+    } else { // Keep Practicing
+        badgeVariant = "destructive";
+    }
+
 
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Test Results</CardTitle>
-          <CardDescription>
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold text-primary">Test Results</CardTitle>
+          <CardDescription className="text-lg">
             You scored {testState.score} out of {totalPossibleScore} ({percentage.toFixed(1)}%).
-            {testState.settings.timer && testState.settings.timer > 0 && testState.timeLeft !== undefined && (
-                <span> Time taken: {formatTime(testState.settings.timer * 60 - (testState.timeLeft > 0 ? testState.timeLeft : 0))}.</span>
-            )}
           </CardDescription>
-          <Progress value={percentage} className="w-full mt-2" />
+          {testState.performanceTag && (
+            <div className="mt-3">
+                <Badge variant={badgeVariant} className="text-lg px-4 py-2">
+                    <Award className="w-5 h-5 mr-2"/>
+                    {testState.performanceTag}
+                </Badge>
+            </div>
+          )}
+           {testState.settings.timer && testState.settings.timer > 0 && testState.timeLeft !== undefined && (
+                <p className="text-sm text-muted-foreground mt-2"> Time taken: {formatTime(testState.settings.timer * 60 - (testState.timeLeft > 0 ? testState.timeLeft : 0))}.</p>
+            )}
+          <Progress value={percentage} className="w-full mt-4 h-3" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 mt-6">
+          <h3 className="text-xl font-semibold text-center mb-4">Review Your Answers</h3>
           {testState.questions.map((q, index) => (
-            <Card key={index} className={q.isCorrect === undefined ? '' : q.isCorrect ? 'border-green-500 bg-green-500/10' : 'border-destructive bg-destructive/10'}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                   {q.isCorrect === undefined ? null : q.isCorrect ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-destructive" />}
-                  Question {index + 1}: <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none inline">{q.question}</ReactMarkdown>
+            <Card key={index} className={cn("overflow-hidden", q.isCorrect === undefined ? '' : q.isCorrect ? 'border-green-500 bg-green-500/5' : 'border-destructive bg-destructive/5')}>
+              <CardHeader className="pb-3 pt-4 px-4 bg-muted/30">
+                <CardTitle className="text-md flex items-start gap-2">
+                   {q.isCorrect === undefined ? <HelpCircle className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" /> : q.isCorrect ? <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />}
+                  <span className="font-semibold">Question {index + 1}:</span>
+                  <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none inline leading-tight">{q.question}</ReactMarkdown>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm space-y-1">
-                <p>Your answer: <span className="font-medium">{q.userAnswer || 'Not answered'}</span></p>
-                <p>Correct answer: <span className="font-medium">{q.answer}</span></p>
+              <CardContent className="text-sm space-y-2 p-4">
+                <p>Your answer: <span className={cn("font-medium", q.isCorrect === undefined ? '' : q.isCorrect ? 'text-green-700 dark:text-green-400' : 'text-destructive')}>{q.userAnswer || 'Not answered'}</span></p>
+                <p>Correct answer: <span className="font-medium text-green-700 dark:text-green-400">{q.answer}</span></p>
                 {q.explanation && (
-                  <Alert variant="default" className="mt-2 bg-blue-500/10 border-blue-500/30">
-                    <Lightbulb className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-700 dark:text-blue-400">Explanation</AlertTitle>
+                  <Alert variant="default" className="mt-2 bg-accent/10 border-accent/30 text-accent-foreground/80">
+                    <Lightbulb className="h-4 w-4 text-accent" />
+                    <AlertTitle className="text-accent">Explanation</AlertTitle>
                     <AlertDescription className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
                        <ReactMarkdown>{q.explanation}</ReactMarkdown>
                     </AlertDescription>
@@ -626,9 +678,9 @@ export default function CustomTestPage() {
             </Card>
           ))}
         </CardContent>
-        <CardFooter className="flex gap-2">
-            <Button onClick={handleRetakeTest} disabled={isLoading}><RotateCcw className="w-4 h-4 mr-2"/>Retake Test</Button>
-            <Button variant="outline" onClick={handleNewTest}>Create New Test</Button>
+        <CardFooter className="flex flex-col sm:flex-row gap-2 justify-center mt-4">
+            <Button onClick={handleRetakeTest} disabled={isLoading} size="lg"><RotateCcw className="w-4 h-4 mr-2"/>Retake Test</Button>
+            <Button variant="outline" onClick={handleNewTest} size="lg">Create New Test</Button>
         </CardFooter>
       </Card>
     );
@@ -641,3 +693,6 @@ export default function CustomTestPage() {
     </Alert>
   );
 }
+
+
+    
