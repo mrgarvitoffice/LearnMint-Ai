@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,11 +15,14 @@ import { Loader2, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FlashcardComponent } from '@/components/features/flashcards/Flashcard';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
+import { useTTS } from '@/hooks/useTTS';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
 });
 type FormData = z.infer<typeof formSchema>;
+
+const PAGE_TITLE = "AI Flashcard Factory";
 
 export default function FlashcardsPage() {
   const [flashcardsData, setFlashcardsData] = useState<GenerateFlashcardsOutput | null>(null);
@@ -27,11 +30,40 @@ export default function FlashcardsPage() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+  const generatingMessageSpokenRef = useRef(false);
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
   const topicValue = watch('topic');
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
+
+  useEffect(() => {
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
+      speak("Generating flashcards. Please wait.");
+      generatingMessageSpokenRef.current = true;
+    }
+    if (!isLoading) {
+      generatingMessageSpokenRef.current = false; 
+    }
+  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
@@ -43,12 +75,21 @@ export default function FlashcardsPage() {
       if (result.flashcards && result.flashcards.length > 0) {
         setFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: 'Your flashcards are ready.' });
+        if (selectedVoice && !isTTSSpeaking) {
+          speak("Flashcards ready!");
+        }
       } else {
         toast({ title: 'No Flashcards', description: 'The AI returned no flashcards for this topic.', variant: 'destructive' });
+        if (selectedVoice && !isTTSSpeaking) {
+          speak("Sorry, no flashcards were returned.");
+        }
       }
     } catch (error) {
       console.error('Error generating flashcards:', error);
       toast({ title: 'Error', description: 'Failed to generate flashcards. Please try again.', variant: 'destructive' });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Sorry, there was an error generating flashcards.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,9 +119,9 @@ export default function FlashcardsPage() {
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <ListChecks className="w-7 h-7 text-primary" />
-            AI Flashcard Generator
+          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
+            <ListChecks className="w-7 h-7" />
+            {PAGE_TITLE}
           </CardTitle>
           <CardDescription>Enter a topic to generate flashcards for quick review.</CardDescription>
         </CardHeader>
@@ -138,3 +179,4 @@ export default function FlashcardsPage() {
     </div>
   );
 }
+

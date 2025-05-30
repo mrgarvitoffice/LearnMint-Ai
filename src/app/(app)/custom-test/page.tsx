@@ -27,6 +27,7 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
+const PAGE_TITLE = "Advanced Test Configuration";
 
 const formSchema = z.object({
   sourceType: z.enum(['topic', 'notes', 'recent']).default('topic'),
@@ -35,7 +36,7 @@ const formSchema = z.object({
   selectedRecentTopics: z.array(z.string()).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   numQuestions: z.coerce.number().min(1, 'Min 1 question').max(20, 'Max 20 questions').default(5),
-  timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0), // 0 for no timer
+  timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0), 
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'topic' && (!data.topics || data.topics.trim().length < 3)) {
     ctx.addIssue({
@@ -76,7 +77,7 @@ interface CustomTestState {
   currentQuestionIndex: number;
   showResults: boolean;
   score: number;
-  timeLeft?: number; // in seconds
+  timeLeft?: number; 
   timerId?: NodeJS.Timeout;
   isAutoSubmitting?: boolean;
 }
@@ -90,10 +91,11 @@ export default function CustomTestPage() {
   const { playSound: playIncorrectSound } = useSound('incorrect'); 
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, isSpeaking: isTTSSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
-  const voicePreferenceWasSetRef = useRef(false);
-
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+  const generatingMessageSpokenRef = useRef(false);
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -107,14 +109,20 @@ export default function CustomTestPage() {
   });
 
   const sourceType = watch('sourceType');
-  const selectedRecentTopics = watch('selectedRecentTopics');
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('female'); // Default to female for announcements
+      setVoicePreference('female'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
+  
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
   
   useEffect(() => {
     if (transcript) {
@@ -137,6 +145,16 @@ export default function CustomTestPage() {
   }, []);
 
   useEffect(() => {
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
+      speak("Creating custom test. Please wait.");
+      generatingMessageSpokenRef.current = true;
+    }
+    if (!isLoading) {
+      generatingMessageSpokenRef.current = false; 
+    }
+  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
+
+  useEffect(() => {
     let currentTimerId: NodeJS.Timeout | undefined;
     if (testState?.timerId) {
       currentTimerId = testState.timerId;
@@ -149,8 +167,7 @@ export default function CustomTestPage() {
     return () => {
       if (currentTimerId) clearInterval(currentTimerId);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, testState?.timerId]);
+  }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, testState?.timerId, handleSubmitTest]);
 
 
   const startTimer = (durationMinutes: number) => {
@@ -180,9 +197,6 @@ export default function CustomTestPage() {
     playClickSound();
     setIsLoading(true);
     setTestState(null); 
-    if (selectedVoice && !isTTSSpeaking) {
-        speak("Creating custom test. Please wait.");
-    }
 
     try {
       let topicForAI = "general knowledge";
@@ -190,11 +204,9 @@ export default function CustomTestPage() {
       let notesForSettings: string | undefined = undefined;
       let selectedRecentTopicsForSettings: string[] | undefined = undefined;
 
-
       if (data.sourceType === 'topic' && data.topics) {
         topicForAI = `${data.topics} (difficulty: ${data.difficulty})`;
         sourceTopicsForSettings = data.topics.split(',').map(t => t.trim());
-         // Add to recent topics if not already there and is a valid topic
         if (data.topics.trim().length >= 3) {
             const newTopic = data.topics.trim();
             setRecentTopics(prev => {
@@ -206,7 +218,6 @@ export default function CustomTestPage() {
             });
         }
       } else if (data.sourceType === 'notes' && data.notes) {
-        // For AI, pass first N words + indicator + difficulty. For settings, store all notes.
         topicForAI = data.notes.split(' ').slice(0, 15).join(' ') + `... (based on provided notes, difficulty: ${data.difficulty})`;
         sourceTopicsForSettings = ["Custom Notes Provided"];
         notesForSettings = data.notes;
@@ -243,12 +254,15 @@ export default function CustomTestPage() {
           startTimer(data.timer);
         }
         toast({ title: 'Test Generated!', description: 'Your custom test is ready.' });
+        if (selectedVoice && !isTTSSpeaking) speak("Test Generated! Good luck.");
       } else {
         toast({ title: 'No Test Data', description: 'The AI returned no questions. Try a different topic or reduce complexity.', variant: 'destructive' });
+        if (selectedVoice && !isTTSSpeaking) speak("Sorry, no test data was returned.");
       }
     } catch (error) {
       console.error('Error generating test:', error);
       toast({ title: 'Error', description: 'Failed to generate test. Please try again.', variant: 'destructive' });
+      if (selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating the test.");
     } finally {
       setIsLoading(false);
     }
@@ -314,7 +328,6 @@ export default function CustomTestPage() {
         timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft 
       };
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]); 
   
   const handleRetakeTest = () => {
@@ -364,7 +377,7 @@ export default function CustomTestPage() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg">Generating your custom test...</p>
+        <p className="ml-4 text-lg text-muted-foreground">Generating your custom test...</p>
       </div>
     );
   }
@@ -373,9 +386,9 @@ export default function CustomTestPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <TestTubeDiagonal className="w-7 h-7 text-primary" />
-            Custom Test Creator
+          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
+            <TestTubeDiagonal className="w-7 h-7" />
+            {PAGE_TITLE}
           </CardTitle>
           <CardDescription>Configure your test parameters and generate a custom assessment.</CardDescription>
         </CardHeader>
@@ -620,3 +633,4 @@ export default function CustomTestPage() {
     </Alert>
   );
 }
+

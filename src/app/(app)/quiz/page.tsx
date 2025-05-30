@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
+import { useTTS } from '@/hooks/useTTS';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -32,6 +33,8 @@ interface QuizState extends GenerateQuizOutput {
   score: number;
 }
 
+const PAGE_TITLE = "AI Powered Quiz Creator";
+
 export default function QuizPage() {
   const [quizState, setQuizState] = useState<QuizState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +42,11 @@ export default function QuizPage() {
   const { playSound: playCorrectSound } = useSound('correct'); 
   const { playSound: playIncorrectSound } = useSound('incorrect'); 
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
 
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+  const generatingMessageSpokenRef = useRef(false);
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -47,6 +54,30 @@ export default function QuizPage() {
       numQuestions: 5,
     }
   });
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
+
+  useEffect(() => {
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
+      speak("Generating quiz. Please wait.");
+      generatingMessageSpokenRef.current = true;
+    }
+    if (!isLoading) {
+      generatingMessageSpokenRef.current = false; // Reset when not loading
+    }
+  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
@@ -63,12 +94,21 @@ export default function QuizPage() {
           score: 0,
         });
         toast({ title: 'Quiz Generated!', description: 'Your quiz is ready to start.' });
+        if (selectedVoice && !isTTSSpeaking) {
+          speak("Quiz ready!");
+        }
       } else {
         toast({ title: 'No Quiz Data', description: 'The AI returned no questions for this topic.', variant: 'destructive' });
+         if (selectedVoice && !isTTSSpeaking) {
+          speak("Sorry, no quiz data was returned.");
+        }
       }
     } catch (error) {
       console.error('Error generating quiz:', error);
       toast({ title: 'Error', description: 'Failed to generate quiz. Please try again.', variant: 'destructive' });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Sorry, there was an error generating the quiz.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +147,9 @@ export default function QuizPage() {
       }
     });
     setQuizState({ ...quizState, score, showResults: true });
-    toast({ title: "Quiz Submitted!", description: `Your score is ${score} out of ${quizState.quiz.length}.`});
+    const resultMessage = `Quiz Submitted! Your score is ${score} out of ${quizState.quiz.length}.`;
+    toast({ title: "Quiz Submitted!", description: resultMessage});
+    if(selectedVoice && !isTTSSpeaking) speak(resultMessage);
   };
 
   const handleRetakeQuiz = () => {
@@ -132,9 +174,9 @@ export default function QuizPage() {
       {!quizState ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <HelpCircle className="w-7 h-7 text-primary" />
-              AI Quiz Creator
+            <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
+              <HelpCircle className="w-7 h-7" />
+              {PAGE_TITLE}
             </CardTitle>
             <CardDescription>Enter a topic and number of questions to generate a quiz.</CardDescription>
           </CardHeader>
@@ -241,3 +283,4 @@ export default function QuizPage() {
     </div>
   );
 }
+

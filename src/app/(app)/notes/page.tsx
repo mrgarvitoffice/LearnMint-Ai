@@ -43,11 +43,12 @@ export default function NotesPage() {
 
   const { toast } = useToast();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
-  const { speak, cancel, isSpeaking, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference } = useTTS();
+  const { speak, cancel, isSpeaking: isTTSSpeaking, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
+  const generatingMessageSpokenRef = useRef(false);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -63,17 +64,27 @@ export default function NotesPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Default to Zia or a female voice
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (selectedVoice && !isSpeaking && !pageTitleSpokenRef.current) {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isSpeaking, speak]);
+  }, [selectedVoice, isTTSSpeaking, speak]);
+
+  useEffect(() => {
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
+      speak("Generating study materials. Please wait.");
+      generatingMessageSpokenRef.current = true;
+    }
+    if (!isLoading) {
+      generatingMessageSpokenRef.current = false; // Reset when not loading
+    }
+  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
@@ -83,10 +94,6 @@ export default function NotesPage() {
     setQuizFromNotes(null); 
     setFlashcardsFromNotes(null); 
     
-    if (selectedVoice && !isTTSSpeaking) {
-        speak("Generating study materials. Please wait.");
-    }
-
     try {
       const result = await generateStudyNotes({ topic: data.topic });
       setNotes(result);
@@ -95,7 +102,6 @@ export default function NotesPage() {
         speak("Notes ready!");
       }
 
-      // Add to recent topics
       if (typeof window !== 'undefined') {
         const currentTopicsJSON = localStorage.getItem(RECENT_TOPICS_LS_KEY);
         let currentTopics: string[] = currentTopicsJSON ? JSON.parse(currentTopicsJSON) : [];
@@ -117,10 +123,9 @@ export default function NotesPage() {
   const handleSpeakNotes = () => {
     playClickSound();
     if (notes?.notes) {
-      if (isSpeaking) {
+      if (isTTSSpeaking) {
         cancel();
       } else {
-        // Replace visual prompts for better speech flow
         const notesForSpeech = notes.notes.replace(/\[VISUAL_PROMPT: ([^\]]+)\]/g, '(Visual aid for: $1)');
         speak(notesForSpeech);
       }
@@ -159,14 +164,13 @@ export default function NotesPage() {
   const handleDownloadNotes = () => {
     playClickSound();
     if (notes?.notes) {
-      // Basic Markdown stripping for plain text download
       let plainText = notes.notes;
-      plainText = plainText.replace(/\[VISUAL_PROMPT: [^\]]+\]/g, ''); // Remove visual prompts
-      plainText = plainText.replace(/^#+\s*/gm, ''); // Remove heading hashes
-      plainText = plainText.replace(/^[*-]\s*/gm, ''); // Remove list item markers
-      plainText = plainText.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Remove bold
-      plainText = plainText.replace(/(\*|_)(.*?)\1/g, '$2'); // Remove italics
-      plainText = plainText.replace(/`([^`]+)`/g, '$1'); // Remove inline code
+      plainText = plainText.replace(/\[VISUAL_PROMPT: [^\]]+\]/g, ''); 
+      plainText = plainText.replace(/^#+\s*/gm, ''); 
+      plainText = plainText.replace(/^[*-]\s*/gm, ''); 
+      plainText = plainText.replace(/(\*\*|__)(.*?)\1/g, '$2'); 
+      plainText = plainText.replace(/(\*|_)(.*?)\1/g, '$2'); 
+      plainText = plainText.replace(/`([^`]+)`/g, '$1'); 
 
       const blob = new Blob([plainText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -188,7 +192,7 @@ export default function NotesPage() {
     playClickSound();
     if (!notes?.notes) return;
     setIsGeneratingQuiz(true);
-    if (selectedVoice && !isTTSSpeaking) {
+     if (selectedVoice && !isTTSSpeaking) {
       speak("Generating quiz from notes. Please wait.");
     }
     try {
@@ -202,7 +206,7 @@ export default function NotesPage() {
     } catch (error) {
       console.error("Error generating quiz from notes:", error);
       toast({ title: "Quiz Generation Error", description: "Failed to generate quiz from notes.", variant: "destructive" });
-      if (selectedVoice && !isTTSSpeaking) {
+       if (selectedVoice && !isTTSSpeaking) {
         speak("Sorry, there was an error generating the quiz.");
       }
     } finally {
@@ -288,7 +292,7 @@ export default function NotesPage() {
       {isLoading && (
          <div className="flex justify-center items-center py-10">
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            <p className="ml-4 text-lg text-muted-foreground">Generating notes, please wait...</p>
+            <p className="ml-4 text-lg text-muted-foreground">Generating your notes...</p>
         </div>
       )}
 
@@ -300,7 +304,7 @@ export default function NotesPage() {
               <CardDescription>Review your notes below. Use the controls to listen or download.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-               <Select onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia'); }}>
+               <Select onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia'); }} defaultValue={selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : selectedVoice?.name.toLowerCase().includes('female') ? 'female' : 'male'}>
                 <SelectTrigger className="w-full sm:w-[150px] text-xs">
                   <SelectValue placeholder="Voice Type" />
                 </SelectTrigger>
@@ -323,10 +327,10 @@ export default function NotesPage() {
                   )) : <SelectItem value="no-voices" disabled className="text-xs">No voices available</SelectItem>}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={handleSpeakNotes} disabled={!notes?.notes || (isSpeaking && !window.speechSynthesis.paused)} title={isSpeaking ? "Pause" : "Play Notes"}>
-                {isSpeaking && !window.speechSynthesis.paused ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
+              <Button variant="outline" size="icon" onClick={handleSpeakNotes} disabled={!notes?.notes || (isTTSSpeaking && !(typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.paused))} title={isTTSSpeaking && !(typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.paused) ? "Pause Notes" : "Play Notes"}>
+                 {isTTSSpeaking && !(typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.paused) ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
               </Button>
-              {isSpeaking && (
+              {isTTSSpeaking && (
                 <Button variant="outline" size="icon" onClick={handleCancelSpeak} title="Stop Speaking">
                   <StopCircle className="w-5 h-5" />
                 </Button>
@@ -346,7 +350,7 @@ export default function NotesPage() {
               className="w-full sm:w-auto"
             >
               {isGeneratingQuiz ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <HelpCircleIcon className="w-4 h-4 mr-2"/>}
-              Generate 30-Question Quiz from Notes
+              Generate 30-Question Quiz
             </Button>
             <Button 
               onClick={handleGenerateFlashcardsFromNotes} 
@@ -354,7 +358,7 @@ export default function NotesPage() {
               className="w-full sm:w-auto"
             >
               {isGeneratingFlashcards ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ListChecksIcon className="w-4 h-4 mr-2"/>}
-              Generate 20 Flashcards from Notes
+              Generate 20 Flashcards
             </Button>
           </CardFooter>
         </Card>
