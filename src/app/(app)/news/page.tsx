@@ -10,9 +10,12 @@ import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added AlertTitle
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const ALL_CATEGORIES_VALUE = "_all_categories_"; // Consistent with NewsFilters
+const ALL_CATEGORIES_VALUE = "_all_categories_"; 
+const ANY_COUNTRY_VALUE = "_any_country_";
+const ANY_REGION_VALUE = "_any_region_";
+
 
 interface NewsPageFilters {
   query: string;
@@ -24,8 +27,8 @@ interface NewsPageFilters {
 
 const initialFilters: NewsPageFilters = {
   query: '',
-  country: '', // Default to Any Country (represented by empty string)
-  stateOrRegion: '',
+  country: '', // Default to Any Country (represented by empty string for API)
+  stateOrRegion: '', // Default to Any State/Region
   city: '',
   category: 'top', // Default to top headlines
 };
@@ -44,22 +47,28 @@ export default function NewsPage() {
     error,
   } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
-    queryFn: ({ pageParam }) => fetchNews({ 
+    queryFn: ({ pageParam }) => fetchNews({
         query: appliedFilters.query,
-        country: appliedFilters.country, // Empty string means no specific country filter for API
+        country: appliedFilters.country,
         stateOrRegion: appliedFilters.stateOrRegion,
         city: appliedFilters.city,
-        category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category, 
-        page: pageParam 
+        category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category,
+        page: pageParam
     }),
-    initialPageParam: undefined as string | undefined, 
-    getNextPageParam: (lastPage) => lastPage.nextPage, 
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
   });
 
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      // If country is cleared (set to "" which represents 'Any Country'), also clear state/region and city
+      
+      if (name === 'country') {
+        // If country changes, reset state/region and city
+        newFilters.stateOrRegion = '';
+        newFilters.city = '';
+      }
+      // If country is cleared, also clear state/region and city
       if (name === 'country' && !value) {
         newFilters.stateOrRegion = '';
         newFilters.city = '';
@@ -67,12 +76,12 @@ export default function NewsPage() {
       return newFilters;
     });
   };
-  
+
 
   const handleApplyFilters = () => {
     setAppliedFilters(filters);
   };
-  
+
   const handleResetFilters = () => {
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
@@ -91,8 +100,8 @@ export default function NewsPage() {
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
         <CardContent>
-          <NewsFilters 
-            filters={filters} 
+          <NewsFilters
+            filters={filters}
             onFilterChange={handleFilterChange}
             onApplyFilters={handleApplyFilters}
             onResetFilters={handleResetFilters}
@@ -113,8 +122,8 @@ export default function NewsPage() {
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle>News API Error</AlertTitle>
           <AlertDescription>
-            Error fetching news: {error instanceof Error ? error.message : "An unknown error occurred."} 
-            This could be due to an invalid or rate-limited API key for Newsdata.io, or a network issue. 
+            Error fetching news: {error instanceof Error ? error.message : "An unknown error occurred."}
+            This could be due to an invalid or rate-limited API key for Newsdata.io, or a network issue.
             Please check your NEWSDATA_API_KEY in your .env file and ensure it's set correctly in your Firebase environment variables if deployed.
           </AlertDescription>
         </Alert>
