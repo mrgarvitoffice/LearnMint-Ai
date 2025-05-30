@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,38 +12,58 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
-import type { TestSettings, TestQuestion, TestResult } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle } from 'lucide-react';
+import type { TestSettings, TestQuestion } from '@/lib/types';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
+import { useTTS } from '@/hooks/useTTS';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 
+const MAX_RECENT_TOPICS_DISPLAY = 10;
+const MAX_RECENT_TOPICS_SELECT = 3;
 
 const formSchema = z.object({
-  sourceType: z.enum(['topic', 'notes']).default('topic'),
-  topics: z.string().min(3, 'Topic(s) must be at least 3 characters.').optional(),
-  notes: z.string().min(50, 'Notes must be at least 50 characters.').optional(),
+  sourceType: z.enum(['topic', 'notes', 'recent']).default('topic'),
+  topics: z.string().optional(),
+  notes: z.string().optional(),
+  selectedRecentTopics: z.array(z.string()).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   numQuestions: z.coerce.number().min(1, 'Min 1 question').max(20, 'Max 20 questions').default(5),
   timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0), // 0 for no timer
 }).superRefine((data, ctx) => {
-  if (data.sourceType === 'topic' && !data.topics) {
+  if (data.sourceType === 'topic' && (!data.topics || data.topics.trim().length < 3)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Topics are required when source type is 'topic'.",
+      message: "Topic(s) must be at least 3 characters.",
       path: ['topics'],
     });
   }
-  if (data.sourceType === 'notes' && !data.notes) {
+  if (data.sourceType === 'notes' && (!data.notes || data.notes.trim().length < 50)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Notes are required when source type is 'notes'.",
+      message: "Notes must be at least 50 characters.",
       path: ['notes'],
     });
+  }
+  if (data.sourceType === 'recent' && (!data.selectedRecentTopics || data.selectedRecentTopics.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select at least one recent topic.",
+      path: ['selectedRecentTopics'],
+    });
+  }
+  if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > MAX_RECENT_TOPICS_SELECT) {
+    ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `You can select a maximum of ${MAX_RECENT_TOPICS_SELECT} recent topics.`,
+        path: ['selectedRecentTopics'],
+      });
   }
 });
 
@@ -64,15 +84,51 @@ interface CustomTestState {
 export default function CustomTestPage() {
   const [testState, setTestState] = useState<CustomTestState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const { toast } = useToast();
   const { playSound: playCorrectSound } = useSound('correct', 0.5);
   const { playSound: playIncorrectSound } = useSound('incorrect', 0.4);
+  const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const voicePreferenceWasSetRef = useRef(false);
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
+  const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
+
+
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      sourceType: 'topic',
+      difficulty: 'medium',
+      numQuestions: 5,
+      timer: 0,
+      selectedRecentTopics: [],
+    }
   });
 
   const sourceType = watch('sourceType');
+  const selectedRecentTopics = watch('selectedRecentTopics');
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); // Default to female for announcements
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+  
+  useEffect(() => {
+    if (transcript) {
+      setValue('topics', transcript);
+    }
+  }, [transcript, setValue]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedTopics = localStorage.getItem('learnmint-recent-topics');
+      if (storedTopics) {
+        setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let currentTimerId: NodeJS.Timeout | undefined;
@@ -117,22 +173,36 @@ export default function CustomTestPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     setIsLoading(true);
     setTestState(null); 
+    if (selectedVoice && !isSpeaking) {
+        speak("Creating custom test. Please wait.");
+    }
+
     try {
-      let topicForAI = data.topics || "general knowledge";
-      if (data.sourceType === 'notes' && data.notes) {
-        topicForAI = data.notes.split(' ').slice(0, 5).join(' ') + ` (based on provided notes, difficulty: ${data.difficulty})`;
-      } else if (data.topics) {
+      let topicForAI = "general knowledge";
+      let sourceTopicsForSettings: string[] = [];
+
+      if (data.sourceType === 'topic' && data.topics) {
         topicForAI = `${data.topics} (difficulty: ${data.difficulty})`;
+        sourceTopicsForSettings = data.topics.split(',').map(t => t.trim());
+      } else if (data.sourceType === 'notes' && data.notes) {
+        topicForAI = data.notes.split(' ').slice(0, 10).join(' ') + `... (based on provided notes, difficulty: ${data.difficulty})`;
+        // For settings, we might just store a placeholder if notes are too long, or the first few words
+        sourceTopicsForSettings = ["Custom Notes Provided"]; 
+      } else if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > 0) {
+        topicForAI = `${data.selectedRecentTopics.join(', ')} (difficulty: ${data.difficulty})`;
+        sourceTopicsForSettings = data.selectedRecentTopics;
       }
       
       const result: GenerateQuizOutput = await generateQuiz({ topic: topicForAI, numQuestions: data.numQuestions });
       
       if (result.quiz && result.quiz.length > 0) {
         const testSettings: TestSettings = {
-          topics: data.topics ? data.topics.split(',').map(t => t.trim()) : [],
-          notes: data.notes,
+          topics: sourceTopicsForSettings,
+          notes: data.sourceType === 'notes' ? data.notes : undefined,
+          sourceType: data.sourceType,
+          selectedRecentTopics: data.sourceType === 'recent' ? data.selectedRecentTopics : undefined,
           difficulty: data.difficulty,
-          numQuestions: result.quiz.length,
+          numQuestions: result.quiz.length, // Use actual number of questions returned
           timer: data.timer,
         };
         setTestState({
@@ -151,7 +221,7 @@ export default function CustomTestPage() {
         }
         toast({ title: 'Test Generated!', description: 'Your custom test is ready.' });
       } else {
-        toast({ title: 'No Test Data', description: 'The AI returned no questions.', variant: 'destructive' });
+        toast({ title: 'No Test Data', description: 'The AI returned no questions. Try a different topic or reduce complexity.', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Error generating test:', error);
@@ -220,9 +290,10 @@ export default function CustomTestPage() {
      if (!testState) return;
      setIsLoading(true); 
      onSubmit({ 
-        sourceType: testState.settings.notes ? 'notes' : 'topic',
-        topics: testState.settings.topics.join(','),
-        notes: testState.settings.notes,
+        sourceType: testState.settings.sourceType || 'topic',
+        topics: testState.settings.sourceType === 'topic' ? testState.settings.topics.join(',') : undefined,
+        notes: testState.settings.sourceType === 'notes' ? testState.settings.notes : undefined,
+        selectedRecentTopics: testState.settings.sourceType === 'recent' ? testState.settings.selectedRecentTopics : undefined,
         difficulty: testState.settings.difficulty,
         numQuestions: testState.settings.numQuestions,
         timer: testState.settings.timer || 0,
@@ -232,6 +303,10 @@ export default function CustomTestPage() {
   const handleNewTest = () => {
     if (testState?.timerId) clearInterval(testState.timerId);
     setTestState(null);
+    setValue('topics', '');
+    setValue('notes', '');
+    setValue('selectedRecentTopics', []);
+    setValue('sourceType', 'topic');
   }
 
   const formatTime = (seconds: number): string => {
@@ -239,6 +314,15 @@ export default function CustomTestPage() {
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
 
   const currentQuestionData = testState?.questions[testState.currentQuestionIndex];
 
@@ -269,13 +353,18 @@ export default function CustomTestPage() {
                 name="sourceType"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 mt-2">
-                    <Label htmlFor="sourceTopic" className="flex items-center gap-2 border p-3 rounded-md has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer">
-                      <RadioGroupItem value="topic" id="sourceTopic" /> Topic(s)
+                  <RadioGroup onValueChange={(value) => { field.onChange(value); setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []); }} defaultValue={field.value} className="flex flex-wrap gap-2 md:gap-4 mt-2">
+                    <Label htmlFor="sourceTopicChoice" className="flex items-center gap-2 border p-3 rounded-md has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer text-sm md:text-base">
+                      <RadioGroupItem value="topic" id="sourceTopicChoice" /> <FileText className="w-4 h-4 mr-1"/> Topic(s)
                     </Label>
-                    <Label htmlFor="sourceNotes" className="flex items-center gap-2 border p-3 rounded-md has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer">
-                      <RadioGroupItem value="notes" id="sourceNotes" /> My Notes
+                    <Label htmlFor="sourceNotesChoice" className="flex items-center gap-2 border p-3 rounded-md has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer text-sm md:text-base">
+                      <RadioGroupItem value="notes" id="sourceNotesChoice" /> <BookOpen className="w-4 h-4 mr-1"/> My Notes
                     </Label>
+                    {recentTopics.length > 0 && (
+                        <Label htmlFor="sourceRecentChoice" className="flex items-center gap-2 border p-3 rounded-md has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer text-sm md:text-base">
+                        <RadioGroupItem value="recent" id="sourceRecentChoice" /> <RotateCcw className="w-4 h-4 mr-1"/> Recent Topics
+                        </Label>
+                    )}
                   </RadioGroup>
                 )}
               />
@@ -284,17 +373,67 @@ export default function CustomTestPage() {
             {sourceType === 'topic' && (
               <div className="space-y-2">
                 <Label htmlFor="topics">Topic(s)</Label>
-                <Input id="topics" placeholder="e.g., Calculus, World History (comma-separated for multiple)" {...register('topics')} />
+                 <div className="flex gap-2">
+                    <Input 
+                        id="topics" 
+                        placeholder="e.g., Calculus, World History (comma-separated)" 
+                        {...register('topics')} 
+                        className={errors.topics ? 'border-destructive' : ''}
+                    />
+                    {browserSupportsSpeechRecognition && (
+                    <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading}>
+                        <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
+                    </Button>
+                    )}
+                </div>
+                {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
                 {errors.topics && <p className="text-sm text-destructive">{errors.topics.message}</p>}
               </div>
             )}
             {sourceType === 'notes' && (
               <div className="space-y-2">
                 <Label htmlFor="notes">Your Notes</Label>
-                <Textarea id="notes" placeholder="Paste your study notes here..." {...register('notes')} rows={6} />
+                <Textarea id="notes" placeholder="Paste your study notes here..." {...register('notes')} rows={6} className={errors.notes ? 'border-destructive' : ''}/>
                 {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
               </div>
             )}
+            {sourceType === 'recent' && (
+              <div className="space-y-2">
+                <Label>Select Recent Topics (up to {MAX_RECENT_TOPICS_SELECT})</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 border rounded-md max-h-60 overflow-y-auto">
+                  {recentTopics.length > 0 ? recentTopics.map(topic => (
+                    <Label key={topic} htmlFor={`recent-${topic}`} className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer">
+                      <Controller
+                        name="selectedRecentTopics"
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox
+                            id={`recent-${topic}`}
+                            checked={field.value?.includes(topic)}
+                            onCheckedChange={(checked) => {
+                              const currentSelection = field.value || [];
+                              if (checked) {
+                                if (currentSelection.length < MAX_RECENT_TOPICS_SELECT) {
+                                  field.onChange([...currentSelection, topic]);
+                                } else {
+                                  toast({ title: "Limit Reached", description: `You can only select up to ${MAX_RECENT_TOPICS_SELECT} topics.`, variant: "destructive"});
+                                  return false; // Prevent checking
+                                }
+                              } else {
+                                field.onChange(currentSelection.filter(t => t !== topic));
+                              }
+                            }}
+                          />
+                        )}
+                      />
+                      <span className="truncate" title={topic}>{topic}</span>
+                    </Label>
+                  )) : <p className="text-sm text-muted-foreground p-2">No recent topics found. Generate some notes first!</p>}
+                </div>
+                {errors.selectedRecentTopics && <p className="text-sm text-destructive">{errors.selectedRecentTopics.message}</p>}
+              </div>
+            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -391,17 +530,20 @@ export default function CustomTestPage() {
   }
 
   if (testState.showResults) {
+    const totalPossibleScore = testState.questions.length * 4;
+    const percentage = totalPossibleScore > 0 ? Math.max(0, (testState.score / totalPossibleScore) * 100) : 0;
+
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Test Results</CardTitle>
           <CardDescription>
-            You scored {testState.score} out of {testState.questions.length * 4} (Correct: +4, Incorrect: -1).
+            You scored {testState.score} out of {totalPossibleScore} ({percentage.toFixed(1)}%).
             {testState.settings.timer && testState.settings.timer > 0 && testState.timeLeft !== undefined && (
                 <span> Time taken: {formatTime(testState.settings.timer * 60 - (testState.timeLeft > 0 ? testState.timeLeft : 0))}.</span>
             )}
           </CardDescription>
-          <Progress value={Math.max(0, (testState.score / (testState.questions.length * 4)) * 100)} className="w-full mt-2" />
+          <Progress value={percentage} className="w-full mt-2" />
         </CardHeader>
         <CardContent className="space-y-4">
           {testState.questions.map((q, index) => (
@@ -443,5 +585,3 @@ export default function CustomTestPage() {
     </Alert>
   );
 }
-
-    
