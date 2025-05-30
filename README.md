@@ -1,4 +1,3 @@
-
 # LearnMint - AI Powered Learning
 
 LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a Daily News Digest feature, and placeholders for future library and game features.
@@ -39,8 +38,8 @@ To get started, take a look at `src/app/page.tsx`.
 *   **Library (Placeholder & Samples)**:
     *   Displays a sample catalog of OpenStax textbooks with links to their website.
     *   Includes a "Math Fact of the Day" (uses a static fallback list if the live API fails).
-    *   Includes a "Search Google Books" feature (launches Google Books search results page).
-    *   Includes a "Search YouTube" feature (UI for search, launches YouTube search results page).
+    *   Includes a "Search Google Books" feature (currently launches Google Books search results page, Genkit flow for API search added).
+    *   Includes a "Search YouTube" feature (UI for search currently launches YouTube search results page, Genkit flow for API search added).
     *   Lists other helpful resources.
 *   **Game (LearnMint Arcade)**:
     *   **Word Game**: A "Definition Challenge" where users guess a term based on its definition, with hints and streak tracking.
@@ -58,6 +57,8 @@ To get started, take a look at `src/app/page.tsx`.
 *   Lucide Icons
 *   `@tanstack/react-query` (for fetching quotes, math facts, and news)
 *   Newsdata.io (for live news - **requires user API key**)
+*   YouTube Data API v3 (for video search - **requires user API key**)
+*   Google Books API (for book search - **requires user API key**)
 *   `date-fns` (for date formatting)
 *   `next-themes` (for light/dark mode)
 
@@ -69,30 +70,32 @@ To get started, take a look at `src/app/page.tsx`.
 
 ### 2. CRITICAL: Set up Environment Variables
 
-Create a file named `.env` in the root of your project. Add the following content:
+Create a file named `.env` in the root of your project. Add the following content. **Replace placeholder values with your actual API keys.**
 
 ```env
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
 # Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
-GOOGLE_API_KEY=YOUR_GOOGLE_AI_API_KEY_HERE
+GOOGLE_API_KEY=AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo_EXAMPLE
 
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
-NEWSDATA_API_KEY=YOUR_NEWSDATA_IO_API_KEY_HERE
+NEWSDATA_API_KEY=pub_039b4b0247244a8e9f85a8f113e9d7f2_EXAMPLE
 
-# For future development of dynamic YouTube search/embedding (currently uses mock data or search redirects)
+# For YouTube Search Integration (Genkit flow)
 # Get your key from Google Cloud Console: https://console.cloud.google.com/apis/library/youtube.googleapis.com
-YOUTUBE_API_KEY=YOUR_YOUTUBE_API_KEY_HERE
+YOUTUBE_API_KEY=AIzaSyBEnMGnZ_8vUA7SP8GzvOvPqFrsHyL-BJk_EXAMPLE
+
+# For Google Books Search Integration (Genkit flow)
+# Get your key from Google Cloud Console: https://console.cloud.google.com/apis/library/books.googleapis.com
+GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw_EXAMPLE
 
 # For future development with OpenRouter (currently unused by the application)
 # Get your key from OpenRouter: https://openrouter.ai/keys
-# OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE
+# OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE_EXAMPLE
 ```
 
-*   You **MUST** replace `YOUR_GOOGLE_AI_API_KEY_HERE` with a valid Google AI API key. Without it, core AI features will fail.
-*   You **MUST** replace `YOUR_NEWSDATA_IO_API_KEY_HERE` with a valid Newsdata.io API key for the Daily News feature to work.
-*   `YOUTUBE_API_KEY` is present for potential future development of a backend-driven YouTube search; current YouTube search features in the app redirect to YouTube's site or use mock data.
+*   You **MUST** replace `_EXAMPLE` placeholders with valid API keys for the respective services. Without them, associated features will fail.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
 ### 3. Install Dependencies
@@ -161,7 +164,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** `GOOGLE_API_KEY` (for AI features) and `NEWSDATA_API_KEY` (for live news). Without these, the deployed app's features will not work.
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books). Without these, the deployed app's features will not work.
 
 2.  **CRITICAL: Add PWA Icons (Required for PWA):**
     *   Create a folder `public/icons`.
@@ -190,10 +193,9 @@ This project is configured for deployment using Firebase Hosting with its `frame
     *   Find your App Hosting service (it might be named `firebase-PROJECT_ID-REGION` or similar, often like `apphosting-PROJECT_ID-REGION`).
     *   Edit the service configuration (usually "Edit & Deploy New Revision" or similar).
     *   Navigate to the "Variables & Secrets" or "Environment Variables" section.
-    *   Add `GOOGLE_API_KEY` with its production value.
-    *   Add `NEWSDATA_API_KEY` with its production value.
+    *   Add `GOOGLE_API_KEY`, `NEWSDATA_API_KEY`, `YOUTUBE_API_KEY`, and `GOOGLE_BOOKS_API_KEY` with their production values.
     *   Deploy the new revision with these environment variables.
-    *   This step is crucial for Genkit AI features and live news to work in the deployed environment.
+    *   This step is crucial for Genkit AI features and other API-dependent features to work in the deployed environment.
 
 ## Customization
 
@@ -204,8 +206,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 ## Future Enhancements (Potential Ideas)
 
 *   **Advanced PWA Features**: Implement a service worker for offline caching of assets and basic content.
-*   **More News API Integrations**: Add support for other news sources with user-selectable preferences if Newsdata.io does not meet all needs or has restrictive free tier limits.
-*   **Full Library Content Integration**: Develop functionality to fetch and display content from APIs like Wikidata, OpenStax (full in-app reading), CK-12, and live YouTube search/embedding on the `/library` page.
+*   **Full Library Content Integration**: Fully integrate YouTube video search & embedding, and Google Books search & display using the newly added Genkit flows.
 *   **Multilingual Support**:
     *   UI Internationalization: Add support for multiple languages in the application's interface using libraries like `next-intl` or `react-i18next`.
     *   AI Content Localization: Update Genkit prompts to accept a target language and generate notes, quizzes, and flashcards in different languages.

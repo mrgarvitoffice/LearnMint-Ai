@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS } from "@/lib/constants";
-import { ArrowRight, Lightbulb, Zap, FileText, TestTubeDiagonal, HelpCircle, ListChecks, Bot, Calculator, Newspaper, BookMarked, Gamepad2, Sparkles, Settings } from "lucide-react";
+import { ArrowRight, Lightbulb, FileText, TestTubeDiagonal, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const coreFeaturesList = [
@@ -15,20 +15,19 @@ const coreFeaturesList = [
   "LearnMint Arcade: Sharpen your mind with educational games like Definition Challenge.",
 ];
 
-// Helper to get icon for a specific feature title
-const getIconForFeature = (title: string) => {
-  const item = NAV_ITEMS.flatMap(nav => nav.children ? nav.children : [nav]).find(i => i.title === title);
-  return item ? item.icon : Sparkles; // Default icon
-}
-
 const keyTools = [
   { title: "Generate Study Notes", href: "/notes", description: "Craft comprehensive notes on any subject with AI assistance.", icon: FileText },
   { title: "Custom Test Creator", href: "/custom-test", description: "Design personalized tests from topics or your own notes.", icon: TestTubeDiagonal },
 ];
 
-const otherFeatures = NAV_ITEMS.flatMap(item => 
+// Filter out Dashboard, parent AI Tools, and already listed keyTools for "Explore More"
+const otherFeatures = NAV_ITEMS.flatMap(item =>
     item.children ? item.children.map(child => ({ ...child, parentIcon: item.icon })) : [{ ...item, parentIcon: item.icon }]
-  ).filter(item => item.href !== '/' && item.href !== '#' && !keyTools.find(kt => kt.title === item.title));
+  ).filter(item => 
+    item.href !== '/' && 
+    item.href !== '#' && 
+    !keyTools.find(kt => kt.title === item.title)
+  );
 
 
 export default function DashboardPage() {
