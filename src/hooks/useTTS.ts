@@ -82,8 +82,8 @@ export function useTTS(): TTSHook {
       }
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+      utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
+        console.error('Speech synthesis error:', event.error, '| Utterance text:', `"${utterance.text.substring(0, 50)}..."`, '| Selected voice:', utterance.voice?.name || 'Default');
         setIsSpeaking(false);
       };
       window.speechSynthesis.speak(utterance);
