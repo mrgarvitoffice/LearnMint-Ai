@@ -68,8 +68,8 @@ This section provides details about the application's user interface, frontend t
 *   Node.js (LTS version recommended)
 *   npm or yarn
 *   A Firebase Project (create one at [firebase.google.com](https://firebase.google.com/)).
-    *   Go to **Authentication** -> **Sign-in method** tab.
-    *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, you may need to provide project support email.
+    *   Go to **Authentication** (under Build in the Firebase console) -> **Sign-in method** tab.
+    *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, you may need to provide your project support email.
 
 ### 2. CRITICAL: Set up Environment Variables
 
@@ -84,7 +84,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=1:your-sender-id:web:your-app-id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional: For Firebase Analytics
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional: For Firebase Analytics. Can be left blank or omitted if not used.
 
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
@@ -119,6 +119,7 @@ GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 
 *   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes.
 *   Ensure there are **no extra spaces or quotes** around the variable names or their values in your `.env` file.
+*   `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is optional. If you don't use Firebase Analytics, you can omit this line or leave the value blank.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
 ### 3. Install Dependencies
@@ -140,12 +141,14 @@ yarn dev --port 9002
 
 **Troubleshooting `Firebase: Error (auth/invalid-api-key)`:**
 If you encounter this error, it means the Firebase API key your application is trying to use is incorrect or not being loaded.
-1.  **Verify `.env` File:** Double-check the `.env` file is in the project root, `NEXT_PUBLIC_FIREBASE_API_KEY` is spelled correctly, and its value is accurately copied from your Firebase project settings.
+1.  **Verify `.env` File:** Double-check that the `.env` file is in the project root, `NEXT_PUBLIC_FIREBASE_API_KEY` is spelled correctly, and its value is accurately copied from your Firebase project settings. Ensure no extra spaces or quotes.
 2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file now includes a line:
-    `console.log("Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED");`
-    *   If it says `undefined`, your `.env` file is not being read correctly or the variable is missing/misspelled. Review step 1 and ensure you restarted the server.
+    `Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED`
+    *   If it says `undefined` or shows an obviously incorrect key, your `.env` file is not being read correctly, the variable is missing/misspelled, or you haven't restarted the server. Review step 1 and ensure you restarted.
     *   If it shows the correct API key, the issue might be with the key itself in your Firebase/Google Cloud Console (e.g., restrictions, disabled key). See Firebase documentation for API key troubleshooting.
-3.  **Firebase Project Settings:** Ensure the "Email/Password", "Google", and "Anonymous" sign-in providers are enabled in your Firebase project's Authentication settings. Also, double-check the API key in your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
+3.  **Firebase Project Settings:**
+    *   Ensure the "Email/Password", "Google", and "Anonymous" sign-in providers are enabled in your Firebase project's Authentication settings.
+    *   Double-check the API key in your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
 
 ### 5. CRITICAL: Add Required Static Assets
 *   **PWA Icons**:
@@ -279,4 +282,3 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 ---
 Made by MrGarvit
-
