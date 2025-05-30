@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { DEFINITION_CHALLENGE_WORDS } from '@/lib/constants';
 import type { DefinitionChallengeWord } from '@/lib/types';
 import { Lightbulb, CheckCircle, XCircle, Zap, RotateCcw } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
+import { useTTS } from '@/hooks/useTTS'; // Import useTTS
 
 export function DefinitionChallenge() {
   const [words, setWords] = useState<DefinitionChallengeWord[]>([]);
@@ -22,10 +23,14 @@ export function DefinitionChallenge() {
   const [showHint, setShowHint] = useState(false);
   const [streak, setStreak] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [mistakesMadeThisWord, setMistakesMadeThisWord] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [wordFailedMessage, setWordFailedMessage] = useState('');
   
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5); 
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.4); 
+  const { playSound: playCorrectSound } = useSound('correct'); 
+  const { playSound: playIncorrectSound } = useSound('incorrect'); 
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { speak, selectedVoice, isSpeaking, isPaused } = useTTS(); // Destructure from useTTS
 
   const shuffleArray = (array: DefinitionChallengeWord[]) => {
     const newArray = [...array];
@@ -37,7 +42,7 @@ export function DefinitionChallenge() {
   };
   
   const initializeGame = useCallback(() => {
-    playClickSound(); // Sound for new game / reset
+    playClickSound();
     setWords(shuffleArray(DEFINITION_CHALLENGE_WORDS));
     setCurrentWordIndex(0);
     setGuess('');
@@ -46,41 +51,21 @@ export function DefinitionChallenge() {
     setHintsUsed(0);
     setShowHint(false);
     setGameOver(false);
-    // Streak is intentionally not reset here for "New Game", but is for "Reset Streak"
+    setMistakesMadeThisWord(0);
+    setWordFailedMessage('');
   }, [playClickSound]);
 
-  const handleResetGameAndStreak = () => {
-    playClickSound();
-    setStreak(0); // Reset streak
-    initializeGame(); // Then initialize a new game
-  }
-
   useEffect(() => {
+    const storedHighScore = localStorage.getItem('learnmint-dc-highscore');
+    if (storedHighScore) {
+      setHighScore(parseInt(storedHighScore, 10));
+    }
     initializeGame();
   }, [initializeGame]);
 
   const currentWord = words[currentWordIndex];
 
-  const handleGuessSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    playClickSound();
-    if (!currentWord || gameOver) return;
-
-    if (guess.trim().toLowerCase() === currentWord.term.toLowerCase()) {
-      setFeedback('Correct!');
-      setIsCorrect(true);
-      setStreak(prev => prev + 1);
-      playCorrectSound();
-      setTimeout(nextWord, 1500);
-    } else {
-      setFeedback('Incorrect. Try again or use a hint!');
-      setIsCorrect(false);
-      setStreak(0); 
-      playIncorrectSound();
-    }
-  };
-
-  const nextWord = () => {
+  const nextWord = useCallback(() => {
     if (currentWordIndex < words.length - 1) {
       setCurrentWordIndex(prev => prev + 1);
       setGuess('');
@@ -88,24 +73,76 @@ export function DefinitionChallenge() {
       setIsCorrect(null);
       setHintsUsed(0);
       setShowHint(false);
+      setMistakesMadeThisWord(0);
+      setWordFailedMessage('');
     } else {
       setGameOver(true);
-      setFeedback(`Game Over! You completed all words. Your final streak: ${streak}.`);
+      setFeedback(`Game Over! You completed all words. Your final streak: ${streak}. High Score: ${highScore}`);
+      if (selectedVoice && !isSpeaking && !isPaused) speak(`Game Over! Your final streak is ${streak}. High Score: ${highScore}`);
     }
-  };
+  }, [currentWordIndex, words.length, streak, highScore, selectedVoice, isSpeaking, isPaused, speak]);
+
+
+  const handleGuessSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    playClickSound();
+    if (!currentWord || gameOver || isCorrect === true) return;
+
+    if (guess.trim().toLowerCase() === currentWord.term.toLowerCase()) {
+      setFeedback('Correct!');
+      setIsCorrect(true);
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak > highScore) {
+        setHighScore(newStreak);
+        localStorage.setItem('learnmint-dc-highscore', newStreak.toString());
+      }
+      playCorrectSound();
+      if (selectedVoice && !isSpeaking && !isPaused) speak("Correct!");
+      setTimeout(nextWord, 1500);
+    } else {
+      const newMistakes = mistakesMadeThisWord + 1;
+      setMistakesMadeThisWord(newMistakes);
+      setStreak(0);
+      playIncorrectSound();
+      if (selectedVoice && !isSpeaking && !isPaused) speak("Incorrect.");
+
+      if (newMistakes >= 3) {
+        setFeedback(`Oops! The correct answer was: ${currentWord.term}`);
+        setWordFailedMessage(`The word was: ${currentWord.term}.`);
+        if (selectedVoice && !isSpeaking && !isPaused) speak(`The correct word was ${currentWord.term}.`);
+        setIsCorrect(false); // Mark as incorrect for UI
+        setTimeout(nextWord, 2500); // Give time to see the answer
+      } else {
+        setFeedback(`Incorrect. Attempts remaining: ${3 - newMistakes}`);
+        setIsCorrect(false);
+      }
+    }
+  }, [playClickSound, currentWord, gameOver, isCorrect, guess, streak, highScore, mistakesMadeThisWord, nextWord, playCorrectSound, playIncorrectSound, speak, selectedVoice, isSpeaking, isPaused]);
+
 
   const handleUseHint = () => {
     playClickSound();
-    if (!currentWord || hintsUsed >= 2 || gameOver) return; 
+    if (!currentWord || hintsUsed >= 3 || gameOver || isCorrect === true) return; 
     setShowHint(true);
-    setHintsUsed(prev => prev + 1);
-    if (hintsUsed === 0) {
+    const newHintsUsed = hintsUsed + 1;
+    setHintsUsed(newHintsUsed);
+    if (newHintsUsed === 1) {
       setFeedback(`Hint: ${currentWord.hint}`);
-    } else if (hintsUsed === 1) {
+    } else if (newHintsUsed === 2) {
+      setFeedback(`Hint: The first letter is "${currentWord.term[0]}"`);
+    } else if (newHintsUsed === 3) {
       const lettersToShow = Math.ceil(currentWord.term.length / 3);
       setFeedback(`Hint: Starts with "${currentWord.term.substring(0, lettersToShow)}..."`);
     }
   };
+
+  const handleResetGameAndStreak = () => {
+    playClickSound();
+    setStreak(0); 
+    // High score remains unless explicitly reset elsewhere.
+    initializeGame();
+  }
   
   if (!currentWord && !gameOver) {
     return (
@@ -116,16 +153,19 @@ export function DefinitionChallenge() {
     );
   }
 
-
   return (
-    <Card className="w-full max-w-lg mx-auto">
+    <Card className="w-full max-w-lg mx-auto shadow-lg">
       <CardHeader>
-        <CardTitle className="text-xl">Definition Challenge</CardTitle>
+        <CardTitle className="text-xl text-primary">Definition Challenge</CardTitle>
         <CardDescription>Guess the term based on its definition. Good luck!</CardDescription>
         <div className="flex justify-between text-sm text-muted-foreground mt-2">
           <span>Word: {currentWordIndex + 1} / {words.length}</span>
-          <span>Streak: {streak} <Zap className="inline h-4 w-4 text-yellow-500" /></span>
+          <div className="space-x-3">
+            <span>Streak: {streak} <Zap className="inline h-4 w-4 text-yellow-500" /></span>
+            <span>High Score: {highScore}</span>
+          </div>
         </div>
+         {!gameOver && currentWord && <p className="text-xs text-muted-foreground">Attempts remaining: {3 - mistakesMadeThisWord}</p>}
       </CardHeader>
       <CardContent className="space-y-4">
         {gameOver ? (
@@ -136,8 +176,8 @@ export function DefinitionChallenge() {
           </Alert>
         ) : currentWord ? (
           <>
-            <div className="p-4 bg-muted rounded-md min-h-[6rem]">
-              <p className="text-md">{currentWord.definition}</p>
+            <div className="p-4 bg-muted rounded-md min-h-[6rem] flex items-center justify-center">
+              <p className="text-md text-center">{currentWord.definition}</p>
             </div>
             {showHint && feedback.startsWith("Hint:") && (
               <Alert variant="default" className="bg-primary/10 border-primary/30">
@@ -153,21 +193,28 @@ export function DefinitionChallenge() {
                   id="guess"
                   value={guess}
                   onChange={(e) => setGuess(e.target.value)}
-                  disabled={isCorrect === true || gameOver}
-                  className={isCorrect === false ? 'border-destructive' : ''}
+                  disabled={isCorrect === true || gameOver || mistakesMadeThisWord >=3}
+                  className={cn(isCorrect === false && mistakesMadeThisWord < 3 ? 'border-destructive focus-visible:ring-destructive' : '')}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isCorrect === true || gameOver}>
+              <Button type="submit" className="w-full" disabled={isCorrect === true || gameOver || mistakesMadeThisWord >=3 || !guess.trim()}>
                 Submit Guess
               </Button>
             </form>
+            {wordFailedMessage && (
+                 <Alert variant="destructive">
+                    <XCircle className="h-5 w-5" />
+                    <AlertTitle>Word Failed</AlertTitle>
+                    <AlertDescription>{wordFailedMessage}</AlertDescription>
+                </Alert>
+            )}
             {isCorrect === true && (
               <Alert variant="default" className="bg-green-500/10 border-green-500">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <AlertTitle>Correct!</AlertTitle>
               </Alert>
             )}
-            {isCorrect === false && feedback && !feedback.startsWith("Hint:") && (
+            {isCorrect === false && feedback && !feedback.startsWith("Hint:") && mistakesMadeThisWord < 3 && (
               <Alert variant="destructive">
                 <XCircle className="h-5 w-5" />
                 <AlertTitle>Incorrect</AlertTitle>
@@ -181,10 +228,10 @@ export function DefinitionChallenge() {
         <Button 
             variant="outline" 
             onClick={handleUseHint} 
-            disabled={hintsUsed >= 2 || isCorrect === true || gameOver}
+            disabled={hintsUsed >= 3 || isCorrect === true || gameOver || mistakesMadeThisWord >= 3}
             className="w-full sm:w-auto"
         >
-          <Lightbulb className="w-4 h-4 mr-2" /> Use Hint ({2 - hintsUsed} left)
+          <Lightbulb className="w-4 h-4 mr-2" /> Use Hint ({3 - hintsUsed} left)
         </Button>
         <Button onClick={handleResetGameAndStreak} variant="secondary" className="w-full sm:w-auto">
           <RotateCcw className="w-4 h-4 mr-2" /> New Game / Reset Streak

@@ -12,7 +12,7 @@ import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage';
+import AiGeneratedImage from './AiGeneratedImage'; // Assuming this component exists
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -109,6 +109,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   };
 
   if (!notesContent) {
+    // This state should ideally be handled by the parent component (e.g., showing a skeleton or error)
     return (
       <Card className="mt-0 shadow-lg flex-1 flex flex-col">
         <CardHeader>
@@ -122,18 +123,18 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   }
 
   return (
-    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
-      <CardHeader>
+    <Card className="shadow-lg flex-1 flex flex-col min-h-0"> {/* Removed mt-0 to allow parent control */}
+      <CardHeader className="sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <CardTitle className="text-lg md:text-xl text-primary font-semibold flex items-center gap-2">
-            Study Notes for: {topic}
+          <CardTitle className="text-base md:text-lg text-primary font-semibold flex items-center gap-2 truncate">
+            Notes: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Select
-              value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')}
-              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia');}}
+              value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : '')}
+              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'kai' | 'zia' | null);}}
             >
-              <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Type" /> </SelectTrigger>
+              <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
               <SelectContent>
                 <SelectItem value="zia">Zia</SelectItem>
                 <SelectItem value="kai">Kai</SelectItem>
@@ -158,7 +159,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
-        <ScrollArea className="h-full w-full p-1 sm:p-4 border rounded-md bg-muted/20" ref={notesContentRef}>
+        <ScrollArea className="h-full w-full p-2 sm:p-4 bg-muted/20" ref={notesContentRef}>
            {renderMarkdownWithPlaceholders(notesContent)}
         </ScrollArea>
       </CardContent>

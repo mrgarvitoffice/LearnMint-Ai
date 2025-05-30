@@ -12,32 +12,34 @@ import { useEffect, useRef } from 'react';
 const PAGE_TITLE = "LearnMint Arcade Arena";
 
 export default function ArcadePage() {
-  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('female'); 
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+    let isMounted = true;
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak]);
+    return () => { isMounted = false; };
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
-      <Card className="shadow-xl bg-gradient-to-br from-primary/20 via-background to-background">
+      <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="inline-block p-3 bg-primary/80 rounded-full mb-4">
-            <Gamepad2 className="w-10 h-10 text-primary-foreground" />
+          <div className="inline-block p-3 bg-primary/80 rounded-full mb-4 mx-auto"> {/* Centered icon */}
+            <Gamepad2 className="w-12 h-12 text-primary-foreground" /> {/* Larger icon */}
           </div>
-          <CardTitle className="text-3xl md:text-4xl font-bold text-primary">
+          <CardTitle className="text-2xl md:text-3xl font-bold text-primary">
             {PAGE_TITLE}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">

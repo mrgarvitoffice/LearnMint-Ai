@@ -10,9 +10,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { generateFlashcards, type GenerateFlashcardsOutput, type GenerateFlashcardsInput } from '@/ai/flows/generate-flashcards';
+import { generateFlashcardsAction } from '@/lib/actions'; // Using the renamed server action
+import type { GenerateFlashcardsOutput, GenerateFlashcardsInput } from '@/lib/types'; // Updated types
 import { Loader2, ListChecks, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { FlashcardComponent } from '@/components/features/flashcards/Flashcard';
+import { FlashcardComponent } from '@/components/features/flashcards/Flashcard'; // Assuming this is the interactive one
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -32,7 +33,7 @@ export default function FlashcardsPage() {
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
-  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
@@ -43,7 +44,7 @@ export default function FlashcardsPage() {
       numFlashcards: 10,
     }
   });
-  const topicValue = watch('topic'); // To display in the results card
+  const topicValue = watch('topic'); 
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -54,25 +55,22 @@ export default function FlashcardsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoading && !flashcardsData) {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !flashcardsData) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => {
-      isMounted = false;
-      // Optional: cancelTTS if it was specifically this page's title speaking
-    };
-  }, [selectedVoice, isTTSSpeaking, speak, isLoading, flashcardsData]);
+    return () => { isMounted = false; };
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, flashcardsData]);
 
   useEffect(() => {
-    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading && generatingMessageSpokenRef.current) { 
       generatingMessageSpokenRef.current = false; 
     }
-  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
+  }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
@@ -81,26 +79,26 @@ export default function FlashcardsPage() {
     setCurrentCardIndex(0);
     pageTitleSpokenRef.current = true; 
 
-    if (selectedVoice && !isTTSSpeaking && !generatingMessageSpokenRef.current) {
+    if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
 
     try {
-      const result = await generateFlashcards(data);
+      const result = await generateFlashcardsAction(data); // Using the new action name
       if (result.flashcards && result.flashcards.length > 0) {
         setFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: `Your flashcards for "${data.topic}" are ready.` });
-        if (selectedVoice && !isTTSSpeaking) speak("Flashcards ready!");
+        if (selectedVoice && !isSpeaking && !isPaused) speak("Flashcards ready!");
       } else {
         toast({ title: 'No Flashcards', description: 'The AI returned no flashcards for this topic.', variant: 'destructive' });
-        if (selectedVoice && !isTTSSpeaking) speak("Sorry, no flashcards were returned.");
+        if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, no flashcards were returned.");
       }
     } catch (error) {
       console.error('Error generating flashcards:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate flashcards. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      if (selectedVoice && !isTTSSpeaking) speak("Sorry, there was an error generating flashcards.");
+      if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, there was an error generating flashcards.");
     } finally {
       setIsLoading(false);
       generatingMessageSpokenRef.current = false;
@@ -125,12 +123,12 @@ export default function FlashcardsPage() {
     playClickSound();
     setFlashcardsData(null); 
     setCurrentCardIndex(0);
-    pageTitleSpokenRef.current = false; // Allow title to be spoken again
+    pageTitleSpokenRef.current = false; 
   }
 
-  return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
-      {!flashcardsData ? (
+  if (!flashcardsData) {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
         <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
@@ -162,37 +160,41 @@ export default function FlashcardsPage() {
             </CardFooter>
           </form>
         </Card>
-      ) : (
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center min-h-[calc(100vh-12rem)] space-y-8">
         <Card className="w-full shadow-xl">
-          <CardHeader>
+        <CardHeader>
             <CardTitle className="text-xl text-primary">Flashcards for: {topicValue}</CardTitle>
             <CardDescription className="text-sm">
-              Card {currentCardIndex + 1} of {flashcardsData.flashcards.length}
+            Card {currentCardIndex + 1} of {flashcardsData.flashcards.length}
             </CardDescription>
-             <Progress value={((currentCardIndex + 1) / flashcardsData.flashcards.length) * 100} className="w-full mt-2 h-2.5" />
-          </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-6 p-6 min-h-[350px] justify-center">
+            <Progress value={((currentCardIndex + 1) / flashcardsData.flashcards.length) * 100} className="w-full mt-2 h-2.5" />
+        </CardHeader>
+        <CardContent className="flex flex-col items-center space-y-6 p-6 min-h-[350px] justify-center">
             <FlashcardComponent
-              term={flashcardsData.flashcards[currentCardIndex].term}
-              definition={flashcardsData.flashcards[currentCardIndex].definition}
-              className="w-full max-w-lg h-64 md:h-72" // Adjusted height
+            term={flashcardsData.flashcards[currentCardIndex].term}
+            definition={flashcardsData.flashcards[currentCardIndex].definition}
+            className="w-full max-w-lg h-64 md:h-72"
             />
-          </CardContent>
-           <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 p-6 border-t">
-             <div className="flex gap-3 w-full sm:w-auto">
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 p-6 border-t">
+            <div className="flex gap-3 w-full sm:w-auto">
                 <Button variant="outline" onClick={handlePrevCard} disabled={currentCardIndex === 0} className="flex-1 sm:flex-initial">
                     <ChevronLeft className="w-4 h-4 mr-2" /> Previous
                 </Button>
                 <Button variant="outline" onClick={handleNextCard} disabled={currentCardIndex === flashcardsData.flashcards.length - 1} className="flex-1 sm:flex-initial">
                     Next <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
-             </div>
-             <Button onClick={handleCreateNewSet} variant="secondary" className="w-full mt-3 sm:mt-0 sm:w-auto">
+            </div>
+            <Button onClick={handleCreateNewSet} variant="secondary" className="w-full mt-3 sm:mt-0 sm:w-auto">
                 Create New Set
-              </Button>
-           </CardFooter>
+            </Button>
+        </CardFooter>
         </Card>
-      )}
     </div>
   );
 }

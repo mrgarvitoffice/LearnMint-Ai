@@ -23,53 +23,38 @@ interface NewsPageFilters {
   category: string; 
 }
 
-const initialFilters: NewsPageFilters = {
-  query: '',
-  country: '', 
-  stateOrRegion: '', 
-  city: '',
-  category: 'top', 
-};
+const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top' };
 
 export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
 
-  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('female'); 
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+    let isMounted = true;
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak]);
+    return () => { isMounted = false; };
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-  } = useInfiniteQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
     queryFn: ({ pageParam }) => fetchNews({
-        query: appliedFilters.query,
-        country: appliedFilters.country, 
-        stateOrRegion: appliedFilters.stateOrRegion,
-        city: appliedFilters.city,
-        category: appliedFilters.category, 
-        page: pageParam
+        query: appliedFilters.query, country: appliedFilters.country, 
+        stateOrRegion: appliedFilters.stateOrRegion, city: appliedFilters.city,
+        category: appliedFilters.category, page: pageParam
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -78,45 +63,26 @@ export default function NewsPage() {
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      
-      if (name === 'country') {
-        newFilters.stateOrRegion = '';
-        newFilters.city = '';
-      }
+      if (name === 'country') { newFilters.stateOrRegion = ''; newFilters.city = ''; }
       return newFilters;
     });
   };
 
-
-  const handleApplyFilters = () => {
-    setAppliedFilters(filters);
-  };
-
-  const handleResetFilters = () => {
-    setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
-  };
+  const handleApplyFilters = () => { setAppliedFilters(filters); };
+  const handleResetFilters = () => { setFilters(initialFilters); setAppliedFilters(initialFilters); };
 
   const articles = data?.pages.flatMap(page => page.results) ?? [];
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
-      <Card className="shadow-xl bg-card/80 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
-            <Newspaper className="w-7 h-7" />
-            {PAGE_TITLE}
-          </CardTitle>
+      <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center mb-4"><Newspaper className="h-12 w-12 text-primary" /></div>
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
         <CardContent>
-          <NewsFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onApplyFilters={handleApplyFilters}
-            onResetFilters={handleResetFilters}
-            isLoading={isLoading || isFetchingNextPage}
-          />
+          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
         </CardContent>
       </Card>
 
@@ -126,7 +92,6 @@ export default function NewsPage() {
           <p className="ml-4 text-lg text-muted-foreground">Fetching latest news...</p>
         </div>
       )}
-
       {isError && (
         <Alert variant="destructive" className="mt-6">
           <AlertTriangle className="h-5 w-5" />
@@ -134,34 +99,26 @@ export default function NewsPage() {
           <AlertDescription>
             Error fetching news: {error instanceof Error ? error.message : "An unknown error occurred."}
             This could be due to an invalid or rate-limited API key for Newsdata.io, or a network issue.
-            Please check your NEWSDATA_API_KEY in your .env file and ensure it's set correctly in your Firebase environment variables if deployed.
+            Please check your NEWSDATA_API_KEY in your .env file and ensure it's set correctly if deployed.
           </AlertDescription>
         </Alert>
       )}
-
       {!isLoading && !isError && articles.length === 0 && (
         <div className="text-center py-10">
           <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-xl text-muted-foreground">No news articles found.</p>
-          <p className="text-sm text-muted-foreground/80">Try adjusting your search or filters, or check if the Newsdata.io API key is working.</p>
+          <p className="text-sm text-muted-foreground/80">Try adjusting your search or filters.</p>
         </div>
       )}
-
       {articles.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {articles.map((article) => (
-            <NewsCard key={article.article_id || article.link} article={article} />
-          ))}
+          {articles.map((article) => <NewsCard key={article.article_id || article.link} article={article} />)}
         </div>
       )}
-
       {hasNextPage && (
         <div className="flex justify-center mt-8">
           <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-            {isFetchingNextPage ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : null}
-            Load More News
+            {isFetchingNextPage && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Load More News
           </Button>
         </div>
       )}

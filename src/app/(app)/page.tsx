@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { NAV_ITEMS, APP_NAME } from "@/lib/constants";
+import { APP_NAME } from "@/lib/constants";
 import { ArrowRight, Lightbulb, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
+const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards via AI.",
@@ -24,19 +25,16 @@ const coreFeaturesListText = [
   "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge).",
 ];
 
-const keyToolCards = [
-  { title: "Generate Study Notes", href: "/notes", description: "Craft comprehensive notes on any subject.", icon: FileText },
-  { title: "Custom Test Creator", href: "/custom-test", description: "Design personalized tests from topics or notes.", icon: TestTubeDiagonal },
-];
-
 const exploreFeaturesCards = [
-  { title: "AI Quiz Creator", href: "/quiz", description: "Generate interactive quizzes on demand.", icon: HelpCircle },
-  { title: "AI Flashcards", href: "/flashcards", description: "Quickly create flashcards for review.", icon: ListChecks },
-  { title: "AI Chatbot (Megumin)", href: "/chatbot", description: "Chat with our witty AI assistant.", icon: Bot },
-  { title: "Calculator & Converter", href: "/calculator", description: "Solve equations and convert units.", icon: CalculatorIcon },
-  { title: "Daily News Digest", href: "/news", description: "Stay updated with the latest news.", icon: Newspaper },
-  { title: "Resource Library", href: "/library", description: "Access textbooks, math facts, and more.", icon: BookMarked },
-  { title: "LearnMint Arcade", href: "/arcade", description: "Play fun and educational games.", icon: Gamepad2 },
+  { title: "Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
+  { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests from topics or notes." },
+  { title: "AI Quiz Creator", href: "/quiz", icon: HelpCircle, description: "Generate interactive quizzes on demand." },
+  { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards for review." },
+  { title: "AI Chatbot (Megumin)", href: "/chatbot", icon: Bot, description: "Chat with our witty AI assistant." },
+  { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations and convert units." },
+  { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with the latest news." },
+  { title: "Resource Library", href: "/library", icon: BookMarked, description: "Access textbooks, math facts, and more." },
+  { title: "LearnMint Arcade", href: "/arcade", icon: Gamepad2, description: "Play fun and educational games." },
 ];
 
 const motivationalQuotes = [
@@ -52,14 +50,14 @@ const motivationalQuotes = [
 
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
   
-  const hasWelcomedRef = useRef(false);
+  const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
@@ -87,15 +85,13 @@ export default function DashboardPage() {
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (
-      selectedVoice &&
-      !isSpeaking &&
-      !hasWelcomedRef.current
-    ) {
-      speak(`Welcome to ${APP_NAME}!`);
-      hasWelcomedRef.current = true;
+    let isMounted = true;
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isSpeaking, speak]);
+    return () => { isMounted = false; };
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -125,7 +121,7 @@ export default function DashboardPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <header className="text-center">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
-          Welcome to {APP_NAME}!
+          {PAGE_TITLE}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant. Explore tools designed to generate study materials, create custom assessments, and make learning more interactive and efficient.
@@ -139,7 +135,7 @@ export default function DashboardPage() {
             <CardTitle className="text-2xl text-primary">Core Features Overview</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground pt-1">
-            {APP_NAME} offers a suite of AI-driven tools and resources to enhance your learning experience:
+            LearnMint offers a suite of AI-driven tools and resources to enhance your learning experience:
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -159,28 +155,25 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <section className="lg:col-span-1 space-y-6">
-          <h2 className="text-2xl font-semibold text-primary mb-4">Key Tools</h2>
-          {keyToolCards.map((tool) => {
-            const Icon = tool.icon;
+      <section>
+         <h2 className="text-2xl font-semibold text-primary mb-6 text-center sm:text-left">Explore Features</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {exploreFeaturesCards.map((item) => {
+            const Icon = item.icon;
             return (
-              <Link href={tool.href} key={tool.href} legacyBehavior>
-                <a className="block">
-                  <Card className="hover:bg-primary/10 hover:shadow-2xl transition-all duration-300 h-full flex flex-col group">
-                    <CardHeader className="flex-row items-center gap-4 pb-3">
-                      <Icon className="h-8 w-8 text-accent group-hover:text-primary transition-colors" />
-                      <CardTitle className="text-xl text-foreground group-hover:text-primary transition-colors">{tool.title}</CardTitle>
+              <Link href={item.href} key={item.href} legacyBehavior>
+                <a className="block h-full">
+                  <Card className="hover:bg-accent/10 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group">
+                     <CardHeader className="pb-2 pt-4">
+                      <div className="flex items-center gap-3 mb-2">
+                          <Icon className="h-6 w-6 text-muted-foreground group-hover:text-accent transition-colors" />
+                          <CardTitle className="text-base font-medium text-foreground group-hover:text-accent transition-colors">{item.title}</CardTitle>
+                      </div>
+                      <CardDescription className="text-xs text-muted-foreground/80 pt-1">{item.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-grow">
-                      <p className="text-sm text-muted-foreground">
-                        {tool.description}
-                      </p>
-                    </CardContent>
-                    <CardFooter>
-                       <Button variant="ghost" className="w-full justify-start text-primary hover:text-primary/90 p-0">
-                        Go to {tool.title.split(' ')[0]} <ArrowRight className="ml-2 h-4 w-4" />
+                    <CardFooter className="pt-2 pb-4">
+                       <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent/80">
+                        Open {item.title.split(' ')[0]} <ArrowRight className="ml-1 h-3 w-3" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -188,55 +181,25 @@ export default function DashboardPage() {
               </Link>
             );
           })}
-        </section>
+           {dailyQuote && (
+            <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group col-span-1 sm:col-span-2 lg:col-span-1"> {/* Adjust span for positioning */}
+              <CardHeader className="pb-2 pt-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
+                  <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Daily Motivation</CardTitle>
+                </div>
+                <CardDescription className="text-base text-accent font-semibold pt-1 italic">
+                  "{dailyQuote.quote}"
+                </CardDescription>
+              </CardHeader>
+              <CardFooter className="pt-2 pb-4">
+                <p className="text-xs text-muted-foreground/70">- {dailyQuote.author}</p>
+              </CardFooter>
+            </Card>
+          )}
+        </div>
+      </section>
 
-        <section className="lg:col-span-2">
-           <h2 className="text-2xl font-semibold text-primary mb-4">Explore More Features</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
-            {exploreFeaturesCards.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link href={item.href} key={item.href} legacyBehavior>
-                  <a className="block h-full">
-                    <Card className="hover:bg-accent/10 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group">
-                       <CardHeader className="pb-2 pt-4">
-                        <div className="flex items-center gap-3 mb-2">
-                            <Icon className="h-6 w-6 text-muted-foreground group-hover:text-accent transition-colors" />
-                            <CardTitle className="text-base font-medium text-foreground group-hover:text-accent transition-colors">{item.title}</CardTitle>
-                        </div>
-                        <CardDescription className="text-xs text-muted-foreground/80 pt-1">{item.description}</CardDescription>
-                      </CardHeader>
-                      <CardFooter className="pt-2 pb-4">
-                         <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent/80">
-                          Open {item.title.split(' ')[0]} <ArrowRight className="ml-1 h-3 w-3" />
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </a>
-                </Link>
-              );
-            })}
-             {dailyQuote && (
-              <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group">
-                <CardHeader className="pb-2 pt-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
-                    <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Daily Motivation</CardTitle>
-                  </div>
-                  <CardDescription className="text-base text-accent font-semibold pt-1 italic">
-                    "{dailyQuote.quote}"
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="pt-2 pb-4">
-                  <p className="text-xs text-muted-foreground/70">- {dailyQuote.author}</p>
-                </CardFooter>
-              </Card>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* Recent Topics Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center justify-between">
