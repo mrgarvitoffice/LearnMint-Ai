@@ -51,7 +51,7 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('kai');
+      setVoicePreference('megumin');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -64,9 +64,11 @@ export default function QuizPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
+      if (isMounted && isSpeaking && (pageTitleSpokenRef.current || generatingMessageSpokenRef.current) ) {
+        // cancelTTS(); // Only cancel if this effect instance initiated the speech
+      }
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {

@@ -27,7 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const PAGE_TITLE_BASE = "Study Hub";
 
 const NotesLoadingSkeleton = () => (
-  <Card>
+  <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
     <CardContent className="p-6">
       <div className="space-y-3">
         <Skeleton className="h-8 w-3/4" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" />
@@ -37,7 +37,7 @@ const NotesLoadingSkeleton = () => (
   </Card>
 );
 const QuizLoadingSkeleton = () => (
-  <Card>
+  <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
     <CardContent className="p-6">
       <div className="space-y-3">
         <Skeleton className="h-6 w-1/2 mb-4" />
@@ -47,7 +47,7 @@ const QuizLoadingSkeleton = () => (
   </Card>
 );
 const FlashcardsLoadingSkeleton = () => (
-   <Card>
+   <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
     <CardContent className="p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
@@ -92,17 +92,16 @@ function StudyPageContent() {
         queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
         queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
         queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
-    } else if (!decodedTopic && activeTopic) {
-      setActiveTopic(""); 
+    } else if (!decodedTopic && !activeTopic) { // Only redirect if activeTopic is also not set (initial load with no topic)
       toast({ title: "No Topic Specified", description: "Please generate materials from the main page or enter a topic.", variant: "destructive" });
-      router.push('/notes'); // Redirect to notes page if no topic
+      router.push('/notes'); 
     }
   }, [topicParam, activeTopic, toast, queryClient, router]);
 
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('kai');
+      setVoicePreference('megumin');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -153,12 +152,12 @@ function StudyPageContent() {
   } = useQuery<GenerateQuizQuestionsOutput, Error>({
     queryKey: ["quizQuestions", activeTopic],
     queryFn: async () => {
-      if (!commonQueryOptions.enabled) throw new Error("A valid topic is required.");
+      if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
       toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${activeTopic}. Difficulty: Medium.`})
       return generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (isLoadingNotes && !notesData)), // Also fetch if notes are loading initially
+    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (!notesData && isLoadingNotes)), 
   });
 
   const {
@@ -171,12 +170,12 @@ function StudyPageContent() {
   } = useQuery<GenerateFlashcardsOutput, Error>({
     queryKey: ["flashcards", activeTopic],
     queryFn: async () => {
-      if (!commonQueryOptions.enabled) throw new Error("A valid topic is required.");
+      if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
       toast({title: "Generating Flashcards...", description: `Fetching 20 flashcards for ${activeTopic}.`})
       return generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (isLoadingNotes && !notesData)), // Also fetch if notes are loading initially
+    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (!notesData && isLoadingNotes)), 
   });
 
 
@@ -188,10 +187,13 @@ function StudyPageContent() {
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
+      refetchNotes();
+      refetchQuiz();
+      refetchFlashcards();
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, queryClient, toast, playClickSound]);
+  }, [activeTopic, queryClient, toast, playClickSound, refetchNotes, refetchQuiz, refetchFlashcards]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
@@ -199,7 +201,7 @@ function StudyPageContent() {
   };
 
   const renderContent = () => {
-    if (!activeTopic) { // No topicParam, or explicitly cleared
+    if (!activeTopic || activeTopic === "No topic provided") { 
       return (
         <Alert variant="default" className="mt-6 flex flex-col items-center justify-center text-center p-6">
           <Home className="h-10 w-10 text-muted-foreground mb-3" />
@@ -270,3 +272,4 @@ export default function StudyPage() {
     </Suspense>
   );
 }
+

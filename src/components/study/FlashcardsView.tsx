@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
-import FlashcardItem from './FlashcardItem';
+import FlashcardItem from './FlashcardItem'; // Assuming FlashcardItem is in the same directory or adjust path
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import type { Flashcard as FlashcardType } from '@/lib/types';
@@ -33,13 +33,13 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   const handlePrevCard = () => {
     playClickSound();
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev + 1);
+      setCurrentCardIndex(prev => prev - 1); // Corrected from prev + 1
     }
   };
 
   if (!flashcards || flashcards.length === 0) {
     return (
-      <Card className="mt-0 shadow-lg flex-1 flex flex-col"> 
+      <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> 
         <CardHeader>
           <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         </CardHeader>
@@ -54,7 +54,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 
   if (!currentFlashcard) { 
     return (
-        <Card className="mt-0 shadow-lg flex-1 flex flex-col">
+        <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
             <CardHeader>
                 <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
             </CardHeader>

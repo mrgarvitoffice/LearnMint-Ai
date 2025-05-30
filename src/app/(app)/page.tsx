@@ -22,7 +22,7 @@ const coreFeaturesListText = [
   "<strong>Scientific Calculator & Unit Converter:</strong> For calculations & unit conversions.",
   "<strong>Daily News Digest:</strong> Filtered news articles from various sources.",
   "<strong>Resource Library:</strong> Explore textbooks, search books/videos, & get Math Facts.",
-  "<strong>Educational Game:</strong> Play 'Definition Challenge' & more coming soon.",
+  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge) & more coming soon.",
 ];
 
 const exploreFeaturesCards = [
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('kai'); 
+      setVoicePreference('megumin'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -92,7 +92,7 @@ export default function DashboardPage() {
     }
     return () => { 
       isMounted = false;
-      // Optional: cancelTTS() if speech should stop on unmount
+      // Optional: cancelTTS() if speech should stop on unmount and was initiated by this effect
     };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
@@ -116,7 +116,7 @@ export default function DashboardPage() {
 
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
-    router.push(`/notes?topic=${encodeURIComponent(topic)}`); // Changed from /study to /notes
+    router.push(`/notes?topic=${encodeURIComponent(topic)}`);
   }
 
 

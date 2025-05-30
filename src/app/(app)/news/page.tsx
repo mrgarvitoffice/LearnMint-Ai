@@ -36,7 +36,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('kai'); 
+      setVoicePreference('megumin'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -60,7 +60,7 @@ export default function NewsPage() {
         stateOrRegion: appliedFilters.stateOrRegion, city: appliedFilters.city,
         category: appliedFilters.category, page: pageParam
     }),
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: undefined as string | undefined, // Ensure initialPageParam is correct type
     getNextPageParam: (lastPage) => lastPage.nextPage,
     refetchOnWindowFocus: false, 
   });

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -48,7 +48,7 @@ export default function FlashcardsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('kai'); 
+      setVoicePreference('megumin'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -61,9 +61,11 @@ export default function FlashcardsPage() {
     }
     return () => { 
       isMounted = false;
-      if(isMounted && isSpeaking) cancelTTS();
+       if (isMounted && isSpeaking && (pageTitleSpokenRef.current || generatingMessageSpokenRef.current)) {
+        // cancelTTS(); // Only cancel if this effect instance initiated the speech
+      }
      };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {

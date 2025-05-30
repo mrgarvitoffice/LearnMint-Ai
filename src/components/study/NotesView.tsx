@@ -29,22 +29,30 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     isPaused,
     selectedVoice,
     setVoicePreference,
-    voicePreference
+    voicePreference,
+    supportedVoices
   } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
 
   const notesContentRef = useRef<HTMLDivElement>(null);
   const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
+  const voicePreferenceWasSetRef = useRef(false);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+        setVoicePreference('megumin'); // Default to female for reading notes
+        voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     if (notesContent) {
-      // Remove Markdown for cleaner TTS, especially image prompts
       const textForSpeech = notesContent
         .replace(/\[VISUAL_PROMPT:[^\]]+\]/gi, "(visual aid suggested)") 
-        .replace(/#+\s*/g, '') // Remove headings
-        .replace(/(\*\*|__)(.*?)\1/g, '$2') // Remove bold
-        .replace(/(\*|_)(.*?)\1/g, '$2'); // Remove italics
+        .replace(/#+\s*/g, '') 
+        .replace(/(\*\*|__)(.*?)\1/g, '$2') 
+        .replace(/(\*|_)(.*?)\1/g, '$2'); 
       setCleanedNotesForTTS(textForSpeech);
     }
   }, [notesContent]);
@@ -137,7 +145,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Select
-              value={voicePreference || ''}
+              value={voicePreference || 'megumin'}
               onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'megumin' | 'kai' | null);}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>

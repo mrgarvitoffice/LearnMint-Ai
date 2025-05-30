@@ -39,65 +39,40 @@ export default function ChatbotPage() {
   } = useTTS();
 
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false); // For main page title voice preference
-  const meguminVoicePreferenceSetRef = useRef(false); // For Megumin's replies voice preference
+  const voicePreferenceWasSetRef = useRef(false); 
+  const meguminVoicePreferenceSetRef = useRef(false); 
   const initialGreetingSpokenRef = useRef(false);
   const currentSpokenMessageRef = useRef<string | null>(null);
 
-  // Effect for page title voice preference
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('kai'); // Default main page announcement to Kai
+      setVoicePreference('megumin'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
-  // Effect for Megumin's replies voice preference (independent of page title voice)
   useEffect(() => {
-    if (supportedVoices.length > 0 && !meguminVoicePreferenceSetRef.current && voicePreference !== 'megumin') {
-      // This will be set by the UI dropdown, but as a fallback, if the user hasn't touched it
-      // we ensure Megumin's preference is set once if possible
-      if (!voicePreference || voicePreference !== 'megumin') { 
-          // No, this is wrong. The UI dropdown will handle setting Megumin's preference.
-          // This effect is just to ensure a voice is available.
-      }
-      // The dropdown itself will call setVoicePreference('megumin' or 'kai') for the chatbot's replies.
-      meguminVoicePreferenceSetRef.current = true; 
+    if (supportedVoices.length > 0 && !meguminVoicePreferenceSetRef.current) {
+        // The UI dropdown for Megumin's voice will default to 'megumin' preference
+        // We ensure a general voice preference is set first for the page title
+        if (voicePreference !== 'megumin' && voicePreference !== 'kai') { // if not already set by user for Megumin specifically
+             // This is handled by the main page title preference logic below.
+        }
+        meguminVoicePreferenceSetRef.current = true;
     }
-  }, [supportedVoices, voicePreference]);
+  }, [supportedVoices, voicePreference, setVoicePreference]);
 
 
-  // Effect for speaking the page title
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      // Check if current preference is Kai for page title. If not, temporarily switch for title.
-      const originalPreference = voicePreference;
-      if (originalPreference !== 'kai') {
-        setVoicePreference('kai'); // Ensure Kai for page title
-         // We need to wait for this preference to apply and selectedVoice to update
-        setTimeout(() => {
-            if (isMounted && selectedVoice?.name.toLowerCase().includes('kai') && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-                 speak(PAGE_TITLE);
-                 pageTitleSpokenRef.current = true;
-                 setVoicePreference(originalPreference); // Revert to original after speaking title
-            } else if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-                // Fallback if Kai couldn't be set quickly, speak with current selectedVoice
-                speak(PAGE_TITLE);
-                pageTitleSpokenRef.current = true;
-                setVoicePreference(originalPreference);
-            }
-        }, 100); // Small delay
-      } else {
-        speak(PAGE_TITLE);
-        pageTitleSpokenRef.current = true;
-      }
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
-      // Optional: cancelTTS() if speech should stop on unmount
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, voicePreference, setVoicePreference]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   useEffect(() => {
@@ -107,7 +82,6 @@ export default function ChatbotPage() {
     }
   }, [messages]);
 
-  // Effect for initial greeting
   useEffect(() => {
     const initialGreeting: ChatMessageType = {
       id: 'initial-greeting', role: 'assistant',
@@ -121,8 +95,7 @@ export default function ChatbotPage() {
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice, voicePreference]); // Ensure speak dependency is present if used
+  }, [selectedVoice, voicePreference, speak, isSpeaking, isPaused]); // Dependencies for initial greeting
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
@@ -144,8 +117,7 @@ export default function ChatbotPage() {
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Use the voicePreference which is controlled by the dropdown for Megumin's replies
-      if (selectedVoice && voicePreference && !isSpeaking && !isPaused) { 
+      if (selectedVoice && voicePreference === 'megumin' && !isSpeaking && !isPaused) { 
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
@@ -170,21 +142,16 @@ export default function ChatbotPage() {
     }
     if (!textToPlay) return;
 
-    if (isSpeaking && !isPaused) pauseTTS();
+    if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay);
+    else if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
-    else speak(textToPlay);
   };
 
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
   
-  // Handler for the voice preference dropdown specific to Megumin's replies
   const handleMeguminVoicePreferenceChange = (value: string) => {
     playClickSound();
     setVoicePreference(value as 'megumin' | 'kai' | null);
-    // This will trigger the useTTS hook to repopulate and select the voice.
-    // If a message is currently being spoken, it might get interrupted/restarted if the voice changes.
-    // Consider cancelling current speech before changing preference if that's desired.
-    // cancelTTS(); 
   };
 
 
@@ -201,7 +168,7 @@ export default function ChatbotPage() {
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
               <Select
-                value={voicePreference || 'megumin'} // Default to megumin for her replies
+                value={voicePreference || 'megumin'} 
                 onValueChange={handleMeguminVoicePreferenceChange}
               >
                 <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
