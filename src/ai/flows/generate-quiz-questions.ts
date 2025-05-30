@@ -19,14 +19,16 @@ const QuizQuestionSchema = z.object({
   explanation: z.string().optional().describe('A brief explanation for why the answer is correct or relevant context.'),
 });
 
-export const GenerateQuizQuestionsInputSchema = z.object({
+// NOT EXPORTED as an object
+const GenerateQuizQuestionsInputSchema = z.object({
   topic: z.string().describe('The academic topic for which to generate quiz questions.'),
   numQuestions: z.number().min(1).max(50).describe('The number of quiz questions to generate.'),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional().describe('The difficulty level of the quiz questions.'),
 });
 export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
 
-export const GenerateQuizQuestionsOutputSchema = z.object({
+// NOT EXPORTED as an object
+const GenerateQuizQuestionsOutputSchema = z.object({
   questions: z.array(QuizQuestionSchema).describe('An array of generated quiz questions.'),
 });
 export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
