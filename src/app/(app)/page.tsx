@@ -79,24 +79,27 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); 
+      console.log("Dashboard: Setting initial voice preference to luma");
+      setVoicePreference('luma');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
+    // Only speak if a voice is selected, TTS is not already active, and welcome message hasn't been played
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      console.log(`Dashboard: Attempting to speak PAGE_TITLE ("${PAGE_TITLE}") with voice: ${selectedVoice.name}`);
+      pageTitleSpokenRef.current = true; // Set before speak to prevent re-entry if speak itself causes a quick state change leading to re-render
       speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
     }
-    return () => { 
+    return () => {
       isMounted = false;
-      if (isMounted && isSpeaking) { // Cancel speech if component unmounts while speaking
-        cancelTTS();
-      }
+      // No need to cancel TTS here specifically for the page title,
+      // as navigating away will unmount and the useTTS hook handles global cancel.
+      // Plus, the speak() in useTTS already cancels previous speech.
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]); // Removed pageTitleSpokenRef from deps as it's a ref
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -158,7 +161,7 @@ export default function DashboardPage() {
       </div>
 
       <section>
-         <h2 className="text-2xl font-semibold text-primary mb-6 text-center sm:text-left">Explore Features</h2>
+         <h2 className="text-2xl font-semibold text-primary mb-6 text-center sm:text-left">Explore More Features</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {exploreFeaturesCards.map((item) => {
             const Icon = item.icon;
