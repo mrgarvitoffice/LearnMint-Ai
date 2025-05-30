@@ -1,7 +1,8 @@
+
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bot, User } from 'lucide-react';
+import { Bot, User, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 
@@ -14,6 +15,23 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const alignment = isUser ? 'items-end' : 'items-start';
   const bubbleColor = isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground';
   
+  if (message.type === 'typing_indicator') {
+    return (
+      <div className={cn('flex flex-col gap-2 py-3', alignment)}>
+        <div className={cn('flex gap-3 items-start', isUser ? 'flex-row-reverse' : 'flex-row')}>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={`https://placehold.co/40x40.png?text=AI`} />
+            <AvatarFallback><Bot /></AvatarFallback>
+          </Avatar>
+          <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md flex items-center gap-2', bubbleColor)}>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm italic">{message.content || "Megumin is thinking..."}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex flex-col gap-2 py-3', alignment)}>
       <div className={cn('flex gap-3 items-start', isUser ? 'flex-row-reverse' : 'flex-row')}>

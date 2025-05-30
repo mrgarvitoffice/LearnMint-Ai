@@ -1,8 +1,9 @@
+
 export interface QuizQuestion {
   question: string;
   options: string[];
   answer: string;
-  explanation?: string; // Added optional explanation
+  explanation?: string;
 }
 
 export interface Flashcard {
@@ -87,18 +88,21 @@ export interface ChatMessage {
   content: string;
   image?: string; // Base64 data URI for user images
   timestamp: Date;
+  type?: 'typing_indicator'; // Added for typing indicator
 }
 
 // For Custom Test
 export interface TestSettings {
   topics: string[];
   notes?: string;
+  sourceType?: 'topic' | 'notes' | 'recent';
+  selectedRecentTopics?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   numQuestions: number;
   timer?: number; // in minutes, 0 for no timer
 }
 
-export interface TestQuestion extends QuizQuestion { // Inherits explanation from QuizQuestion
+export interface TestQuestion extends QuizQuestion {
   userAnswer?: string;
   isCorrect?: boolean;
 }
