@@ -5,9 +5,9 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS, APP_NAME } from "@/lib/constants";
-import { ArrowRight, Lightbulb, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Info } from "lucide-react";
+import { ArrowRight, Lightbulb, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Info, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
-import { useTTS } from '@/hooks/useTTS'; 
+import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 
@@ -39,17 +39,32 @@ const exploreFeaturesCards = [
   { title: "LearnMint Arcade", href: "/arcade", description: "Play fun and educational games.", icon: Gamepad2 },
 ];
 
+const motivationalQuotes = [
+  { quote: "The only way to do great work is to love what you do. ✨", author: "Steve Jobs" },
+  { quote: "Believe you can and you're halfway there. 🚀", author: "Theodore Roosevelt" },
+  { quote: "Strive for progress, not perfection. 🌱", author: "Unknown" },
+  { quote: "Your limitation is only your imagination. 🧠", author: "Unknown" },
+  { quote: "Dream bigger. Do bigger. 💪", author: "Unknown" },
+  { quote: "The future belongs to those who believe in the beauty of their dreams. 🌟", author: "Eleanor Roosevelt" },
+  { quote: "Every day is a new opportunity to learn and grow. 📚", author: "Unknown" },
+  { quote: "Don't watch the clock; do what it does. Keep going. 🕰️", author: "Sam Levenson"}
+];
+
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice, voicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const hasWelcomedRef = useRef(false);
+  const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const router = useRouter();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
+  const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
 
   useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+    setDailyQuote(motivationalQuotes[randomIndex]);
+
     if (typeof window !== 'undefined') {
       const storedTopics = localStorage.getItem(RECENT_TOPICS_LS_KEY);
       if (storedTopics) {
@@ -85,7 +100,6 @@ export default function DashboardPage() {
     router.push(`/notes?topic=${encodeURIComponent(topic)}`);
   }
 
-
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
       setVoicePreference('zia');
@@ -95,20 +109,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (
-      supportedVoices.length > 0 &&
-      voicePreferenceWasSetRef.current && 
-      selectedVoice &&                
+      selectedVoice &&
       !isSpeaking &&
-      !hasWelcomedRef.current         
+      !pageTitleSpokenRef.current
     ) {
-      speak("Welcome to LearnMint!");
-      hasWelcomedRef.current = true;   
+      speak(`Welcome to ${APP_NAME}!`);
+      pageTitleSpokenRef.current = true;
     }
-  }, [supportedVoices, selectedVoice, isSpeaking, speak]);
+  }, [selectedVoice, isSpeaking, speak]);
 
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 space-y-12">
+    <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <header className="text-center">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
           Welcome to {APP_NAME}!
@@ -124,12 +136,12 @@ export default function DashboardPage() {
             <Brain className="h-7 w-7 text-primary" />
             <CardTitle className="text-2xl text-primary">Core Features Overview</CardTitle>
           </div>
-          <CardDescription className="text-muted-foreground">
-            {APP_NAME} offers a suite of AI-driven tools and resources to enhance your learning experience:
+          <CardDescription className="text-muted-foreground pt-1">
+            LearnMint offers a suite of AI-driven tools and resources to enhance your learning experience:
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+          <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
             {coreFeaturesListText.map((feature, index) => (
               <li key={index} className="text-sm md:text-base">{feature}</li>
             ))}
@@ -138,15 +150,15 @@ export default function DashboardPage() {
       </Card>
 
       <div className="text-center">
-         <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-8 py-6 shadow-lg" asChild>
+         <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-8 py-6 shadow-lg group" asChild>
             <Link href="/notes">
-                <Lightbulb className="mr-3 h-6 w-6" /> Start Generating Notes
+                <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Notes
             </Link>
         </Button>
       </div>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <section className="lg:col-span-1 space-y-6">
           <h2 className="text-2xl font-semibold text-primary mb-4">Key Tools</h2>
           {keyToolCards.map((tool) => {
@@ -178,7 +190,7 @@ export default function DashboardPage() {
 
         <section className="lg:col-span-2">
            <h2 className="text-2xl font-semibold text-primary mb-4">Explore More Features</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6"> {/* Adjusted for better fit with new cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
             {exploreFeaturesCards.map((item) => {
               const Icon = item.icon;
               return (
@@ -202,6 +214,22 @@ export default function DashboardPage() {
                 </Link>
               );
             })}
+             {dailyQuote && (
+              <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group">
+                <CardHeader className="pb-2 pt-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
+                    <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Daily Motivation</CardTitle>
+                  </div>
+                  <CardDescription className="text-sm text-secondary-foreground/90 pt-1 italic">
+                    "{dailyQuote.quote}"
+                  </CardDescription>
+                </CardHeader>
+                <CardFooter className="pt-2 pb-4">
+                  <p className="text-xs text-muted-foreground/70">- {dailyQuote.author}</p>
+                </CardFooter>
+              </Card>
+            )}
           </div>
         </section>
       </div>
@@ -224,8 +252,8 @@ export default function DashboardPage() {
             <ul className="space-y-2">
               {recentTopics.map((topic, index) => (
                 <li key={index} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
-                  <button 
-                    onClick={() => handleRecentTopicClick(topic)} 
+                  <button
+                    onClick={() => handleRecentTopicClick(topic)}
                     className="truncate text-left hover:text-primary flex-grow"
                     title={`Revisit notes for: ${topic}`}
                   >
@@ -242,7 +270,7 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Your Activity Card */}
       <Card>
         <CardHeader>
