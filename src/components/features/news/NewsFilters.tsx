@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ interface NewsFiltersProps {
   onResetFilters: () => void;
   isLoading: boolean;
 }
+
+const ALL_CATEGORIES_VALUE = "_all_categories_";
 
 export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFilters, isLoading }: NewsFiltersProps) {
   return (
@@ -46,15 +49,15 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
       <div className="space-y-1.5">
         <Label htmlFor="category">Category</Label>
         <Select
-          value={filters.category}
+          value={filters.category === '' ? ALL_CATEGORIES_VALUE : filters.category}
           onValueChange={(value) => onFilterChange('category', value)}
           disabled={isLoading}
         >
-          <SelectTrigger id="category">
+          <SelectTrigger id="category-select-trigger">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
             {NEWS_CATEGORIES.map(cat => (
               <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
             ))}

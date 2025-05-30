@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const ALL_CATEGORIES_VALUE = "_all_categories_";
 
 const initialFilters = {
   query: '',
@@ -31,16 +34,22 @@ export default function NewsPage() {
     error,
   } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
-    queryFn: ({ pageParam }) => fetchNews({ ...appliedFilters, page: pageParam }),
-    initialPageParam: undefined as string | undefined, // Newsdata.io uses a 'page' token for next page
-    getNextPageParam: (lastPage) => lastPage.nextPage, // The API response should include 'nextPage' token
+    queryFn: ({ pageParam }) => fetchNews({ ...appliedFilters, category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category, page: pageParam }),
+    initialPageParam: undefined as string | undefined, 
+    getNextPageParam: (lastPage) => lastPage.nextPage, 
   });
 
   const handleFilterChange = (name: keyof typeof filters, value: string) => {
-    setFilters(prev => ({ ...prev, [name]: value }));
+    if (name === 'category' && value === ALL_CATEGORIES_VALUE) {
+      setFilters(prev => ({ ...prev, category: '' })); // Store empty string internally for 'All Categories'
+    } else {
+      setFilters(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleApplyFilters = () => {
+    // When applying, if category is stored as '', it means 'All Categories' was selected.
+    // The fetchNews queryFn will handle converting '' for category if needed.
     setAppliedFilters(filters);
   };
   
