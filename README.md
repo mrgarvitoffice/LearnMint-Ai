@@ -71,7 +71,11 @@ This section provides details about the application's user interface, frontend t
     *   Go to **Authentication** (under Build in the Firebase console) -> **Sign-in method** tab.
     *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, you may need to provide your project support email.
 
-### 2. CRITICAL: Set up Environment Variables
+### 2. CRITICAL: Set up Environment Variables (IMPORTANT NOTE)
+
+**CURRENT STATUS: For ease of initial setup due to persistent environment variable loading issues, the Firebase configuration has been TEMPORARILY HARDCODED in `src/lib/firebase/config.ts`.**
+
+**RECOMMENDED ACTION: You should still set up your `.env` file correctly as described below. Once your `.env` file is working and your server correctly loads the variables (check server logs!), you should request to revert the hardcoding in `src/lib/firebase/config.ts` to use these environment variables for better security and flexibility.**
 
 Create a file named `.env` in the **root of your project**. Add the following content, replacing placeholder values with your actual Firebase project configuration and API keys:
 
@@ -140,12 +144,12 @@ yarn dev --port 9002
 ```
 
 **Troubleshooting Firebase Errors (e.g., `auth/invalid-api-key`, `auth/auth-domain-config-required`):**
-If you encounter Firebase errors, it means the Firebase configuration your application is trying to use is incorrect or not being loaded.
+If you encounter Firebase errors AFTER you've ensured your `.env` file is correctly set up AND you've requested to revert the temporary hardcoding:
 1.  **Verify `.env` File:**
     *   Double-check that the `.env` file is in the project root.
     *   Ensure `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are spelled correctly and their values are accurately copied from your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
     *   Ensure no extra spaces or quotes around the variable names or values.
-2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file now includes lines like:
+2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file includes lines like:
     *   `Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED`
     *   `Firebase Config: Attempting to use Auth Domain: YOUR_AUTH_DOMAIN_VALUE_OR_UNDEFINED`
     *   If either says `undefined` or shows an obviously incorrect value, your `.env` file is not being read correctly, the variable is missing/misspelled, or you haven't restarted the server. Review step 1 and ensure you restarted.
@@ -219,7 +223,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Firebase config, Google AI, Newsdata.io, YouTube, Google Books).
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Firebase config, Google AI, Newsdata.io, YouTube, Google Books). **This is especially important if you revert the temporary hardcoding of Firebase keys.**
     *   Use `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you have configured separate keys for those features.
     *   Without these, the deployed app's features will not work.
 
@@ -286,4 +290,3 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 ---
 Made by MrGarvit
-
