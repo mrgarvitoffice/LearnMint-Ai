@@ -46,6 +46,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      // Default page title announcement voice
       setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
@@ -53,7 +54,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !chatbotVoicePreferenceSetRef.current) {
-        // Ensure chatbot replies default to 'luma' (Megumin's voice)
+        // Chatbot replies should also default to Luma (Megumin's voice)
         setVoicePreference('luma'); 
         chatbotVoicePreferenceSetRef.current = true;
     }
@@ -63,15 +64,13 @@ export default function ChatbotPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      // Page title is spoken by the page's default voice preference, which is set above.
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   useEffect(() => {
@@ -89,12 +88,28 @@ export default function ChatbotPage() {
     };
     setMessages([initialGreeting]);
 
+    // Speak initial greeting only if voice is 'luma' and conditions met
     if (selectedVoice && voicePreference === 'luma' && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
       currentSpokenMessageRef.current = initialGreeting.content;
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
-  }, [selectedVoice, voicePreference, speak, isSpeaking, isPaused]); // Only run once with these specific deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    // This effect is specifically to speak the initial greeting if the voice preference was set LATER
+    // than the initial mount, or if the selectedVoice took time to become available.
+    if (messages.length === 1 && messages[0].id === 'initial-greeting' &&
+        selectedVoice && voicePreference === 'luma' && 
+        !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
+      
+      currentSpokenMessageRef.current = messages[0].content;
+      speak(messages[0].content);
+      initialGreetingSpokenRef.current = true;
+    }
+  }, [selectedVoice, voicePreference, messages, speak, isSpeaking, isPaused]);
+
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
@@ -116,7 +131,8 @@ export default function ChatbotPage() {
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      if (selectedVoice && voicePreference === 'luma' && !isSpeaking && !isPaused) { 
+      // Speak assistant's message using the current voice preference (should be 'luma' by default for Megumin)
+      if (selectedVoice && !isSpeaking && !isPaused) { 
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
@@ -155,6 +171,9 @@ export default function ChatbotPage() {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
+    // Infer preference from selectedVoice name if voicePreference is null
+    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
     return 'luma'; // Default UI selection to Luma
   };
 

@@ -17,7 +17,7 @@ import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 
 import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
-import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput } from '@/lib/types';
+import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QueryError } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
 import QuizView from '@/components/study/QuizView';
@@ -94,14 +94,14 @@ function StudyPageContent() {
         queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
     } else if (!decodedTopic && !activeTopic) { 
       toast({ title: "No Topic Specified", description: "Please generate materials from the main page or enter a topic.", variant: "destructive" });
-      router.push('/notes'); 
+      // router.push('/notes'); // Or your designated generate page
     }
   }, [topicParam, activeTopic, toast, queryClient, router]);
 
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma');
+      setVoicePreference('luma'); // Default to Luma (female) for page announcements
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -114,9 +114,8 @@ function StudyPageContent() {
     }
     return () => {
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
 
 
   const commonQueryOptions = {
@@ -133,7 +132,7 @@ function StudyPageContent() {
     error: notesErrorObj, 
     refetch: refetchNotes,
     isFetching: isFetchingNotes,
-  } = useQuery<GenerateStudyNotesOutput, Error>({
+  } = useQuery<GenerateStudyNotesOutput, QueryError>({ // Use QueryError type
     queryKey: ["studyNotes", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A valid topic is required to generate notes.");
@@ -149,7 +148,7 @@ function StudyPageContent() {
     error: quizErrorObj, 
     refetch: refetchQuiz,
     isFetching: isFetchingQuiz,
-  } = useQuery<GenerateQuizQuestionsOutput, Error>({
+  } = useQuery<GenerateQuizQuestionsOutput, QueryError>({ // Use QueryError type
     queryKey: ["quizQuestions", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
@@ -166,7 +165,7 @@ function StudyPageContent() {
     error: flashcardsErrorObj, 
     refetch: refetchFlashcards,
     isFetching: isFetchingFlashcards,
-  } = useQuery<GenerateFlashcardsOutput, Error>({
+  } = useQuery<GenerateFlashcardsOutput, QueryError>({ // Use QueryError type
     queryKey: ["flashcards", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A topic is required.");

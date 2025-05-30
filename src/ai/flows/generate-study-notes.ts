@@ -15,7 +15,7 @@ const GenerateStudyNotesInputSchema = z.object({ topic: z.string().describe('The
 export type GenerateStudyNotesInput = z.infer<typeof GenerateStudyNotesInputSchema>;
 
 const GenerateStudyNotesOutputSchema = z.object({
-  notes: z.string().describe("Comprehensive, well-structured study notes in Markdown format. Include headings, subheadings, bullet points, bold text for key terms. Where a diagram or visual would be helpful, insert a placeholder like '[VISUAL_PROMPT: A diagram illustrating...]'. The notes should be engaging, like topper notes, with good spacing and visual hierarchy (big text, small text).")
+  notes: z.string().describe("Comprehensive, well-structured study notes in Markdown format. Include headings (H1, H2, H3), subheadings, bullet points, bold text for key terms. Where a diagram or visual would be helpful, insert a placeholder like '[VISUAL_PROMPT: A diagram illustrating...]'. The notes should be engaging, like topper notes, with good spacing and visual hierarchy (big text, small text), and relevant emojis.")
 });
 export type GenerateStudyNotesOutput = z.infer<typeof GenerateStudyNotesOutputSchema>;
 
@@ -90,21 +90,23 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
     outputSchema: GenerateStudyNotesOutputSchema,
   },
   async (input) => {
+    console.log(`[AI Flow - Notes] Generating notes for topic: ${input.topic}`);
     const { output } = await generateStudyNotesPrompt(input);
     if (!output || typeof output.notes !== 'string' || output.notes.trim() === '') {
       console.error("[AI Flow Error - Notes] AI returned empty or invalid notes data:", output);
       throw new Error("AI failed to generate notes in the expected style. The returned data was empty or invalid.");
     }
+    console.log(`[AI Flow - Notes] Successfully generated notes for topic: ${input.topic}. Length: ${output.notes.length}`);
     return output;
   }
 );
 
 export async function generateStudyNotes(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
-  console.log(`[AI Flow] generateStudyNotes called for topic: ${input.topic}. Using notes-specific AI configuration if GOOGLE_API_KEY_NOTES is set.`);
+  console.log(`[AI Wrapper] generateStudyNotes called for topic: ${input.topic}. Using notes-specific AI configuration if GOOGLE_API_KEY_NOTES is set.`);
   try {
     return await generateStudyNotesFlow(input);
   } catch (error: any) {
-    console.error("[AI Flow Error - generateStudyNotes] Error in flow execution:", error.message, error.stack);
+    console.error("[AI Wrapper Error - generateStudyNotes] Error in flow execution:", error.message, error.stack);
     let clientErrorMessage = "Failed to generate study notes. Please try again.";
     if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
       clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration (GOOGLE_API_KEY or GOOGLE_API_KEY_NOTES) and ensure billing is enabled for the Google Cloud project.";

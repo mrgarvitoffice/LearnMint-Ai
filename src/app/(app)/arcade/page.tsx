@@ -31,16 +31,15 @@ export default function ArcadePage() {
     }
     return () => { 
       isMounted = false; 
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="inline-block p-3 bg-primary/80 rounded-full mb-4 mx-auto"> 
-            <Gamepad2 className="w-12 h-12 text-primary-foreground" />
+            <Gamepad2 className="h-12 w-12 text-primary-foreground" />
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">
             {PAGE_TITLE}

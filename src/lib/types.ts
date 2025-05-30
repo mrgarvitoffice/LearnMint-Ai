@@ -34,15 +34,14 @@ export type GenerateQuizFromNotesInput = {
   notesContent: string;
   numQuestions: number;
 };
-// Output type can reuse GenerateQuizQuestionsOutput if the structure is the same
-// or define a specific one if different. Assuming same for now.
+// Output type uses GenerateQuizQuestionsOutput as the structure is the same.
 
 // For Flashcard Generation from Notes
 export type GenerateFlashcardsFromNotesInput = {
   notesContent: string;
   numFlashcards: number;
 };
-// Output type can reuse GenerateFlashcardsOutput.
+// Output type uses GenerateFlashcardsOutput as the structure is the same.
 
 
 // For News API
@@ -183,5 +182,4 @@ export interface GoogleBooksSearchOutput {
 }
 
 // Generic type for TanStack Query useQuery error
-// This can be a basic Error or a more specific type if your actions throw custom errors
-export type QueryError = Error;
+export type QueryError = Error & { cause?: any }; // Allow for a cause property

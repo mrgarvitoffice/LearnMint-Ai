@@ -51,7 +51,6 @@ const generateFlashcardsPrompt = ai.definePrompt({
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
     ],
-    // temperature: 0.6 // Adjust for balance
   }
 });
 
@@ -62,21 +61,23 @@ const generateFlashcardsFlow = ai.defineFlow(
     outputSchema: GenerateFlashcardsOutputSchema,
   },
   async (input) => {
+    console.log(`[AI Flow - Flashcards] Generating ${input.numFlashcards} flashcards for topic: ${input.topic}`);
     const { output } = await generateFlashcardsPrompt(input);
     if (!output || !output.flashcards || !Array.isArray(output.flashcards) || output.flashcards.length === 0) {
       console.error("[AI Flow Error - Flashcards] Invalid or empty output from LLM:", output);
       throw new Error('AI failed to generate flashcards in the expected format.');
     }
+    console.log(`[AI Flow - Flashcards] Successfully generated ${output.flashcards.length} flashcards for topic: ${input.topic}`);
     return output;
   }
 );
 
 export async function generateFlashcards(input: GenerateFlashcardsInput): Promise<GenerateFlashcardsOutput> {
-  console.log(`[AI Flow] generateFlashcards called for topic: ${input.topic}, num: ${input.numFlashcards}`);
+  console.log(`[AI Wrapper] generateFlashcards called for topic: ${input.topic}, num: ${input.numFlashcards}`);
   try {
     return await generateFlashcardsFlow(input);
   } catch (error: any) {
-    console.error("[AI Flow Error - generateFlashcards] Error in flow execution:", error.message, error.stack);
+    console.error("[AI Wrapper Error - generateFlashcards] Error in flow execution:", error.message, error.stack);
     let clientErrorMessage = "Failed to generate flashcards. Please try again.";
     if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
       clientErrorMessage = "Flashcard Generation: Failed due to an API key issue. Please check server configuration and ensure billing is enabled for the Google Cloud project.";

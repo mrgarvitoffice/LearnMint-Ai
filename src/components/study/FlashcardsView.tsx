@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
-import FlashcardItem from './FlashcardItem';
+import FlashcardItem from './FlashcardItem'; // Assuming FlashcardItem is correctly implemented
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import type { Flashcard as FlashcardType } from '@/lib/types';

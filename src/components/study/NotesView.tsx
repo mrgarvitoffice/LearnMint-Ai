@@ -12,7 +12,7 @@ import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage'; // Ensure this path is correct
+import AiGeneratedImage from './AiGeneratedImage';
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -40,8 +40,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-        // Default voice preference is set by the parent page (StudyPage)
-        // This component just reacts to the selectedVoice from the hook
+        // Default preference (e.g., 'luma') is typically set by the parent page (StudyPage)
+        // This component just reacts to the selectedVoice or allows overriding via its own dropdown
         voicePreferenceWasSetRef.current = true; 
     }
   }, [supportedVoices]);
@@ -55,6 +55,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         .replace(/(\*|_)(.*?)\1/g, '$2')
         .replace(/---|===/g, ''); 
       setCleanedNotesForTTS(textForSpeech);
+    } else {
+      setCleanedNotesForTTS(""); // Clear if notesContent is null
     }
   }, [notesContent]);
 
@@ -147,10 +149,10 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    // This part might need adjustment if selectedVoice can be null initially even with a preference
-    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'luma'; // Map Zia to Luma UI
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'luma'; // Default UI selection
+    return 'luma'; 
   };
 
   return (

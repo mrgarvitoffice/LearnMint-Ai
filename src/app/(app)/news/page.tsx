@@ -49,9 +49,8 @@ export default function NewsPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -68,7 +67,7 @@ export default function NewsPage() {
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      if (name === 'country') { 
+      if (name === 'country') { // If country changes, reset state/region and city
         newFilters.stateOrRegion = ''; 
         newFilters.city = ''; 
       }

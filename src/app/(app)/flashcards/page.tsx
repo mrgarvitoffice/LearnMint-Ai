@@ -61,9 +61,8 @@ export default function FlashcardsPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
      };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, isLoading, generatedFlashcardsData]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
@@ -80,6 +79,8 @@ export default function FlashcardsPage() {
     setIsLoading(true);
     setGeneratedFlashcardsData(null);
     pageTitleSpokenRef.current = true; 
+    generatingMessageSpokenRef.current = false;
+
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
@@ -111,6 +112,7 @@ export default function FlashcardsPage() {
     playClickSound();
     setGeneratedFlashcardsData(null); 
     pageTitleSpokenRef.current = false; 
+    generatingMessageSpokenRef.current = false;
     reset({ topic: '', numFlashcards: 10 }); 
   }
 

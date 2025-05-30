@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,9 +72,8 @@ export default function GenerateNotesPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, isLoadingAll, generatedNotesContent]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoadingAll, generatedNotesContent]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
@@ -106,6 +105,7 @@ export default function GenerateNotesPage() {
     setIsLoadingAll(true);
     setIsLoadingNotes(true); setIsLoadingQuiz(true); setIsLoadingFlashcards(true);
     pageTitleSpokenRef.current = true; 
+    generatingMessageSpokenRef.current = false; // Reset before potentially speaking
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating all study materials, please wait.");
@@ -236,11 +236,11 @@ export default function GenerateNotesPage() {
           </TabsContent>
           
           <TabsContent value="quiz" className="mt-4">
-            {isLoadingQuiz && !generatedQuizData && (
+             {isLoadingQuiz && !generatedQuizData && (
               <Card><CardContent className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-4" /><p>Loading Quiz...</p></CardContent></Card>
             )}
             {quizError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error Generating Quiz</AlertTitle><AlertDescription>{quizError}</AlertDescription></Alert>}
-            {generatedQuizData?.questions && generatedQuizData.questions.length > 0 && <QuizView questions={generatedQuizData.questions} topic={topic} difficulty="medium" />}
+            {generatedQuizData?.questions && generatedQuizData.questions.length > 0 && <QuizView questions={generatedQuizData.questions} topic={topic} difficulty="medium"/>}
             {generatedQuizData && (!generatedQuizData.questions || generatedQuizData.questions.length === 0) && !isLoadingQuiz && !quizError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Quiz will appear here after generation.</p>}
             {!isLoadingQuiz && !generatedQuizData && !quizError && !isLoadingAll && <p className="text-muted-foreground p-4 text-center">Quiz will appear here after generation.</p>}
           </TabsContent>

@@ -68,9 +68,8 @@ export default function CalculatorPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   useEffect(() => {

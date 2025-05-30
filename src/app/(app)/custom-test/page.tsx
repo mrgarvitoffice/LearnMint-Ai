@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions';
 import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Palette } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -119,18 +119,6 @@ export default function CustomTestPage() {
     overallTestTimerIdRef.current = null;
   }, []);
 
-
-  const handleNextQuestion = useCallback(() => {
-    playClickSound();
-    clearCurrentQuestionTimer();
-    setTestState(prev => {
-      if (!prev || prev.showResults || prev.currentQuestionIndex >= prev.questions.length - 1) return prev;
-      const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
-      return { ...prev, currentQuestionIndex: prev.currentQuestionIndex + 1, currentQuestionTimeLeft: nextQuestionTime };
-    });
-  }, [playClickSound, clearCurrentQuestionTimer]);
-
-
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     if (!autoSubmitted) playClickSound();
     clearCurrentQuestionTimer();
@@ -171,7 +159,18 @@ export default function CustomTestPage() {
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast]);
+  }, [playClickSound, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast, clearCurrentQuestionTimer, clearOverallTestTimer]);
+
+
+  const handleNextQuestion = useCallback(() => {
+    playClickSound();
+    clearCurrentQuestionTimer();
+    setTestState(prev => {
+      if (!prev || prev.showResults || prev.currentQuestionIndex >= prev.questions.length - 1) return prev;
+      const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
+      return { ...prev, currentQuestionIndex: prev.currentQuestionIndex + 1, currentQuestionTimeLeft: nextQuestionTime };
+    });
+  }, [playClickSound, clearCurrentQuestionTimer]);
 
 
   useEffect(() => { 
@@ -189,9 +188,8 @@ export default function CustomTestPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, testState, isLoading]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
 
   useEffect(() => { 
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
@@ -216,16 +214,16 @@ export default function CustomTestPage() {
   }, []);
 
   useEffect(() => { 
-    let currentTimerId: NodeJS.Timeout | null = null;
+    if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
     if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft > 0 && !testState.showResults && !testState.isAutoSubmitting) {
-      currentTimerId = setInterval(() => {
+      overallTestTimerIdRef.current = setInterval(() => {
         setTestState(currentTestState => {
           if (!currentTestState || typeof currentTestState.timeLeft !== 'number' || currentTestState.timeLeft <= 0 || currentTestState.showResults || currentTestState.isAutoSubmitting) {
-            if (currentTimerId) clearInterval(currentTimerId); return currentTestState;
+            if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current); return currentTestState;
           }
           const newTimeLeftVal = currentTestState.timeLeft - 1;
           if (newTimeLeftVal <= 0) {
-            if (currentTimerId) clearInterval(currentTimerId);
+            if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
             handleSubmitTest(true); 
             return { ...currentTestState, timeLeft: 0, isAutoSubmitting: true };
@@ -233,16 +231,12 @@ export default function CustomTestPage() {
           return { ...currentTestState, timeLeft: newTimeLeftVal };
         });
       }, 1000);
-      overallTestTimerIdRef.current = currentTimerId;
-    } else if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft <= 0 && !testState.showResults && !testState.isAutoSubmitting) {
-        toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-        handleSubmitTest(true); 
     }
     return () => {
-      if (currentTimerId) clearInterval(currentTimerId);
-      if (overallTestTimerIdRef.current) { clearInterval(overallTestTimerIdRef.current); overallTestTimerIdRef.current = null; }
+      if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
     };
   }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, handleSubmitTest, toast]);
+
 
   useEffect(() => { 
     clearCurrentQuestionTimer();
@@ -275,7 +269,8 @@ export default function CustomTestPage() {
     playClickSound();
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
-    pageTitleSpokenRef.current = true; 
+    pageTitleSpokenRef.current = true; // Assume title might have been spoken if config was visible long enough
+    generatingMessageSpokenRef.current = false; // Reset
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Creating custom test. Please wait.");
@@ -343,7 +338,8 @@ export default function CustomTestPage() {
     const originalSettings = testState.settings;
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
-    pageTitleSpokenRef.current = false; 
+    pageTitleSpokenRef.current = true; // Keep true, as config is skipped
+    generatingMessageSpokenRef.current = false;
     
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
         speak("Recreating test. Please wait.");
@@ -427,7 +423,7 @@ export default function CustomTestPage() {
   
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
     return 'luma'; 
   };

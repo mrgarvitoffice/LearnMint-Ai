@@ -2,19 +2,17 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 
-// Main GOOGLE_API_KEY and its warning
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
 
 const knownDemoKeys = [
-  "YOUR_GOOGLE_AI_API_KEY_HERE", // Generic placeholder from original README
-  "YOUR_GOOGLE_API_KEY_HERE", // Another generic placeholder
-  "AIzaSy*********************************", // Common pattern for placeholders
-  "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M", // User provided as main
-  "AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A", // User provided for notes
-  "AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg", // User provided for chatbot
-  "AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo" // Previous example key
+  "YOUR_GOOGLE_AI_API_KEY_HERE", 
+  "YOUR_GOOGLE_API_KEY_HERE", 
+  "AIzaSy*********************************", 
+  "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M", 
+  "AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A", 
+  "AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg", 
 ];
 
 const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
@@ -39,11 +37,12 @@ const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
     }
     return keyToCheck === demoKey;
   });
+
   if (isKnownDemo) {
      console.warn(
       `\n****************************************************************************************\n` +
-      `CRITICAL WARNING: ${keyName || 'An API key'} in .env is a KNOWN DEMO KEY: "${keyToCheck}".\n` +
-      `AI features relying on this key WILL LIKELY FAIL or use unexpected quotas.\n` +
+      `CRITICAL WARNING: ${keyName || 'An API key'} in .env is a KNOWN DEMO or PLACEHOLDER KEY: "${keyToCheck}".\n` +
+      `AI features relying on this key WILL LIKELY FAIL or use unexpected quotas/permissions.\n` +
       `Please replace it with your actual valid API key.\n` +
       `****************************************************************************************\n`
     );
@@ -52,9 +51,10 @@ const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
   return false;
 };
 
-isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY');
+isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (Main)');
 
 
+// Main Genkit instance
 export const ai = genkit({
   plugins: [
     googleAI({ apiKey: GOOGLE_API_KEY }), 
@@ -71,44 +71,43 @@ export const ai = genkit({
   },
 });
 
-// Specific API key and Genkit instance for Study Notes Generation
-let aiForNotesInstance;
+// Genkit instance for Study Notes
+let notesInstanceKey = GOOGLE_API_KEY;
 if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '' && GOOGLE_API_KEY_NOTES !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_NOTES for study notes generation.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES, 'GOOGLE_API_KEY_NOTES');
-  aiForNotesInstance = genkit({
-    plugins: [googleAI({ apiKey: GOOGLE_API_KEY_NOTES })],
-    model: 'googleai/gemini-1.5-flash-latest',
-    enableTracingAndMetrics: true,
-    defaultModelConfig: { /* Can have its own specific config */ },
-  });
+  notesInstanceKey = GOOGLE_API_KEY_NOTES;
 } else {
   if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES === GOOGLE_API_KEY) {
     console.log("INFO: GOOGLE_API_KEY_NOTES is set but is the same as GOOGLE_API_KEY. Notes will use the main AI configuration.");
   } else if (!GOOGLE_API_KEY_NOTES || GOOGLE_API_KEY_NOTES.trim() === '') {
     console.log("INFO: GOOGLE_API_KEY_NOTES is not set. Notes will use the main AI configuration.");
   }
-  aiForNotesInstance = ai; 
 }
-export const aiForNotes = aiForNotesInstance;
+export const aiForNotes = genkit({
+  plugins: [googleAI({ apiKey: notesInstanceKey })],
+  model: 'googleai/gemini-1.5-flash-latest',
+  enableTracingAndMetrics: true,
+  defaultModelConfig: { /* Can have its own specific config if needed */ },
+});
 
-// Specific API key and Genkit instance for AI Chatbot
-let aiForChatbotInstance;
+
+// Genkit instance for AI Chatbot
+let chatbotInstanceKey = GOOGLE_API_KEY;
 if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT.trim() !== '' && GOOGLE_API_KEY_CHATBOT !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_CHATBOT for AI Chatbot.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_CHATBOT, 'GOOGLE_API_KEY_CHATBOT');
-  aiForChatbotInstance = genkit({
-    plugins: [googleAI({ apiKey: GOOGLE_API_KEY_CHATBOT })],
-    model: 'googleai/gemini-1.5-flash-latest',
-    enableTracingAndMetrics: true,
-    defaultModelConfig: { /* Can have its own specific config */ },
-  });
+  chatbotInstanceKey = GOOGLE_API_KEY_CHATBOT;
 } else {
    if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT === GOOGLE_API_KEY) {
     console.log("INFO: GOOGLE_API_KEY_CHATBOT is set but is the same as GOOGLE_API_KEY. Chatbot will use the main AI configuration.");
   } else if (!GOOGLE_API_KEY_CHATBOT || GOOGLE_API_KEY_CHATBOT.trim() === '') {
     console.log("INFO: GOOGLE_API_KEY_CHATBOT is not set. Chatbot will use the main AI configuration.");
   }
-  aiForChatbotInstance = ai; 
 }
-export const aiForChatbot = aiForChatbotInstance;
+export const aiForChatbot = genkit({
+  plugins: [googleAI({ apiKey: chatbotInstanceKey })],
+  model: 'googleai/gemini-1.5-flash-latest',
+  enableTracingAndMetrics: true,
+  defaultModelConfig: { /* Can have its own specific config if needed */ },
+});

@@ -64,9 +64,8 @@ export default function QuizPage() {
     }
     return () => { 
       isMounted = false;
-      if(isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, isLoading, generatedQuizData]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
@@ -83,6 +82,7 @@ export default function QuizPage() {
     setIsLoading(true);
     setGeneratedQuizData(null);
     pageTitleSpokenRef.current = true; 
+    generatingMessageSpokenRef.current = false;
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating quiz. Please wait.");
@@ -118,6 +118,7 @@ export default function QuizPage() {
     playClickSound();
     setGeneratedQuizData(null);
     pageTitleSpokenRef.current = false; 
+    generatingMessageSpokenRef.current = false;
     reset({ topic: '', numQuestions: 10, difficulty: 'medium' }); 
   }
 
@@ -133,7 +134,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
+    <div className="container mx-auto max-w-xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4"><HelpCircle className="h-12 w-12 text-primary" /></div>

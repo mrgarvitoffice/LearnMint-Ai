@@ -14,13 +14,6 @@ import '@/ai/flows/generate-flashcards-from-notes';
 import '@/ai/flows/search-youtube-videos';
 import '@/ai/flows/search-google-books';
 
-// Flows for custom test creation are typically covered by generate-quiz-questions
-// If you have a distinct flow for "generate-test-questions", import it.
-// e.g., import '@/ai/flows/generate-test-questions';
-
-// A flow for summarizing news articles might be:
-// import '@/ai/flows/summarize-news-article-flow';
-// Ensure this file exists if uncommented.
-
 // The Genkit dev server will pick up flows defined with ai.defineFlow(...)
 // Just importing the files that contain ai.defineFlow is sufficient for the dev UI.
+// Ensure each flow file correctly defines its flows and any related prompts or tools.

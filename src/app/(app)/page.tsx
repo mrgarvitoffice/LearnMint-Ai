@@ -16,13 +16,13 @@ const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const coreFeaturesListText = [
-  "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards.",
-  "<strong>Custom Test Creation:</strong> Topic-based tests, difficulty levels, timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'. Voice input.",
-  "<strong>Scientific Calculator & Unit Converter:</strong> Calculations & conversions.",
-  "<strong>Daily News Digest:</strong> Filtered news by country, category, keywords.",
-  "<strong>Resource Library:</strong> OpenStax, Google Books/YouTube search, Math Facts.",
-  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge).",
+  "<strong>AI Content Generation:</strong> Quickly create notes, quizzes, & flashcards.",
+  "<strong>Custom Test Creation:</strong> Design tests with specific topics, difficulty, and timers.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Chat with a witty AI for questions or fun. Voice input supported.",
+  "<strong>Scientific Calculator & Unit Converter:</strong> For calculations and unit conversions.",
+  "<strong>Daily News Digest:</strong> Stay updated with news, filterable by country and category.",
+  "<strong>Resource Library:</strong> Access OpenStax samples, search books/videos, and get Math Facts.",
+  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge). More games coming!",
 ];
 
 const exploreFeaturesCards = [
@@ -78,28 +78,27 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // Set default voice preference for page announcements
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
       console.log("Dashboard: Setting initial voice preference to luma");
-      setVoicePreference('luma');
+      setVoicePreference('luma'); // Default to Luma (female-implied)
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    // Only speak if a voice is selected, TTS is not already active, and welcome message hasn't been played
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       console.log(`Dashboard: Attempting to speak PAGE_TITLE ("${PAGE_TITLE}") with voice: ${selectedVoice.name}`);
-      pageTitleSpokenRef.current = true; // Set before speak to prevent re-entry if speak itself causes a quick state change leading to re-render
       speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
-      // No need to cancel TTS here specifically for the page title,
-      // as navigating away will unmount and the useTTS hook handles global cancel.
-      // Plus, the speak() in useTTS already cancels previous speech.
+      // No need to cancelTTS() here for page title if it has already played.
+      // If it was queued but not played, useTTS's own cleanup or next speak call will cancel.
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]); // Removed pageTitleSpokenRef from deps as it's a ref
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -123,7 +122,6 @@ export default function DashboardPage() {
     playClickSound();
     router.push(`/notes?topic=${encodeURIComponent(topic)}`);
   }
-
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
@@ -247,4 +245,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-    

@@ -60,7 +60,6 @@ const generateQuizQuestionsPrompt = ai.definePrompt({
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
     ],
-    // temperature: 0.7 // Adjust for creativity vs. determinism if needed
   }
 });
 
@@ -71,31 +70,31 @@ const generateQuizQuestionsFlow = ai.defineFlow(
     outputSchema: GenerateQuizQuestionsOutputSchema,
   },
   async (input) => {
+    console.log(`[AI Flow - Quiz] Generating ${input.numQuestions} quiz questions for topic: ${input.topic}, difficulty: ${input.difficulty || 'not specified'}`);
     const { output } = await generateQuizQuestionsPrompt(input);
     if (!output || !output.questions || !Array.isArray(output.questions) || output.questions.length === 0) {
       console.error("[AI Flow Error - Quiz Questions] Invalid or empty output from LLM:", output);
       throw new Error('AI failed to generate quiz questions in the expected format.');
     }
-    // Basic validation for MCQs
     output.questions.forEach(q => {
-        if (q.type === 'multiple-choice' && (!q.options || q.options.length < 2)) { // Check for at least 2, ideally 4
+        if (q.type === 'multiple-choice' && (!q.options || q.options.length < 2)) { 
             console.warn(`[AI Flow Warning - Quiz Questions] Multiple-choice question for topic "${input.topic}" has insufficient options:`, q.question);
-            // Potentially throw an error or try to provide default options if critical
         }
         if (!q.explanation) {
              console.warn(`[AI Flow Warning - Quiz Questions] Question for topic "${input.topic}" is missing an explanation:`, q.question);
         }
     });
+    console.log(`[AI Flow - Quiz] Successfully generated ${output.questions.length} quiz questions for topic: ${input.topic}`);
     return output;
   }
 );
 
 export async function generateQuizQuestions(input: GenerateQuizQuestionsInput): Promise<GenerateQuizQuestionsOutput> {
-  console.log(`[AI Flow] generateQuizQuestions called for topic: ${input.topic}, num: ${input.numQuestions}, difficulty: ${input.difficulty}`);
+  console.log(`[AI Wrapper] generateQuizQuestions called for topic: ${input.topic}, num: ${input.numQuestions}, difficulty: ${input.difficulty}`);
   try {
     return await generateQuizQuestionsFlow(input);
   } catch (error: any) {
-    console.error("[AI Flow Error - generateQuizQuestions] Error in flow execution:", error.message, error.stack);
+    console.error("[AI Wrapper Error - generateQuizQuestions] Error in flow execution:", error.message, error.stack);
     let clientErrorMessage = "Failed to generate quiz questions. Please try again.";
     if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
       clientErrorMessage = "Quiz Generation: Failed due to an API key issue. Please check server configuration and ensure billing is enabled for the Google Cloud project.";
