@@ -48,13 +48,15 @@ const otherFeatures = Array.from(uniqueOtherFeaturesMap.values());
 
 
 export default function DashboardPage() {
-  const { playSound: playWelcomeSound } = useSound('/sounds/welcome-learnmint.mp3', 0.6);
+  const { playSound: playWelcomeSound, audio: welcomeAudioReady } = useSound('/sounds/welcome-learnmint.mp3', 0.6);
 
   useEffect(() => {
-    // Play welcome sound once when the component mounts
-    playWelcomeSound();
+    // Play welcome sound once when the component mounts and audio is ready
+    if (welcomeAudioReady) {
+      playWelcomeSound();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once
+  }, [playWelcomeSound, welcomeAudioReady]); // Re-run if playWelcomeSound or audio readiness changes
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-12">

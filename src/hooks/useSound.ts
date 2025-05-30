@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useEffect, useState } from 'react';
@@ -22,10 +23,15 @@ export function useSound(soundPath: string, defaultVolume: number = 0.5) {
 
   const playSound = useCallback(() => {
     if (audio && isSoundEnabled) {
+      console.log(`Attempting to play sound: ${soundPath}`);
       audio.currentTime = 0;
-      audio.play().catch(error => console.error("Error playing sound:", error));
+      audio.play().catch(error => console.error(`Error playing sound ${soundPath}:`, error));
+    } else if (!audio) {
+      console.warn(`Cannot play sound: Audio object for ${soundPath} not ready yet.`);
+    } else if (!isSoundEnabled) {
+      console.log(`Sound disabled, not playing: ${soundPath}`);
     }
-  }, [audio, isSoundEnabled]);
+  }, [audio, isSoundEnabled, soundPath]);
 
   const toggleSound = useCallback(() => {
     setIsSoundEnabled(prev => {
@@ -36,5 +42,5 @@ export function useSound(soundPath: string, defaultVolume: number = 0.5) {
     });
   }, []);
 
-  return { playSound, isSoundEnabled, toggleSound, setVolume: (vol: number) => audio?.volume && (audio.volume = vol) };
+  return { playSound, isSoundEnabled, toggleSound, setVolume: (vol: number) => audio?.volume && (audio.volume = vol), audio };
 }
