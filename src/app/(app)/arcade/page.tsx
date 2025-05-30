@@ -18,7 +18,7 @@ export default function ArcadePage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('kai'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -31,9 +31,9 @@ export default function ArcadePage() {
     }
     return () => { 
       isMounted = false; 
-      if(isMounted) cancelTTS();
+      // Optional: cancelTTS() if speech should stop on unmount
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">

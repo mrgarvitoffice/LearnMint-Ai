@@ -51,7 +51,7 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('kai');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -64,7 +64,7 @@ export default function QuizPage() {
     }
     return () => { 
       isMounted = false;
-      if (isMounted) cancelTTS();
+      if (isMounted && isSpeaking) cancelTTS();
     };
   }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData, cancelTTS]);
 
@@ -118,7 +118,7 @@ export default function QuizPage() {
     playClickSound();
     setGeneratedQuizData(null);
     pageTitleSpokenRef.current = false; 
-    reset({ topic: '', numQuestions: 10, difficulty: 'medium' }); // Reset form
+    reset({ topic: '', numQuestions: 10, difficulty: 'medium' }); 
   }
 
   if (generatedQuizData && generatedQuizData.questions && topicValue) {

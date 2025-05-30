@@ -36,7 +36,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('kai'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -49,9 +49,9 @@ export default function NewsPage() {
     }
     return () => { 
       isMounted = false;
-      if(isMounted) cancelTTS();
+      // Optional: cancelTTS() if speech should stop on unmount
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -78,8 +78,7 @@ export default function NewsPage() {
 
   const handleApplyFilters = () => { 
     setAppliedFilters(filters); 
-    pageTitleSpokenRef.current = true; /* Prevent re-announcement on filter apply */ 
-    // If search button is clicked, we might want to announce "Fetching news..."
+    pageTitleSpokenRef.current = true; 
     if (selectedVoice && !isSpeaking && !isPaused) {
       speak("Fetching news with new filters.");
     }

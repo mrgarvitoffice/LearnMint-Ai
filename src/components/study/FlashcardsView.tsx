@@ -33,7 +33,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   const handlePrevCard = () => {
     playClickSound();
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev - 1);
+      setCurrentCardIndex(prev => prev + 1);
     }
   };
 
@@ -95,3 +95,4 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 };
 
 export default FlashcardsView;
+

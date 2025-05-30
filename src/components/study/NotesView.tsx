@@ -12,7 +12,7 @@ import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-r
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage'; // Assuming this is in the same directory or path is correct
+import AiGeneratedImage from './AiGeneratedImage';
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -35,25 +35,35 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   const { toast } = useToast();
 
   const notesContentRef = useRef<HTMLDivElement>(null);
+  const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
+
+  useEffect(() => {
+    if (notesContent) {
+      // Remove Markdown for cleaner TTS, especially image prompts
+      const textForSpeech = notesContent
+        .replace(/\[VISUAL_PROMPT:[^\]]+\]/gi, "(visual aid suggested)") 
+        .replace(/#+\s*/g, '') // Remove headings
+        .replace(/(\*\*|__)(.*?)\1/g, '$2') // Remove bold
+        .replace(/(\*|_)(.*?)\1/g, '$2'); // Remove italics
+      setCleanedNotesForTTS(textForSpeech);
+    }
+  }, [notesContent]);
 
   const handlePlaybackControl = useCallback(() => {
     playClickSound();
-    if (!notesContent) {
+    if (!cleanedNotesForTTS) {
         toast({title: "No Content", description: "Nothing to speak.", variant: "destructive"});
         return;
     }
     
-    const textToSpeak = notesContentRef.current?.innerText ||
-                        notesContent.replace(/\[VISUAL_PROMPT:[^\]]+\]/g, '');
-
     if (isSpeaking && !isPaused) {
       pauseTTS();
     } else if (isPaused) {
       resumeTTS();
     } else {
-      speak(textToSpeak);
+      speak(cleanedNotesForTTS);
     }
-  }, [playClickSound, notesContent, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
+  }, [playClickSound, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
   const handleStopTTS = useCallback(() => {
     playClickSound();
@@ -93,16 +103,13 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   
   const renderMarkdownWithPlaceholders = (markdownContent: string) => {
     if (!markdownContent) return null;
-    // Split the content by the visual prompt placeholder
     const parts = markdownContent.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
 
     return parts.map((part, index) => {
       if (part.startsWith('[VISUAL_PROMPT:')) {
-        // Extract the prompt text from the placeholder
         const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1).trim();
         return <AiGeneratedImage key={`vis-${index}`} promptText={promptText} />;
       }
-      // Render regular Markdown parts
       return <ReactMarkdown key={`md-${index}`} remarkPlugins={[remarkGfm]} className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words">{part}</ReactMarkdown>;
     });
   };

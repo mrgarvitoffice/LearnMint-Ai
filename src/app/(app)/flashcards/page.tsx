@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateFlashcardsAction } from '@/lib/actions'; 
 import type { GenerateFlashcardsOutput } from '@/lib/types'; 
 import { Loader2, ListChecks, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import FlashcardsView from '@/components/study/FlashcardsView'; // Use the centralized view
+import FlashcardsView from '@/components/study/FlashcardsView';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -48,7 +48,7 @@ export default function FlashcardsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('kai'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -61,7 +61,7 @@ export default function FlashcardsPage() {
     }
     return () => { 
       isMounted = false;
-      if(isMounted) cancelTTS();
+      if(isMounted && isSpeaking) cancelTTS();
      };
   }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData, cancelTTS]);
 
@@ -111,7 +111,7 @@ export default function FlashcardsPage() {
     playClickSound();
     setGeneratedFlashcardsData(null); 
     pageTitleSpokenRef.current = false; 
-    reset({ topic: '', numFlashcards: 10 }); // Reset form
+    reset({ topic: '', numFlashcards: 10 }); 
   }
 
   if (generatedFlashcardsData && topicValue) {

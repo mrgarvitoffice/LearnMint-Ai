@@ -16,12 +16,12 @@ const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const coreFeaturesListText = [
-  "<strong>AI Content Generation:</strong> Quickly create notes, quizzes, & flashcards.",
+  "<strong>AI Content Generation:</strong> Create notes, quizzes, & flashcards with AI.",
   "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, & timers.",
   "<strong>Interactive AI Chatbot (Megumin):</strong> Engage with a witty AI for questions & 'singing'.",
   "<strong>Scientific Calculator & Unit Converter:</strong> For calculations & unit conversions.",
-  "<strong>Daily News Digest:</strong> Filtered news articles.",
-  "<strong>Resource Library:</strong> Explore textbooks, search books/videos, and get Math Facts.",
+  "<strong>Daily News Digest:</strong> Filtered news articles from various sources.",
+  "<strong>Resource Library:</strong> Explore textbooks, search books/videos, & get Math Facts.",
   "<strong>Educational Game:</strong> Play 'Definition Challenge' & more coming soon.",
 ];
 
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('kai'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -92,6 +92,7 @@ export default function DashboardPage() {
     }
     return () => { 
       isMounted = false;
+      // Optional: cancelTTS() if speech should stop on unmount
     };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
@@ -115,7 +116,7 @@ export default function DashboardPage() {
 
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
-    router.push(`/study?topic=${encodeURIComponent(topic)}`);
+    router.push(`/notes?topic=${encodeURIComponent(topic)}`); // Changed from /study to /notes
   }
 
 

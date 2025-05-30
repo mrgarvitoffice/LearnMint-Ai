@@ -3,8 +3,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Image as ImageIcon } from 'lucide-react'; // Using ImageIcon for visual placeholder icon
-import Image from 'next/image'; // Use next/image for placeholders too
+import { Sparkles, Image as ImageIcon } from 'lucide-react';
+import NextImage from 'next/image'; // Renamed to avoid conflict
 
 interface AiGeneratedImageProps {
   promptText: string;
@@ -25,7 +25,7 @@ const AiGeneratedImage: React.FC<AiGeneratedImageProps> = ({ promptText }) => {
       </div>
       <p className="font-semibold text-foreground/90 mb-2 text-sm sm:text-base italic">"{promptText}"</p>
       <div className="aspect-video bg-muted/30 rounded overflow-hidden flex items-center justify-center mb-3 ring-1 ring-border/50">
-        <Image
+        <NextImage // Use the renamed import
             src={placeholderUrl}
             alt={`Placeholder for: ${promptText}`}
             width={600} 

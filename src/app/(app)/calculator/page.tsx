@@ -55,7 +55,7 @@ export default function CalculatorPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('kai'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -68,9 +68,9 @@ export default function CalculatorPage() {
     }
     return () => { 
       isMounted = false;
-      if(isMounted) cancelTTS();
+      // Optional: cancelTTS() if speech should stop on unmount
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   useEffect(() => {

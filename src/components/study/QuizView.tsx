@@ -40,7 +40,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('kai'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -104,41 +104,42 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const handleNextQuestion = () => {
     playClickSound();
     if (!questions || currentQuestionIndex >= questions.length - 1) {
-      if (!quizFinished) handleViewResults(); // If it's the last question and not finished, view results
+      if (!quizFinished) handleViewResults(); 
       return;
     }
-    setCurrentQuestionIndex(prev => prev + 1);
-    setIsMcqAnswerFinalized(false);
-    setIsShortAnswerSubmitted(false);
-    setSelectedMcqOption(userAnswers[currentQuestionIndex + 1] && questions[currentQuestionIndex +1]?.type === 'multiple-choice' ? userAnswers[currentQuestionIndex + 1] : null);
-    setShortAnswerValue(userAnswers[currentQuestionIndex + 1] && questions[currentQuestionIndex + 1]?.type === 'short-answer' ? userAnswers[currentQuestionIndex + 1] || '' : ''); 
+    const nextIndex = currentQuestionIndex + 1;
+    setCurrentQuestionIndex(nextIndex);
     
-    // Determine if the next question was already answered to set finalized state
-    const nextAnswer = userAnswers[currentQuestionIndex + 1];
-    if(nextAnswer) {
-        if(questions[currentQuestionIndex + 1]?.type === 'multiple-choice') setIsMcqAnswerFinalized(true);
-        else if(questions[currentQuestionIndex + 1]?.type === 'short-answer') setIsShortAnswerSubmitted(true);
-    }
+    const nextQuestionData = questions[nextIndex];
+    const nextAnswer = userAnswers[nextIndex];
+
+    setIsMcqAnswerFinalized(!!nextAnswer && nextQuestionData?.type === 'multiple-choice');
+    setIsShortAnswerSubmitted(!!nextAnswer && nextQuestionData?.type === 'short-answer');
+    setSelectedMcqOption(nextQuestionData?.type === 'multiple-choice' ? nextAnswer || null : null);
+    setShortAnswerValue(nextQuestionData?.type === 'short-answer' ? nextAnswer || '' : ''); 
   };
 
   const handlePrevQuestion = () => {
     playClickSound();
     if (currentQuestionIndex <= 0) return;
-    setCurrentQuestionIndex(prev => prev - 1);
-    const prevAnswer = userAnswers[currentQuestionIndex - 1];
-    const prevQuestionType = questions?.[currentQuestionIndex - 1]?.type;
+    const prevIndex = currentQuestionIndex - 1;
+    setCurrentQuestionIndex(prevIndex);
+    
+    const prevQuestionData = questions?.[prevIndex];
+    const prevAnswer = userAnswers[prevIndex];
 
-    setIsMcqAnswerFinalized(!!prevAnswer && prevQuestionType === 'multiple-choice');
-    setIsShortAnswerSubmitted(!!prevAnswer && prevQuestionType === 'short-answer');
-    setSelectedMcqOption(prevQuestionType === 'multiple-choice' ? prevAnswer || null : null);
-    setShortAnswerValue(prevQuestionType === 'short-answer' ? prevAnswer || '' : ''); 
+    setIsMcqAnswerFinalized(!!prevAnswer && prevQuestionData?.type === 'multiple-choice');
+    setIsShortAnswerSubmitted(!!prevAnswer && prevQuestionData?.type === 'short-answer');
+    setSelectedMcqOption(prevQuestionData?.type === 'multiple-choice' ? prevAnswer || null : null);
+    setShortAnswerValue(prevQuestionData?.type === 'short-answer' ? prevAnswer || '' : ''); 
   };
 
   const handleViewResults = () => {
     playClickSound();
     if (!questions) return;
     setQuizFinished(true);
-    const finalScoreMessage = `Quiz finished! Your final score is ${score} out of ${questions.length * 4}.`;
+    const totalPossibleScore = questions.length * 4;
+    const finalScoreMessage = `Quiz finished! Your final score is ${score} out of ${totalPossibleScore}.`;
     if (selectedVoice && !isSpeaking && !isPaused) speak(finalScoreMessage);
   };
   
@@ -167,13 +168,14 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   }
   
   if (quizFinished) {
+    const totalPossibleScore = questions.length * 4;
     return (
       <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">Quiz Results</CardTitle>
           <CardDescription>Topic: {topic} (Difficulty: {difficulty})</CardDescription>
-          <p className="text-3xl font-bold mt-2">Your Score: {score} / {questions.length * 4}</p>
-          <Progress value={((score / (questions.length * 4 || 1)) * 100)} className="w-3/4 mx-auto mt-3 h-3" />
+          <p className="text-3xl font-bold mt-2">Your Score: {score} / {totalPossibleScore}</p>
+          <Progress value={((score / (totalPossibleScore || 1)) * 100)} className="w-3/4 mx-auto mt-3 h-3" />
         </CardHeader>
         <CardContent className="space-y-3 flex-1 overflow-y-auto p-4">
           {questions.map((q, index) => {
