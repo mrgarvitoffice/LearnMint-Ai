@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'assets3.cbsnewsstatic.com', // Added for CBS News images
+        port: '',
+        pathname: '/**',
+      },
       // Add other news image hostnames here as they appear
       // For example, if you see errors for cdn.cnn.com, add:
       // {
