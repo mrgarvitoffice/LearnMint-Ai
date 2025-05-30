@@ -1,7 +1,12 @@
+
 {
-  "name": "LearnFlow - AI Powered Learning",
-  "short_name": "LearnFlow",
-  "description": "AI-powered learning assistant for notes, quizzes, flashcards, and more.",
+  "name": "LearnMint - AI Powered Learning",
+  "short_name": "LearnMint",
+  "description": "Your AI-powered learning assistant for notes, quizzes, tests, and more.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#11151c",
+  "theme_color": "#00FFFF",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -15,10 +20,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#FDFDF4",
-  "theme_color": "#F7E335"
+  ]
 }
