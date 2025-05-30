@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.mos.cms.futurecdn.net', // Added for this news source
+        port: '',
+        pathname: '/**',
+      },
       // Add other news image hostnames here as they appear
       // For example, if you see errors for cdn.cnn.com, add:
       // {
