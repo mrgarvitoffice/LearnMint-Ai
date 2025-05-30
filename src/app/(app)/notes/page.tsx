@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,14 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateStudyNotes, type GenerateStudyNotesOutput } from '@/ai/flows/generate-study-notes';
 import { generateQuizFromNotes } from '@/ai/flows/generate-quiz-from-notes';
 import { generateFlashcardsFromNotes } from '@/ai/flows/generate-flashcards-from-notes';
 import type { GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import type { GenerateFlashcardsOutput as GenerateFlashcardsOutputFromNotes } from '@/ai/flows/generate-flashcards';
-import { Loader2, FileText, Search, Volume2, Mic, PlayCircle, PauseCircle, StopCircle, HelpCircleIcon, ListChecksIcon } from 'lucide-react';
+import { Loader2, FileText, Search, Mic, PlayCircle, PauseCircle, StopCircle, HelpCircleIcon, ListChecksIcon, Download, Volume2 } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useTTS } from '@/hooks/useTTS';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +27,10 @@ const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters long.' }),
 });
 type FormData = z.infer<typeof formSchema>;
+
+const MAX_RECENT_TOPICS = 10;
+const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
+const PAGE_TITLE = "Generate Topper Notes";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<GenerateStudyNotesOutput | null>(null);
@@ -43,6 +46,8 @@ export default function NotesPage() {
   const { speak, cancel, isSpeaking, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -56,6 +61,20 @@ export default function NotesPage() {
     }
   }, [transcript, setValue]);
 
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia'); // Default to Zia or a female voice
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isSpeaking, speak]);
+
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
@@ -63,13 +82,33 @@ export default function NotesPage() {
     setNotes(null);
     setQuizFromNotes(null); 
     setFlashcardsFromNotes(null); 
+    
+    if (selectedVoice && !isTTSSpeaking) {
+        speak("Generating study materials. Please wait.");
+    }
+
     try {
       const result = await generateStudyNotes({ topic: data.topic });
       setNotes(result);
       toast({ title: 'Notes Generated!', description: 'Study notes are ready.' });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Notes ready!");
+      }
+
+      // Add to recent topics
+      if (typeof window !== 'undefined') {
+        const currentTopicsJSON = localStorage.getItem(RECENT_TOPICS_LS_KEY);
+        let currentTopics: string[] = currentTopicsJSON ? JSON.parse(currentTopicsJSON) : [];
+        currentTopics = [data.topic, ...currentTopics.filter(t => t !== data.topic)].slice(0, MAX_RECENT_TOPICS);
+        localStorage.setItem(RECENT_TOPICS_LS_KEY, JSON.stringify(currentTopics));
+      }
+
     } catch (error) {
       console.error('Error generating notes:', error);
       toast({ title: 'Error', description: 'Failed to generate notes. Please try again.', variant: 'destructive' });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Sorry, there was an error generating notes.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +120,9 @@ export default function NotesPage() {
       if (isSpeaking) {
         cancel();
       } else {
-        speak(notes.notes.replace(/\[Image: ([^\]]+)\]/g, 'Image placeholder for $1.'));
+        // Replace visual prompts for better speech flow
+        const notesForSpeech = notes.notes.replace(/\[VISUAL_PROMPT: ([^\]]+)\]/g, '(Visual aid for: $1)');
+        speak(notesForSpeech);
       }
     }
   };
@@ -92,9 +133,9 @@ export default function NotesPage() {
   }
 
   const renderMarkdownWithPlaceholders = (markdownText: string) => {
-    const parts = markdownText.split(/(\[Image: [^\]]+\])/g);
+    const parts = markdownText.split(/(\[VISUAL_PROMPT: [^\]]+\])/g);
     return parts.map((part, index) => {
-      const match = part.match(/\[Image: ([^\]]+)\]/);
+      const match = part.match(/\[VISUAL_PROMPT: ([^\]]+)\]/);
       if (match) {
         const query = match[1];
         return (
@@ -115,18 +156,55 @@ export default function NotesPage() {
     });
   };
 
+  const handleDownloadNotes = () => {
+    playClickSound();
+    if (notes?.notes) {
+      // Basic Markdown stripping for plain text download
+      let plainText = notes.notes;
+      plainText = plainText.replace(/\[VISUAL_PROMPT: [^\]]+\]/g, ''); // Remove visual prompts
+      plainText = plainText.replace(/^#+\s*/gm, ''); // Remove heading hashes
+      plainText = plainText.replace(/^[*-]\s*/gm, ''); // Remove list item markers
+      plainText = plainText.replace(/(\*\*|__)(.*?)\1/g, '$2'); // Remove bold
+      plainText = plainText.replace(/(\*|_)(.*?)\1/g, '$2'); // Remove italics
+      plainText = plainText.replace(/`([^`]+)`/g, '$1'); // Remove inline code
+
+      const blob = new Blob([plainText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${topicValue || 'study-notes'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Notes Downloaded!", description: "Plain text version saved."});
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Notes downloaded!");
+      }
+    }
+  };
+
   const handleGenerateQuizFromNotes = async () => {
     playClickSound();
     if (!notes?.notes) return;
     setIsGeneratingQuiz(true);
+    if (selectedVoice && !isTTSSpeaking) {
+      speak("Generating quiz from notes. Please wait.");
+    }
     try {
       const result = await generateQuizFromNotes({ notesContent: notes.notes, numQuestions: 30 });
       setQuizFromNotes(result); 
       console.log("Generated Quiz from Notes:", result);
       toast({ title: "Quiz Generated from Notes!", description: `${result.quiz.length} questions created.` });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Quiz ready!");
+      }
     } catch (error) {
       console.error("Error generating quiz from notes:", error);
       toast({ title: "Quiz Generation Error", description: "Failed to generate quiz from notes.", variant: "destructive" });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Sorry, there was an error generating the quiz.");
+      }
     } finally {
       setIsGeneratingQuiz(false);
     }
@@ -136,14 +214,23 @@ export default function NotesPage() {
     playClickSound();
     if (!notes?.notes) return;
     setIsGeneratingFlashcards(true);
+     if (selectedVoice && !isTTSSpeaking) {
+      speak("Generating flashcards from notes. Please wait.");
+    }
     try {
       const result = await generateFlashcardsFromNotes({ notesContent: notes.notes, numFlashcards: 20 });
       setFlashcardsFromNotes(result); 
       console.log("Generated Flashcards from Notes:", result);
       toast({ title: "Flashcards Generated from Notes!", description: `${result.flashcards.length} flashcards created.` });
+      if (selectedVoice && !isTTSSpeaking) {
+        speak("Flashcards ready!");
+      }
     } catch (error) {
       console.error("Error generating flashcards from notes:", error);
       toast({ title: "Flashcard Generation Error", description: "Failed to generate flashcards from notes.", variant: "destructive" });
+       if (selectedVoice && !isTTSSpeaking) {
+        speak("Sorry, there was an error generating flashcards.");
+      }
     } finally {
       setIsGeneratingFlashcards(false);
     }
@@ -162,9 +249,9 @@ export default function NotesPage() {
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <FileText className="w-7 h-7 text-primary" />
-            AI Note Generator
+          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
+            <FileText className="w-7 h-7" />
+            {PAGE_TITLE}
           </CardTitle>
           <CardDescription>Enter a topic to generate comprehensive study notes using AI.</CardDescription>
         </CardHeader>
@@ -198,16 +285,23 @@ export default function NotesPage() {
         </form>
       </Card>
 
-      {notes && (
+      {isLoading && (
+         <div className="flex justify-center items-center py-10">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="ml-4 text-lg text-muted-foreground">Generating notes, please wait...</p>
+        </div>
+      )}
+
+      {notes && !isLoading && (
         <Card>
           <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-xl">Generated Study Notes</CardTitle>
-              <CardDescription>Topic: {topicValue}</CardDescription>
+              <CardTitle className="text-xl font-semibold text-primary">Generated Study Notes for: {topicValue}</CardTitle>
+              <CardDescription>Review your notes below. Use the controls to listen or download.</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                <Select onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia'); }}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px] text-xs">
                   <SelectValue placeholder="Voice Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -218,31 +312,34 @@ export default function NotesPage() {
                 </SelectContent>
               </Select>
               <Select onValueChange={(uri) => {playClickSound(); setSelectedVoiceURI(uri);}} value={selectedVoice?.voiceURI}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px] text-xs">
                   <SelectValue placeholder="Select Voice Engine" />
                 </SelectTrigger>
                 <SelectContent>
                   {supportedVoices.length > 0 ? supportedVoices.map(voice => (
-                    <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
+                    <SelectItem key={voice.voiceURI} value={voice.voiceURI} className="text-xs">
                       {voice.name} ({voice.lang})
                     </SelectItem>
-                  )) : <SelectItem value="no-voices" disabled>No voices available</SelectItem>}
+                  )) : <SelectItem value="no-voices" disabled className="text-xs">No voices available</SelectItem>}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={handleSpeakNotes} disabled={!notes?.notes || isSpeaking && !window.speechSynthesis.paused}>
-                {isSpeaking ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
+              <Button variant="outline" size="icon" onClick={handleSpeakNotes} disabled={!notes?.notes || (isSpeaking && !window.speechSynthesis.paused)} title={isSpeaking ? "Pause" : "Play Notes"}>
+                {isSpeaking && !window.speechSynthesis.paused ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
               </Button>
               {isSpeaking && (
-                <Button variant="outline" size="icon" onClick={handleCancelSpeak}>
+                <Button variant="outline" size="icon" onClick={handleCancelSpeak} title="Stop Speaking">
                   <StopCircle className="w-5 h-5" />
                 </Button>
               )}
+               <Button variant="outline" size="icon" onClick={handleDownloadNotes} title="Download Notes">
+                <Download className="w-5 h-5" />
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="prose dark:prose-invert max-w-none">
             {renderMarkdownWithPlaceholders(notes.notes)}
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
+          <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4 border-t mt-4">
             <Button 
               onClick={handleGenerateQuizFromNotes} 
               disabled={isGeneratingQuiz || !notes?.notes}
@@ -265,3 +362,4 @@ export default function NotesPage() {
     </div>
   );
 }
+ 
