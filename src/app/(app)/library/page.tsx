@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { OPENSTAX_BOOKS, MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
-import { BookMarked, Search, Youtube, Lightbulb, Link as LinkIcon, ExternalLink, Loader2 } from 'lucide-react';
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2 } from 'lucide-react'; // Added BookOpen, Brain
 
 export default function LibraryPage() {
   const [youtubeSearchTerm, setYoutubeSearchTerm] = useState('');
@@ -19,7 +20,7 @@ export default function LibraryPage() {
   const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
     queryKey: ['mathFact'],
     queryFn: fetchMathFact,
-    staleTime: Infinity, // Keep fact until manually refetched
+    staleTime: Infinity, 
     gcTime: Infinity,
   });
 
@@ -27,7 +28,6 @@ export default function LibraryPage() {
     if (mathFact) {
       setCurrentMathFact(mathFact);
     } else if (!isLoadingMathFact) {
-      // Handle case where API might fail initially, use fallback
       const randomIndex = Math.floor(Math.random() * MATH_FACTS_FALLBACK.length);
       setCurrentMathFact({ text: MATH_FACTS_FALLBACK[randomIndex] });
     }
@@ -47,14 +47,17 @@ export default function LibraryPage() {
   const handleGoogleBooksSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
+      // Using tbm=bks for Google Books specific search
       window.open(`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(googleBooksSearchTerm.trim())}`, '_blank');
     }
   };
   
   const otherResources = [
     { title: "Khan Academy", description: "Free online courses, lessons & practice.", link: "https://www.khanacademy.org/", icon: Lightbulb, dataAiHint: "education learning" },
-    { title: "Project Gutenberg", description: "Over 70,000 free eBooks.", link: "https://www.gutenberg.org/", icon: BookMarked, dataAiHint: "ebooks literature" },
-    { title: "Wolfram Alpha", description: "Computational knowledge engine.", link: "https://www.wolframalpha.com/", icon: Search, dataAiHint: "computation search" },
+    { title: "Project Gutenberg", description: "Over 70,000 free eBooks.", link: "https://www.gutenberg.org/", icon: BookOpen, dataAiHint: "ebooks literature" },
+    { title: "Wolfram Alpha", description: "Computational knowledge engine.", link: "https://www.wolframalpha.com/", icon: Brain, dataAiHint: "computation search" },
+    { title: "CK-12 Foundation", description: "Free K-12 STEM resources.", link: "https://www.ck12.org/", icon: Lightbulb, dataAiHint: "education STEM" },
+    { title: "Wikipedia", description: "The Free Encyclopedia.", link: "https://www.wikipedia.org/", icon: BookOpen, dataAiHint: "encyclopedia reference" },
   ];
 
 
@@ -64,7 +67,7 @@ export default function LibraryPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl">
             <BookMarked className="w-7 h-7 text-primary" />
-            LearnFlow Library
+            LearnMint Library
           </CardTitle>
           <CardDescription>Explore a collection of educational resources and tools.</CardDescription>
         </CardHeader>
@@ -100,7 +103,7 @@ export default function LibraryPage() {
 
       {/* OpenStax Textbooks */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">OpenStax Textbooks</h2>
+        <h2 className="text-2xl font-semibold mb-4">OpenStax Textbooks (Sample Catalog)</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {OPENSTAX_BOOKS.map(book => (
             <ResourceCard 
@@ -111,6 +114,7 @@ export default function LibraryPage() {
               imageUrl={book.coverImage}
               dataAiHint={book.dataAiHint}
               linkText="View on OpenStax"
+              icon={BookOpen}
             />
           ))}
         </div>
@@ -136,6 +140,9 @@ export default function LibraryPage() {
               <Button type="submit">Search</Button>
             </CardContent>
           </form>
+          <CardFooter className="text-xs text-muted-foreground pt-2">
+            This will redirect you to Google Books search results.
+          </CardFooter>
         </Card>
         <Card>
           <CardHeader>
@@ -155,6 +162,9 @@ export default function LibraryPage() {
               <Button type="submit">Search</Button>
             </CardContent>
           </form>
+           <CardFooter className="text-xs text-muted-foreground pt-2">
+            This will redirect you to YouTube search results.
+          </CardFooter>
         </Card>
       </section>
       
@@ -171,6 +181,7 @@ export default function LibraryPage() {
                icon={resource.icon}
                imageUrl={`https://placehold.co/300x150.png?text=${encodeURIComponent(resource.title)}`}
                dataAiHint={resource.dataAiHint}
+               linkText="Visit Site"
              />
            ))}
         </div>
