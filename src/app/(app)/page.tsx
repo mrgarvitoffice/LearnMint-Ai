@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS, APP_NAME } from "@/lib/constants";
-import { ArrowRight, Lightbulb, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Info, Sparkles, Quote } from "lucide-react";
+import { ArrowRight, Lightbulb, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -54,12 +54,13 @@ const motivationalQuotes = [
 export default function DashboardPage() {
   const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice, voicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const router = useRouter();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
+  
+  const hasWelcomedRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
@@ -77,6 +78,25 @@ export default function DashboardPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia');
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (
+      selectedVoice &&
+      !isSpeaking &&
+      !hasWelcomedRef.current
+    ) {
+      speak(`Welcome to ${APP_NAME}!`);
+      hasWelcomedRef.current = true;
+    }
+  }, [selectedVoice, isSpeaking, speak]);
+
 
   const handleRemoveTopic = (topicToRemove: string) => {
     playClickSound();
@@ -100,25 +120,6 @@ export default function DashboardPage() {
     router.push(`/notes?topic=${encodeURIComponent(topic)}`);
   }
 
-  useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
-      voicePreferenceWasSetRef.current = true;
-    }
-  }, [supportedVoices, setVoicePreference]);
-
-  useEffect(() => {
-    if (
-      selectedVoice &&
-      !isSpeaking &&
-      !pageTitleSpokenRef.current
-    ) {
-      speak(`Welcome to ${APP_NAME}!`);
-      pageTitleSpokenRef.current = true;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice, isSpeaking]); // speak and APP_NAME are stable or from constants
-
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
@@ -138,7 +139,7 @@ export default function DashboardPage() {
             <CardTitle className="text-2xl text-primary">Core Features Overview</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground pt-1">
-            LearnMint offers a suite of AI-driven tools and resources to enhance your learning experience:
+            {APP_NAME} offers a suite of AI-driven tools and resources to enhance your learning experience:
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -271,21 +272,10 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Your Activity Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Info className="h-5 w-5 text-primary" />
-            Your Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            User accounts and detailed activity tracking (like test scores, generated material history) are not implemented in this version to maintain simplicity.
-          </p>
-        </CardContent>
-      </Card>
+      
+      <div className="text-center text-sm text-muted-foreground mt-12 py-4">
+        Made by - MrGarvit
+      </div>
     </div>
   );
 }
