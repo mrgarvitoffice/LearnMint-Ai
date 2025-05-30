@@ -49,7 +49,7 @@ export default function CalculatorPage() {
   const [isRadians, setIsRadians] = useState(true); 
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -66,8 +66,11 @@ export default function CalculatorPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+    return () => { 
+      isMounted = false;
+      if(isMounted) cancelTTS();
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
 
   useEffect(() => {
@@ -166,7 +169,7 @@ export default function CalculatorPage() {
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><CalculatorIcon className="h-7 w-7 text-primary" /></div>
+          <div className="flex items-center justify-center mb-4"><CalculatorIcon className="h-12 w-12 text-primary" /></div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
         </CardHeader>
       </Card>
@@ -227,6 +230,3 @@ export default function CalculatorPage() {
     </div>
   );
 }
-
-
-    

@@ -25,20 +25,17 @@ interface QuizViewProps {
 const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'medium' }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Array<string | undefined>>([]);
-  // State to track if the current MCQ answer has been finalized (and feedback shown)
   const [isMcqAnswerFinalized, setIsMcqAnswerFinalized] = useState<boolean>(false);
-  // State to track if the current short answer has been submitted
   const [isShortAnswerSubmitted, setIsShortAnswerSubmitted] = useState<boolean>(false);
   const [quizFinished, setQuizFinished] = useState(false);
   const [score, setScore] = useState(0);
   const [shortAnswerValue, setShortAnswerValue] = useState('');
-  // State to track the selected MCQ option for immediate feedback UI
   const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
   
   const { playSound: playCorrectSound } = useSound('correct');
   const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
-  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices } = useTTS();
   const voicePreferenceWasSetRef = React.useRef(false);
 
   useEffect(() => {
@@ -48,7 +45,6 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     }
   }, [supportedVoices, setVoicePreference]);
 
-  // Initialize/Reset quiz state when questions prop changes
   useEffect(() => {
     if (questions && questions.length > 0) {
       setUserAnswers(Array(questions.length).fill(undefined));
@@ -66,7 +62,6 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const isAnswerSubmittedForCurrent = currentQuestion?.type === 'multiple-choice' 
     ? isMcqAnswerFinalized 
     : isShortAnswerSubmitted;
-
 
   const processAnswer = useCallback((answerToSubmit: string) => {
     if (!currentQuestion) return;
@@ -93,12 +88,11 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     }
   }, [currentQuestion, userAnswers, playCorrectSound, playIncorrectSound, speak, selectedVoice, isSpeaking, isPaused, currentQuestionIndex]);
 
-
   const handleMcqOptionClick = useCallback((optionValue: string) => {
     if (isMcqAnswerFinalized || !currentQuestion || currentQuestion.type !== 'multiple-choice') return;
     playClickSound();
-    setSelectedMcqOption(optionValue); // For immediate UI update
-    processAnswer(optionValue); // Process correctness, score, and finalize
+    setSelectedMcqOption(optionValue);
+    processAnswer(optionValue);
   }, [isMcqAnswerFinalized, currentQuestion, processAnswer, playClickSound]);
 
   const handleShortAnswerSubmit = useCallback(() => {
@@ -107,17 +101,24 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     processAnswer(shortAnswerValue);
   }, [isShortAnswerSubmitted, currentQuestion, shortAnswerValue, processAnswer, playClickSound]);
 
-
   const handleNextQuestion = () => {
     playClickSound();
-    if (!questions || currentQuestionIndex >= questions.length - 1) return;
+    if (!questions || currentQuestionIndex >= questions.length - 1) {
+      if (!quizFinished) handleViewResults(); // If it's the last question and not finished, view results
+      return;
+    }
     setCurrentQuestionIndex(prev => prev + 1);
-    // Reset states for the new question
     setIsMcqAnswerFinalized(false);
     setIsShortAnswerSubmitted(false);
-    setSelectedMcqOption(null);
-    // Pre-fill short answer input if user previously answered this question
-    setShortAnswerValue(userAnswers[currentQuestionIndex + 1] || ''); 
+    setSelectedMcqOption(userAnswers[currentQuestionIndex + 1] && questions[currentQuestionIndex +1]?.type === 'multiple-choice' ? userAnswers[currentQuestionIndex + 1] : null);
+    setShortAnswerValue(userAnswers[currentQuestionIndex + 1] && questions[currentQuestionIndex + 1]?.type === 'short-answer' ? userAnswers[currentQuestionIndex + 1] || '' : ''); 
+    
+    // Determine if the next question was already answered to set finalized state
+    const nextAnswer = userAnswers[currentQuestionIndex + 1];
+    if(nextAnswer) {
+        if(questions[currentQuestionIndex + 1]?.type === 'multiple-choice') setIsMcqAnswerFinalized(true);
+        else if(questions[currentQuestionIndex + 1]?.type === 'short-answer') setIsShortAnswerSubmitted(true);
+    }
   };
 
   const handlePrevQuestion = () => {
@@ -201,7 +202,6 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   if (!currentQuestion) return <div className="p-4 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /><p className="text-muted-foreground mt-2">Loading question...</p></div>;
 
-  // Feedback specific to the current question after submission
   const isCurrentMcqCorrect = isMcqAnswerFinalized && selectedMcqOption?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
   const isCurrentShortAnswerCorrect = isShortAnswerSubmitted && userAnswers[currentQuestionIndex]?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
   const isCurrentAnswerCorrect = isCurrentMcqCorrect || isCurrentShortAnswerCorrect;
@@ -218,8 +218,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
         {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
           <RadioGroup 
-            value={selectedMcqOption || undefined} // Controlled by selectedMcqOption for styling
-            // onValueChange is not used; click on Label triggers handleMcqOptionClick
+            value={selectedMcqOption || undefined} 
             className="space-y-2"
           >
             {currentQuestion.options.map((option, i) => {
@@ -232,15 +231,15 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
                     "flex items-center space-x-2 p-3 border rounded-md transition-all",
                     isMcqAnswerFinalized && isThisOptionSelected && isCorrectAnswer && "bg-green-500/20 border-green-600 text-green-700 dark:text-green-400 ring-2 ring-green-500",
                     isMcqAnswerFinalized && isThisOptionSelected && !isCorrectAnswer && "bg-destructive/20 border-destructive text-destructive-foreground ring-2 ring-destructive",
-                    isMcqAnswerFinalized && !isThisOptionSelected && isCorrectAnswer && "border-green-600 bg-green-500/10", // Highlight correct if wrong one selected
+                    isMcqAnswerFinalized && !isThisOptionSelected && isCorrectAnswer && "border-green-600 bg-green-500/10", 
                     !isMcqAnswerFinalized && "hover:bg-muted cursor-pointer"
                   )}>
                   <RadioGroupItem 
                     value={option} 
                     id={`option-${i}-${currentQuestionIndex}`} 
                     disabled={isMcqAnswerFinalized} 
-                    checked={selectedMcqOption === option} // Visually show selection
-                    className="sr-only" // Hide actual radio, label click handles it
+                    checked={selectedMcqOption === option} 
+                    className="sr-only" 
                   />
                   <div className={cn(
                       "w-4 h-4 rounded-full border border-primary flex items-center justify-center shrink-0",
@@ -296,5 +295,3 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 };
 
 export default QuizView;
-
-    

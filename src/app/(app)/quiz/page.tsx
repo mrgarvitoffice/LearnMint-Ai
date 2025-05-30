@@ -33,16 +33,17 @@ export default function QuizPage() {
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
 
-  const { register, handleSubmit, control, formState: { errors }, watch } = useForm<FormData>({
+  const { register, handleSubmit, control, formState: { errors }, watch, reset } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       numQuestions: 10, 
       difficulty: 'medium',
+      topic: '',
     }
   });
   const topicValue = watch('topic');
@@ -61,8 +62,11 @@ export default function QuizPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData]);
+    return () => { 
+      isMounted = false;
+      if (isMounted) cancelTTS();
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData, cancelTTS]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
@@ -78,7 +82,7 @@ export default function QuizPage() {
     playClickSound();
     setIsLoading(true);
     setGeneratedQuizData(null);
-    pageTitleSpokenRef.current = true; // Prevent page title announcement again
+    pageTitleSpokenRef.current = true; 
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating quiz. Please wait.");
@@ -113,7 +117,8 @@ export default function QuizPage() {
   const handleNewQuiz = () => {
     playClickSound();
     setGeneratedQuizData(null);
-    pageTitleSpokenRef.current = false; // Allow title to be spoken again
+    pageTitleSpokenRef.current = false; 
+    reset({ topic: '', numQuestions: 10, difficulty: 'medium' }); // Reset form
   }
 
   if (generatedQuizData && generatedQuizData.questions && topicValue) {
@@ -128,10 +133,10 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
+    <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><HelpCircle className="h-7 w-7 text-primary" /></div>
+          <div className="flex items-center justify-center mb-4"><HelpCircle className="h-12 w-12 text-primary" /></div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">
             Enter a topic, number of questions (max 30), and difficulty to generate an interactive quiz.
@@ -181,6 +186,3 @@ export default function QuizPage() {
     </div>
   );
 }
-
-
-    

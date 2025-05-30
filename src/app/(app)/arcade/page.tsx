@@ -12,7 +12,7 @@ import { useEffect, useRef } from 'react';
 const PAGE_TITLE = "LearnMint Arcade Arena";
 
 export default function ArcadePage() {
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -29,15 +29,18 @@ export default function ArcadePage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+    return () => { 
+      isMounted = false; 
+      if(isMounted) cancelTTS();
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="inline-block p-3 bg-primary/80 rounded-full mb-4 mx-auto"> 
-            <Gamepad2 className="w-7 h-7 text-primary-foreground" />
+            <Gamepad2 className="w-12 h-12 text-primary-foreground" />
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">
             {PAGE_TITLE}
@@ -112,6 +115,3 @@ export default function ArcadePage() {
     </div>
   );
 }
-
-
-    

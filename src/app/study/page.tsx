@@ -27,21 +27,33 @@ import { Skeleton } from '@/components/ui/skeleton';
 const PAGE_TITLE_BASE = "Study Hub";
 
 const NotesLoadingSkeleton = () => (
-  <div className="p-4 space-y-3">
-    <Skeleton className="h-8 w-3/4" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" />
-    <Skeleton className="h-32 w-full mt-4" />
-  </div>
+  <Card>
+    <CardContent className="p-6">
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-3/4" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-32 w-full mt-4" />
+      </div>
+    </CardContent>
+  </Card>
 );
 const QuizLoadingSkeleton = () => (
-  <div className="p-4 space-y-3">
-    <Skeleton className="h-6 w-1/2 mb-4" />
-    {[...Array(3)].map((_, i) => ( <div key={i} className="space-y-2 mb-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div>))}
-  </div>
+  <Card>
+    <CardContent className="p-6">
+      <div className="space-y-3">
+        <Skeleton className="h-6 w-1/2 mb-4" />
+        {[...Array(3)].map((_, i) => ( <div key={i} className="space-y-2 mb-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div>))}
+      </div>
+    </CardContent>
+  </Card>
 );
 const FlashcardsLoadingSkeleton = () => (
-  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
-  </div>
+   <Card>
+    <CardContent className="p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+      </div>
+    </CardContent>
+  </Card>
 );
 
 const ErrorDisplay = ({ error, onRetry, contentType }: { error: Error | null, onRetry: () => void, contentType: string }) => (
@@ -61,7 +73,7 @@ function StudyPageContent() {
   const router = useRouter(); 
   const topicParam = searchParams.get("topic");
 
-  const [activeTopic, setActiveTopic] = useState<string>(topicParam ? decodeURIComponent(topicParam) : "No topic provided"); 
+  const [activeTopic, setActiveTopic] = useState<string>(topicParam ? decodeURIComponent(topicParam) : ""); 
   const [activeTab, setActiveTab] = useState<string>("notes");
 
   const { toast } = useToast();
@@ -74,17 +86,18 @@ function StudyPageContent() {
   const initialFetchTriggeredRef = useRef(false);
 
    useEffect(() => {
-    if (topicParam) {
-      const decodedTopic = decodeURIComponent(topicParam);
-      if (decodedTopic !== activeTopic) { 
-         setActiveTopic(decodedTopic);
-         queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
-         queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
-         queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
-         pageTitleSpokenRef.current = false; 
-      }
-    } else if (activeTopic !== "No topic provided") { 
-      setActiveTopic("No topic provided");
+    const decodedTopic = topicParam ? decodeURIComponent(topicParam) : "";
+    if (decodedTopic !== activeTopic) { 
+        setActiveTopic(decodedTopic);
+        pageTitleSpokenRef.current = false; // Reset for new topic
+        initialFetchTriggeredRef.current = false; // Allow refetch for new topic
+        // Invalidate queries when activeTopic changes to allow re-fetching
+        queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
+        queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
+        queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
+    }
+    if (!decodedTopic && activeTopic !== "") {
+      setActiveTopic(""); // Clear if no topic in URL
       toast({ title: "No Topic", description: "No topic was specified in the URL. Please generate materials from the main page.", variant: "destructive" });
     }
   }, [topicParam, activeTopic, toast, queryClient]);
@@ -99,7 +112,7 @@ function StudyPageContent() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic && activeTopic !== "No topic provided") {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
     }
@@ -110,9 +123,9 @@ function StudyPageContent() {
 
 
   const commonQueryOptions = {
-    enabled: !!activeTopic && activeTopic !== "No topic provided",
-    staleTime: 1000 * 60 * 1, 
-    gcTime: 1000 * 60 * 5,
+    enabled: !!activeTopic, // Enable query only if activeTopic is truthy
+    staleTime: 1000 * 60 * 1, // 1 minute
+    gcTime: 1000 * 60 * 5,   // 5 minutes
     retry: 1,
   };
 
@@ -126,7 +139,7 @@ function StudyPageContent() {
   } = useQuery<GenerateStudyNotesOutput, Error>({
     queryKey: ["studyNotes", activeTopic],
     queryFn: async () => {
-      if (!activeTopic || activeTopic === "No topic provided") throw new Error("A valid topic is required.");
+      if (!activeTopic) throw new Error("A valid topic is required to generate notes.");
       toast({title: "Generating Notes...", description: `Fetching notes for ${activeTopic}.`})
       return generateNotesAction({ topic: activeTopic });
     },
@@ -143,12 +156,13 @@ function StudyPageContent() {
   } = useQuery<GenerateQuizQuestionsOutput, Error>({
     queryKey: ["quizQuestions", activeTopic],
     queryFn: async () => {
-      if (!activeTopic || activeTopic === "No topic provided") throw new Error("A valid topic is required.");
+      if (!activeTopic) throw new Error("A valid topic is required.");
       toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${activeTopic}. Difficulty: Medium.`})
       return generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || initialFetchTriggeredRef.current),
+    // Only fetch if tab is active or it's the initial parallel fetch
+    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (initialFetchTriggeredRef.current && !quizData)),
   });
 
   const {
@@ -161,57 +175,61 @@ function StudyPageContent() {
   } = useQuery<GenerateFlashcardsOutput, Error>({
     queryKey: ["flashcards", activeTopic],
     queryFn: async () => {
-      if (!activeTopic || activeTopic === "No topic provided") throw new Error("A valid topic is required.");
+      if (!activeTopic) throw new Error("A valid topic is required.");
       toast({title: "Generating Flashcards...", description: `Fetching 20 flashcards for ${activeTopic}.`})
       return generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || initialFetchTriggeredRef.current),
+    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (initialFetchTriggeredRef.current && !flashcardsData)),
   });
 
+  // Trigger initial fetches if topic is present
   useEffect(() => {
-    if(commonQueryOptions.enabled && !initialFetchTriggeredRef.current && activeTopic && activeTopic !== "No topic provided") {
-        refetchNotes(); 
-        refetchQuiz(); 
-        refetchFlashcards();
-        initialFetchTriggeredRef.current = true;
+    if(activeTopic && !initialFetchTriggeredRef.current) {
+        initialFetchTriggeredRef.current = true; 
+        // Queries will run based on their `enabled` condition
     }
-  }, [commonQueryOptions.enabled, activeTopic, refetchNotes, refetchQuiz, refetchFlashcards]);
+  }, [activeTopic]);
 
 
   const handleRefreshContent = useCallback(() => {
     playClickSound();
-    if (activeTopic && activeTopic !== "No topic provided") {
+    if (activeTopic) {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
-      pageTitleSpokenRef.current = false; // Allow title to be spoken again
+      pageTitleSpokenRef.current = false; 
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      refetchNotes();
-      refetchQuiz();
-      refetchFlashcards();
+      // refetchNotes(); refetchQuiz(); refetchFlashcards(); // Not needed, invalidateQueries will trigger refetch on next render if active
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, refetchNotes, refetchQuiz, refetchFlashcards, toast, playClickSound, queryClient]);
+  }, [activeTopic, queryClient, toast, playClickSound]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
     setActiveTab(value);
-    if (value === 'quiz' && (!quizData || isErrorQuiz) && commonQueryOptions.enabled) refetchQuiz();
-    if (value === 'flashcards' && (!flashcardsData || isErrorFlashcards) && commonQueryOptions.enabled) refetchFlashcards();
+    // Trigger fetch if tab is opened and data hasn't been successfully fetched yet
+    if (value === 'quiz' && commonQueryOptions.enabled && !quizData && !isErrorQuiz && !isLoadingQuiz) {
+      refetchQuiz();
+    }
+    if (value === 'flashcards' && commonQueryOptions.enabled && !flashcardsData && !isErrorFlashcards && !isLoadingFlashcards) {
+      refetchFlashcards();
+    }
   };
 
   const renderContent = () => {
-    if (activeTopic === "No topic provided") {
+    if (!activeTopic) {
       return (
-        <Alert variant="destructive" className="mt-6">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertTitle>No Topic Specified</AlertTitle>
-          <AlertDescription>
-            Please go back to the generation page and enter a topic first.
-            <Button onClick={() => router.push('/notes')} variant="link" className="pl-2 text-destructive h-auto py-0">Go to Generate</Button>
+        <Alert variant="default" className="mt-6 flex flex-col items-center justify-center text-center p-6">
+          <Home className="h-10 w-10 text-muted-foreground mb-3" />
+          <AlertTitle className="text-xl">No Topic Loaded</AlertTitle>
+          <AlertDescription className="mb-4">
+            Please generate study materials from the main page first.
           </AlertDescription>
+          <Button onClick={() => router.push('/notes')} variant="outline">
+            Go to Generate Page
+          </Button>
         </Alert>
       );
     }
@@ -219,9 +237,9 @@ function StudyPageContent() {
     return (
       <Tabs defaultValue="notes" value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col min-h-0">
         <TabsList className="grid w-full grid-cols-1 xs:grid-cols-3 mb-4 sm:mb-6 mx-auto md:max-w-md sticky top-[calc(theme(spacing.16)_+_1px)] sm:top-0 z-10 bg-background/80 backdrop-blur-sm py-1.5">
-          <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {(isLoadingNotes || (isFetchingNotes && !notesData && !isErrorNotes)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-          <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz || (isFetchingQuiz && !quizData && !isErrorQuiz)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-          <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData && !isErrorFlashcards)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {(isLoadingNotes || isFetchingNotes) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz || isFetchingQuiz) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards || isFetchingFlashcards) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
@@ -243,27 +261,18 @@ function StudyPageContent() {
     );
   }
 
-
-  if (!topicParam && activeTopic === "No topic provided") { 
-    return (
-      <div className="container mx-auto max-w-5xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading study materials...</p>
-         <Button onClick={() => router.push('/notes')} variant="outline" className="mt-4"><Home className="mr-2 h-4 w-4"/> Go to Generate Page</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto max-w-5xl px-2 py-6 sm:px-4 sm:py-8 flex flex-col flex-1 min-h-[calc(100vh-8rem)]">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-2">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center sm:text-left truncate max-w-xl">
-          Study Hub for: <span className="text-primary">{activeTopic}</span>
-        </h1>
-        <Button onClick={handleRefreshContent} variant="outline" size="sm" className="active:scale-95" disabled={isLoadingNotes || isLoadingQuiz || isLoadingFlashcards || isFetchingNotes || isFetchingQuiz || isFetchingFlashcards}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh Content
-        </Button>
-      </div>
+      {activeTopic ? (
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center sm:text-left truncate max-w-xl">
+            Study Hub for: <span className="text-primary">{activeTopic}</span>
+          </h1>
+          <Button onClick={handleRefreshContent} variant="outline" size="sm" className="active:scale-95" disabled={isLoadingNotes || isLoadingQuiz || isLoadingFlashcards || isFetchingNotes || isFetchingQuiz || isFetchingFlashcards}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh Content
+          </Button>
+        </div>
+      ) : null}
       {renderContent()}
     </div>
   );
@@ -271,6 +280,7 @@ function StudyPageContent() {
 
 export default function StudyPage() {
   return (
+    // Wrap with Suspense at the Layout level if needed, or ensure client components handle their own loading
     <Suspense fallback={
       <div className="container mx-auto max-w-5xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -281,6 +291,3 @@ export default function StudyPage() {
     </Suspense>
   );
 }
-
-
-    

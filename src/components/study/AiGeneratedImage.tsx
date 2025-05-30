@@ -13,11 +13,8 @@ interface AiGeneratedImageProps {
 const AiGeneratedImage: React.FC<AiGeneratedImageProps> = ({ promptText }) => {
   const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(promptText)}`;
   
-  // Create a concise placeholder text, max 50 chars
   const placeholderText = promptText.length > 50 ? promptText.substring(0, 47) + "..." : promptText;
   const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(placeholderText)}`;
-
-  // Generate a simple 2-word hint for data-ai-hint from the prompt
   const hintKeywords = promptText.toLowerCase().split(/\s+/).slice(0, 2).join(" ");
 
   return (
@@ -47,5 +44,3 @@ const AiGeneratedImage: React.FC<AiGeneratedImageProps> = ({ promptText }) => {
 };
 
 export default AiGeneratedImage;
-
-    

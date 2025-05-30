@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateFlashcardsAction } from '@/lib/actions'; 
 import type { GenerateFlashcardsOutput } from '@/lib/types'; 
 import { Loader2, ListChecks, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { FlashcardComponent } from '@/components/features/flashcards/Flashcard'; 
+import FlashcardsView from '@/components/study/FlashcardsView'; // Use the centralized view
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -27,21 +27,21 @@ type FormData = z.infer<typeof formSchema>;
 const PAGE_TITLE = "AI Flashcard Factory";
 
 export default function FlashcardsPage() {
-  const [flashcardsData, setFlashcardsData] = useState<GenerateFlashcardsOutput | null>(null);
+  const [generatedFlashcardsData, setGeneratedFlashcardsData] = useState<GenerateFlashcardsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       numFlashcards: 10,
+      topic: '',
     }
   });
   const topicValue = watch('topic'); 
@@ -55,12 +55,15 @@ export default function FlashcardsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !flashcardsData) {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !generatedFlashcardsData) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, flashcardsData]);
+    return () => { 
+      isMounted = false;
+      if(isMounted) cancelTTS();
+     };
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData, cancelTTS]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
@@ -75,9 +78,8 @@ export default function FlashcardsPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
     setIsLoading(true);
-    setFlashcardsData(null);
-    setCurrentCardIndex(0);
-    pageTitleSpokenRef.current = true; // Prevent page title announcement again
+    setGeneratedFlashcardsData(null);
+    pageTitleSpokenRef.current = true; 
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
@@ -87,7 +89,7 @@ export default function FlashcardsPage() {
     try {
       const result = await generateFlashcardsAction(data);
       if (result.flashcards && result.flashcards.length > 0) {
-        setFlashcardsData(result);
+        setGeneratedFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: `Your flashcards for "${data.topic}" are ready.` });
         if (selectedVoice && !isSpeaking && !isPaused) speak("Flashcards ready!");
       } else {
@@ -104,100 +106,58 @@ export default function FlashcardsPage() {
       generatingMessageSpokenRef.current = false;
     }
   };
-
-  const handleNextCard = () => {
-    playClickSound();
-    if (flashcardsData && currentCardIndex < flashcardsData.flashcards.length - 1) {
-      setCurrentCardIndex(prev => prev + 1);
-    }
-  };
-
-  const handlePrevCard = () => {
-    playClickSound();
-    if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev - 1);
-    }
-  };
   
   const handleCreateNewSet = () => {
     playClickSound();
-    setFlashcardsData(null); 
-    setCurrentCardIndex(0);
-    pageTitleSpokenRef.current = false; // Allow title to be spoken again
+    setGeneratedFlashcardsData(null); 
+    pageTitleSpokenRef.current = false; 
+    reset({ topic: '', numFlashcards: 10 }); // Reset form
   }
 
-  if (!flashcardsData) {
+  if (generatedFlashcardsData && topicValue) {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
-        <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
-                <ListChecks className="h-7 w-7 text-primary" />
-            </div>
-            <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
-            <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">
-                Enter a topic and number of cards to create your flashcard set.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6 p-6">
-              <div className="space-y-2">
-                <Label htmlFor="topic">Topic</Label>
-                <Input id="topic" placeholder="e.g., Key Historical Figures, Chemical Elements" {...register('topic')} className="text-base"/>
-                {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="numFlashcards">Number of Flashcards (1-50)</Label>
-                <Input id="numFlashcards" type="number" {...register('numFlashcards')} className="text-base"/>
-                {errors.numFlashcards && <p className="text-sm text-destructive">{errors.numFlashcards.message}</p>}
-              </div>
-            </CardContent>
-            <CardFooter className="justify-center p-6">
-              <Button type="submit" disabled={isLoading} size="lg" className="min-w-[200px]">
-                {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Sparkles className="w-5 h-5 mr-2" />}
-                Generate Flashcards
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+      <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center min-h-[calc(100vh-12rem)] space-y-8">
+        <FlashcardsView flashcards={generatedFlashcardsData.flashcards} topic={topicValue} />
+        <div className="text-center">
+            <Button onClick={handleCreateNewSet} variant="outline" size="lg">Create New Set</Button>
+        </div>
       </div>
-    );
+    )
   }
   
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center min-h-[calc(100vh-12rem)] space-y-8">
-        <Card className="w-full shadow-xl">
-        <CardHeader>
-            <CardTitle className="text-xl text-primary">Flashcards for: {topicValue}</CardTitle>
-            <CardDescription className="text-sm">
-            Card {currentCardIndex + 1} of {flashcardsData.flashcards.length}
-            </CardDescription>
-            <Progress value={((currentCardIndex + 1) / flashcardsData.flashcards.length) * 100} className="w-full mt-2 h-2.5" />
+    <div className="container mx-auto max-w-xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
+      <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center mb-4">
+              <ListChecks className="h-12 w-12 text-primary" />
+          </div>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+          <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">
+              Enter a topic and number of cards to create your flashcard set.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-6 p-6 min-h-[350px] justify-center">
-            <FlashcardComponent
-            term={flashcardsData.flashcards[currentCardIndex].term}
-            definition={flashcardsData.flashcards[currentCardIndex].definition}
-            className="w-full max-w-lg h-64 md:h-72"
-            />
-        </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 p-6 border-t">
-            <div className="flex gap-3 w-full sm:w-auto">
-                <Button variant="outline" onClick={handlePrevCard} disabled={currentCardIndex === 0} className="flex-1 sm:flex-initial">
-                    <ChevronLeft className="w-4 h-4 mr-2" /> Previous
-                </Button>
-                <Button variant="outline" onClick={handleNextCard} disabled={currentCardIndex === flashcardsData.flashcards.length - 1} className="flex-1 sm:flex-initial">
-                    Next <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardContent className="space-y-6 p-6">
+            <div className="space-y-2">
+              <Label htmlFor="topic">Topic</Label>
+              <Input id="topic" placeholder="e.g., Key Historical Figures, Chemical Elements" {...register('topic')} className="text-base"/>
+              {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
             </div>
-            <Button onClick={handleCreateNewSet} variant="secondary" className="w-full mt-3 sm:mt-0 sm:w-auto">
-                Create New Set
+            <div className="space-y-2">
+              <Label htmlFor="numFlashcards">Number of Flashcards (1-50)</Label>
+              <Input id="numFlashcards" type="number" {...register('numFlashcards')} className="text-base"/>
+              {errors.numFlashcards && <p className="text-sm text-destructive">{errors.numFlashcards.message}</p>}
+            </div>
+          </CardContent>
+          <CardFooter className="justify-center p-6">
+            <Button type="submit" disabled={isLoading} size="lg" className="min-w-[200px]">
+              {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Sparkles className="w-5 h-5 mr-2" />}
+              Generate Flashcards
             </Button>
-        </CardFooter>
-        </Card>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }
-
-
-    

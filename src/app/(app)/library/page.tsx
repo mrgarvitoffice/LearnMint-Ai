@@ -20,7 +20,7 @@ export default function LibraryPage() {
   const [googleBooksSearchTerm, setGoogleBooksSearchTerm] = useState('');
   const [currentMathFact, setCurrentMathFact] = useState<MathFact | null>(null);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -37,8 +37,11 @@ export default function LibraryPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+    return () => { 
+      isMounted = false;
+      if(isMounted) cancelTTS();
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
   const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
     queryKey: ['mathFact'], queryFn: fetchMathFact, staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false,
@@ -52,9 +55,24 @@ export default function LibraryPage() {
     }
   }, [mathFact, isLoadingMathFact]);
   
-  const handleRefreshMathFact = () => { refetchMathFact(); };
-  const handleYoutubeSearch = (e: React.FormEvent) => { e.preventDefault(); if (youtubeSearchTerm.trim()) window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeSearchTerm.trim())}`, '_blank'); };
-  const handleGoogleBooksSearch = (e: React.FormEvent) => { e.preventDefault(); if (googleBooksSearchTerm.trim()) window.open(`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(googleBooksSearchTerm.trim())}`, '_blank'); };
+  const handleRefreshMathFact = () => { 
+    refetchMathFact(); 
+    if(selectedVoice && !isSpeaking && !isPaused) speak("Fetching new math fact.");
+  };
+  const handleYoutubeSearch = (e: React.FormEvent) => { 
+    e.preventDefault(); 
+    if (youtubeSearchTerm.trim()) {
+      if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeSearchTerm.trim())}`, '_blank'); 
+    }
+  };
+  const handleGoogleBooksSearch = (e: React.FormEvent) => { 
+    e.preventDefault(); 
+    if (googleBooksSearchTerm.trim()) {
+      if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
+      window.open(`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(googleBooksSearchTerm.trim())}`, '_blank'); 
+    }
+  };
   
   const otherResources = [
     { title: "Khan Academy", description: "Free online courses, lessons & practice.", link: "https://www.khanacademy.org/", icon: Lightbulb, dataAiHint: "education learning" },
@@ -68,7 +86,7 @@ export default function LibraryPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><BookMarked className="h-7 w-7 text-primary" /></div>
+          <div className="flex items-center justify-center mb-4"><BookMarked className="h-12 w-12 text-primary" /></div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Explore a collection of educational resources and tools.</CardDescription>
         </CardHeader>
@@ -113,6 +131,3 @@ export default function LibraryPage() {
     </div>
   );
 }
-
-
-    

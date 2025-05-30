@@ -30,7 +30,7 @@ export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -47,8 +47,11 @@ export default function NewsPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+    return () => { 
+      isMounted = false;
+      if(isMounted) cancelTTS();
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -73,8 +76,22 @@ export default function NewsPage() {
     });
   };
 
-  const handleApplyFilters = () => { setAppliedFilters(filters); pageTitleSpokenRef.current = true; /* Prevent re-announcement on filter apply */ };
-  const handleResetFilters = () => { setFilters(initialFilters); setAppliedFilters(initialFilters); pageTitleSpokenRef.current = true; };
+  const handleApplyFilters = () => { 
+    setAppliedFilters(filters); 
+    pageTitleSpokenRef.current = true; /* Prevent re-announcement on filter apply */ 
+    // If search button is clicked, we might want to announce "Fetching news..."
+    if (selectedVoice && !isSpeaking && !isPaused) {
+      speak("Fetching news with new filters.");
+    }
+  };
+  const handleResetFilters = () => { 
+    setFilters(initialFilters); 
+    setAppliedFilters(initialFilters); 
+    pageTitleSpokenRef.current = true; 
+    if (selectedVoice && !isSpeaking && !isPaused) {
+      speak("News filters reset.");
+    }
+  };
 
   const articles = data?.pages.flatMap(page => page.results) ?? [];
 
@@ -82,7 +99,7 @@ export default function NewsPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><Newspaper className="h-7 w-7 text-primary" /></div>
+          <div className="flex items-center justify-center mb-4"><Newspaper className="h-12 w-12 text-primary" /></div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
@@ -130,6 +147,3 @@ export default function NewsPage() {
     </div>
   );
 }
-
-
-    
