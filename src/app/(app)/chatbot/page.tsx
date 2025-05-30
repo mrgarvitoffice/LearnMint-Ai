@@ -8,7 +8,7 @@ import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { meguminChatbot, type MeguminChatbotInput } from '@/ai/flows/ai-chatbot';
-import { Bot } from 'lucide-react';
+import { Bot, PlayCircle, PauseCircle, StopCircle } from 'lucide-react'; // Added TTS control icons
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -23,19 +23,31 @@ export default function ChatbotPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { playSound: playMessageSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, cancel, isSpeaking, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference } = useTTS();
+  const { 
+    speak, 
+    pauseTTS,
+    resumeTTS,
+    cancelTTS, 
+    isSpeaking, 
+    isPaused,
+    supportedVoices, 
+    selectedVoice, 
+    setSelectedVoiceURI, 
+    setVoicePreference,
+    voicePreference
+  } = useTTS();
   const initialGreetingSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
+  const currentSpokenMessageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('female'); // Default to female for chatbot replies
+      setVoicePreference('zia'); // Default to Zia for Megumin
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages are added
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (viewport) {
@@ -53,15 +65,17 @@ export default function ChatbotPage() {
     };
     setMessages([initialGreeting]);
 
-    if (selectedVoice && !initialGreetingSpokenRef.current && !isSpeaking) {
+    if (selectedVoice && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
+      currentSpokenMessageRef.current = initialGreeting.content;
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice]); // Rerun if selectedVoice changes initially, speak depends on selectedVoice
+  }, [selectedVoice]); // Only trigger on selectedVoice change (after preference set)
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
+    cancelTTS(); // Stop any ongoing speech before sending new message
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString() + '-user',
@@ -96,10 +110,11 @@ export default function ChatbotPage() {
         timestamp: new Date(),
       };
       
-      setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID)); // Remove typing indicator
+      setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
       playMessageSound();
-      if (selectedVoice && !isSpeaking) {
+      if (selectedVoice && !isSpeaking && !isPaused) {
+        currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
 
@@ -112,12 +127,23 @@ export default function ChatbotPage() {
         content: "Sorry, I couldn't process that. My explosion magic might be on cooldown!",
         timestamp: new Date(),
       };
-      setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID)); // Remove typing indicator
+      setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const handleTTSPlayback = () => {
+    if (isSpeaking && !isPaused) {
+      pauseTTS();
+    } else if (isPaused) {
+      resumeTTS();
+    } else if (currentSpokenMessageRef.current) {
+      speak(currentSpokenMessageRef.current);
+    }
+  };
+
 
   return (
     <Card className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] flex flex-col">
@@ -131,20 +157,21 @@ export default function ChatbotPage() {
                 <CardDescription>Your playful AI assistant. Try asking her to "sing a song about explosions!"</CardDescription>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}>
-                <SelectTrigger className="w-full sm:w-[150px] text-xs">
+              <Select 
+                value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')}
+                onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}
+              >
+                <SelectTrigger className="w-auto text-xs h-8">
                   <SelectValue placeholder="Voice Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="female">Female (Default)</SelectItem>
-                  <SelectItem value="male">Male (Default)</SelectItem>
                   <SelectItem value="zia">Zia (Female)</SelectItem>
                   <SelectItem value="kai">Kai (Male)</SelectItem>
                 </SelectContent>
               </Select>
               <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
-                <SelectTrigger className="w-full sm:w-[180px] text-xs">
-                  <SelectValue placeholder="Select Voice Engine" />
+                <SelectTrigger className="w-auto text-xs h-8">
+                  <SelectValue placeholder="Voice Engine" />
                 </SelectTrigger>
                 <SelectContent>
                   {supportedVoices.length > 0 ? supportedVoices.map(voice => (
@@ -154,9 +181,12 @@ export default function ChatbotPage() {
                   )) : <SelectItem value="no-voices" disabled className="text-xs">No voices available</SelectItem>}
                 </SelectContent>
               </Select>
-               <Button variant="outline" size="icon" onClick={cancel} disabled={!isSpeaking} className="h-8 w-8">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="6" width="12" height="12"></rect></svg>
-               </Button>
+              <Button onClick={handleTTSPlayback} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
+                {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+              </Button>
+              <Button onClick={cancelTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused}>
+                <StopCircle className="h-4 w-4" />
+              </Button>
             </div>
         </div>
       </CardHeader>

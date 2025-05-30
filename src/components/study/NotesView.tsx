@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Volume2, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react'; // Removed Volume2
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
@@ -22,55 +22,48 @@ interface NotesViewProps {
 const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   const {
     speak,
-    cancel: cancelTTS,
+    pauseTTS,
+    resumeTTS,
+    cancelTTS,
     isSpeaking,
+    isPaused,
     selectedVoice,
     setSelectedVoiceURI,
     setVoicePreference,
-    supportedVoices
+    supportedVoices,
+    voicePreference
   } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
 
-  const [speechState, setSpeechState] = useState<'idle' | 'playing' | 'paused'>('idle');
   const notesContentRef = useRef<HTMLDivElement>(null);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('zia'); // Default to Zia preference
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
-  useEffect(() => {
-    if (!isSpeaking && (speechState === 'playing' || speechState === 'paused')) {
-        setSpeechState('idle');
-    }
-  }, [isSpeaking, speechState]);
 
   const handleSpeakNotes = useCallback(() => {
     playClickSound();
     if (!notesContent) return;
-
     const textToSpeak = notesContentRef.current?.innerText || notesContent;
 
-    if (speechState === 'playing') {
-        cancelTTS();
-        setSpeechState('paused');
-    } else if (speechState === 'paused') {
-        speak(textToSpeak);
-        setSpeechState('playing');
+    if (isSpeaking && !isPaused) {
+      pauseTTS();
+    } else if (isPaused) {
+      resumeTTS();
     } else {
-        speak(textToSpeak);
-        setSpeechState('playing');
+      speak(textToSpeak);
     }
-  }, [playClickSound, notesContent, speechState, cancelTTS, speak]);
+  }, [playClickSound, notesContent, isSpeaking, isPaused, pauseTTS, resumeTTS, speak]);
 
   const handleStopSpeakNotes = useCallback(() => {
     playClickSound();
     cancelTTS();
-    setSpeechState('idle');
   }, [playClickSound, cancelTTS]);
 
   const handleDownloadNotes = () => {
@@ -101,7 +94,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast({ title: "Notes Downloaded", description: "Notes saved as a .txt file." });
-    if(selectedVoice && !isSpeaking) speak("Notes downloaded!");
+    if(selectedVoice && !isSpeaking && !isPaused) speak("Notes downloaded!");
   };
 
   const renderMarkdownWithPlaceholders = (markdownContent: string) => {
@@ -129,20 +122,21 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   }
 
   return (
-    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> {/* Added min-h-0 for flex child */}
+    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <CardTitle className="text-lg md:text-xl text-primary font-semibold flex items-center gap-2">
             Study Notes for: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')} defaultValue={selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai')? 'kai' : selectedVoice?.name.toLowerCase().includes('female') ? 'female' : 'male'}>
+            <Select 
+              value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')} 
+              onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}
+            >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Type" /> </SelectTrigger>
               <SelectContent>
                 <SelectItem value="zia">Zia (Female)</SelectItem>
                 <SelectItem value="kai">Kai (Male)</SelectItem>
-                <SelectItem value="female">Female (Default)</SelectItem>
-                <SelectItem value="male">Male (Default)</SelectItem>
               </SelectContent>
             </Select>
             <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
@@ -153,17 +147,17 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
                 )) : <SelectItem value="no-voices" disabled className="text-xs">No voices</SelectItem>}
               </SelectContent>
             </Select>
-            <Button onClick={handleSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title={speechState === 'playing' ? "Pause Notes" : speechState === 'paused' ? "Resume Notes" : "Speak Notes"}>
-              {speechState === 'playing' ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+            <Button onClick={handleSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
+              {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
-            <Button onClick={handleStopSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={speechState === 'idle'}>
+            <Button onClick={handleStopSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
               <StopCircle className="h-4 w-4" />
             </Button>
             <Button onClick={handleDownloadNotes} variant="outline" size="sm" className="h-8 text-xs"><Download className="mr-1.5 h-3.5 w-3.5"/>Download</Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0"> {/* Make CardContent flexible and hide its overflow */}
+      <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-1 sm:p-4 border rounded-md bg-muted/20" ref={notesContentRef}>
            {renderMarkdownWithPlaceholders(notesContent)}
         </ScrollArea>
@@ -173,4 +167,3 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
-
