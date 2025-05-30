@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalculatorDisplay } from '@/components/features/calculator/CalculatorDisplay';
@@ -9,10 +9,12 @@ import { CalculatorButton } from '@/components/features/calculator/CalculatorBut
 import { UnitConverter } from '@/components/features/calculator/UnitConverter';
 import type { CalculatorButtonConfig } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Trash2, RotateCcw } from 'lucide-react';
+import { Trash2, RotateCcw, Calculator as CalculatorIcon } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
+import { useTTS } from '@/hooks/useTTS';
 
 const LOCAL_STORAGE_HISTORY_KEY = 'learnmint-calculator-history';
+const PAGE_TITLE = "Precision Toolkit: Calculator & Converter";
 
 const calculatorButtonsConfig: CalculatorButtonConfig[] = [
   // Row 1
@@ -36,7 +38,7 @@ const calculatorButtonsConfig: CalculatorButtonConfig[] = [
   { value: '3', label: '3', type: 'digit' },
   { value: '+', label: '+', type: 'operator', className: 'bg-primary/80 hover:bg-primary text-primary-foreground' },
   // Row 5
-  { value: '0', label: '0', type: 'digit' }, // Spans 2 columns handled in CalculatorButton
+  { value: '0', label: '0', type: 'digit' }, 
   { value: '.', label: '.', type: 'decimal' },
   { value: '=', label: '=', type: 'equals', className: 'bg-primary hover:bg-primary/90 text-primary-foreground' },
 ];
@@ -45,15 +47,15 @@ const scientificButtonsConfig: CalculatorButtonConfig[] = [
   { value: 'sin', label: 'sin', type: 'scientific', action: 'sin' },
   { value: 'cos', label: 'cos', type: 'scientific', action: 'cos' },
   { value: 'tan', label: 'tan', type: 'scientific', action: 'tan' },
-  { value: 'log', label: 'log', type: 'scientific', action: 'log10' }, // base 10
-  { value: 'ln', label: 'ln', type: 'scientific', action: 'log' }, // natural log
+  { value: 'log', label: 'log', type: 'scientific', action: 'log10' }, 
+  { value: 'ln', label: 'ln', type: 'scientific', action: 'log' }, 
   { value: 'sqrt', label: '√', type: 'scientific', action: 'sqrt' },
   { value: '(', label: '(', type: 'operator' },
   { value: ')', label: ')', type: 'operator' },
   { value: 'x^y', label: 'xʸ', type: 'operator', value: '**' },
   { value: 'PI', label: 'π', type: 'digit', value: Math.PI.toString()},
   { value: 'E', label: 'e', type: 'digit', value: Math.E.toString()},
-  { value: 'deg', label: 'DEG', type: 'action', action: 'toggleMode' }, // Placeholder for Rad/Deg mode
+  { value: 'deg', label: 'DEG', type: 'action', action: 'toggleMode' }, 
 ];
 
 
@@ -62,11 +64,28 @@ export default function CalculatorPage() {
   const [currentExpression, setCurrentExpression] = useState('');
   const [historyDisplay, setHistoryDisplay] = useState('');
   const [calculationHistory, setCalculationHistory] = useState<{ expression: string, result: string }[]>([]);
-  const [isRadians, setIsRadians] = useState(true); // Default to Radians
+  const [isRadians, setIsRadians] = useState(true); 
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
+  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
 
-  // Load history from localStorage on mount
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
+
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedHistory = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
@@ -75,13 +94,12 @@ export default function CalculatorPage() {
           setCalculationHistory(JSON.parse(storedHistory));
         } catch (e) {
           console.error("Failed to parse calculator history from localStorage", e);
-          localStorage.removeItem(LOCAL_STORAGE_HISTORY_KEY); // Clear corrupted data
+          localStorage.removeItem(LOCAL_STORAGE_HISTORY_KEY); 
         }
       }
     }
   }, []);
 
-  // Save history to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(calculationHistory));
@@ -99,7 +117,7 @@ export default function CalculatorPage() {
       // eslint-disable-next-line no-eval
       let result = eval(sanitizedExpr);
       if (typeof result === 'number' && !Number.isFinite(result)) return 'Error';
-      return String(Number(result.toFixed(10))); // Limit precision
+      return String(Number(result.toFixed(10))); 
     } catch (error) {
       return 'Error';
     }
@@ -169,7 +187,6 @@ export default function CalculatorPage() {
         if (mainDisplay) {
           const newValue = (parseFloat(mainDisplay) * -1).toString();
           setMainDisplay(newValue);
-          // This needs careful handling with currentExpression
         }
         break;
       case 'percentage':
@@ -235,73 +252,82 @@ export default function CalculatorPage() {
 
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <Card className="w-full lg:max-w-md flex-shrink-0">
-        <CardHeader>
-          <CardTitle className="text-2xl">Scientific Calculator</CardTitle>
+    <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
+      <Card className="w-full shadow-xl">
+        <CardHeader className="text-center sm:text-left">
+          <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-2xl md:text-3xl text-primary font-bold">
+            <CalculatorIcon className="w-7 h-7" />
+            {PAGE_TITLE}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="calculator">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="calculator">Calculator</TabsTrigger>
-              <TabsTrigger value="scientific">Scientific</TabsTrigger>
-            </TabsList>
-            <CalculatorDisplay mainDisplay={mainDisplay} historyDisplay={historyDisplay + (isRadians ? ' RAD' : ' DEG')} />
-            <TabsContent value="calculator">
-              <div className="grid grid-cols-4 gap-2 mt-4">
-                {calculatorButtonsConfig.map(btn => (
-                  <CalculatorButton key={btn.value} config={btn} onClick={handleButtonClick} />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="scientific">
-              <div className="grid grid-cols-4 gap-2 mt-4">
-                {scientificButtonsConfig.map(btn => (
-                  <CalculatorButton key={btn.value} config={btn} onClick={handleButtonClick} />
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          {calculationHistory.length > 0 && (
-            <div className="mt-6">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-medium text-muted-foreground">History (Last 3)</h3>
-                <Button variant="ghost" size="sm" onClick={clearAllHistory} className="text-xs text-destructive/80 hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear All
-                </Button>
-              </div>
-              <ul className="space-y-2">
-                {calculationHistory.map((item, index) => (
-                  <li key={index} className="flex justify-between items-center p-2 border rounded-md bg-muted/30 text-sm">
-                    <button 
-                      onClick={() => useHistoryItem(item)} 
-                      className="truncate text-left hover:text-primary"
-                      title={`Use: ${item.expression} = ${item.result}`}
-                    >
-                      <span className="text-muted-foreground">{item.expression.replace(/\*/g, '×').replace(/\//g, '÷')} = </span> 
-                      <span className="font-semibold">{item.result}</span>
-                    </button>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => useHistoryItem(item)} className="h-7 w-7">
-                        <RotateCcw className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteHistoryItem(index)} className="h-7 w-7">
-                        <Trash2 className="h-3.5 w-3.5 text-destructive/80" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-        </CardContent>
       </Card>
-      <div className="w-full lg:flex-grow">
-         <UnitConverter />
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <Card className="w-full lg:max-w-md flex-shrink-0">
+          <CardHeader>
+            <CardTitle className="text-2xl">Scientific Calculator</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="calculator">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="calculator">Calculator</TabsTrigger>
+                <TabsTrigger value="scientific">Scientific</TabsTrigger>
+              </TabsList>
+              <CalculatorDisplay mainDisplay={mainDisplay} historyDisplay={historyDisplay + (isRadians ? ' RAD' : ' DEG')} />
+              <TabsContent value="calculator">
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {calculatorButtonsConfig.map(btn => (
+                    <CalculatorButton key={btn.value} config={btn} onClick={handleButtonClick} />
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="scientific">
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {scientificButtonsConfig.map(btn => (
+                    <CalculatorButton key={btn.value} config={btn} onClick={handleButtonClick} />
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            {calculationHistory.length > 0 && (
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">History (Last 3)</h3>
+                  <Button variant="ghost" size="sm" onClick={clearAllHistory} className="text-xs text-destructive/80 hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear All
+                  </Button>
+                </div>
+                <ul className="space-y-2">
+                  {calculationHistory.map((item, index) => (
+                    <li key={index} className="flex justify-between items-center p-2 border rounded-md bg-muted/30 text-sm">
+                      <button 
+                        onClick={() => useHistoryItem(item)} 
+                        className="truncate text-left hover:text-primary"
+                        title={`Use: ${item.expression} = ${item.result}`}
+                      >
+                        <span className="text-muted-foreground">{item.expression.replace(/\*/g, '×').replace(/\//g, '÷')} = </span> 
+                        <span className="font-semibold">{item.result}</span>
+                      </button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => useHistoryItem(item)} className="h-7 w-7">
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteHistoryItem(index)} className="h-7 w-7">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive/80" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+          </CardContent>
+        </Card>
+        <div className="w-full lg:flex-grow">
+           <UnitConverter />
+        </div>
       </div>
     </div>
   );
 }
-

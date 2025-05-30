@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,33 @@ import { OPENSTAX_BOOKS, MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
-import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2 } from 'lucide-react'; // Added BookOpen, Brain
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2 } from 'lucide-react'; 
+import { useTTS } from '@/hooks/useTTS';
+
+const PAGE_TITLE = "LearnMint Knowledge Hub";
 
 export default function LibraryPage() {
   const [youtubeSearchTerm, setYoutubeSearchTerm] = useState('');
   const [googleBooksSearchTerm, setGoogleBooksSearchTerm] = useState('');
   const [currentMathFact, setCurrentMathFact] = useState<MathFact | null>(null);
+
+  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
 
   const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
     queryKey: ['mathFact'],
@@ -47,7 +68,6 @@ export default function LibraryPage() {
   const handleGoogleBooksSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
-      // Using tbm=bks for Google Books specific search
       window.open(`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(googleBooksSearchTerm.trim())}`, '_blank');
     }
   };
@@ -62,18 +82,17 @@ export default function LibraryPage() {
 
 
   return (
-    <div className="space-y-10">
+    <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <BookMarked className="w-7 h-7 text-primary" />
-            LearnMint Library
+          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
+            <BookMarked className="w-7 h-7" />
+            {PAGE_TITLE}
           </CardTitle>
           <CardDescription>Explore a collection of educational resources and tools.</CardDescription>
         </CardHeader>
       </Card>
 
-      {/* Math Fact of the Day */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
@@ -101,7 +120,6 @@ export default function LibraryPage() {
         </CardFooter>
       </Card>
 
-      {/* OpenStax Textbooks */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">OpenStax Textbooks (Sample Catalog)</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -120,7 +138,6 @@ export default function LibraryPage() {
         </div>
       </section>
 
-      {/* Search Tools */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -168,7 +185,6 @@ export default function LibraryPage() {
         </Card>
       </section>
       
-      {/* Other Helpful Resources */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Other Helpful Resources</h2>
          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

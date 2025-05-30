@@ -63,11 +63,11 @@ export default function QuizPage() {
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoading && !quizState) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak]);
+  }, [selectedVoice, isTTSSpeaking, speak, isLoading, quizState]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
@@ -75,7 +75,7 @@ export default function QuizPage() {
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading) {
-      generatingMessageSpokenRef.current = false; // Reset when not loading
+      generatingMessageSpokenRef.current = false; 
     }
   }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
@@ -83,6 +83,11 @@ export default function QuizPage() {
     playClickSound();
     setIsLoading(true);
     setQuizState(null);
+
+    if (selectedVoice && !isTTSSpeaking) {
+      speak("Generating quiz. Please wait.");
+    }
+
     try {
       const result = await generateQuiz(data);
       if (result.quiz && result.quiz.length > 0) {
@@ -165,12 +170,13 @@ export default function QuizPage() {
   const handleNewQuiz = () => {
     playClickSound();
     setQuizState(null);
+    pageTitleSpokenRef.current = false; // Allow title to be spoken again
   }
 
   const currentQuestionData = quizState?.quiz[quizState.currentQuestionIndex];
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8">
       {!quizState ? (
         <Card>
           <CardHeader>
@@ -283,4 +289,3 @@ export default function QuizPage() {
     </div>
   );
 }
-

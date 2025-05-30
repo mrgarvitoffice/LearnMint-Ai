@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
@@ -11,31 +11,47 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useTTS } from '@/hooks/useTTS';
 
-// These constants are also defined in NewsFilters.tsx, consider moving to constants.ts if used more broadly
-const ALL_CATEGORIES_VALUE = "_all_categories_"; 
-const ANY_COUNTRY_VALUE = "_any_country_";
-// const ANY_REGION_VALUE = "_any_region_"; // This one is used internally in NewsFilters
+const PAGE_TITLE = "Global News Terminal";
 
 interface NewsPageFilters {
   query: string;
-  country: string; // Empty string means "Any Country" / World
+  country: string; 
   stateOrRegion: string;
   city: string;
-  category: string; // Empty string means "All Categories" (for API)
+  category: string; 
 }
 
 const initialFilters: NewsPageFilters = {
   query: '',
-  country: '', // Default to Any Country (world news)
+  country: '', 
   stateOrRegion: '', 
   city: '',
-  category: 'top', // Default to top headlines (which can also be an empty string for "all")
+  category: 'top', 
 };
 
 export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
+
+  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
 
   const {
     data,
@@ -49,10 +65,10 @@ export default function NewsPage() {
     queryKey: ['news', appliedFilters],
     queryFn: ({ pageParam }) => fetchNews({
         query: appliedFilters.query,
-        country: appliedFilters.country, // Will be "" if "World / Any Country" is selected
+        country: appliedFilters.country, 
         stateOrRegion: appliedFilters.stateOrRegion,
         city: appliedFilters.city,
-        category: appliedFilters.category, // Will be "" if "All Categories" is selected
+        category: appliedFilters.category, 
         page: pageParam
     }),
     initialPageParam: undefined as string | undefined,
@@ -64,8 +80,6 @@ export default function NewsPage() {
       const newFilters = { ...prev, [name]: value };
       
       if (name === 'country') {
-        // If country changes (or is set to "Any Country" which results in value=""), 
-        // reset state/region and city as they depend on a specific country context.
         newFilters.stateOrRegion = '';
         newFilters.city = '';
       }
@@ -86,12 +100,12 @@ export default function NewsPage() {
   const articles = data?.pages.flatMap(page => page.results) ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl text-primary">
+          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
             <Newspaper className="w-7 h-7" />
-            Daily News Digest
+            {PAGE_TITLE}
           </CardTitle>
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
@@ -154,4 +168,3 @@ export default function NewsPage() {
     </div>
   );
 }
-

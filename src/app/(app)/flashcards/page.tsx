@@ -49,11 +49,11 @@ export default function FlashcardsPage() {
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoading && !flashcardsData) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak]);
+  }, [selectedVoice, isTTSSpeaking, speak, isLoading, flashcardsData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
@@ -70,6 +70,11 @@ export default function FlashcardsPage() {
     setIsLoading(true);
     setFlashcardsData(null);
     setCurrentCardIndex(0);
+
+    if (selectedVoice && !isTTSSpeaking) {
+      speak("Generating flashcards. Please wait.");
+    }
+
     try {
       const result = await generateFlashcards(data);
       if (result.flashcards && result.flashcards.length > 0) {
@@ -113,10 +118,11 @@ export default function FlashcardsPage() {
     playClickSound();
     setFlashcardsData(null); 
     setCurrentCardIndex(0);
+    pageTitleSpokenRef.current = false; // Allow title to be spoken again
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
@@ -179,4 +185,3 @@ export default function FlashcardsPage() {
     </div>
   );
 }
-

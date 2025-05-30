@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,17 +6,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DefinitionChallenge } from '@/components/features/arcade/DefinitionChallenge';
 import { Gamepad2, Puzzle, Construction } from 'lucide-react';
 import Image from 'next/image';
+import { useTTS } from '@/hooks/useTTS';
+import { useEffect, useRef } from 'react';
+
+const PAGE_TITLE = "LearnMint Arcade Arena";
 
 export default function ArcadePage() {
+  const { speak, isSpeaking: isTTSSpeaking, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const pageTitleSpokenRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('female'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isTTSSpeaking, speak]);
+
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-gradient-to-br from-primary/20 via-background to-background">
         <CardHeader className="text-center">
           <div className="inline-block p-3 bg-primary/80 rounded-full mb-4">
             <Gamepad2 className="w-10 h-10 text-primary-foreground" />
           </div>
           <CardTitle className="text-3xl md:text-4xl font-bold text-primary">
-            LearnFlow Arcade
+            {PAGE_TITLE}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Sharpen your mind with fun and educational games!

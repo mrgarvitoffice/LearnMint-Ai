@@ -70,19 +70,19 @@ export default function NotesPage() {
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) {
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoading && !notes) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-  }, [selectedVoice, isTTSSpeaking, speak]);
+  }, [selectedVoice, isTTSSpeaking, speak, isLoading, notes]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
       speak("Generating study materials. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
-    if (!isLoading) {
-      generatingMessageSpokenRef.current = false; // Reset when not loading
+    if (!isLoading && generatingMessageSpokenRef.current) { 
+      generatingMessageSpokenRef.current = false; 
     }
   }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
@@ -94,6 +94,10 @@ export default function NotesPage() {
     setQuizFromNotes(null); 
     setFlashcardsFromNotes(null); 
     
+    if (selectedVoice && !isTTSSpeaking) {
+      speak("Generating study materials. Please wait.");
+    }
+
     try {
       const result = await generateStudyNotes({ topic: data.topic });
       setNotes(result);
@@ -250,7 +254,7 @@ export default function NotesPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl text-primary font-bold">
@@ -268,7 +272,7 @@ export default function NotesPage() {
                   id="topic"
                   placeholder="e.g., Photosynthesis, The French Revolution, Quantum Physics"
                   {...register('topic')}
-                  className={errors.topic ? 'border-destructive' : ''}
+                  className={errors.topic ? 'border-destructive transition-colors duration-200 ease-in-out' : 'transition-colors duration-200 ease-in-out'}
                 />
                 {browserSupportsSpeechRecognition && (
                   <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading}>
@@ -366,4 +370,3 @@ export default function NotesPage() {
     </div>
   );
 }
- 
