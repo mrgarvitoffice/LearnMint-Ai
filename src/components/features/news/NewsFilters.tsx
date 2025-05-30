@@ -54,7 +54,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ANY_COUNTRY_VALUE}>Any Country</SelectItem>
+              <SelectItem value={ANY_COUNTRY_VALUE}>World / Any Country</SelectItem>
               {NEWS_COUNTRIES.map(country => (
                 <SelectItem key={country.value} value={country.value}>{country.label} ({country.value.toUpperCase()})</SelectItem>
               ))}
@@ -91,7 +91,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         <div className="space-y-1.5">
           <Label htmlFor="category-select">Category</Label>
           <Select
-            value={filters.category || ALL_CATEGORIES_VALUE}
+            value={filters.category || ALL_CATEGORIES_VALUE} // Handle empty string for "All Categories"
             onValueChange={(value) => onFilterChange('category', value === ALL_CATEGORIES_VALUE ? "" : value)}
             disabled={isLoading}
           >
@@ -117,7 +117,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
       </div>
       <p className="text-xs text-muted-foreground/80 mt-2">
         Note: State/Region and City filters are applied as part of the keyword search when a country is selected.
-        For broad searches without a specific country, leave the country field as "Any Country".
+        For broad searches without a specific country, leave the country field as "World / Any Country".
       </p>
     </div>
   );
