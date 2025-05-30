@@ -14,8 +14,7 @@ import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
 import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
-import { directYoutubeSearch } from '@/lib/actions'; 
-import { searchGoogleBooks } from '@/ai/flows/search-google-books';
+import { directYoutubeSearch, directGoogleBooksSearch } from '@/lib/actions'; 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -81,7 +80,7 @@ export default function LibraryPage() {
         toast({ title: "YouTube Search Complete", description: `${data.videos.length} videos found.` });
       } else {
         setYoutubeResults([]);
-        toast({ title: "No YouTube Videos Found", description: "Try a different search term, or check API key configuration if issues persist." });
+        toast({ title: "No YouTube Videos Found", description: "Try a different search term. Ensure your YOUTUBE_API_KEY is valid and the YouTube Data API v3 is enabled in Google Cloud Console." });
       }
     },
     onError: (error) => {
@@ -92,18 +91,18 @@ export default function LibraryPage() {
   });
 
   const googleBooksSearchMutation = useMutation<GoogleBooksSearchOutput, QueryError, GoogleBooksSearchInput>({
-    mutationFn: searchGoogleBooks, 
+    mutationFn: directGoogleBooksSearch, 
     onSuccess: (data) => {
       if (data.books && data.books.length > 0) {
         setGoogleBooksResults(data.books);
         toast({ title: "Google Books Search Complete", description: `${data.books.length} books found.` });
       } else {
         setGoogleBooksResults([]);
-        toast({ title: "No Books Found", description: "Try a different search term, or check API key configuration." });
+        toast({ title: "No Books Found", description: "Try a different search term. Ensure your GOOGLE_BOOKS_API_KEY is valid and the Google Books API is enabled." });
       }
     },
     onError: (error) => {
-      console.error("Google Books search error:", error);
+      console.error("Google Books search error (direct action):", error);
       toast({ title: "Google Books Search Error", description: error.message || "Could not fetch books. Ensure GOOGLE_BOOKS_API_KEY is valid.", variant: "destructive" });
       setGoogleBooksResults([]);
     }
@@ -316,4 +315,3 @@ export default function LibraryPage() {
     </div>
   );
 }
-

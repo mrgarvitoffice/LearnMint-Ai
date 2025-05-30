@@ -3,7 +3,7 @@
 import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
-import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem } from './types';
+import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
 export async function generateNotesAction(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
   console.log(`[Server Action] generateNotesAction called for topic: ${input.topic}`);
@@ -70,7 +70,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
     console.error("YOUTUBE_API_KEY is not configured for direct search.");
-    throw new Error('YouTube API key is not configured.');
+    throw new Error('YouTube API key is not configured. Please set YOUTUBE_API_KEY in your .env file.');
   }
 
   const params = new URLSearchParams({
@@ -78,7 +78,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
     part: 'snippet',
     q: input.query,
     type: 'video',
-    maxResults: (input.maxResults || 8).toString(), // Default to 8 results
+    maxResults: (input.maxResults || 8).toString(),
   });
 
   try {
@@ -91,7 +91,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
 
     const data = await response.json();
     const videos: YoutubeVideoItem[] = data.items?.map((item: any) => {
-      let thumbnailUrl = item.snippet.thumbnails.default?.url; // Default fallback
+      let thumbnailUrl = item.snippet.thumbnails.default?.url;
       if (item.snippet.thumbnails.medium?.url) {
         thumbnailUrl = item.snippet.thumbnails.medium.url;
       } else if (item.snippet.thumbnails.high?.url) { 
@@ -111,5 +111,51 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
   } catch (error: any) {
     console.error("[Server Action Error - directYoutubeSearch] Error fetching from YouTube API:", error);
     throw new Error(error.message || "Failed to fetch YouTube videos directly.");
+  }
+}
+
+export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Promise<GoogleBooksSearchOutput> {
+  console.log(`[Server Action] directGoogleBooksSearch called for query: ${input.query}, maxResults: ${input.maxResults}`);
+  const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+  if (!apiKey) {
+    console.error("GOOGLE_BOOKS_API_KEY is not configured for direct search.");
+    throw new Error('Google Books API key is not configured. Please set GOOGLE_BOOKS_API_KEY in your .env file.');
+  }
+
+  const params = new URLSearchParams({
+    q: input.query,
+    maxResults: (input.maxResults || 9).toString(), // Default to 9 results
+  });
+  // The Google Books API key can be appended if it's required by all requests.
+  // Some endpoints might not need it or have different auth methods.
+  // For public search, it's often optional but good for quota tracking.
+  if (apiKey) {
+    params.append('key', apiKey);
+  }
+
+  try {
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Direct Google Books API Error:', errorData);
+      throw new Error(`Google Books API request failed: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const books: GoogleBookItem[] = data.items?.map((item: any) => ({
+      bookId: item.id,
+      title: item.volumeInfo?.title,
+      authors: item.volumeInfo?.authors || [],
+      description: item.volumeInfo?.description,
+      thumbnailUrl: item.volumeInfo?.imageLinks?.thumbnail || item.volumeInfo?.imageLinks?.smallThumbnail,
+      publishedDate: item.volumeInfo?.publishedDate,
+      pageCount: item.volumeInfo?.pageCount,
+      infoLink: item.volumeInfo?.infoLink,
+    })).filter((book: any) => book.title) || []; // Ensure books have a title
+
+    return { books };
+  } catch (error: any) {
+    console.error("[Server Action Error - directGoogleBooksSearch] Error fetching from Google Books API:", error);
+    throw new Error(error.message || "Failed to fetch Google Books directly.");
   }
 }
