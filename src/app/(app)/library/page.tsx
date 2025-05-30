@@ -14,7 +14,7 @@ import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
 import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
-import { directYoutubeSearch } from '@/lib/actions'; // Import directYoutubeSearch
+import { directYoutubeSearch } from '@/lib/actions'; 
 import { searchGoogleBooks } from '@/ai/flows/search-google-books';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
@@ -32,7 +32,7 @@ export default function LibraryPage() {
   const [selectedYoutubeVideo, setSelectedYoutubeVideo] = useState<YoutubeVideoItem | null>(null);
 
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
-  // const [selectedGoogleBook, setSelectedGoogleBook] = useState<GoogleBookItem | null>(null); // Kept for consistency, but not used in UI yet
+  
 
 
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
@@ -76,7 +76,7 @@ export default function LibraryPage() {
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
-    mutationFn: directYoutubeSearch, // Use direct server action
+    mutationFn: directYoutubeSearch, 
     onSuccess: (data) => {
       if (data.videos && data.videos.length > 0) {
         setYoutubeResults(data.videos);
@@ -94,7 +94,7 @@ export default function LibraryPage() {
   });
 
   const googleBooksSearchMutation = useMutation<GoogleBooksSearchOutput, QueryError, GoogleBooksSearchInput>({
-    mutationFn: searchGoogleBooks, // This still uses Genkit flow as per previous setup
+    mutationFn: searchGoogleBooks, 
     onSuccess: (data) => {
       if (data.books && data.books.length > 0) {
         setGoogleBooksResults(data.books);
@@ -117,7 +117,7 @@ export default function LibraryPage() {
     if (youtubeSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
-      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 9 });
+      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 }); // Updated to 8 results
     }
   };
 

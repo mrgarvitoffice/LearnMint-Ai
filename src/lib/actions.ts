@@ -78,7 +78,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
     part: 'snippet',
     q: input.query,
     type: 'video',
-    maxResults: (input.maxResults || 9).toString(),
+    maxResults: (input.maxResults || 8).toString(), // Default to 8 results
   });
 
   try {
@@ -90,14 +90,22 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
     }
 
     const data = await response.json();
-    const videos: YoutubeVideoItem[] = data.items?.map((item: any) => ({
-      videoId: item.id.videoId,
-      title: item.snippet.title,
-      description: item.snippet.description,
-      thumbnailUrl: item.snippet.thumbnails.default.url,
-      channelTitle: item.snippet.channelTitle,
-      publishedAt: item.snippet.publishedAt,
-    })) || [];
+    const videos: YoutubeVideoItem[] = data.items?.map((item: any) => {
+      let thumbnailUrl = item.snippet.thumbnails.default?.url; // Default fallback
+      if (item.snippet.thumbnails.medium?.url) {
+        thumbnailUrl = item.snippet.thumbnails.medium.url;
+      } else if (item.snippet.thumbnails.high?.url) { 
+        thumbnailUrl = item.snippet.thumbnails.high.url;
+      }
+      return {
+        videoId: item.id.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        thumbnailUrl: thumbnailUrl,
+        channelTitle: item.snippet.channelTitle,
+        publishedAt: item.snippet.publishedAt,
+      };
+    }) || [];
 
     return { videos };
   } catch (error: any) {

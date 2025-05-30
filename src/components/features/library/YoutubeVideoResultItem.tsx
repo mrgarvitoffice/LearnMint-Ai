@@ -13,32 +13,37 @@ interface YoutubeVideoResultItemProps {
 }
 
 export function YoutubeVideoResultItem({ video, onPlay }: YoutubeVideoResultItemProps) {
-  const placeholderImage = `https://placehold.co/480x360.png?text=${encodeURIComponent(video.title.substring(0,20) + '...')}`;
+  // Using medium thumbnail (320x180) or high (480x360) if available
+  const thumbnailUrl = video.thumbnailUrl; // Already prefer medium/high from the action
+  const placeholderImage = `https://placehold.co/320x180.png?text=${encodeURIComponent(video.title.substring(0,15) + '...')}`;
   const dataAiHintKeywords = video.title.toLowerCase().split(' ').slice(0, 2).join(' ');
 
   const publishedDateFormatted = video.publishedAt 
-    ? format(new Date(video.publishedAt), 'PP') // e.g., Oct 26, 2023
+    ? format(new Date(video.publishedAt), 'PP') 
     : null;
 
   return (
-    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group">
       <button
         onClick={() => onPlay(video)}
-        className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t-lg group"
+        className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t-lg"
         aria-label={`Play video: ${video.title}`}
       >
         <div className="relative w-full aspect-video bg-muted">
           <Image
-            src={video.thumbnailUrl || placeholderImage}
+            src={thumbnailUrl || placeholderImage}
             alt={`Thumbnail for ${video.title}`}
             fill={true}
             style={{ objectFit: 'cover' }}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             data-ai-hint={dataAiHintKeywords}
-            onError={(e) => { (e.target as HTMLImageElement).src = placeholderImage; }}
+            onError={(e) => { 
+              (e.target as HTMLImageElement).srcset = placeholderImage; // Fallback for next/image
+              (e.target as HTMLImageElement).src = placeholderImage; 
+            }}
           />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300">
-            <PlayCircle className="w-12 h-12 text-white/80" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300">
+            <PlayCircle className="w-12 h-12 text-white/90" />
           </div>
         </div>
       </button>
