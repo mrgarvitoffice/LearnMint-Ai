@@ -6,13 +6,14 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSearchInput, GoogleBooksSearchInput, YoutubeSearchOutput, GoogleBooksSearchOutput } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
-import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays } from 'lucide-react';
+import { BookResultItem } from '@/components/features/library/BookResultItem'; // New component
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { directYoutubeSearch, directGoogleBooksSearch } from '@/lib/actions'; 
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,6 +32,7 @@ export default function LibraryPage() {
   const [selectedYoutubeVideo, setSelectedYoutubeVideo] = useState<YoutubeVideoItem | null>(null);
 
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
+  const [selectedBookForPreview, setSelectedBookForPreview] = useState<GoogleBookItem | null>(null);
   
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
@@ -91,7 +93,7 @@ export default function LibraryPage() {
   });
 
   const googleBooksSearchMutation = useMutation<GoogleBooksSearchOutput, QueryError, GoogleBooksSearchInput>({
-    mutationFn: directGoogleBooksSearch, 
+    mutationFn: (input) => directGoogleBooksSearch({...input, country: 'US'}), // Defaulting country here
     onSuccess: (data) => {
       if (data.books && data.books.length > 0) {
         setGoogleBooksResults(data.books);
@@ -123,8 +125,7 @@ export default function LibraryPage() {
     if (googleBooksSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
-      // Defaulting to 'US' to potentially avoid geo-restriction errors
-      googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9, country: 'US' });
+      googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
     }
   };
 
@@ -242,7 +243,7 @@ export default function LibraryPage() {
 
       <section>
         <Card>
-          <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search Google Books</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search & Preview Google Books</CardTitle></CardHeader>
           <form onSubmit={handleGoogleBooksSearchSubmit}>
             <CardContent className="flex gap-2">
               <Input type="search" placeholder="Search for books and articles..." value={googleBooksSearchTerm} onChange={(e) => setGoogleBooksSearchTerm(e.target.value)} disabled={googleBooksSearchMutation.isPending}/>
@@ -259,40 +260,14 @@ export default function LibraryPage() {
            {googleBooksResults.length > 0 && (
             <div className="px-6 pb-6">
               <h3 className="text-lg font-semibold mb-3 mt-4">Book Results:</h3>
-              <ScrollArea className="h-[400px] w-full pr-3">
+              <ScrollArea className="h-[400px] w-full pr-3"> {/* Ensure enough height for scrolling */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {googleBooksResults.map(book => (
-                     <Card key={book.bookId} className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 group">
-                        <CardHeader className="p-3 pb-2">
-                           {book.thumbnailUrl ? (
-                             <div className="relative w-full aspect-[2/3] mb-2 rounded overflow-hidden bg-muted group-hover:opacity-90 transition-opacity">
-                               <Image 
-                                 src={book.thumbnailUrl} 
-                                 alt={book.title} 
-                                 fill={true} 
-                                 style={{objectFit: 'contain'}} 
-                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                 data-ai-hint="book cover"
-                                 onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/128x192.png?text=${encodeURIComponent(book.title.substring(0,10)+'...')}`; }}
-                                />
-                             </div>
-                           ) : (
-                             <div className="relative w-full aspect-[2/3] mb-2 rounded overflow-hidden bg-muted flex items-center justify-center">
-                               <BookOpen className="w-12 h-12 text-muted-foreground/50" />
-                             </div>
-                           )}
-                           <CardTitle className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</CardTitle>
-                           {book.authors && <CardDescription className="text-xs line-clamp-1 pt-0.5">{book.authors.join(', ')}</CardDescription>}
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0 text-xs line-clamp-3 flex-grow text-muted-foreground">
-                           {book.description || "No description available."}
-                        </CardContent>
-                        <CardFooter className="p-3 pt-1">
-                           <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs text-primary hover:text-primary/80">
-                             <a href={book.infoLink} target="_blank" rel="noopener noreferrer">View on Google Books <ExternalLink className="ml-1 h-3 w-3" /></a>
-                           </Button>
-                        </CardFooter>
-                     </Card>
+                     <BookResultItem 
+                        key={book.bookId} 
+                        book={book} 
+                        onPreviewRequest={setSelectedBookForPreview} 
+                      />
                   ))}
                 </div>
               </ScrollArea>
@@ -307,6 +282,47 @@ export default function LibraryPage() {
         </Card>
       </section>
 
+       {selectedBookForPreview && (
+        <Dialog open={!!selectedBookForPreview} onOpenChange={(isOpen) => { if (!isOpen) setSelectedBookForPreview(null); }}>
+          <DialogContent className="max-w-4xl h-[90vh] p-0 border-0 flex flex-col data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
+            <DialogHeader className="p-4 border-b flex flex-row items-center justify-between">
+              <DialogTitle className="truncate text-lg">{selectedBookForPreview.title}</DialogTitle>
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
+              </DialogClose>
+            </DialogHeader>
+            {selectedBookForPreview.embeddable ? (
+              <iframe
+                src={`https://books.google.com/books?id=${selectedBookForPreview.bookId}&pg=PP1&output=embed`}
+                title={`Preview of ${selectedBookForPreview.title}`}
+                className="w-full flex-1 border-0"
+                allowFullScreen
+              ></iframe>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <BookOpen className="w-16 h-16 text-muted-foreground mb-4"/>
+                    <p className="text-lg text-muted-foreground">Preview not available for this book.</p>
+                    {selectedBookForPreview.webReaderLink && (
+                        <Button asChild className="mt-4">
+                            <a href={selectedBookForPreview.webReaderLink} target="_blank" rel="noopener noreferrer">
+                                View on Google Books <ExternalLink className="ml-2 h-4 w-4" />
+                            </a>
+                        </Button>
+                    )}
+                </div>
+            )}
+             <div className="p-3 border-t text-center">
+                 <Button variant="link" asChild size="sm">
+                     <a href={selectedBookForPreview.infoLink} target="_blank" rel="noopener noreferrer">
+                        More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
+                     </a>
+                 </Button>
+             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
       <section>
         <h2 className="text-2xl font-semibold mb-4">Other Helpful Resources</h2>
          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -316,4 +332,3 @@ export default function LibraryPage() {
     </div>
   );
 }
-

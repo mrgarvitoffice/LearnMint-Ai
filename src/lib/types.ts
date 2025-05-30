@@ -173,6 +173,9 @@ export interface GoogleBookItem {
   publishedDate?: string;
   pageCount?: number;
   infoLink?: string;
+  embeddable: boolean; // Can the book be viewed in an embedded viewer?
+  previewLink?: string; // Link to a web preview (often same as infoLink or more specific)
+  webReaderLink?: string; // Specific link for web reader if available
 }
 export interface GoogleBooksSearchInput {
   query: string;
@@ -185,4 +188,3 @@ export interface GoogleBooksSearchOutput {
 
 // Generic type for TanStack Query useQuery error (can be more specific if needed)
 export type QueryError = Error & { cause?: any; errors?: {message: string}[] }; // Allow for errors array for API responses
-

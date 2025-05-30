@@ -92,7 +92,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
     const data = await response.json();
     const videos: YoutubeVideoItem[] = data.items?.map((item: any) => {
       let thumbnailUrl = item.snippet.thumbnails.default?.url;
-      if (item.snippet.thumbnails.medium?.url) {
+      if (item.snippet.thumbnails.medium?.url) { // Prefer medium thumbnail
         thumbnailUrl = item.snippet.thumbnails.medium.url;
       } else if (item.snippet.thumbnails.high?.url) { 
         thumbnailUrl = item.snippet.thumbnails.high.url;
@@ -125,6 +125,7 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   const params = new URLSearchParams({
     q: input.query,
     maxResults: (input.maxResults || 9).toString(),
+    // projection: 'full', // Request more details, including accessInfo
   });
   if (apiKey) {
     params.append('key', apiKey);
@@ -132,7 +133,6 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   if (input.country) {
     params.append('country', input.country);
   }
-
 
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`);
@@ -143,16 +143,26 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
     }
 
     const data = await response.json();
-    const books: GoogleBookItem[] = data.items?.map((item: any) => ({
-      bookId: item.id,
-      title: item.volumeInfo?.title,
-      authors: item.volumeInfo?.authors || [],
-      description: item.volumeInfo?.description,
-      thumbnailUrl: item.volumeInfo?.imageLinks?.thumbnail || item.volumeInfo?.imageLinks?.smallThumbnail,
-      publishedDate: item.volumeInfo?.publishedDate,
-      pageCount: item.volumeInfo?.pageCount,
-      infoLink: item.volumeInfo?.infoLink,
-    })).filter((book: any) => book.title) || [];
+    const books: GoogleBookItem[] = data.items?.map((item: any) => {
+      const imageLinks = item.volumeInfo?.imageLinks;
+      let thumbnailUrl = imageLinks?.smallThumbnail || imageLinks?.thumbnail; // Default
+      if (imageLinks?.medium) thumbnailUrl = imageLinks.medium;
+      else if (imageLinks?.large) thumbnailUrl = imageLinks.large;
+      
+      return {
+        bookId: item.id,
+        title: item.volumeInfo?.title,
+        authors: item.volumeInfo?.authors || [],
+        description: item.volumeInfo?.description,
+        thumbnailUrl: thumbnailUrl,
+        publishedDate: item.volumeInfo?.publishedDate,
+        pageCount: item.volumeInfo?.pageCount,
+        infoLink: item.volumeInfo?.infoLink,
+        embeddable: item.accessInfo?.embeddable || false,
+        previewLink: item.volumeInfo?.previewLink,
+        webReaderLink: item.accessInfo?.webReaderLink,
+      };
+    }).filter((book: any) => book.title) || [];
 
     return { books };
   } catch (error: any) {
@@ -160,4 +170,3 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
     throw new Error(error.message || "Failed to fetch Google Books directly.");
   }
 }
-
