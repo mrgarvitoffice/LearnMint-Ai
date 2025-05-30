@@ -65,7 +65,13 @@ const generateStudyNotesFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    // Add basic validation for the output structure
+    if (!output || typeof output.notes !== 'string' || output.notes.trim() === '') {
+        console.error("[AI Flow Error - Notes] AI returned empty or invalid notes data:", output);
+        // Fallback or more specific error handling can be added here
+        // For now, returning a structured error or a default note
+        return { notes: "# Error\n\nSorry, the AI failed to generate notes for this topic. Please try again or rephrase your topic." };
+    }
+    return output;
   }
 );
-
