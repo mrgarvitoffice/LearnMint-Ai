@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning={true}>
         <head>
           {/* Theme color for browser UI - typically matches manifest.json's theme_color */}
           <meta name="theme-color" content="#00FFFF" />
