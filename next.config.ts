@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      // News API image hostnames - more may need to be added as new sources appear
       {
         protocol: 'https',
         hostname: 'images.mktw.net',
@@ -37,15 +38,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'i2-prod.dailyrecord.co.uk', // Added this new hostname
+        hostname: 'i2-prod.dailyrecord.co.uk',
         port: '',
         pathname: '/**',
       },
-      // Add other news image hostnames here as they appear
-      // For example, if you see errors for cdn.cnn.com, add:
+      // Add other news image hostnames here as they appear. For example:
       // {
       //   protocol: 'https',
-      //   hostname: 'cdn.cnn.com',
+      //   hostname: 'some.other-news-image-domain.com',
       //   port: '',
       //   pathname: '/**',
       // },
