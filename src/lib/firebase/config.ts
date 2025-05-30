@@ -8,7 +8,11 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
-const apiKeyFromEnv = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+// TEMPORARY HARDCODING FOR DEBUGGING - USER PROVIDED THIS KEY
+const apiKeyFromEnv = "AIzaSyCNcktsyCTevZebTrc4aBnG4b0pRbYx4tk"; 
+
+// Original attempt to read from .env
+// const apiKeyFromEnv = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 // Log the API key being used (or if it's undefined)
 // This log will appear in the terminal where your Next.js dev server is running
@@ -16,15 +20,16 @@ console.log(`Firebase Config: Attempting to use API Key: ${apiKeyFromEnv}`);
 
 if (!apiKeyFromEnv) {
   console.error("************************************************************************************");
-  console.error("CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_API_KEY is UNDEFINED.");
+  console.error("CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_API_KEY is UNDEFINED or not loaded.");
   console.error("This means your .env file might be missing, in the wrong location,");
-  console.error("or the variable NEXT_PUBLIC_FIREBASE_API_KEY is not set correctly within it.");
-  console.error("Ensure the .env file is in the project root and you have restarted your Next.js server.");
+  console.error("or the variable NEXT_PUBLIC_FIREBASE_API_KEY is not set correctly within it,");
+  console.error("OR you haven't restarted your Next.js server after .env changes.");
+  console.error("The application will likely fail to connect to Firebase.");
   console.error("************************************************************************************");
 }
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: apiKeyFromEnv,
+  apiKey: apiKeyFromEnv, // Using the (potentially hardcoded) key
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
@@ -49,4 +54,3 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider(); // Exported for use
 
 export { app, auth, googleProvider };
-
