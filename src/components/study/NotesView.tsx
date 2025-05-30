@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('zia');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -129,14 +129,14 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
             Study Notes for: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select 
-              value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')} 
+            <Select
+              value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')}
               onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia');}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Type" /> </SelectTrigger>
               <SelectContent>
-                <SelectItem value="zia">Zia (Female)</SelectItem>
-                <SelectItem value="kai">Kai (Male)</SelectItem>
+                <SelectItem value="zia">Zia</SelectItem>
+                <SelectItem value="kai">Kai</SelectItem>
               </SelectContent>
             </Select>
             <Select onValueChange={(uri) => {playClickSound(); setSelectedVoiceURI(uri);}} value={selectedVoice?.voiceURI}>

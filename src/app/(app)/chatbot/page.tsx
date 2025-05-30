@@ -15,6 +15,7 @@ import { useTTS } from '@/hooks/useTTS';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 
+const PAGE_TITLE = "Megumin AI: Your Witty Companion";
 const TYPING_INDICATOR_ID = 'typing-indicator';
 
 export default function ChatbotPage() {
@@ -36,6 +37,7 @@ export default function ChatbotPage() {
     setVoicePreference,
     voicePreference
   } = useTTS();
+  const pageTitleSpokenRef = useRef(false);
   const initialGreetingSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const currentSpokenMessageRef = useRef<string | null>(null);
@@ -46,6 +48,13 @@ export default function ChatbotPage() {
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    if (selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
+    }
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -71,11 +80,11 @@ export default function ChatbotPage() {
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice]); 
+  }, [selectedVoice]); // Only depend on selectedVoice to trigger initial greeting speech
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS(); 
+    cancelTTS(); // Stop any ongoing speech from Megumin
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString() + '-user',
@@ -135,7 +144,13 @@ export default function ChatbotPage() {
   };
   
   const handlePlaybackControl = () => {
-    if (!currentSpokenMessageRef.current) return;
+    if (!currentSpokenMessageRef.current && messages.length > 0) {
+      // If nothing specific to speak, try speaking the last assistant message
+      const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
+      if (lastAssistantMessage) currentSpokenMessageRef.current = lastAssistantMessage.content;
+    }
+    
+    if(!currentSpokenMessageRef.current) return;
 
     if (isSpeaking && !isPaused) {
       pauseTTS();
@@ -156,9 +171,9 @@ export default function ChatbotPage() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                <Bot className="w-7 h-7 text-primary" />
-                Chat with Megumin
+                <CardTitle className="flex items-center gap-2 text-2xl text-primary font-bold">
+                <Bot className="w-7 h-7" />
+                {PAGE_TITLE}
                 </CardTitle>
                 <CardDescription>Your playful AI assistant. Try asking her to "sing a song about explosions!"</CardDescription>
             </div>
@@ -171,8 +186,8 @@ export default function ChatbotPage() {
                   <SelectValue placeholder="Voice Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="zia">Zia (Female)</SelectItem>
-                  <SelectItem value="kai">Kai (Male)</SelectItem>
+                  <SelectItem value="zia">Zia</SelectItem>
+                  <SelectItem value="kai">Kai</SelectItem>
                 </SelectContent>
               </Select>
               <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
