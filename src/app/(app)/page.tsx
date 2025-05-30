@@ -15,13 +15,13 @@ const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 
 const coreFeaturesListText = [
-  "AI Content Generation: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI.",
-  "Custom Test Creation: Build tests based on specific topics, difficulty levels, number of questions, and timer settings.",
-  "Interactive AI Chatbot (Megumin): Engage with a witty AI assistant for questions and even 'singing'. Supports voice input.",
-  "Scientific Calculator & Unit Converter: Perform calculations and convert units across various categories.",
-  "Daily News Digest: Browse news articles filtered by country, category, and keywords.",
-  "Resource Library: Explore OpenStax textbooks, search Google Books & YouTube, and get a daily Math Fact.",
-  "Educational Game: Play 'Word Game' (Definition Challenge) and look forward to more games.",
+  "<strong>AI Content Generation:</strong> Notes, quizzes, and flashcards via AI.",
+  "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, and timers.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions, supports voice input.",
+  "<strong>Scientific Calculator & Unit Converter:</strong> For calculations and unit conversions.",
+  "<strong>Daily News Digest:</strong> Browse news filtered by country, category, and keywords.",
+  "<strong>Resource Library:</strong> Explore textbooks, Google Books, YouTube, and daily Math Facts.",
+  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge).",
 ];
 
 const keyToolCards = [
@@ -116,6 +116,7 @@ export default function DashboardPage() {
       speak(`Welcome to ${APP_NAME}!`);
       pageTitleSpokenRef.current = true;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVoice, isSpeaking, speak]);
 
 
@@ -143,7 +144,7 @@ export default function DashboardPage() {
         <CardContent>
           <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
             {coreFeaturesListText.map((feature, index) => (
-              <li key={index} className="text-sm md:text-base">{feature}</li>
+              <li key={index} className="text-sm md:text-base" dangerouslySetInnerHTML={{ __html: feature }} />
             ))}
           </ul>
         </CardContent>
@@ -221,7 +222,7 @@ export default function DashboardPage() {
                     <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
                     <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Daily Motivation</CardTitle>
                   </div>
-                  <CardDescription className="text-sm text-secondary-foreground/90 pt-1 italic">
+                  <CardDescription className="text-base text-secondary-foreground/90 pt-1 italic"> {/* Increased text size here */}
                     "{dailyQuote.quote}"
                   </CardDescription>
                 </CardHeader>
@@ -288,3 +289,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
