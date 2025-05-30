@@ -26,7 +26,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   
-  useEffect(() => { // Correctly use useEffect for side effects
+  useEffect(() => { 
     if (transcript) {
       setInputValue(transcript);
     }
@@ -75,9 +75,12 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     }
   };
   
-  if (voiceError) {
-    toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
-  }
+  useEffect(() => {
+    if (voiceError) {
+      toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
+    }
+  }, [voiceError, toast]);
+
 
   const handleRemoveImage = () => {
     playClickSound();
@@ -123,7 +126,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
         <Input
           type="text"
-          placeholder="Type your message or ask Megumin to sing..."
+          placeholder="Type your message or ask Kazuma to sing..."
           value={inputValue}
           onChange={handleInputChange}
           disabled={isLoading}
