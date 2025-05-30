@@ -81,19 +81,18 @@ const searchGoogleBooksFlow = ai.defineFlow(
     name: 'searchGoogleBooksFlow',
     inputSchema: GoogleBooksSearchInputSchema,
     outputSchema: GoogleBooksSearchOutputSchema,
-    model: 'googleai/gemini-1.5-flash-latest', // Changed model
+    model: 'googleai/gemini-2.0-flash-exp', // Reverted model
   },
   async (input) => {
     const llmResponse = await ai.generate({
-      prompt: `You MUST use the fetchGoogleBooks tool to find books. Search Google Books for "${input.query}" and get ${input.maxResults} results using the fetchGoogleBooks tool. Return ONLY the tool's output.`, // Refined prompt
+      prompt: `You MUST use the fetchGoogleBooks tool to find books. Search Google Books for "${input.query}" and get ${input.maxResults} results using the fetchGoogleBooks tool. Return ONLY the tool's output.`, 
       tools: [fetchGoogleBooksTool],
-      toolChoice: "fetchGoogleBooks", // Force tool usage
+      toolChoice: "fetchGoogleBooks", 
       config: {
         temperature: 0.1,
       },
     });
 
-    // Check if the LLM directly outputted the tool's expected response
     if (llmResponse.output && typeof llmResponse.output === 'object' && 'books' in llmResponse.output) {
         try {
             const validatedOutput = GoogleBooksSearchOutputSchema.parse(llmResponse.output);

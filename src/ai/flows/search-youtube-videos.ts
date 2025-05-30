@@ -80,19 +80,18 @@ const searchYoutubeVideosFlow = ai.defineFlow(
     name: 'searchYoutubeVideosFlow',
     inputSchema: YoutubeSearchInputSchema,
     outputSchema: YoutubeSearchOutputSchema,
-    model: 'googleai/gemini-1.5-flash-latest', // Changed model
+    model: 'googleai/gemini-2.0-flash-exp', // Reverted model
   },
   async (input) => {
     const llmResponse = await ai.generate({
-      prompt: `You MUST use the fetchYouTubeVideos tool to find videos. Search YouTube for "${input.query}" and get ${input.maxResults} results using the fetchYouTubeVideos tool. Return ONLY the tool's output.`, // Refined prompt
+      prompt: `You MUST use the fetchYouTubeVideos tool to find videos. Search YouTube for "${input.query}" and get ${input.maxResults} results using the fetchYouTubeVideos tool. Return ONLY the tool's output.`, 
       tools: [fetchYouTubeVideosTool],
-      toolChoice: "fetchYouTubeVideos", // Force tool usage
+      toolChoice: "fetchYouTubeVideos", 
       config: {
         temperature: 0.1,
       },
     });
 
-    // Check if the LLM directly outputted the tool's expected response
     if (llmResponse.output && typeof llmResponse.output === 'object' && 'videos' in llmResponse.output) {
         try {
             const validatedOutput = YoutubeSearchOutputSchema.parse(llmResponse.output);
