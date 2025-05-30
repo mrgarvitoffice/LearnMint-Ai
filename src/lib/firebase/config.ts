@@ -9,10 +9,12 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
 const apiKeyFromEnv = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+const authDomainFromEnv = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
 
-// Log the API key being used (or if it's undefined)
+// Log the API key and Auth Domain being used (or if they are undefined)
 // This log will appear in the terminal where your Next.js dev server is running
 console.log(`Firebase Config: Attempting to use API Key: ${apiKeyFromEnv}`);
+console.log(`Firebase Config: Attempting to use Auth Domain: ${authDomainFromEnv}`);
 
 if (!apiKeyFromEnv) {
   console.error("************************************************************************************");
@@ -26,9 +28,19 @@ if (!apiKeyFromEnv) {
   // throw new Error("Firebase API Key is missing. Check server logs for details.");
 }
 
+if (!authDomainFromEnv) {
+  console.error("************************************************************************************");
+  console.error("CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is UNDEFINED or not loaded.");
+  console.error("This means your .env file might be missing, in the wrong location (must be project root),");
+  console.error("or the variable NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is not set correctly (e.g., your-project-id.firebaseapp.com),");
+  console.error("OR you haven't restarted your Next.js server after .env changes.");
+  console.error("Firebase Authentication will fail.");
+  console.error("************************************************************************************");
+}
+
 const firebaseConfig: FirebaseOptions = {
-  apiKey: apiKeyFromEnv, // Reverted to use the environment variable
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  apiKey: apiKeyFromEnv,
+  authDomain: authDomainFromEnv,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
@@ -52,3 +64,4 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider(); // Exported for use
 
 export { app, auth, googleProvider };
+

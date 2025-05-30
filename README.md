@@ -79,7 +79,7 @@ Create a file named `.env` in the **root of your project**. Add the following co
 # Firebase Project Configuration (Get these from your Firebase project settings)
 # Go to Project Settings > General tab > Your apps > Web app SDK snippet
 NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYOUR_FIREBASE_API_KEY
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com # CRITICAL for Firebase Auth
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
@@ -139,16 +139,20 @@ npm run dev -- --port 9002
 yarn dev --port 9002
 ```
 
-**Troubleshooting `Firebase: Error (auth/invalid-api-key)`:**
-If you encounter this error, it means the Firebase API key your application is trying to use is incorrect or not being loaded.
-1.  **Verify `.env` File:** Double-check that the `.env` file is in the project root, `NEXT_PUBLIC_FIREBASE_API_KEY` is spelled correctly, and its value is accurately copied from your Firebase project settings. Ensure no extra spaces or quotes.
-2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file now includes a line:
-    `Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED`
-    *   If it says `undefined` or shows an obviously incorrect key, your `.env` file is not being read correctly, the variable is missing/misspelled, or you haven't restarted the server. Review step 1 and ensure you restarted.
-    *   If it shows the correct API key, the issue might be with the key itself in your Firebase/Google Cloud Console (e.g., restrictions, disabled key). See Firebase documentation for API key troubleshooting.
+**Troubleshooting Firebase Errors (e.g., `auth/invalid-api-key`, `auth/auth-domain-config-required`):**
+If you encounter Firebase errors, it means the Firebase configuration your application is trying to use is incorrect or not being loaded.
+1.  **Verify `.env` File:**
+    *   Double-check that the `.env` file is in the project root.
+    *   Ensure `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are spelled correctly and their values are accurately copied from your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
+    *   Ensure no extra spaces or quotes around the variable names or values.
+2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file now includes lines like:
+    *   `Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED`
+    *   `Firebase Config: Attempting to use Auth Domain: YOUR_AUTH_DOMAIN_VALUE_OR_UNDEFINED`
+    *   If either says `undefined` or shows an obviously incorrect value, your `.env` file is not being read correctly, the variable is missing/misspelled, or you haven't restarted the server. Review step 1 and ensure you restarted.
+    *   If the logs show `CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_API_KEY is UNDEFINED...` or `CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is UNDEFINED...`, this directly confirms the .env variable is not being loaded.
 3.  **Firebase Project Settings:**
     *   Ensure the "Email/Password", "Google", and "Anonymous" sign-in providers are enabled in your Firebase project's Authentication settings.
-    *   Double-check the API key in your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
+    *   Double-check the API key and Auth Domain in your Firebase project settings.
 
 ### 5. CRITICAL: Add Required Static Assets
 *   **PWA Icons**:
@@ -282,3 +286,4 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 ---
 Made by MrGarvit
+
