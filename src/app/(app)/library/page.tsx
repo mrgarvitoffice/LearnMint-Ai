@@ -41,7 +41,7 @@ export default function LibraryPage() {
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
   const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
-    queryKey: ['mathFact'], queryFn: fetchMathFact, staleTime: Infinity, gcTime: Infinity,
+    queryKey: ['mathFact'], queryFn: fetchMathFact, staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -68,8 +68,8 @@ export default function LibraryPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><BookMarked className="h-12 w-12 text-primary" /></div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+          <div className="flex items-center justify-center mb-4"><BookMarked className="h-7 w-7 text-primary" /></div>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Explore a collection of educational resources and tools.</CardDescription>
         </CardHeader>
       </Card>

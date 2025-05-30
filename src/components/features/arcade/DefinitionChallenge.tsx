@@ -11,7 +11,8 @@ import { DEFINITION_CHALLENGE_WORDS } from '@/lib/constants';
 import type { DefinitionChallengeWord } from '@/lib/types';
 import { Lightbulb, CheckCircle, XCircle, Zap, RotateCcw } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
-import { useTTS } from '@/hooks/useTTS'; // Import useTTS
+import { useTTS } from '@/hooks/useTTS'; 
+import { cn } from '@/lib/utils';
 
 export function DefinitionChallenge() {
   const [words, setWords] = useState<DefinitionChallengeWord[]>([]);
@@ -30,7 +31,15 @@ export function DefinitionChallenge() {
   const { playSound: playCorrectSound } = useSound('correct'); 
   const { playSound: playIncorrectSound } = useSound('incorrect'); 
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, selectedVoice, isSpeaking, isPaused } = useTTS(); // Destructure from useTTS
+  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices } = useTTS();
+  const voicePreferenceWasSetRef = useRef(false);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia'); 
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
 
   const shuffleArray = (array: DefinitionChallengeWord[]) => {
     const newArray = [...array];
@@ -77,8 +86,9 @@ export function DefinitionChallenge() {
       setWordFailedMessage('');
     } else {
       setGameOver(true);
-      setFeedback(`Game Over! You completed all words. Your final streak: ${streak}. High Score: ${highScore}`);
-      if (selectedVoice && !isSpeaking && !isPaused) speak(`Game Over! Your final streak is ${streak}. High Score: ${highScore}`);
+      const finalMessage = `Game Over! You completed all words. Your final streak: ${streak}. High Score: ${highScore}`;
+      setFeedback(finalMessage);
+      if (selectedVoice && !isSpeaking && !isPaused) speak(finalMessage);
     }
   }, [currentWordIndex, words.length, streak, highScore, selectedVoice, isSpeaking, isPaused, speak]);
 
@@ -108,11 +118,12 @@ export function DefinitionChallenge() {
       if (selectedVoice && !isSpeaking && !isPaused) speak("Incorrect.");
 
       if (newMistakes >= 3) {
-        setFeedback(`Oops! The correct answer was: ${currentWord.term}`);
+        const failMsg = `Oops! The correct answer was: ${currentWord.term}`;
+        setFeedback(failMsg);
         setWordFailedMessage(`The word was: ${currentWord.term}.`);
         if (selectedVoice && !isSpeaking && !isPaused) speak(`The correct word was ${currentWord.term}.`);
-        setIsCorrect(false); // Mark as incorrect for UI
-        setTimeout(nextWord, 2500); // Give time to see the answer
+        setIsCorrect(false); 
+        setTimeout(nextWord, 2500); 
       } else {
         setFeedback(`Incorrect. Attempts remaining: ${3 - newMistakes}`);
         setIsCorrect(false);
@@ -127,21 +138,24 @@ export function DefinitionChallenge() {
     setShowHint(true);
     const newHintsUsed = hintsUsed + 1;
     setHintsUsed(newHintsUsed);
+    let hintText = "";
     if (newHintsUsed === 1) {
-      setFeedback(`Hint: ${currentWord.hint}`);
+      hintText = `Hint: ${currentWord.hint}`;
     } else if (newHintsUsed === 2) {
-      setFeedback(`Hint: The first letter is "${currentWord.term[0]}"`);
+      hintText = `Hint: The first letter is "${currentWord.term[0]}"`;
     } else if (newHintsUsed === 3) {
       const lettersToShow = Math.ceil(currentWord.term.length / 3);
-      setFeedback(`Hint: Starts with "${currentWord.term.substring(0, lettersToShow)}..."`);
+      hintText = `Hint: Starts with "${currentWord.term.substring(0, lettersToShow)}..."`;
     }
+    setFeedback(hintText);
+    if (selectedVoice && !isSpeaking && !isPaused) speak(hintText);
   };
 
   const handleResetGameAndStreak = () => {
     playClickSound();
     setStreak(0); 
-    // High score remains unless explicitly reset elsewhere.
     initializeGame();
+    if (selectedVoice && !isSpeaking && !isPaused) speak("New game started.");
   }
   
   if (!currentWord && !gameOver) {

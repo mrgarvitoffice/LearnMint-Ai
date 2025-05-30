@@ -10,10 +10,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { generateFlashcardsAction } from '@/lib/actions'; // Using the renamed server action
-import type { GenerateFlashcardsOutput, GenerateFlashcardsInput } from '@/lib/types'; // Updated types
+import { generateFlashcardsAction } from '@/lib/actions'; 
+import type { GenerateFlashcardsOutput } from '@/lib/types'; 
 import { Loader2, ListChecks, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { FlashcardComponent } from '@/components/features/flashcards/Flashcard'; // Assuming this is the interactive one
+import { FlashcardComponent } from '@/components/features/flashcards/Flashcard'; 
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -85,7 +85,7 @@ export default function FlashcardsPage() {
     }
 
     try {
-      const result = await generateFlashcardsAction(data); // Using the new action name
+      const result = await generateFlashcardsAction(data);
       if (result.flashcards && result.flashcards.length > 0) {
         setFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: `Your flashcards for "${data.topic}" are ready.` });
@@ -128,13 +128,13 @@ export default function FlashcardsPage() {
 
   if (!flashcardsData) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
+      <div className="container mx-auto max-w-xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
         <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
-                <ListChecks className="h-12 w-12 text-primary" />
+                <ListChecks className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
             <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">
                 Enter a topic and number of cards to create your flashcard set.
             </CardDescription>

@@ -28,7 +28,7 @@ const calculatorButtonsConfig: CalculatorButtonConfig[] = [
   { value: '1', label: '1', type: 'digit' }, { value: '2', label: '2', type: 'digit' }, { value: '3', label: '3', type: 'digit' },
   { value: '+', label: '+', type: 'operator', className: 'bg-primary/80 hover:bg-primary text-primary-foreground' },
   { value: '0', label: '0', type: 'digit' }, { value: '.', label: '.', type: 'decimal' },
-  { value: '=', label: '=', type: 'equals', className: 'bg-primary hover:bg-primary/90 text-primary-foreground col-span-2' }, // Adjusted equals to span 2
+  { value: '=', label: '=', type: 'equals', className: 'bg-primary hover:bg-primary/90 text-primary-foreground col-span-2' },
 ];
 
 const scientificButtonsConfig: CalculatorButtonConfig[] = [
@@ -166,8 +166,8 @@ export default function CalculatorPage() {
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><CalculatorIcon className="h-12 w-12 text-primary" /></div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+          <div className="flex items-center justify-center mb-4"><CalculatorIcon className="h-7 w-7 text-primary" /></div>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
         </CardHeader>
       </Card>
       <div className="flex flex-col lg:flex-row gap-6 items-start">

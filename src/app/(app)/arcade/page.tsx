@@ -36,10 +36,10 @@ export default function ArcadePage() {
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="inline-block p-3 bg-primary/80 rounded-full mb-4 mx-auto"> {/* Centered icon */}
-            <Gamepad2 className="w-12 h-12 text-primary-foreground" /> {/* Larger icon */}
+          <div className="inline-block p-3 bg-primary/80 rounded-full mb-4 mx-auto"> 
+            <Gamepad2 className="w-7 h-7 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl md:text-3xl font-bold text-primary">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-primary">
             {PAGE_TITLE}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">

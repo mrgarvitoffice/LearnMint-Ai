@@ -58,12 +58,16 @@ export default function NewsPage() {
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
+    refetchOnWindowFocus: false, // To prevent excessive refetching on focus
   });
 
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      if (name === 'country') { newFilters.stateOrRegion = ''; newFilters.city = ''; }
+      if (name === 'country') { 
+        newFilters.stateOrRegion = ''; 
+        newFilters.city = ''; 
+      }
       return newFilters;
     });
   };
@@ -77,8 +81,8 @@ export default function NewsPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><Newspaper className="h-12 w-12 text-primary" /></div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+          <div className="flex items-center justify-center mb-4"><Newspaper className="h-7 w-7 text-primary" /></div>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
         <CardContent>

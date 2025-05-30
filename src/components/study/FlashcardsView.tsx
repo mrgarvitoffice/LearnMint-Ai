@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; // Added CardFooter
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import FlashcardItem from './FlashcardItem';
@@ -49,7 +49,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   const currentFlashcard = flashcards[currentCardIndex];
 
   return (
-    <Card className="mt-6 shadow-lg flex-1 flex flex-col min-h-0">
+    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> {/* Changed mt-6 to mt-0 */}
       <CardHeader>
         <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         <CardDescription>

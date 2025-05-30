@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { generateQuizAction } from '@/lib/actions'; // Using the renamed server action
-import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types'; // Updated types
+import { generateQuizAction } from '@/lib/actions'; 
+import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types';
 import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -98,7 +98,7 @@ export default function CustomTestPage() {
   });
 
   const sourceType = watch('sourceType');
-  const selectedRecentTopicsWatch = watch('selectedRecentTopics'); // Renamed to avoid conflict
+  const selectedRecentTopicsWatch = watch('selectedRecentTopics');
 
   const getPerformanceTag = useCallback((percentage: number): string => {
     if (percentage === 100) return "Conqueror";
@@ -170,7 +170,7 @@ export default function CustomTestPage() {
     });
   }, [playClickSound, clearCurrentQuestionTimer]);
 
- useEffect(() => {
+  useEffect(() => { // Overall Test Timer
     let currentTimerId: NodeJS.Timeout | null = null;
     if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft > 0 && !testState.showResults && !testState.isAutoSubmitting) {
       currentTimerId = setInterval(() => {
@@ -199,7 +199,7 @@ export default function CustomTestPage() {
     };
   }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, handleSubmitTest, toast]);
 
-  useEffect(() => {
+  useEffect(() => { // Per-Question Timer
     clearCurrentQuestionTimer(); 
     if (testState && !testState.showResults && !testState.isAutoSubmitting && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
       const perQuestionDuration = testState.settings.perQuestionTimer;
@@ -227,6 +227,12 @@ export default function CustomTestPage() {
   }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, testState?.isAutoSubmitting, handleNextQuestion, handleSubmitTest, toast, clearCurrentQuestionTimer]);
 
   useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia'); voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => { // Page Title TTS
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading ) {
       speak(PAGE_TITLE);
@@ -235,17 +241,19 @@ export default function CustomTestPage() {
     return () => { isMounted = false; };
   }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
 
-  useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); voicePreferenceWasSetRef.current = true;
+  useEffect(() => { // Generation Message TTS
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
+      speak("Creating custom test. Please wait.");
+      generatingMessageSpokenRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
-
-  useEffect(() => {
+    if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
+  }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
+  
+  useEffect(() => { // Transcript to Topic Input
     if (transcript && sourceType === 'topic') setValue('topics', transcript);
   }, [transcript, setValue, sourceType]);
 
-  useEffect(() => {
+  useEffect(() => { // Load Recent Topics from LocalStorage
     if (typeof window !== 'undefined') {
       const storedTopics = localStorage.getItem(RECENT_TOPICS_LS_KEY);
       if (storedTopics) {
@@ -254,14 +262,6 @@ export default function CustomTestPage() {
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
-      speak("Creating custom test. Please wait.");
-      generatingMessageSpokenRef.current = true;
-    }
-    if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
-  }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
   
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
@@ -330,8 +330,15 @@ export default function CustomTestPage() {
 
   const handleRetakeTest = () => {
     playClickSound(); if (!testState) return;
-    const originalSettings = testState.settings; setIsLoading(true); setTestState(null); resultAnnouncementSpokenRef.current = false; 
-    if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) { speak("Recreating test. Please wait."); generatingMessageSpokenRef.current = true; }
+    const originalSettings = testState.settings; 
+    setIsLoading(true); setTestState(null); 
+    resultAnnouncementSpokenRef.current = false; 
+    pageTitleSpokenRef.current = true; // Already announced once
+    
+    if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) { 
+        speak("Recreating test. Please wait."); 
+        generatingMessageSpokenRef.current = true; 
+    }
     let topicForAI = "";
     if (originalSettings.sourceType === 'topic' && originalSettings.topics.length > 0) topicForAI = originalSettings.topics.join(', ');
     else if (originalSettings.sourceType === 'notes' && originalSettings.notes) topicForAI = `questions based on the following notes: ${originalSettings.notes}`;
@@ -394,11 +401,14 @@ export default function CustomTestPage() {
        if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
        else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
         textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
+      } else if (isLoading && !generatingMessageSpokenRef.current) {
+        textToPlay = "Creating custom test. Please wait.";
       }
       if (textToPlay) {
         speak(textToPlay);
         if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
         if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
+        if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
       }
     }
   };
@@ -409,9 +419,9 @@ export default function CustomTestPage() {
       <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
         <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-12 w-12 text-primary" /></div>
+            <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-7 w-7 text-primary" /></div>
              <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
-                <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center sm:text-left">{PAGE_TITLE}</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold text-primary flex-1 text-center sm:text-left">{PAGE_TITLE}</CardTitle>
                  <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
                      <Select value={voicePreference || ''} onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'kai' | 'zia' | null);}}>
                         <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
@@ -499,7 +509,7 @@ export default function CustomTestPage() {
                     <Label htmlFor="perQuestionTimer" className="text-base">Time per Question (sec, 0 for none)</Label>
                     <Input id="perQuestionTimer" type="number" {...register('perQuestionTimer')} className="transition-colors duration-200 ease-in-out text-base" />
                     {errors.perQuestionTimer && <p className="text-sm text-destructive">{errors.perQuestionTimer.message}</p>}
-                     <p className="text-xs text-muted-foreground/80">Full per-question timer enforcement is active.</p>
+                     <p className="text-xs text-muted-foreground/80">Per-question timer will auto-advance if time expires.</p>
                 </div>
               </div>
                <p className="text-xs text-muted-foreground/80 text-center">Marking: +4 correct, -1 incorrect (for answered questions).</p>
@@ -526,7 +536,7 @@ export default function CustomTestPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
+    <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
       <Card className="shadow-lg w-full">
         {!testState.showResults && currentQuestionData ? (
           <>
@@ -584,4 +594,3 @@ export default function CustomTestPage() {
     </div>
   );
 }
-

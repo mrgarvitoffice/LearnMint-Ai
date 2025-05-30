@@ -23,13 +23,14 @@ export default function ChatbotPage() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { playSound: playMessageSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3); // Used for UI clicks
+  
   const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference, voicePreference } = useTTS();
   
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const initialGreetingSpokenRef = useRef(false);
-  const currentSpokenMessageRef = useRef<string | null>(null);
+  const currentSpokenMessageRef = useRef<string | null>(null); // To store the text of the last spoken message
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -38,7 +39,7 @@ export default function ChatbotPage() {
     }
   }, [supportedVoices, setVoicePreference]);
 
-  useEffect(() => {
+  useEffect(() => { // Page title TTS
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
@@ -47,14 +48,14 @@ export default function ChatbotPage() {
     return () => { isMounted = false; };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
-  useEffect(() => {
+  useEffect(() => { // Scroll to bottom
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (viewport) viewport.scrollTop = viewport.scrollHeight;
     }
   }, [messages]);
   
-  useEffect(() => {
+  useEffect(() => { // Initial Greeting
     const initialGreeting: ChatMessageType = { 
       id: 'initial-greeting', role: 'assistant', 
       content: "Kazuma, Kazuma! It's me, Megumin, the greatest archwizard of the Crimson Demon Clan! What explosive adventure shall we embark on today? Ask me anything!", 
@@ -68,11 +69,11 @@ export default function ChatbotPage() {
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice]);
+  }, [selectedVoice]); // Only re-run if selectedVoice changes, speak is stable from useTTS
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS(); 
+    cancelTTS(); // Stop any ongoing speech from Megumin
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicator: ChatMessageType = { id: TYPING_INDICATOR_ID, role: 'assistant', content: "Megumin is conjuring a response...", timestamp: new Date(), type: 'typing_indicator' };
@@ -89,8 +90,8 @@ export default function ChatbotPage() {
       
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
-      playMessageSound();
-      if (selectedVoice && !isSpeaking && !isPaused) {
+      // playMessageSound(); // Removed to avoid sound on AI reply, TTS handles audio
+      if (selectedVoice && !isSpeaking && !isPaused) { // Ensure not already speaking (e.g. from previous quick message)
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
@@ -106,7 +107,7 @@ export default function ChatbotPage() {
   const handlePlaybackControl = () => {
     playClickSound();
     let textToPlay = currentSpokenMessageRef.current;
-    if (!textToPlay && messages.length > 0) {
+    if (!textToPlay && messages.length > 0) { // Fallback to last assistant message if currentSpoken is null
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
       if (lastAssistantMessage) textToPlay = lastAssistantMessage.content;
     }
@@ -114,7 +115,7 @@ export default function ChatbotPage() {
 
     if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
-    else speak(textToPlay);
+    else speak(textToPlay); // Will cancel previous and speak this
   };
 
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
@@ -124,9 +125,9 @@ export default function ChatbotPage() {
       <CardHeader className="border-b">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div className="flex items-center gap-3">
-                <Bot className="h-12 w-12 text-primary" />
+                <Bot className="h-7 w-7 text-primary" />
                 <div>
-                    <CardTitle className="text-2xl text-primary font-bold">{PAGE_TITLE}</CardTitle>
+                    <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
                     <CardDescription>Your playful AI assistant. Try asking her to "sing a song about explosions!"</CardDescription>
                 </div>
             </div>
@@ -154,7 +155,7 @@ export default function ChatbotPage() {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-          <div className="space-y-4 pb-4"> {/* Added pb-4 for bottom padding */}
+          <div className="space-y-4 pb-4">
             {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
           </div>
         </ScrollArea>

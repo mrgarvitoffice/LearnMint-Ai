@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('zia'); // Default to Zia for welcome
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             );
           })}
            {dailyQuote && (
-            <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group col-span-1 sm:col-span-2 lg:col-span-1"> {/* Adjust span for positioning */}
+            <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group col-span-1 sm:col-span-2 lg:col-span-1">
               <CardHeader className="pb-2 pt-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
