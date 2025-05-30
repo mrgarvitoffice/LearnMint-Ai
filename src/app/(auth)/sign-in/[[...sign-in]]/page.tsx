@@ -62,7 +62,8 @@ export default function SignInPage() {
       await signInAnonymously(auth);
       toast({ title: 'Signed In Anonymously', description: 'Welcome, Guest!' });
       router.push('/');
-    } catch (err: any)      setError(err.message || 'Failed to sign in anonymously.');
+    } catch (err: any) { // Fixed: Added opening curly brace
+      setError(err.message || 'Failed to sign in anonymously.');
       toast({ title: 'Anonymous Sign In Failed', description: err.message || 'Please try again.', variant: 'destructive' });
     } finally {
       setIsAnonymousLoading(false);
