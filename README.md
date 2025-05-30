@@ -1,50 +1,28 @@
+
 # LearnMint - AI Powered Learning
 
-LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a Daily News Digest feature, and placeholders for future library and game features.
+LearnMint is a versatile AI-powered learning assistant designed to help users transform academic topics into structured study materials. It leverages AI to generate notes, quizzes, and flashcards. The application also includes utility features like a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a daily news digest, a library section for exploring educational resources, and a simple word game.
 
 User accounts and server-side data persistence for test results have been removed to simplify the application for this version.
 
 To get started, take a look at `src/app/page.tsx`.
 
-## Features
+## Core Features
 
-*   **AI Content Generation**:
-    *   Generate comprehensive study notes on any topic (with Markdown rendering and visual prompt placeholders linking to Google Images).
-    *   Create quizzes with various question types based on a topic.
-    *   Generate flashcards for quick review of key terms and definitions.
-*   **Custom Test Creation**:
-    *   Generate tests based on single topics, up to 3 recent topics, or user-provided notes.
-    *   Selectable difficulty level and number of questions.
-    *   Timer options for tests (UI only, full logic for enforcement is a future enhancement).
-    *   Test scoring: +4 for correct, -1 for incorrect.
-    *   Review answers after test completion.
-*   **Scientific Calculator**:
-    *   Standard scientific calculator functions.
-    *   Unit converter for Length, Temperature, Weight/Mass, Volume, Area, and Speed.
-    *   History of the last 3 calculations with options to reuse results or delete history items.
-*   **Megumin AI Chatbot**:
-    *   Interactive chatbot with a playful persona.
-    *   Supports voice input and user image uploads (for the AI to acknowledge, not generate from).
-    *   Can attempt to "sing" with text-based lyrics if requested.
-*   **Daily News Digest**:
-    *   Fetches and displays live news articles from Newsdata.io.
-    *   Filterable by country, state/region (text input, enabled when a country is selected), city (text input, enabled when a country is selected), and general news categories (Top Headlines, Business, Technology, Sports, Science, Health).
-*   **Interactive UI**:
-    *   Responsive design for desktop and mobile.
-    *   Theme toggle (Light/Dark mode).
-    *   Click sound effects for key interactions.
-    *   Text-to-Speech for reading generated notes (with Male/Female voice preference, using browser's capabilities).
-    *   Voice input for topic generation and chatbot.
-*   **Library (Placeholder & Samples)**:
-    *   Displays a sample catalog of OpenStax textbooks with links to their website.
-    *   Includes a "Math Fact of the Day" (uses a static fallback list if the live API fails).
-    *   Includes a "Search Google Books" feature (Genkit flow for API search added; UI currently launches Google Books search results page).
-    *   Includes a "Search YouTube" feature (Genkit flow for API search added; UI for search currently launches YouTube search results page).
-    *   Lists other helpful resources.
-*   **Game (LearnMint Arcade)**:
-    *   **Word Game**: A "Definition Challenge" where users guess a term based on its definition, with hints and streak tracking.
-    *   **Dino Runner (Coming Soon!)**: Placeholder for the classic infinite side-scrolling runner game.
-    *   **Tetris (Coming Soon!)**: Placeholder for the classic block-stacking game.
+*   **AI Content Generation**: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI (powered by Genkit and Google AI).
+*   **Custom Test Creation**: Build tests based on specific topics (single or multiple recent), difficulty levels, number of questions, optional custom notes, and timer settings.
+*   **Interactive AI Chatbot (Megumin)**: Engage with "Megumin," a witty AI assistant, for small talk, questions, and even "singing" (text-based). Supports voice input and user image uploads.
+*   **Scientific Calculator & Unit Converter**: Perform basic and scientific calculations. Includes a Unit Converter (Length, Temperature, Weight/Mass, Volume, Area, Speed) and a history of the last 3 calculations.
+*   **Daily News Digest**: Browse news articles filtered by country, state/region (text input), city (text input), and general categories, powered by Newsdata.io.
+*   **Resource Library**:
+    *   Explore a sample catalog of OpenStax textbooks (links to external site).
+    *   Search Google Books (redirects to Google Books search results for full reading).
+    *   Search YouTube (redirects to YouTube search results page).
+    *   View a "Math Fact of the Day" (from a static list after attempting live fetch).
+*   **Educational Game**: Play "Word Game" (a definition/term guessing game with hints and streak scoring). Placeholders for "Dino Runner" 
+*   **Theme Toggle**: Switch between light and dark modes.
+*   **Responsive UI**: Designed to adapt to various screen sizes, including mobile (with drawer navigation).
+*   **Auditory Feedback**: Click sounds and vocal announcements for a more engaging experience.
 
 ## Tech Stack
 
@@ -133,7 +111,7 @@ This starts the Genkit development UI, usually at `http://localhost:4000`, where
 ## Pushing to GitHub (Optional but Recommended)
 
 1.  **Create a New Repository on GitHub.com:**
-    *   Go to [GitHub.com](https://github.com/) and create a new repository (e.g., `learnmint-app`). **Do NOT** initialize it with a README, .gitignore, or license if you're pushing an existing project (as this project has them).
+    *   Go to [GitHub.com](https://github.com/) and create a new repository (e.g., `learnmint`). **Do NOT** initialize it with a README, .gitignore, or license if you're pushing an existing project (as this project has them).
 2.  **Initialize Git Locally (if not already done):**
     *   Open a terminal in your project's root directory.
     *   Run `git init -b main`

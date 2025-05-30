@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'LearnFlow - AI Powered Learning',
+  title: 'LearnMint - AI Powered Learning',
   description: 'AI-powered learning assistant for notes, quizzes, flashcards, and more.',
   manifest: '/manifest.json',
 };

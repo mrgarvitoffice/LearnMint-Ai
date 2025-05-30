@@ -51,7 +51,7 @@ export const NAV_ITEMS: NavItem[] = [
   // { title: 'Settings', href: '/settings', icon: Settings }, // Placeholder for future settings
 ];
 
-export const APP_NAME = "LearnFlow";
+export const APP_NAME = "LearnMint";
 
 export const OPENSTAX_BOOKS = [
   { title: "College Physics 2e", url: "https://openstax.org/details/books/college-physics-2e", subject: "Physics", coverImage: "https://placehold.co/150x200.png?text=Physics+2e", dataAiHint: "textbook physics" },
