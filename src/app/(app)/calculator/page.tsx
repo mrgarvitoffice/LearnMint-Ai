@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, RotateCcw } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 
+const LOCAL_STORAGE_HISTORY_KEY = 'learnmint-calculator-history';
 
 const calculatorButtonsConfig: CalculatorButtonConfig[] = [
   // Row 1
@@ -64,16 +66,35 @@ export default function CalculatorPage() {
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
 
+  // Load history from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedHistory = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
+      if (storedHistory) {
+        try {
+          setCalculationHistory(JSON.parse(storedHistory));
+        } catch (e) {
+          console.error("Failed to parse calculator history from localStorage", e);
+          localStorage.removeItem(LOCAL_STORAGE_HISTORY_KEY); // Clear corrupted data
+        }
+      }
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(calculationHistory));
+    }
+  }, [calculationHistory]);
+
+
   const evaluateExpression = (expr: string): string => {
     try {
-      // Sanitize: allow numbers, decimal points, operators +-*/%() and functions like Math.sin, etc.
-      // A more robust solution would be a proper math expression parser.
-      // This is a simplified and somewhat unsafe approach.
       const sanitizedExpr = expr
         .replace(/×/g, '*')
         .replace(/÷/g, '/')
-        .replace(/−/g, '-')
-        // Add more replacements if needed (e.g. for scientific functions if not directly using Math.)
+        .replace(/−/g, '-');
       
       // eslint-disable-next-line no-eval
       let result = eval(sanitizedExpr);
@@ -110,7 +131,6 @@ export default function CalculatorPage() {
         break;
       case 'operator':
         if(currentExpression.endsWith('(') && (value === '+' || value === '-' || value === '*' || value === '/')) {
-            // Avoid operator right after an opening parenthesis
             return;
         }
         setCurrentExpression(prev => prev + value);
@@ -150,20 +170,18 @@ export default function CalculatorPage() {
           const newValue = (parseFloat(mainDisplay) * -1).toString();
           setMainDisplay(newValue);
           // This needs careful handling with currentExpression
-          // For simplicity, this might only affect the current number being typed
         }
         break;
       case 'percentage':
         if (mainDisplay) {
           const percentageValue = (parseFloat(mainDisplay) / 100).toString();
           setMainDisplay(percentageValue);
-          setCurrentExpression(percentageValue); // Assuming it replaces current input
+          setCurrentExpression(percentageValue);
         }
         break;
        case 'toggleMode':
         setIsRadians(prev => !prev);
-        // Update display or state related to RAD/DEG if needed
-        setHistoryDisplay(isRadians ? 'Mode: DEG' : 'Mode: RAD'); // Show current mode after toggle
+        setHistoryDisplay(isRadians ? 'Mode: DEG' : 'Mode: RAD');
         setTimeout(() => setHistoryDisplay(prev => prev.replace(/Mode: (DEG|RAD)/, '')), 1000);
         break;
     }
@@ -178,7 +196,7 @@ export default function CalculatorPage() {
         case 'cos': result = isRadians ? Math.cos(val) : Math.cos(val * Math.PI / 180); break;
         case 'tan': result = isRadians ? Math.tan(val) : Math.tan(val * Math.PI / 180); break;
         case 'log10': result = Math.log10(val); break;
-        case 'log': result = Math.log(val); break; // Natural log
+        case 'log': result = Math.log(val); break; 
         case 'sqrt': result = Math.sqrt(val); break;
         default: break;
       }
@@ -192,22 +210,28 @@ export default function CalculatorPage() {
         setCurrentExpression('');
       }
     } else if (func === 'sqrt' || func === 'sin' || func === 'cos' || func === 'tan' || func === 'log10' || func === 'log') {
-        // Allows functions to be part of the expression, e.g. Math.sqrt(
         setCurrentExpression(prev => prev + `Math.${func}(`);
         setHistoryDisplay(prev => prev + `${func}(`);
-        setMainDisplay(''); // Clear main display to type the argument
+        setMainDisplay('');
     }
   };
   
   const useHistoryItem = (item: { expression: string, result: string }) => {
+    playSound();
     setMainDisplay(item.result);
-    setCurrentExpression(item.result); // Start new calculation with this result
+    setCurrentExpression(item.result);
     setHistoryDisplay(`${item.expression.replace(/\*/g, '×').replace(/\//g, '÷')} = ${item.result}`);
   };
   
   const deleteHistoryItem = (index: number) => {
+    playSound();
     setCalculationHistory(prev => prev.filter((_, i) => i !== index));
   };
+
+  const clearAllHistory = () => {
+    playSound();
+    setCalculationHistory([]);
+  }
 
 
   return (
@@ -241,7 +265,12 @@ export default function CalculatorPage() {
           
           {calculationHistory.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">History (Last 3)</h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-muted-foreground">History (Last 3)</h3>
+                <Button variant="ghost" size="sm" onClick={clearAllHistory} className="text-xs text-destructive/80 hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear All
+                </Button>
+              </div>
               <ul className="space-y-2">
                 {calculationHistory.map((item, index) => (
                   <li key={index} className="flex justify-between items-center p-2 border rounded-md bg-muted/30 text-sm">
@@ -275,3 +304,4 @@ export default function CalculatorPage() {
     </div>
   );
 }
+
