@@ -1,0 +1,121 @@
+"use client";
+
+import { useState, useRef, type ChangeEvent, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Paperclip, Send, Mic, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
+
+
+interface ChatInputProps {
+  onSendMessage: (message: string, image?: string) => void;
+  isLoading: boolean;
+}
+
+export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+  const [inputValue, setInputValue] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
+  
+  useState(() => {
+    if (transcript) {
+      setInputValue(transcript);
+    }
+  });
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        setImageData(reader.result as string); // This will be the base64 data URI
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (isLoading || (!inputValue.trim() && !imageData)) return;
+    onSendMessage(inputValue.trim(), imageData || undefined);
+    setInputValue('');
+    setImageData(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Reset file input
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+  
+  if (voiceError) {
+    toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="sticky bottom-0 bg-background/80 backdrop-blur-md p-4 border-t">
+      {imagePreview && (
+        <div className="mb-2 relative w-24 h-24">
+          <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md" />
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="icon" 
+            className="absolute -top-2 -right-2 h-6 w-6 bg-destructive/80 text-destructive-foreground rounded-full"
+            onClick={() => { setImagePreview(null); setImageData(null); if(fileInputRef.current) fileInputRef.current.value = ""; }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+          <ImageIcon className="w-5 h-5" />
+          <span className="sr-only">Upload Image</span>
+        </Button>
+        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
+
+        {browserSupportsSpeechRecognition && (
+          <Button type="button" variant="ghost" size="icon" onClick={toggleListening} disabled={isLoading}>
+            <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
+            <span className="sr-only">{isListening ? 'Stop Listening' : 'Start Listening'}</span>
+          </Button>
+        )}
+
+        <Input
+          type="text"
+          placeholder="Type your message or ask Megumin to sing..."
+          value={inputValue}
+          onChange={handleInputChange}
+          disabled={isLoading}
+          className="flex-1"
+        />
+        <Button type="submit" size="icon" disabled={isLoading || (!inputValue.trim() && !imageData)}>
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+          <span className="sr-only">Send Message</span>
+        </Button>
+      </div>
+    </form>
+  );
+}
