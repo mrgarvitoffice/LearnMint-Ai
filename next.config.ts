@@ -42,6 +42,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'kubrick.htvapps.com',
+        port: '',
+        pathname: '/**',
+      },
       // Add other news image hostnames here as they appear. For example:
       // {
       //   protocol: 'https',
