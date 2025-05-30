@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'; // Keep for YouTube
+import { useSound } from '@/hooks/useSound';
 
 const PAGE_TITLE = "LearnMint Knowledge Hub";
 
@@ -34,7 +35,6 @@ export default function LibraryPage() {
 
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
   
-  // State for new direct fullscreen book viewer
   const [fullscreenBook, setFullscreenBook] = useState<GoogleBookItem | null>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +42,9 @@ export default function LibraryPage() {
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const { toast } = useToast();
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -74,6 +77,7 @@ export default function LibraryPage() {
   }, [mathFact, isLoadingMathFact]);
 
   const handleRefreshMathFact = () => {
+    playClickSound();
     refetchMathFact();
     if(selectedVoice && !isSpeaking && !isPaused) speak("Fetching new math fact.");
   };
@@ -117,6 +121,7 @@ export default function LibraryPage() {
   const handleYoutubeSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
+      playActionSound();
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
@@ -126,33 +131,33 @@ export default function LibraryPage() {
   const handleGoogleBooksSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
+      playActionSound();
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9, country: 'US' });
     }
   };
   
-  // --- New Fullscreen Book Viewer Logic ---
   const openBookInFullscreen = (book: GoogleBookItem) => {
+    playClickSound();
     if (book.embeddable) {
       setFullscreenBook(book);
     } else {
-      // Fallback for non-embeddable books
       window.open(book.webReaderLink || book.infoLink || `https://books.google.com/books?id=${book.bookId}`, '_blank', 'noopener,noreferrer');
       toast({ title: "Opening on Google Books", description: "This book will be opened on the Google Books website." });
     }
   };
 
   const closeFullscreenViewer = useCallback(() => {
+    playClickSound();
     if (document.fullscreenElement && fullscreenContainerRef.current === document.fullscreenElement) {
       document.exitFullscreen().catch(err => console.error("Error exiting fullscreen:", err));
     }
     setFullscreenBook(null);
-  }, []);
+  }, [playClickSound]);
 
   useEffect(() => {
     const handleActualFullscreenChange = () => {
-      // If browser fullscreen is exited (e.g., by Esc key) and our state still thinks a book should be fullscreen, reset state.
       if (!document.fullscreenElement && fullscreenBook) {
         setFullscreenBook(null); 
       }
@@ -164,22 +169,19 @@ export default function LibraryPage() {
           toast({
             title: "Fullscreen Mode Not Available",
             description: `Could not enter fullscreen automatically: ${err.message}. Displaying in an overlay.`,
-            variant: "default", // Not destructive, as we still show the overlay
+            variant: "default",
           });
-          // The content will still be rendered in the fixed overlay even if browser fullscreen fails
         });
     }
     
     document.addEventListener('fullscreenchange', handleActualFullscreenChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleActualFullscreenChange);
-      // Ensure fullscreen is exited if component unmounts or fullscreenBook changes while active
       if (document.fullscreenElement && fullscreenContainerRef.current === document.fullscreenElement) {
           document.exitFullscreen().catch(err => console.error("Error exiting fullscreen on cleanup:", err));
       }
     };
   }, [fullscreenBook, toast]);
-  // --- End New Fullscreen Book Viewer Logic ---
 
   const otherResources = [
     { title: "Wikidata", description: "A free and open knowledge base that can be read and edited by humans and machines.", link: "https://www.wikidata.org/", icon: BookOpen },
@@ -189,13 +191,12 @@ export default function LibraryPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-10">
-      {/* Fullscreen Book Viewer - renders as an overlay if fullscreenBook is set */}
       {fullscreenBook && (
         <div
           ref={fullscreenContainerRef}
-          className="fixed inset-0 z-[100] flex flex-col bg-background" // High z-index, covers everything
+          className="fixed inset-0 z-[100] flex flex-col bg-background"
         >
-          <div className="flex items-center justify-between p-2 bg-muted/80 backdrop-blur-sm shadow-md">
+          <div className="flex items-center justify-between p-3 bg-muted/80 backdrop-blur-sm shadow-md">
             <h3 className="text-lg font-semibold truncate text-foreground pl-2">{fullscreenBook.title}</h3>
             <Button variant="ghost" size="icon" onClick={closeFullscreenViewer} aria-label="Close reader">
               <X className="h-6 w-6 text-foreground" />
@@ -204,13 +205,21 @@ export default function LibraryPage() {
           <iframe
             src={`https://books.google.com/books?id=${fullscreenBook.bookId}&pg=PP1&output=embed`}
             title={`Read ${fullscreenBook.title}`}
-            className="w-full flex-1 border-0" // flex-1 makes it take remaining space
-            allow="fullscreen" // Allow iframe to potentially use its own fullscreen within our fullscreen
+            className="w-full flex-1 border-0"
+            allow="fullscreen"
           ></iframe>
+           {fullscreenBook.infoLink && (
+            <div className="p-2 bg-muted/80 text-right">
+              <Button variant="link" size="sm" asChild className="text-xs">
+                <a href={fullscreenBook.infoLink} target="_blank" rel="noopener noreferrer">
+                  More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Rest of the Library Page content */}
       {!fullscreenBook && (
         <>
           <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
@@ -270,7 +279,7 @@ export default function LibraryPage() {
                         <YoutubeVideoResultItem
                           key={video.videoId}
                           video={video}
-                          onPlay={() => setSelectedYoutubeVideo(video)}
+                          onPlay={() => { playClickSound(); setSelectedYoutubeVideo(video);}}
                         />
                       ))}
                     </div>
@@ -342,7 +351,7 @@ export default function LibraryPage() {
                         <BookResultItem 
                             key={book.bookId} 
                             book={book} 
-                            onPreviewRequest={openBookInFullscreen} // Updated to new handler
+                            onPreviewRequest={openBookInFullscreen}
                           />
                       ))}
                     </div>

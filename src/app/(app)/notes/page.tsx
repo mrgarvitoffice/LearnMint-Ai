@@ -52,6 +52,7 @@ export default function GenerateNotesPage() {
   const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
@@ -92,7 +93,7 @@ export default function GenerateNotesPage() {
   }, [isListening, startListening, stopListening, playClickSound]);
 
   const handleGenerateAllMaterials = async () => {
-    playClickSound();
+    playActionSound(); // Use custom sound for major action
     if (topic.trim().length < 3) {
       toast({ title: "Invalid Topic", description: "Topic must be at least 3 characters long.", variant: "destructive" });
       return;
@@ -105,7 +106,7 @@ export default function GenerateNotesPage() {
     setIsLoadingAll(true);
     setIsLoadingNotes(true); setIsLoadingQuiz(true); setIsLoadingFlashcards(true);
     pageTitleSpokenRef.current = true; 
-    generatingMessageSpokenRef.current = false; // Reset before potentially speaking
+    generatingMessageSpokenRef.current = false; 
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating all study materials, please wait.");

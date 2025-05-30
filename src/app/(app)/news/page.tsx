@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTTS } from '@/hooks/useTTS';
+import { useSound } from '@/hooks/useSound';
 
 const PAGE_TITLE = "Global News Terminal";
 
@@ -33,6 +34,7 @@ export default function NewsPage() {
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -76,6 +78,7 @@ export default function NewsPage() {
   };
 
   const handleApplyFilters = () => { 
+    playActionSound();
     setAppliedFilters(filters); 
     pageTitleSpokenRef.current = true; 
     if (selectedVoice && !isSpeaking && !isPaused) {
@@ -83,6 +86,8 @@ export default function NewsPage() {
     }
   };
   const handleResetFilters = () => { 
+    // Consider if custom-sound-2 should play here or a general click sound
+    playActionSound(); // Or use a different sound for reset if desired
     setFilters(initialFilters); 
     setAppliedFilters(initialFilters); 
     pageTitleSpokenRef.current = true; 
@@ -137,7 +142,7 @@ export default function NewsPage() {
       )}
       {hasNextPage && (
         <div className="flex justify-center mt-8">
-          <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+          <Button onClick={() => { playActionSound(); fetchNextPage(); }} disabled={isFetchingNextPage}>
             {isFetchingNextPage && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Load More News
           </Button>
         </div>

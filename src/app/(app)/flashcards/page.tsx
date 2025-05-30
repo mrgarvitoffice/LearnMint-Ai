@@ -31,6 +31,7 @@ export default function FlashcardsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
@@ -75,7 +76,7 @@ export default function FlashcardsPage() {
   }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
-    playClickSound();
+    playActionSound();
     setIsLoading(true);
     setGeneratedFlashcardsData(null);
     pageTitleSpokenRef.current = true; 

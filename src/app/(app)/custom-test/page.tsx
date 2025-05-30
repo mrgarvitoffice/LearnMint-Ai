@@ -78,6 +78,8 @@ export default function CustomTestPage() {
   const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
   const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+
 
   const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
@@ -268,7 +270,7 @@ export default function CustomTestPage() {
   }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, testState?.isAutoSubmitting, handleNextQuestion, handleSubmitTest, toast, clearCurrentQuestionTimer]);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
-    playClickSound();
+    playActionSound();
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
     pageTitleSpokenRef.current = true;
@@ -336,7 +338,8 @@ export default function CustomTestPage() {
   };
 
   const handleRetakeTest = () => {
-    playClickSound(); if (!testState) return;
+    playActionSound(); // Use action sound for major action
+    if (!testState) return;
     const originalSettings = testState.settings;
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
@@ -372,7 +375,8 @@ export default function CustomTestPage() {
   };
 
   const handleNewTest = () => {
-    playClickSound(); setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
+    playActionSound(); // Use action sound for major action
+    setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
     pageTitleSpokenRef.current = false; resultAnnouncementSpokenRef.current = false;
     generatingMessageSpokenRef.current = false;
     setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []);
@@ -616,5 +620,3 @@ export default function CustomTestPage() {
     </div>
   );
 }
-
-    
