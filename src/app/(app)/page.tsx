@@ -1,18 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS } from "@/lib/constants";
-import { ArrowRight, Lightbulb, FileText, TestTubeDiagonal, Sparkles } from "lucide-react";
+import { ArrowRight, Lightbulb, FileText, TestTubeDiagonal } from "lucide-react";
 import Link from "next/link";
 
 const coreFeaturesList = [
-  "AI Content Generation: Generate comprehensive study notes, quizzes, and flashcards.",
-  "Custom Test Creation: Build tests from topics or notes with difficulty levels and timers.",
-  "Scientific Calculator: Perform calculations, convert units, and view history.",
-  "Megumin AI Chatbot: Interact with an AI chatbot that supports voice and image uploads.",
-  "Daily News Digest: Get the latest news, filterable by location and category.",
-  "Interactive UI: Enjoy a responsive design, theme toggles, and TTS for notes.",
-  "Library Resources: Access OpenStax textbooks, math facts, and search tools.",
-  "LearnMint Arcade: Sharpen your mind with educational games like Definition Challenge.",
+  "AI Content Generation: Generate comprehensive study notes on any topic (with Markdown rendering and visual prompt placeholders linking to Google Images).",
+  "Create quizzes with various question types based on a topic.",
+  "Generate flashcards for quick review of key terms and definitions.",
+  "Custom Test Creation: Generate tests based on single topics, up to 3 recent topics, or user-provided notes, with selectable difficulty, number of questions, timer options, and scoring.",
+  "Scientific Calculator: Standard functions, unit converter (Length, Temperature, Weight/Mass, Volume, Area, Speed), and calculation history.",
+  "Megumin AI Chatbot: Interactive chatbot with a playful persona, supporting voice input and user image uploads.",
+  "Daily News Digest: Fetches and displays live news articles from Newsdata.io, filterable by location and category.",
+  "Interactive UI: Responsive design, theme toggle, click sound effects, Text-to-Speech for notes, and voice input.",
+  "Library Resources: Sample OpenStax textbooks, Math Fact of the Day, and search tools for Google Books & YouTube (backend flows added).",
+  "LearnMint Arcade: Definition Challenge word game, with placeholders for Dino Runner and Tetris.",
 ];
 
 const keyTools = [

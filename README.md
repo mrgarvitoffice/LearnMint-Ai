@@ -38,8 +38,8 @@ To get started, take a look at `src/app/page.tsx`.
 *   **Library (Placeholder & Samples)**:
     *   Displays a sample catalog of OpenStax textbooks with links to their website.
     *   Includes a "Math Fact of the Day" (uses a static fallback list if the live API fails).
-    *   Includes a "Search Google Books" feature (currently launches Google Books search results page, Genkit flow for API search added).
-    *   Includes a "Search YouTube" feature (UI for search currently launches YouTube search results page, Genkit flow for API search added).
+    *   Includes a "Search Google Books" feature (Genkit flow for API search added; UI currently launches Google Books search results page).
+    *   Includes a "Search YouTube" feature (Genkit flow for API search added; UI for search currently launches YouTube search results page).
     *   Lists other helpful resources.
 *   **Game (LearnMint Arcade)**:
     *   **Word Game**: A "Definition Challenge" where users guess a term based on its definition, with hints and streak tracking.
@@ -70,32 +70,32 @@ To get started, take a look at `src/app/page.tsx`.
 
 ### 2. CRITICAL: Set up Environment Variables
 
-Create a file named `.env` in the root of your project. Add the following content. **Replace placeholder values with your actual API keys.**
+Create a file named `.env` in the root of your project. Add the following content. **It is strongly recommended to replace these example keys with your own personal API keys for full functionality and to avoid rate limits or suspension.**
 
 ```env
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
 # Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
-GOOGLE_API_KEY=AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo_EXAMPLE
+GOOGLE_API_KEY=AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo
 
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
-NEWSDATA_API_KEY=pub_039b4b0247244a8e9f85a8f113e9d7f2_EXAMPLE
+NEWSDATA_API_KEY=pub_039b4b0247244a8e9f85a8f113e9d7f2
 
 # For YouTube Search Integration (Genkit flow)
 # Get your key from Google Cloud Console: https://console.cloud.google.com/apis/library/youtube.googleapis.com
-YOUTUBE_API_KEY=AIzaSyBEnMGnZ_8vUA7SP8GzvOvPqFrsHyL-BJk_EXAMPLE
+YOUTUBE_API_KEY=AIzaSyBEnMGnZ_8vUA7SP8GzvOvPqFrsHyL-BJk
 
 # For Google Books Search Integration (Genkit flow)
 # Get your key from Google Cloud Console: https://console.cloud.google.com/apis/library/books.googleapis.com
-GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw_EXAMPLE
+GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 
 # For future development with OpenRouter (currently unused by the application)
 # Get your key from OpenRouter: https://openrouter.ai/keys
 # OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE_EXAMPLE
 ```
 
-*   You **MUST** replace `_EXAMPLE` placeholders with valid API keys for the respective services. Without them, associated features will fail.
+*   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
 ### 3. Install Dependencies

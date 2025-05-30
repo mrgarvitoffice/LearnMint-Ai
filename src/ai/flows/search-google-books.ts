@@ -43,8 +43,6 @@ const fetchGoogleBooksTool = ai.defineTool(
   },
   async (input) => {
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
-    // Google Books API can often work without an API key for basic searches, but it's better to use one for higher quotas / reliability.
-    // If no key, the request might still work but could be rate-limited.
     
     const params = new URLSearchParams({
       q: input.query,
@@ -71,7 +69,7 @@ const fetchGoogleBooksTool = ai.defineTool(
       publishedDate: item.volumeInfo?.publishedDate,
       pageCount: item.volumeInfo?.pageCount,
       infoLink: item.volumeInfo?.infoLink,
-    })).filter((book: any) => book.title) || []; // Ensure books have titles
+    })).filter((book: any) => book.title) || []; 
 
     return { books };
   }
@@ -83,7 +81,7 @@ const searchGoogleBooksFlow = ai.defineFlow(
     name: 'searchGoogleBooksFlow',
     inputSchema: GoogleBooksSearchInputSchema,
     outputSchema: GoogleBooksSearchOutputSchema,
-    model: 'googleai/gemini-2.0-flash-exp', // Capable model for tool use
+    model: 'googleai/gemini-2.0-flash-exp',
   },
   async (input) => {
     const llmResponse = await ai.generate({

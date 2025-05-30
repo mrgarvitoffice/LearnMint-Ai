@@ -78,36 +78,27 @@ const searchYoutubeVideosFlow = ai.defineFlow(
     name: 'searchYoutubeVideosFlow',
     inputSchema: YoutubeSearchInputSchema,
     outputSchema: YoutubeSearchOutputSchema,
-    // Using gemini-2.0-flash-exp as it's a capable model for tool use, though not strictly necessary here
-    // as the primary work is done by the tool.
     model: 'googleai/gemini-2.0-flash-exp', 
   },
   async (input) => {
-    // The prompt can be simple here as the tool does the heavy lifting.
-    // We're using a prompt primarily to enable tool calling.
     const llmResponse = await ai.generate({
       prompt: `The user wants to search for YouTube videos with the query: "${input.query}". Use the fetchYouTubeVideos tool to get ${input.maxResults} results.`,
       tools: [fetchYouTubeVideosTool],
       config: {
-        // Lower temperature as we want factual tool use, not creative text.
         temperature: 0.1,
       },
     });
 
-    // Extract tool call results
     const toolResponse = llmResponse.toolRequest?.tool?.response as YoutubeSearchOutput | undefined;
 
     if (toolResponse && toolResponse.videos) {
       return toolResponse;
     }
     
-    // Fallback or if tool wasn't called as expected (should be rare with explicit prompt)
-    // Or try to extract info from text if LLM just summarized without calling tool effectively.
-    // For this example, we'll assume direct tool usage is primary.
     if (llmResponse.text) {
         console.warn("LLM did not use the YouTube tool as expected, or returned text instead. Text response:", llmResponse.text);
     }
-    return { videos: [] }; // Return empty if tool fails or LLM doesn't cooperate.
+    return { videos: [] }; 
   }
 );
 
@@ -117,7 +108,6 @@ export async function searchYoutubeVideos(input: YoutubeSearchInput): Promise<Yo
     return await searchYoutubeVideosFlow(input);
   } catch (error) {
     console.error("Error in searchYoutubeVideos flow:", error);
-    // Return a structured error or empty list
     return { videos: [] };
   }
 }
