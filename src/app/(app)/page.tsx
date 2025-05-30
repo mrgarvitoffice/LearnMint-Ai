@@ -129,7 +129,7 @@ export default function DashboardPage() {
           {PAGE_TITLE}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          Your AI-powered learning assistant. Explore tools designed to generate study materials, create custom assessments, and make learning more interactive and efficient.
+          Your AI-powered learning assistant for notes, quizzes, tests, and more.
         </p>
         {/* Example Interactive Element */}
         <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-75 hover:opacity-100 transition-opacity hidden sm:block">
