@@ -17,6 +17,7 @@ const YoutubeVideoItemSchema = z.object({
   description: z.string().optional().describe('A short description of the video.'),
   thumbnailUrl: z.string().url().describe('URL of the video thumbnail.'),
   channelTitle: z.string().optional().describe('The title of the YouTube channel.'),
+  publishedAt: z.string().optional().describe('The date the video was published (ISO 8601 format).'),
 });
 
 const YoutubeSearchInputSchema = z.object({
@@ -66,6 +67,7 @@ const fetchYouTubeVideosTool = ai.defineTool(
       description: item.snippet.description,
       thumbnailUrl: item.snippet.thumbnails.default.url, // or medium/high
       channelTitle: item.snippet.channelTitle,
+      publishedAt: item.snippet.publishedAt,
     })) || [];
 
     return { videos };

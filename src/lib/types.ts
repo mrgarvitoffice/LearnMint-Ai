@@ -153,6 +153,7 @@ export interface YoutubeVideoItem {
   description?: string;
   thumbnailUrl: string;
   channelTitle?: string;
+  publishedAt?: string; // Added publish date
 }
 export interface YoutubeSearchInput {
   query: string;

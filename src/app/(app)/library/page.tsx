@@ -6,19 +6,20 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
-import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X } from 'lucide-react';
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { searchYoutubeVideos, type YoutubeSearchInput, type YoutubeSearchOutput } from '@/ai/flows/search-youtube-videos';
 import { searchGoogleBooks, type GoogleBooksSearchInput, type GoogleBooksSearchOutput } from '@/ai/flows/search-google-books';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const PAGE_TITLE = "LearnMint Knowledge Hub";
 
@@ -116,7 +117,7 @@ export default function LibraryPage() {
     if (youtubeSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); // Clear previous results
-      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 9 });
+      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 20 });
     }
   };
 
@@ -201,11 +202,11 @@ export default function LibraryPage() {
 
       {selectedYoutubeVideo && (
         <Dialog open={!!selectedYoutubeVideo} onOpenChange={(isOpen) => { if (!isOpen) setSelectedYoutubeVideo(null); }}>
-          <DialogContent className="max-w-3xl aspect-video p-0 border-0">
+          <DialogContent className="max-w-3xl p-0 border-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
             <DialogHeader className="sr-only">
               <DialogTitle>{selectedYoutubeVideo.title}</DialogTitle>
             </DialogHeader>
-            <div className="aspect-video">
+            <div className="aspect-video relative">
               <iframe
                 width="100%"
                 height="100%"
@@ -215,16 +216,17 @@ export default function LibraryPage() {
                 allowFullScreen
                 className="rounded-lg"
               ></iframe>
+               <DialogClose asChild>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8 z-10"
+                    aria-label="Close video player"
+                >
+                    <X className="h-5 w-5" />
+                </Button>
+              </DialogClose>
             </div>
-             <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8 z-10"
-                onClick={() => setSelectedYoutubeVideo(null)}
-                aria-label="Close video player"
-            >
-                <X className="h-5 w-5" />
-            </Button>
           </DialogContent>
         </Dialog>
       )}
@@ -250,7 +252,7 @@ export default function LibraryPage() {
                         <CardHeader className="p-3">
                            {book.thumbnailUrl && (
                              <div className="relative w-full aspect-[2/3] mb-2 rounded overflow-hidden bg-muted">
-                               <Image src={book.thumbnailUrl} alt={book.title} layout="fill" objectFit="contain" data-ai-hint="book cover" />
+                               <Image src={book.thumbnailUrl} alt={book.title} fill={true} style={{objectFit: 'contain'}} data-ai-hint="book cover" />
                              </div>
                            )}
                            <CardTitle className="text-sm font-semibold line-clamp-2">{book.title}</CardTitle>

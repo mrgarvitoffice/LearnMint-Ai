@@ -3,9 +3,9 @@
 
 import type { YoutubeVideoItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { PlayCircle } from 'lucide-react';
+import { PlayCircle, CalendarDays } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface YoutubeVideoResultItemProps {
   video: YoutubeVideoItem;
@@ -16,6 +16,9 @@ export function YoutubeVideoResultItem({ video, onPlay }: YoutubeVideoResultItem
   const placeholderImage = `https://placehold.co/480x360.png?text=${encodeURIComponent(video.title.substring(0,20) + '...')}`;
   const dataAiHintKeywords = video.title.toLowerCase().split(' ').slice(0, 2).join(' ');
 
+  const publishedDateFormatted = video.publishedAt 
+    ? format(new Date(video.publishedAt), 'PP') // e.g., Oct 26, 2023
+    : null;
 
   return (
     <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
@@ -30,7 +33,7 @@ export function YoutubeVideoResultItem({ video, onPlay }: YoutubeVideoResultItem
             alt={`Thumbnail for ${video.title}`}
             fill={true}
             style={{ objectFit: 'cover' }}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" // Basic sizes, adjust as needed
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => { (e.target as HTMLImageElement).src = placeholderImage; }}
           />
@@ -45,16 +48,20 @@ export function YoutubeVideoResultItem({ video, onPlay }: YoutubeVideoResultItem
             {video.title}
           </CardTitle>
         </button>
-        {video.channelTitle && (
-          <CardDescription className="text-xs pt-0.5 line-clamp-1">
-            {video.channelTitle}
-          </CardDescription>
-        )}
+        <CardDescription className="text-xs pt-0.5 space-y-0.5">
+            {video.channelTitle && (
+              <span className="block line-clamp-1">{video.channelTitle}</span>
+            )}
+            {publishedDateFormatted && (
+              <span className="flex items-center gap-1 text-muted-foreground/80">
+                <CalendarDays className="w-3 h-3" /> {publishedDateFormatted}
+              </span>
+            )}
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-3 pt-1 text-xs text-muted-foreground line-clamp-2">
         {video.description || "No description available."}
       </CardContent>
-      {/* CardFooter can be added if needed for more actions */}
     </Card>
   );
 }
