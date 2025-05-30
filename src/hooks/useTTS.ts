@@ -66,16 +66,19 @@ export function useTTS(): TTSHook {
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = null;
-        window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel(); // Important cleanup
       }
     };
   }, [populateVoiceList]);
 
   const speak = useCallback((text: string) => {
     if (typeof window !== 'undefined' && window.speechSynthesis && text) {
-      if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-      }
+      // Always cancel any existing speech from browser's queue.
+      window.speechSynthesis.cancel();
+      // Immediately set our internal speaking state to false.
+      // onstart will set it to true if the new utterance successfully starts.
+      setIsSpeaking(false);
+
       const utterance = new SpeechSynthesisUtterance(text);
       if (selectedVoice) {
         utterance.voice = selectedVoice;
@@ -86,14 +89,21 @@ export function useTTS(): TTSHook {
         console.error('Speech synthesis error:', event.error, '| Utterance text:', `"${utterance.text.substring(0, 50)}..."`, '| Selected voice:', utterance.voice?.name || 'Default');
         setIsSpeaking(false);
       };
-      window.speechSynthesis.speak(utterance);
+
+      // Use a small timeout to allow the cancel operation to fully process
+      // and to avoid some browser-specific quirks with rapid speak/cancel.
+      setTimeout(() => {
+         if (typeof window !== 'undefined' && window.speechSynthesis) { // Re-check in case component unmounted
+            window.speechSynthesis.speak(utterance);
+         }
+      }, 50); // 50ms delay, adjust if needed
     }
   }, [selectedVoice, setIsSpeaking]); // setIsSpeaking is stable
 
   const cancel = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false); // Immediately update our state
+      setIsSpeaking(false); // Update our internal state
     }
   }, [setIsSpeaking]); // setIsSpeaking is stable
 
