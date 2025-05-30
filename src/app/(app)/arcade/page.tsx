@@ -9,6 +9,7 @@ import { useTTS } from '@/hooks/useTTS';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const PAGE_TITLE = "LearnMint Arcade Arena";
 
@@ -19,7 +20,7 @@ export default function ArcadePage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma');
+      setVoicePreference('zia');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -76,6 +77,15 @@ export default function ArcadePage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center gap-4 p-8 bg-muted rounded-lg">
+                <div className="relative w-full max-w-xs h-40 sm:h-48 rounded-md overflow-hidden mb-4">
+                  <Image 
+                    src="https://placehold.co/300x200.png?text=Dino+Run" 
+                    alt="Dino Runner Game" 
+                    layout="fill" 
+                    objectFit="cover"
+                    data-ai-hint="dinosaur game" 
+                  />
+                </div>
                 <p className="text-muted-foreground">Get ready to jump over obstacles!</p>
                 <Button asChild size="lg">
                   <Link href="https://chromedino.com/" target="_blank" rel="noopener noreferrer">
@@ -95,6 +105,15 @@ export default function ArcadePage() {
             </CardHeader>
             <CardContent>
                <div className="flex flex-col items-center gap-4 p-8 bg-muted rounded-lg">
+                <div className="relative w-full max-w-xs h-40 sm:h-48 rounded-md overflow-hidden mb-4">
+                  <Image 
+                    src="https://placehold.co/300x200.png?text=Chess+Game" 
+                    alt="Chess Game" 
+                    layout="fill" 
+                    objectFit="cover" 
+                    data-ai-hint="chess board"
+                  />
+                </div>
                 <p className="text-muted-foreground">Test your strategy on the 64 squares!</p>
                  <Button asChild size="lg">
                   <Link href="https://www.chess.com/play/computer" target="_blank" rel="noopener noreferrer">
