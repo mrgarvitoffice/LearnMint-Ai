@@ -86,9 +86,10 @@ export default function CustomTestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('correct', 0.5);
-  const { playSound: playIncorrectSound } = useSound('incorrect', 0.4);
-  const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const { playSound: playCorrectSound } = useSound('correct'); 
+  const { playSound: playIncorrectSound } = useSound('incorrect'); 
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { speak, isSpeaking: isTTSSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
   const voicePreferenceWasSetRef = useRef(false);
 
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
@@ -125,7 +126,12 @@ export default function CustomTestPage() {
     if (typeof window !== 'undefined') {
       const storedTopics = localStorage.getItem('learnmint-recent-topics');
       if (storedTopics) {
-        setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY));
+        try {
+            setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY));
+        } catch (e) {
+            console.error("Failed to parse recent topics from localStorage", e);
+            localStorage.removeItem('learnmint-recent-topics');
+        }
       }
     }
   }, []);
@@ -171,26 +177,43 @@ export default function CustomTestPage() {
   };
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    playClickSound();
     setIsLoading(true);
     setTestState(null); 
-    if (selectedVoice && !isSpeaking) {
+    if (selectedVoice && !isTTSSpeaking) {
         speak("Creating custom test. Please wait.");
     }
 
     try {
       let topicForAI = "general knowledge";
       let sourceTopicsForSettings: string[] = [];
+      let notesForSettings: string | undefined = undefined;
+      let selectedRecentTopicsForSettings: string[] | undefined = undefined;
+
 
       if (data.sourceType === 'topic' && data.topics) {
         topicForAI = `${data.topics} (difficulty: ${data.difficulty})`;
         sourceTopicsForSettings = data.topics.split(',').map(t => t.trim());
+         // Add to recent topics if not already there and is a valid topic
+        if (data.topics.trim().length >= 3) {
+            const newTopic = data.topics.trim();
+            setRecentTopics(prev => {
+                const updated = [newTopic, ...prev.filter(t => t !== newTopic)].slice(0, MAX_RECENT_TOPICS_DISPLAY);
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('learnmint-recent-topics', JSON.stringify(updated));
+                }
+                return updated;
+            });
+        }
       } else if (data.sourceType === 'notes' && data.notes) {
-        topicForAI = data.notes.split(' ').slice(0, 10).join(' ') + `... (based on provided notes, difficulty: ${data.difficulty})`;
-        // For settings, we might just store a placeholder if notes are too long, or the first few words
-        sourceTopicsForSettings = ["Custom Notes Provided"]; 
+        // For AI, pass first N words + indicator + difficulty. For settings, store all notes.
+        topicForAI = data.notes.split(' ').slice(0, 15).join(' ') + `... (based on provided notes, difficulty: ${data.difficulty})`;
+        sourceTopicsForSettings = ["Custom Notes Provided"];
+        notesForSettings = data.notes;
       } else if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > 0) {
         topicForAI = `${data.selectedRecentTopics.join(', ')} (difficulty: ${data.difficulty})`;
         sourceTopicsForSettings = data.selectedRecentTopics;
+        selectedRecentTopicsForSettings = data.selectedRecentTopics;
       }
       
       const result: GenerateQuizOutput = await generateQuiz({ topic: topicForAI, numQuestions: data.numQuestions });
@@ -198,16 +221,16 @@ export default function CustomTestPage() {
       if (result.quiz && result.quiz.length > 0) {
         const testSettings: TestSettings = {
           topics: sourceTopicsForSettings,
-          notes: data.sourceType === 'notes' ? data.notes : undefined,
+          notes: notesForSettings,
           sourceType: data.sourceType,
-          selectedRecentTopics: data.sourceType === 'recent' ? data.selectedRecentTopics : undefined,
+          selectedRecentTopics: selectedRecentTopicsForSettings,
           difficulty: data.difficulty,
-          numQuestions: result.quiz.length, // Use actual number of questions returned
+          numQuestions: result.quiz.length,
           timer: data.timer,
         };
         setTestState({
           settings: testSettings,
-          questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, explanation: q.explanation })),
+          questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, explanation: q.explanation || "No explanation provided." })),
           userAnswers: Array(result.quiz.length).fill(undefined),
           currentQuestionIndex: 0,
           showResults: false,
@@ -232,6 +255,7 @@ export default function CustomTestPage() {
   };
   
   const handleAnswerSelect = (answer: string) => {
+    playClickSound();
     if (!testState || testState.showResults || testState.isAutoSubmitting) return;
     const newUserAnswers = [...testState.userAnswers];
     newUserAnswers[testState.currentQuestionIndex] = answer;
@@ -239,16 +263,19 @@ export default function CustomTestPage() {
   };
 
   const handleNextQuestion = () => {
+    playClickSound();
     if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) return;
     setTestState({ ...testState, currentQuestionIndex: testState.currentQuestionIndex + 1 });
   };
 
   const handlePrevQuestion = () => {
+    playClickSound();
     if (!testState || testState.currentQuestionIndex <= 0 || testState.isAutoSubmitting) return;
     setTestState({ ...testState, currentQuestionIndex: testState.currentQuestionIndex - 1 });
   };
 
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
+    playClickSound();
     setTestState(prevTestState => {
       if (!prevTestState || prevTestState.showResults) return prevTestState;
       if (prevTestState.timerId) {
@@ -268,9 +295,13 @@ export default function CustomTestPage() {
         }
         return { ...q, userAnswer, isCorrect };
       });
-
+      
+      const resultMessage = `Your score is ${score}. Review your answers below.`;
       if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) {
-         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Your score is ${score}. Review your answers below.`});
+         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: resultMessage});
+         if (selectedVoice && !isTTSSpeaking) {
+           speak(autoSubmitted ? "Test auto-submitted! Please review your answers." : "Test submitted! Please review your answers.");
+         }
       }
       
       return { 
@@ -284,9 +315,10 @@ export default function CustomTestPage() {
       };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, playCorrectSound, playIncorrectSound]); 
+  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]); 
   
   const handleRetakeTest = () => {
+     playClickSound();
      if (!testState) return;
      setIsLoading(true); 
      onSubmit({ 
@@ -301,6 +333,7 @@ export default function CustomTestPage() {
   }
   
   const handleNewTest = () => {
+    playClickSound();
     if (testState?.timerId) clearInterval(testState.timerId);
     setTestState(null);
     setValue('topics', '');
@@ -316,6 +349,7 @@ export default function CustomTestPage() {
   };
 
   const handleMicClick = () => {
+    playClickSound();
     if (isListening) {
       stopListening();
     } else {
@@ -353,7 +387,7 @@ export default function CustomTestPage() {
                 name="sourceType"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup onValueChange={(value) => { field.onChange(value); setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []); }} defaultValue={field.value} className="flex flex-wrap gap-2 md:gap-4 mt-2">
+                  <RadioGroup onValueChange={(value) => { playClickSound(); field.onChange(value); setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []); }} defaultValue={field.value} className="flex flex-wrap gap-2 md:gap-4 mt-2">
                     <Label htmlFor="sourceTopicChoice" className="flex items-center gap-2 border p-3 rounded-md has-[:checked]:bg-primary/10 has-[:checked]:border-primary cursor-pointer text-sm md:text-base">
                       <RadioGroupItem value="topic" id="sourceTopicChoice" /> <FileText className="w-4 h-4 mr-1"/> Topic(s)
                     </Label>
@@ -378,7 +412,7 @@ export default function CustomTestPage() {
                         id="topics" 
                         placeholder="e.g., Calculus, World History (comma-separated)" 
                         {...register('topics')} 
-                        className={errors.topics ? 'border-destructive' : ''}
+                        className={cn(errors.topics ? 'border-destructive' : '', "transition-colors duration-200 ease-in-out")}
                     />
                     {browserSupportsSpeechRecognition && (
                     <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading}>
@@ -393,7 +427,7 @@ export default function CustomTestPage() {
             {sourceType === 'notes' && (
               <div className="space-y-2">
                 <Label htmlFor="notes">Your Notes</Label>
-                <Textarea id="notes" placeholder="Paste your study notes here..." {...register('notes')} rows={6} className={errors.notes ? 'border-destructive' : ''}/>
+                <Textarea id="notes" placeholder="Paste your study notes here..." {...register('notes')} rows={6} className={cn(errors.notes ? 'border-destructive' : '', "transition-colors duration-200 ease-in-out")}/>
                 {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
               </div>
             )}
@@ -411,13 +445,14 @@ export default function CustomTestPage() {
                             id={`recent-${topic}`}
                             checked={field.value?.includes(topic)}
                             onCheckedChange={(checked) => {
+                              playClickSound();
                               const currentSelection = field.value || [];
                               if (checked) {
                                 if (currentSelection.length < MAX_RECENT_TOPICS_SELECT) {
                                   field.onChange([...currentSelection, topic]);
                                 } else {
                                   toast({ title: "Limit Reached", description: `You can only select up to ${MAX_RECENT_TOPICS_SELECT} topics.`, variant: "destructive"});
-                                  return false; // Prevent checking
+                                  return false; 
                                 }
                               } else {
                                 field.onChange(currentSelection.filter(t => t !== topic));
@@ -442,7 +477,7 @@ export default function CustomTestPage() {
                   name="difficulty"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={(value) => { playClickSound(); field.onChange(value);}} defaultValue={field.value}>
                       <SelectTrigger id="difficulty"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="easy">Easy</SelectItem>
@@ -455,12 +490,12 @@ export default function CustomTestPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="numQuestions">Number of Questions (1-20)</Label>
-                <Input id="numQuestions" type="number" {...register('numQuestions')} />
+                <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out" />
                 {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timer">Timer (minutes, 0 for none)</Label>
-                <Input id="timer" type="number" {...register('timer')} />
+                <Input id="timer" type="number" {...register('timer')} className="transition-colors duration-200 ease-in-out" />
                 {errors.timer && <p className="text-sm text-destructive">{errors.timer.message}</p>}
               </div>
             </div>

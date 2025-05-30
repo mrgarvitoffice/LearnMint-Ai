@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
 import { useSound } from '@/hooks/useSound';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -35,8 +36,10 @@ export default function QuizPage() {
   const [quizState, setQuizState] = useState<QuizState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('correct', 0.5); 
-  const { playSound: playIncorrectSound } = useSound('incorrect', 0.4); 
+  const { playSound: playCorrectSound } = useSound('correct'); 
+  const { playSound: playIncorrectSound } = useSound('incorrect'); 
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -46,6 +49,7 @@ export default function QuizPage() {
   });
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    playClickSound();
     setIsLoading(true);
     setQuizState(null);
     try {
@@ -71,6 +75,7 @@ export default function QuizPage() {
   };
 
   const handleAnswerSelect = (answer: string) => {
+    playClickSound();
     if (!quizState || quizState.showResults) return;
     const newUserAnswers = [...quizState.userAnswers];
     newUserAnswers[quizState.currentQuestionIndex] = answer;
@@ -78,16 +83,19 @@ export default function QuizPage() {
   };
 
   const handleNextQuestion = () => {
+    playClickSound();
     if (!quizState || quizState.currentQuestionIndex >= quizState.quiz.length - 1) return;
     setQuizState({ ...quizState, currentQuestionIndex: quizState.currentQuestionIndex + 1 });
   };
 
   const handlePrevQuestion = () => {
+    playClickSound();
     if (!quizState || quizState.currentQuestionIndex <= 0) return;
     setQuizState({ ...quizState, currentQuestionIndex: quizState.currentQuestionIndex - 1 });
   };
 
   const handleSubmitQuiz = () => {
+    playClickSound();
     if (!quizState) return;
     let score = 0;
     quizState.quiz.forEach((q, index) => {
@@ -103,6 +111,7 @@ export default function QuizPage() {
   };
 
   const handleRetakeQuiz = () => {
+    playClickSound();
     if (!quizState) return;
     const originalSettings = {
         topic: quizState.quiz[0] ? quizState.quiz[0].question.split(" about ")[1]?.split(" (difficulty")[0] || "previous topic" : "previous topic",
@@ -112,6 +121,7 @@ export default function QuizPage() {
   }
   
   const handleNewQuiz = () => {
+    playClickSound();
     setQuizState(null);
   }
 
@@ -132,12 +142,12 @@ export default function QuizPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="topic">Topic</Label>
-                <Input id="topic" placeholder="e.g., Solar System, World War II" {...register('topic')} />
+                <Input id="topic" placeholder="e.g., Solar System, World War II" {...register('topic')} className="transition-colors duration-200 ease-in-out" />
                 {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="numQuestions">Number of Questions (1-10)</Label>
-                <Input id="numQuestions" type="number" {...register('numQuestions')} />
+                <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out" />
                 {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
               </div>
             </CardContent>
@@ -231,4 +241,3 @@ export default function QuizPage() {
     </div>
   );
 }
-
