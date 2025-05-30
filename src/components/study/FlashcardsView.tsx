@@ -2,13 +2,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; // Added CardFooter
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import FlashcardItem from './FlashcardItem'; // Assuming this component is created
+import FlashcardItem from './FlashcardItem';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
-import type { Flashcard as FlashcardType } from '@/lib/types'; // Assuming this type is { term: string, definition: string }
+import type { Flashcard as FlashcardType } from '@/lib/types';
 
 interface FlashcardsViewProps {
   flashcards: FlashcardType[] | null;
@@ -35,11 +35,11 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 
   if (!flashcards || flashcards.length === 0) {
     return (
-      <Card className="mt-6 shadow-lg">
+      <Card className="mt-6 shadow-lg flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">No flashcards available for this topic, or an error occurred.</p>
         </CardContent>
       </Card>
@@ -49,7 +49,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   const currentFlashcard = flashcards[currentCardIndex];
 
   return (
-    <Card className="mt-6 shadow-lg flex-1 flex flex-col">
+    <Card className="mt-6 shadow-lg flex-1 flex flex-col min-h-0">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         <CardDescription>
@@ -61,8 +61,8 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
         {currentFlashcard && (
           <FlashcardItem
             flashcard={currentFlashcard}
-            isCurrent={true} // Or manage based on visibility for animations
-            className="w-full max-w-md h-64 sm:h-72 md:h-80" // Adjusted height
+            isCurrent={true} 
+            className="w-full max-w-md h-64 sm:h-72 md:h-80" 
           />
         )}
       </CardContent>
