@@ -1,6 +1,6 @@
 # LearnMint - AI Powered Learning
 
-LearnMint is a versatile AI-powered learning assistant designed to help users transform academic topics into structured study materials. It leverages AI to generate notes, quizzes, and flashcards. The application also includes utility features like a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a daily news digest, a library section for exploring educational resources, and a simple word game.
+LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a Daily News Digest feature, and placeholders for future library and game features.
 
 User accounts and server-side data persistence for test results have been removed to simplify the application for this version.
 
@@ -74,6 +74,11 @@ Create a file named `.env` in the root of your project. Add the following conten
 # Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
 GOOGLE_API_KEY=AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo
 
+# OPTIONAL: Separate API Key for Study Notes Generation
+# If you want to use a different Gemini API key specifically for generating study notes,
+# set it here. If left blank, notes generation will use the main GOOGLE_API_KEY above.
+GOOGLE_API_KEY_NOTES=
+
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
 NEWSDATA_API_KEY=pub_039b4b0247244a8e9f85a8f113e9d7f2
@@ -87,7 +92,6 @@ YOUTUBE_API_KEY=AIzaSyBEnMGnZ_8vUA7SP8GzvOvPqFrsHyL-BJk
 GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 
 # For future development with OpenRouter (currently unused by the application)
-# Get your key from OpenRouter: https://openrouter.ai/keys
 # OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE_EXAMPLE
 ```
 
@@ -162,7 +166,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books). Without these, the deployed app's features will not work.
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books). Use the `GOOGLE_API_KEY_NOTES` if you have configured a separate key for notes. Without these, the deployed app's features will not work.
 
 2.  **CRITICAL: Add PWA Icons (Required for PWA):**
     *   Create a folder `public/icons`.
@@ -192,6 +196,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
     *   Edit the service configuration (usually "Edit & Deploy New Revision" or similar).
     *   Navigate to the "Variables & Secrets" or "Environment Variables" section.
     *   Add `GOOGLE_API_KEY`, `NEWSDATA_API_KEY`, `YOUTUBE_API_KEY`, and `GOOGLE_BOOKS_API_KEY` with their production values.
+    *   **If you use a separate key for notes, also add `GOOGLE_API_KEY_NOTES`.**
     *   Deploy the new revision with these environment variables.
     *   This step is crucial for Genkit AI features and other API-dependent features to work in the deployed environment.
 

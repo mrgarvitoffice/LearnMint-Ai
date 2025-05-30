@@ -8,7 +8,7 @@
  * - GenerateStudyNotesOutput - The return type for the generateStudyNotes function.
  */
 
-import {ai}from '@/ai/genkit';
+import {aiForNotes} from '@/ai/genkit'; // Changed to use aiForNotes
 import {z} from 'zod';
 
 // Input Schema (NOT EXPORTED as an object)
@@ -24,11 +24,11 @@ const GenerateStudyNotesOutputSchema = z.object({
 export type GenerateStudyNotesOutput = z.infer<typeof GenerateStudyNotesOutputSchema>;
 
 // Prompt Definition (NOT EXPORTED)
-const generateStudyNotesPrompt = ai.definePrompt({
+const generateStudyNotesPrompt = aiForNotes.definePrompt({ // Changed to use aiForNotes
   name: 'generateStudyNotesPrompt',
   input: { schema: GenerateStudyNotesInputSchema },
   output: { schema: GenerateStudyNotesOutputSchema },
-  model: 'googleai/gemini-1.5-flash-latest', // Specify model
+  model: 'googleai/gemini-1.5-flash-latest', 
   prompt: `You are an expert educator tasked with creating exceptionally engaging and visually appealing study notes, in the style of a top student's "topper notes." The notes must be well-formatted using Markdown to be both informative and a pleasure to study from. Your goal is to make learning fun and effective!
 
 Topic: {{{topic}}}
@@ -89,7 +89,7 @@ Not all cells are the same! There are two major types you must know!
 });
 
 // Flow Definition (NOT EXPORTED)
-const generateStudyNotesFlow = ai.defineFlow(
+const generateStudyNotesFlow = aiForNotes.defineFlow( // Changed to use aiForNotes
   {
     name: 'generateStudyNotesFlow',
     inputSchema: GenerateStudyNotesInputSchema,
@@ -107,19 +107,18 @@ const generateStudyNotesFlow = ai.defineFlow(
 
 // Exported Function
 export async function generateStudyNotes(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
-  console.log(`[AI Flow] generateStudyNotes called for topic: ${input.topic}`);
+  console.log(`[AI Flow] generateStudyNotes called for topic: ${input.topic}. Using notes-specific AI configuration if GOOGLE_API_KEY_NOTES is set.`);
   try {
     return await generateStudyNotesFlow(input);
   } catch (error: any) {
     console.error("[AI Flow Error - generateStudyNotes] Error in flow execution:", error.message, error.stack);
     let clientErrorMessage = "Failed to generate study notes. Please try again.";
+    // Check if the error message indicates an API key issue, considering it might come from either the main or notes-specific key
     if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
-      clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration and ensure billing is enabled for the Google Cloud project.";
+      clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration (GOOGLE_API_KEY or GOOGLE_API_KEY_NOTES) and ensure billing is enabled for the Google Cloud project.";
     } else if (error.message) {
       clientErrorMessage = `Study Notes: Generation failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
     }
     throw new Error(clientErrorMessage);
   }
 }
-
-    
