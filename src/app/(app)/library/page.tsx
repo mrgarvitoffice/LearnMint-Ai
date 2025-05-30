@@ -13,7 +13,7 @@ import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSea
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
 import { BookResultItem } from '@/components/features/library/BookResultItem';
-import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye, BookText } from 'lucide-react';
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye, BookText, Maximize, Minimize } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { directYoutubeSearch, directGoogleBooksSearch } from '@/lib/actions'; 
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,6 +38,9 @@ export default function LibraryPage() {
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const { toast } = useToast();
+
+  const bookReaderContentRef = useRef<HTMLDivElement>(null);
+  const [isBookReaderFullScreen, setIsBookReaderFullScreen] = useState(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -68,6 +71,14 @@ export default function LibraryPage() {
       setCurrentMathFact({ text: MATH_FACTS_FALLBACK[randomIndex] });
     }
   }, [mathFact, isLoadingMathFact]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsBookReaderFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const handleRefreshMathFact = () => {
     refetchMathFact();
@@ -125,7 +136,20 @@ export default function LibraryPage() {
     if (googleBooksSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
-      googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
+      googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9, country: 'US' });
+    }
+  };
+
+  const toggleBookReaderFullscreen = () => {
+    if (!bookReaderContentRef.current) return;
+    if (!document.fullscreenElement) {
+      bookReaderContentRef.current.requestFullscreen().catch(err => {
+        alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   };
 
@@ -145,16 +169,16 @@ export default function LibraryPage() {
         </CardHeader>
       </Card>
 
-      <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 group">
+      <Card className="bg-secondary/30 border-orange-500/30 hover:shadow-xl transition-shadow duration-300 group">
         <CardHeader className="pb-2 pt-4">
           <div className="flex items-center gap-3 mb-2">
-            <Quote className="h-7 w-7 text-secondary-foreground/80 group-hover:text-orange-500 transition-colors" />
-            <CardTitle className="text-xl font-semibold text-secondary-foreground group-hover:text-orange-500 transition-colors">Math Fact of the Day</CardTitle>
+            <Quote className="h-7 w-7 text-orange-500/80 group-hover:text-orange-600 transition-colors" />
+            <CardTitle className="text-xl font-semibold text-orange-600 dark:text-orange-500 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">Math Fact of the Day</CardTitle>
           </div>
           {isLoadingMathFact && !currentMathFact ? (
             <div className="flex items-center space-x-2 text-muted-foreground py-3"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading math fact...</span></div>
             ) : currentMathFact ? (
-            <CardDescription className="text-lg text-orange-600 dark:text-orange-400 font-medium pt-1 italic py-3">
+            <CardDescription className="text-lg text-orange-700 dark:text-orange-400 font-medium pt-1 italic py-3">
               "{currentMathFact.text}"
             </CardDescription>
             ) : (
@@ -284,12 +308,17 @@ export default function LibraryPage() {
 
        {selectedBookForPreview && (
         <Dialog open={!!selectedBookForPreview} onOpenChange={(isOpen) => { if (!isOpen) setSelectedBookForPreview(null); }}>
-          <DialogContent className="max-w-4xl h-[90vh] p-0 border-0 flex flex-col data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
-            <DialogHeader className="p-4 border-b flex flex-row items-center justify-between sticky top-0 bg-background z-10">
-              <DialogTitle className="truncate text-lg sm:text-xl">{selectedBookForPreview.title}</DialogTitle>
-              <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
-              </DialogClose>
+          <DialogContent ref={bookReaderContentRef} className="max-w-4xl h-[90vh] p-0 border-0 flex flex-col data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
+            <DialogHeader className="p-3 border-b flex flex-row items-center justify-between sticky top-0 bg-background z-10">
+                <DialogTitle className="truncate text-lg sm:text-xl">{selectedBookForPreview.title}</DialogTitle>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={toggleBookReaderFullscreen} title={isBookReaderFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+                        {isBookReaderFullScreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+                    </Button>
+                    <DialogClose asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
+                    </DialogClose>
+                </div>
             </DialogHeader>
             <div className="flex-1 overflow-hidden">
                 {selectedBookForPreview.embeddable ? (
@@ -298,11 +327,12 @@ export default function LibraryPage() {
                     title={`Read ${selectedBookForPreview.title}`}
                     className="w-full h-full border-0"
                     allowFullScreen
+                    allow="fullscreen" 
                 ></iframe>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center h-full">
                         <BookText className="w-16 h-16 text-muted-foreground mb-4"/>
-                        <p className="text-lg text-muted-foreground">In-app reading is not available for this book.</p>
+                        <p className="text-lg text-muted-foreground">In-app reading/preview is not available for this book.</p>
                         {(selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink) && (
                             <Button asChild className="mt-4">
                                 <a href={selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink!} target="_blank" rel="noopener noreferrer">
@@ -314,7 +344,7 @@ export default function LibraryPage() {
                 )}
             </div>
              {(selectedBookForPreview.infoLink) && (
-                <div className="p-3 border-t text-center sticky bottom-0 bg-background z-10">
+                <div className="p-2 border-t flex justify-end sticky bottom-0 bg-background z-10">
                     <Button variant="link" asChild size="sm">
                         <a href={selectedBookForPreview.infoLink} target="_blank" rel="noopener noreferrer">
                             More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
