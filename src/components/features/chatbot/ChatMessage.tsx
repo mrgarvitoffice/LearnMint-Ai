@@ -20,7 +20,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div className={cn('flex flex-col gap-2 py-3', alignment)}>
         <div className={cn('flex gap-3 items-start', isUser ? 'flex-row-reverse' : 'flex-row')}>
           <Avatar className="h-8 w-8">
-            <AvatarImage src={`https://placehold.co/40x40.png?text=Kz`} data-ai-hint="anime boy" />
+            <AvatarImage src="/images/kazuma-dp.jpg" alt="Kazuma AI Avatar" data-ai-hint="Kazuma Satou" />
             <AvatarFallback><Bot /></AvatarFallback>
           </Avatar>
           <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md flex items-center gap-2', bubbleColor)}>
@@ -36,7 +36,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
     <div className={cn('flex flex-col gap-2 py-3', alignment)}>
       <div className={cn('flex gap-3 items-start', isUser ? 'flex-row-reverse' : 'flex-row')}>
         <Avatar className="h-8 w-8">
-          <AvatarImage src={isUser ? undefined : `https://placehold.co/40x40.png?text=Kz`} data-ai-hint="anime boy"/>
+          <AvatarImage src={isUser ? undefined : "/images/kazuma-dp.jpg"} alt={isUser ? "User Avatar" : "Kazuma AI Avatar"} data-ai-hint={isUser ? "user" : "Kazuma Satou"}/>
           <AvatarFallback>{isUser ? <User /> : <Bot />}</AvatarFallback>
         </Avatar>
         <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md', bubbleColor)}>
