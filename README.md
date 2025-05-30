@@ -4,7 +4,7 @@ LearnMint is a Next.js application designed to be an AI-powered learning assista
 
 User accounts and server-side data persistence for test results have been removed to simplify the application for this version.
 
-To get started, take a look at `src/app/page.tsx`.
+To get started, take a look at `src/app/(app)/page.tsx`.
 
 ## LearnMint UI and Frontend Overview
 
@@ -79,6 +79,11 @@ GOOGLE_API_KEY=AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo
 # set it here. If left blank, notes generation will use the main GOOGLE_API_KEY above.
 GOOGLE_API_KEY_NOTES=
 
+# OPTIONAL: Separate API Key for AI Chatbot (Megumin)
+# If you want to use a different Gemini API key specifically for the chatbot,
+# set it here. If left blank, the chatbot will use the main GOOGLE_API_KEY above.
+GOOGLE_API_KEY_CHATBOT=
+
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
 NEWSDATA_API_KEY=pub_039b4b0247244a8e9f85a8f113e9d7f2
@@ -95,7 +100,7 @@ GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 # OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE_EXAMPLE
 ```
 
-*   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes.
+*   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes. If using the example keys, ensure they are appropriate for the features you are testing (e.g., the example `GOOGLE_API_KEY` is for general Genkit features, you might need separate valid keys for `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you want to use different quotas or models for those specific features).
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
 ### 3. Install Dependencies
@@ -166,7 +171,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books). Use the `GOOGLE_API_KEY_NOTES` if you have configured a separate key for notes. Without these, the deployed app's features will not work.
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books). Use `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you have configured separate keys for those features. Without these, the deployed app's features will not work.
 
 2.  **CRITICAL: Add PWA Icons (Required for PWA):**
     *   Create a folder `public/icons`.
@@ -196,7 +201,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
     *   Edit the service configuration (usually "Edit & Deploy New Revision" or similar).
     *   Navigate to the "Variables & Secrets" or "Environment Variables" section.
     *   Add `GOOGLE_API_KEY`, `NEWSDATA_API_KEY`, `YOUTUBE_API_KEY`, and `GOOGLE_BOOKS_API_KEY` with their production values.
-    *   **If you use a separate key for notes, also add `GOOGLE_API_KEY_NOTES`.**
+    *   **If you use separate keys for notes or chatbot, also add `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT`.**
     *   Deploy the new revision with these environment variables.
     *   This step is crucial for Genkit AI features and other API-dependent features to work in the deployed environment.
 

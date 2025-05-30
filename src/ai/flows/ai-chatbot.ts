@@ -8,7 +8,7 @@
  * - MeguminChatbotOutput - The return type for the meguminChatbot function.
  */
 
-import {ai} from '@/ai/genkit';
+import {aiForChatbot} from '@/ai/genkit'; // Changed to use aiForChatbot
 import {z} from 'genkit';
 
 const MeguminChatbotInputSchema = z.object({
@@ -31,7 +31,7 @@ export async function meguminChatbot(input: MeguminChatbotInput): Promise<Megumi
   return meguminChatbotFlow(input);
 }
 
-const meguminChatbotPrompt = ai.definePrompt({
+const meguminChatbotPrompt = aiForChatbot.definePrompt({ // Changed to use aiForChatbot
   name: 'meguminChatbotPrompt',
   input: {schema: MeguminChatbotInputSchema},
   output: {schema: MeguminChatbotOutputSchema},
@@ -61,7 +61,7 @@ User also sent an image! You can describe it or comment on it if you like, but r
 Your Response:`,
 });
 
-const meguminChatbotFlow = ai.defineFlow(
+const meguminChatbotFlow = aiForChatbot.defineFlow( // Changed to use aiForChatbot
   {
     name: 'meguminChatbotFlow',
     inputSchema: MeguminChatbotInputSchema,
