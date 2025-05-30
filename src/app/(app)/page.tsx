@@ -15,12 +15,12 @@ const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 
 const coreFeaturesListText = [
-  "<strong>AI Content Generation:</strong> Notes, quizzes, and flashcards via AI.",
-  "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, and timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions, supports voice input.",
-  "<strong>Scientific Calculator & Unit Converter:</strong> For calculations and unit conversions.",
-  "<strong>Daily News Digest:</strong> Browse news filtered by country, category, and keywords.",
-  "<strong>Resource Library:</strong> Explore textbooks, Google Books, YouTube, and daily Math Facts.",
+  "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards via AI.",
+  "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, & timers.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'. Supports voice input.",
+  "<strong>Scientific Calculator & Unit Converter:</strong> Calculations & unit conversions.",
+  "<strong>Daily News Digest:</strong> Browse news filtered by country, category, & keywords.",
+  "<strong>Resource Library:</strong> Explore textbooks, search Google Books & YouTube, get Math Facts.",
   "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge).",
 ];
 
@@ -117,7 +117,7 @@ export default function DashboardPage() {
       pageTitleSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice, isSpeaking, speak]);
+  }, [selectedVoice, isSpeaking]); // speak and APP_NAME are stable or from constants
 
 
   return (
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                     <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
                     <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Daily Motivation</CardTitle>
                   </div>
-                  <CardDescription className="text-base text-secondary-foreground/90 pt-1 italic"> {/* Increased text size here */}
+                  <CardDescription className="text-base text-accent font-semibold pt-1 italic">
                     "{dailyQuote.quote}"
                   </CardDescription>
                 </CardHeader>
@@ -289,5 +289,4 @@ export default function DashboardPage() {
     </div>
   );
 }
-
     
