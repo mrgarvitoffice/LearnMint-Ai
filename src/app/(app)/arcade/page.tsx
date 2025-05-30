@@ -12,7 +12,7 @@ import { useEffect, useRef } from 'react';
 const PAGE_TITLE = "LearnMint Arcade Arena";
 
 export default function ArcadePage() {
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 

@@ -33,7 +33,7 @@ export default function FlashcardsPage() {
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);

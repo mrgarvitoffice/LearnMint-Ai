@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added Select imports
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions';
 import type { GenerateQuizQuestionsOutput, QuizQuestion } from '@/lib/types';
 import { Loader2, HelpCircle, Sparkles } from 'lucide-react';
-import { QuizView } from '@/components/study/QuizView'; // Import interactive QuizView
+import { QuizView } from '@/components/study/QuizView'; 
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 
@@ -33,7 +33,7 @@ export default function QuizPage() {
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
@@ -41,7 +41,7 @@ export default function QuizPage() {
   const { register, handleSubmit, control, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numQuestions: 10, // Default to 10 for this page
+      numQuestions: 10, 
       difficulty: 'medium',
     }
   });
@@ -115,10 +115,10 @@ export default function QuizPage() {
     pageTitleSpokenRef.current = false;
   }
 
-  if (generatedQuizData && generatedQuizData.questions) {
+  if (generatedQuizData && generatedQuizData.questions && topicValue) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
-        <QuizView questions={generatedQuizData.questions} topic={topicValue || "Selected Topic"} />
+        <QuizView questions={generatedQuizData.questions} topic={topicValue} />
         <div className="text-center">
             <Button onClick={handleNewQuiz} variant="outline" size="lg">Create New Quiz</Button>
         </div>

@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react'; // Added Loader2
+import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react'; 
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage'; // Assuming this component exists
+import AiGeneratedImage from './AiGeneratedImage'; 
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -41,7 +41,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Default to Zia/female for notes
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -66,10 +66,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     }
   }, [playClickSound, notesContent, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
-  const handleStopTTS = useCallback(() => {
-    playClickSound();
-    cancelTTS();
-  }, [playClickSound, cancelTTS]);
+  const handleStopTTS = useCallback(() => { playClickSound(); cancelTTS(); }, [playClickSound, cancelTTS]);
 
   const handleDownloadNotes = () => {
     playClickSound();
@@ -104,7 +101,6 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   
   const renderMarkdownWithPlaceholders = (markdownContent: string) => {
     if (!markdownContent) return null;
-    // Split by the visual prompt pattern, keeping the delimiter
     const parts = markdownContent.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
     return parts.map((part, index) => {
       if (part.startsWith('[VISUAL_PROMPT:')) {
@@ -116,7 +112,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   };
 
 
-  if (!notesContent) { // This handles null or empty string
+  if (!notesContent) { 
     return (
       <Card className="shadow-lg flex-1 flex flex-col min-h-0">
         <CardHeader>
@@ -142,21 +138,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
               onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'kai' | 'zia' | null);}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="zia">Zia</SelectItem>
-                <SelectItem value="kai">Kai</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="zia">Zia</SelectItem><SelectItem value="kai">Kai</SelectItem></SelectContent>
             </Select>
-             {/* Optional: Detailed voice engine selector if needed
-            <Select onValueChange={(uri) => {playClickSound(); setSelectedVoiceURI(uri);}} value={selectedVoice?.voiceURI}>
-              <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Engine" /> </SelectTrigger>
-              <SelectContent>
-                {supportedVoices.length > 0 ? supportedVoices.map(voice => (
-                  <SelectItem key={voice.voiceURI} value={voice.voiceURI} className="text-xs"> {voice.name} ({voice.lang})</SelectItem>
-                )) : <SelectItem value="no-voices" disabled className="text-xs">No voices</SelectItem>}
-              </SelectContent>
-            </Select>
-            */}
             <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
               {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
@@ -179,5 +162,3 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
-
-    

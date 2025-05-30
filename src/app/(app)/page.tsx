@@ -18,11 +18,11 @@ const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards via AI.",
   "<strong>Custom Test Creation:</strong> Tests with specific topics, difficulty, & timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'. Supports voice input.",
   "<strong>Scientific Calculator & Unit Converter:</strong> Calculations & unit conversions.",
   "<strong>Daily News Digest:</strong> News filtered by country, category, & keywords.",
-  "<strong>Resource Library:</strong> Textbooks, Google Books/YouTube search, Math Facts.",
-  "<strong>Educational Game:</strong> 'Word Game' (Definition Challenge) & more soon.",
+  "<strong>Resource Library:</strong> OpenStax textbooks, Google Books/YouTube search, Math Facts.",
+  "<strong>Educational Game:</strong> 'Word Game' & more soon.",
 ];
 
 const exploreFeaturesCards = [
@@ -33,7 +33,6 @@ const exploreFeaturesCards = [
   { title: "AI Chatbot (Megumin)", href: "/chatbot", icon: Bot, description: "Chat with our witty AI assistant." },
   { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations and convert units." },
   { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with the latest news." },
-  { title: "Resource Library", href: "/library", icon: BookMarked, description: "Access textbooks, math facts, and more." },
   { title: "LearnMint Arcade", href: "/arcade", icon: Gamepad2, description: "Play fun and educational games." },
 ];
 
@@ -50,7 +49,7 @@ const motivationalQuotes = [
 
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
 
@@ -178,6 +177,24 @@ export default function DashboardPage() {
               </Link>
             );
           })}
+           <Link href="/library" legacyBehavior>
+             <a className="block h-full">
+                <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group">
+                    <CardHeader className="pb-2 pt-4">
+                        <div className="flex items-center gap-3 mb-2">
+                            <BookMarked className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
+                            <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Resource Library</CardTitle>
+                        </div>
+                        <CardDescription className="text-xs text-muted-foreground/80 pt-1">Access textbooks, math facts, and search external resources.</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="pt-2 pb-4">
+                        <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent/80">
+                            Open Library <ArrowRight className="ml-1 h-3 w-3" />
+                        </Button>
+                    </CardFooter>
+                </Card>
+             </a>
+           </Link>
            {dailyQuote && (
             <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group col-span-1 sm:col-span-2 lg:col-span-1">
               <CardHeader className="pb-2 pt-4">
@@ -239,6 +256,4 @@ export default function DashboardPage() {
     </div>
   );
 }
-    
-
     

@@ -23,13 +23,14 @@ interface NewsPageFilters {
   category: string; 
 }
 
-const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top' };
+const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: '' };
+
 
 export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -58,7 +59,7 @@ export default function NewsPage() {
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    refetchOnWindowFocus: false, // To prevent excessive refetching on focus
+    refetchOnWindowFocus: false, 
   });
 
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {

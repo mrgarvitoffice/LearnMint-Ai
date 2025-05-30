@@ -158,7 +158,7 @@ export default function CustomTestPage() {
         performanceTag, currentQuestionTimeLeft: undefined, 
       };
     });
-  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast, resultAnnouncementSpokenRef]); 
+  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast]); 
 
   const handleNextQuestion = useCallback(() => {
     playClickSound();
@@ -179,7 +179,7 @@ export default function CustomTestPage() {
             if (currentTimerId) clearInterval(currentTimerId); return currentTestState;
           }
           const newTimeLeftVal = currentTestState.timeLeft - 1;
-          if (newTimeLeftVal === 0) {
+          if (newTimeLeftVal <= 0) { // Changed to <= 0 for safety
             if (currentTimerId) clearInterval(currentTimerId);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
             handleSubmitTest(true); 
@@ -333,7 +333,7 @@ export default function CustomTestPage() {
     const originalSettings = testState.settings; 
     setIsLoading(true); setTestState(null); 
     resultAnnouncementSpokenRef.current = false; 
-    pageTitleSpokenRef.current = true; // Already announced once
+    pageTitleSpokenRef.current = false; // Reset for page title TTS on config screen
     
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) { 
         speak("Recreating test. Please wait."); 
@@ -397,7 +397,7 @@ export default function CustomTestPage() {
     if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
     else {
-      let textToPlay = PAGE_TITLE;
+      let textToPlay = "";
        if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
        else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
         textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
@@ -407,8 +407,8 @@ export default function CustomTestPage() {
       if (textToPlay) {
         speak(textToPlay);
         if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
-        if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
-        if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
+        else if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
+        else if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
       }
     }
   };
@@ -419,9 +419,9 @@ export default function CustomTestPage() {
       <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
         <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-7 w-7 text-primary" /></div>
+            <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-10 w-10 text-primary" /></div>
              <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-primary flex-1 text-center sm:text-left">{PAGE_TITLE}</CardTitle>
+                <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center sm:text-left">{PAGE_TITLE}</CardTitle>
                  <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
                      <Select value={voicePreference || ''} onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'kai' | 'zia' | null);}}>
                         <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
@@ -594,3 +594,4 @@ export default function CustomTestPage() {
     </div>
   );
 }
+

@@ -2,14 +2,14 @@
 "use client";
 
 import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2, Home } from "lucide-react"; // Added Home
+import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2, Home } from "lucide-react"; 
 
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from '@/hooks/useSound';
@@ -57,7 +57,7 @@ const ErrorDisplay = ({ error, onRetry, contentType }: { error: Error | null, on
 
 function StudyPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter(); // For navigation
+  const router = useRouter(); 
   const topicParam = searchParams.get("topic");
 
   const [activeTopic, setActiveTopic] = useState<string>(""); 
@@ -65,7 +65,7 @@ function StudyPageContent() {
 
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const queryClient = useQueryClient();
 
   const pageTitleSpokenRef = useRef(false);
@@ -98,9 +98,8 @@ function StudyPageContent() {
     }
     return () => {
       isMounted = false;
-      cancelTTS(); // Stop any ongoing speech on unmount
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
 
 
   const commonQueryOptions = {
@@ -114,7 +113,7 @@ function StudyPageContent() {
     data: notesData,
     isLoading: isLoadingNotes,
     isError: isErrorNotes,
-    error: notesErrorObj, // Renamed to avoid conflict with error type in ErrorDisplay
+    error: notesErrorObj, 
     refetch: refetchNotes,
     isFetching: isFetchingNotes,
   } = useQuery<GenerateStudyNotesOutput, Error>({
@@ -131,7 +130,7 @@ function StudyPageContent() {
     data: quizData,
     isLoading: isLoadingQuiz,
     isError: isErrorQuiz,
-    error: quizErrorObj, // Renamed
+    error: quizErrorObj, 
     refetch: refetchQuiz,
     isFetching: isFetchingQuiz,
   } = useQuery<GenerateQuizQuestionsOutput, Error>({
@@ -149,7 +148,7 @@ function StudyPageContent() {
     data: flashcardsData,
     isLoading: isLoadingFlashcards,
     isError: isErrorFlashcards,
-    error: flashcardsErrorObj, // Renamed
+    error: flashcardsErrorObj, 
     refetch: refetchFlashcards,
     isFetching: isFetchingFlashcards,
   } = useQuery<GenerateFlashcardsOutput, Error>({
@@ -176,18 +175,16 @@ function StudyPageContent() {
     playClickSound();
     if (activeTopic && activeTopic !== "No topic provided") {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
-      queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
-      queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
-      queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      
-      // Optionally, directly trigger refetches if immediate reload is desired for all tabs
-      refetchNotes();
-      refetchQuiz();
-      refetchFlashcards();
+      if (activeTab === 'notes') refetchNotes();
+      else if (activeTab === 'quiz') refetchQuiz();
+      else if (activeTab === 'flashcards') refetchFlashcards();
+      else { // Default or if on an unknown tab, refetch all
+        refetchNotes(); refetchQuiz(); refetchFlashcards();
+      }
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, queryClient, toast, playClickSound, refetchNotes, refetchQuiz, refetchFlashcards]);
+  }, [activeTopic, activeTab, refetchNotes, refetchQuiz, refetchFlashcards, toast, playClickSound]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
@@ -255,7 +252,7 @@ function StudyPageContent() {
           Study Hub for: <span className="text-primary">{topicParam ? decodeURIComponent(topicParam) : activeTopic}</span>
         </h1>
         <Button onClick={handleRefreshContent} variant="outline" size="sm" className="active:scale-95" disabled={isLoadingNotes || isLoadingQuiz || isLoadingFlashcards || isFetchingNotes || isFetchingQuiz || isFetchingFlashcards}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh All
+          <RefreshCw className="mr-2 h-4 w-4" /> Refresh Content
         </Button>
       </div>
       {renderContent()}
@@ -275,5 +272,3 @@ export default function StudyPage() {
     </Suspense>
   );
 }
-
-    

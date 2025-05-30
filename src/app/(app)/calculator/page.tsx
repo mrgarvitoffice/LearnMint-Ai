@@ -49,7 +49,7 @@ export default function CalculatorPage() {
   const [isRadians, setIsRadians] = useState(true); 
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -198,7 +198,7 @@ export default function CalculatorPage() {
               <div className="mt-4 pt-3 border-t">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-sm font-medium text-muted-foreground">History (Last 3)</h3>
-                  <Button variant="ghost" size="sm" onClick={clearAllHistory} className="text-xs text-destructive/80 hover:text-destructive">
+                  <Button variant="ghost" size="sm" onClick={clearAllHistory} className="text-xs text-destructive hover:text-destructive/80">
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear All
                   </Button>
                 </div>

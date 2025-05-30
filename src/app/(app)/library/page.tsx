@@ -20,7 +20,7 @@ export default function LibraryPage() {
   const [googleBooksSearchTerm, setGoogleBooksSearchTerm] = useState('');
   const [currentMathFact, setCurrentMathFact] = useState<MathFact | null>(null);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
