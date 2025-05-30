@@ -12,7 +12,7 @@ import { Download, Volume2, PlayCircle, PauseCircle, StopCircle, Sparkles } from
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage'; // Assuming this component is created
+import AiGeneratedImage from './AiGeneratedImage';
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -20,31 +20,30 @@ interface NotesViewProps {
 }
 
 const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
-  const { 
-    speak, 
-    cancel: cancelTTS, 
-    isSpeaking, 
-    selectedVoice, 
-    setSelectedVoiceURI, 
-    setVoicePreference, 
-    supportedVoices 
+  const {
+    speak,
+    cancel: cancelTTS,
+    isSpeaking,
+    selectedVoice,
+    setSelectedVoiceURI,
+    setVoicePreference,
+    supportedVoices
   } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
-  
+
   const [speechState, setSpeechState] = useState<'idle' | 'playing' | 'paused'>('idle');
   const notesContentRef = useRef<HTMLDivElement>(null);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Default to Zia if available
+      setVoicePreference('zia');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    // Update speechState if TTS finishes naturally or is cancelled by another source
     if (!isSpeaking && (speechState === 'playing' || speechState === 'paused')) {
         setSpeechState('idle');
     }
@@ -60,9 +59,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         cancelTTS();
         setSpeechState('paused');
     } else if (speechState === 'paused') {
-        speak(textToSpeak); // Restart from beginning or implement resume logic
+        speak(textToSpeak);
         setSpeechState('playing');
-    } else { // 'idle'
+    } else {
         speak(textToSpeak);
         setSpeechState('playing');
     }
@@ -80,16 +79,16 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       toast({ title: "No Notes", description: "Nothing to download.", variant: "destructive" });
       return;
     }
-    // Basic stripping, can be improved
     const plainText = notesContent
-      .replace(/\[VISUAL_PROMPT:[^\]]+\]/g, '') 
-      .replace(/#{1,6}\s?/g, '')       
-      .replace(/(\*\*|__)(.*?)\1/g, '$2') 
-      .replace(/(\*|_)(.*?)\1/g, '$2')   
+      .replace(/\[VISUAL_PROMPT:[^\]]+\]/g, '')
+      .replace(/#{1,6}\s?/g, '')
+      .replace(/(\*|-)\s/g, '')
+      .replace(/(\*\*|__)(.*?)\1/g, '$2')
+      .replace(/(\*|_)(.*?)\1/g, '$2')
       .replace(/`{1,3}(.*?)`{1,3}/g, '$1')
-      .replace(/<[^>]+>/g, '') // Strip HTML tags that might be in markdown
-      .replace(/(\r\n|\n|\r)/gm, "\n") // Normalize line breaks
-      .replace(/\n{3,}/g, "\n\n"); // Reduce multiple blank lines
+      .replace(/<[^>]+>/g, '')
+      .replace(/(\r\n|\n|\r)/gm, "\n")
+      .replace(/\n{3,}/g, "\n\n");
 
     const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8;' });
     const link = document.createElement("a");
@@ -118,11 +117,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   if (!notesContent) {
     return (
-      <Card className="mt-6 shadow-lg">
+      <Card className="mt-0 shadow-lg flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl text-primary font-semibold">Study Notes for: {topic}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">No notes available for this topic yet, or an error occurred.</p>
         </CardContent>
       </Card>
@@ -130,7 +129,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   }
 
   return (
-    <Card className="mt-6 shadow-lg flex-1 flex flex-col">
+    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> {/* Added min-h-0 for flex child */}
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <CardTitle className="text-lg md:text-xl text-primary font-semibold flex items-center gap-2">
@@ -164,8 +163,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <ScrollArea className="h-[calc(100vh-28rem)] sm:h-[calc(100vh-25rem)] w-full p-1 sm:p-4 border rounded-md bg-muted/20" ref={notesContentRef}>
+      <CardContent className="flex-1 overflow-hidden p-0"> {/* Make CardContent flexible and hide its overflow */}
+        <ScrollArea className="h-full w-full p-1 sm:p-4 border rounded-md bg-muted/20" ref={notesContentRef}>
            {renderMarkdownWithPlaceholders(notesContent)}
         </ScrollArea>
       </CardContent>
@@ -174,3 +173,4 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
+
