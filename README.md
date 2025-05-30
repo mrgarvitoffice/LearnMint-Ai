@@ -1,4 +1,3 @@
-
 # LearnMint - AI Powered Learning
 
 LearnMint is a versatile AI-powered learning assistant designed to help users transform academic topics into structured study materials. It leverages AI to generate notes, quizzes, and flashcards. The application also includes utility features like a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a daily news digest, a library section for exploring educational resources, and a simple word game.
@@ -19,7 +18,7 @@ To get started, take a look at `src/app/page.tsx`.
     *   Search Google Books (redirects to Google Books search results for full reading).
     *   Search YouTube (redirects to YouTube search results page).
     *   View a "Math Fact of the Day" (from a static list after attempting live fetch).
-*   **Educational Game**: Play "Word Game" (a definition/term guessing game with hints and streak scoring). Placeholders for "Dino Runner" 
+*   **Educational Game**: Play "Word Game" (a definition/term guessing game with hints and streak scoring). Placeholders for "Dino Runner" and "Tetris" exist in the game hub.
 *   **Theme Toggle**: Switch between light and dark modes.
 *   **Responsive UI**: Designed to adapt to various screen sizes, including mobile (with drawer navigation).
 *   **Auditory Feedback**: Click sounds and vocal announcements for a more engaging experience.
@@ -35,8 +34,6 @@ To get started, take a look at `src/app/page.tsx`.
 *   Lucide Icons
 *   `@tanstack/react-query` (for fetching quotes, math facts, and news)
 *   Newsdata.io (for live news - **requires user API key**)
-*   YouTube Data API v3 (for video search - **requires user API key**)
-*   Google Books API (for book search - **requires user API key**)
 *   `date-fns` (for date formatting)
 *   `next-themes` (for light/dark mode)
 
@@ -48,7 +45,7 @@ To get started, take a look at `src/app/page.tsx`.
 
 ### 2. CRITICAL: Set up Environment Variables
 
-Create a file named `.env` in the root of your project. Add the following content. **It is strongly recommended to replace these example keys with your own personal API keys for full functionality and to avoid rate limits or suspension.**
+Create a file named `.env` in the root of your project. Add the following content:
 
 ```env
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
@@ -89,7 +86,10 @@ yarn install
     *   Add `icon-192x192.png` (192x192 pixels) and `icon-512x512.png` (512x512 pixels) to this folder. These are referenced in `public/manifest.json`.
 *   **Sound Effects**:
     *   Create a folder `public/sounds`.
-    *   Add `ting.mp3` (or your preferred sound file, e.g., `pop.mp3`) to this folder. If you use a different filename, you may need to update paths in the components where sounds are played.
+    *   Add `ting.mp3` (for general UI clicks).
+    *   Add `correct-answer.mp3` (for correct answers in quizzes/tests).
+    *   Add `incorrect-answer.mp3` (for incorrect answers in quizzes/tests).
+    *   If you use different filenames, you may need to update paths in the components where sounds are played.
 
 ### 5. Run the Development Server
 ```bash
@@ -150,7 +150,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 3.  **CRITICAL: Add Sound Effects (Required for functionality):**
     *   Create a folder `public/sounds`.
-    *   Add `ting.mp3` (or your preferred sound files, updating paths in components if you use different filenames) to this folder.
+    *   Add `ting.mp3`, `correct-answer.mp3`, and `incorrect-answer.mp3` (or your preferred sound files, updating paths in components if you use different filenames) to this folder.
 
 4.  **Build your Next.js application for production:**
     ```bash
@@ -179,7 +179,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 *   **Styling**: Modify `src/app/globals.css` and Tailwind configuration in `tailwind.config.ts`. ShadCN components can be customized as per their documentation.
 *   **AI Prompts**: Adjust the prompts in `src/ai/flows/` to change the style, content, or structure of the generated materials.
-*   **Sound Effects**: To use different sounds, replace `/public/sounds/ting.mp3` with your desired audio files and update the paths in the relevant components.
+*   **Sound Effects**: To use different sounds, replace sound files in `/public/sounds/` and update paths in the relevant components if necessary.
 
 ## Future Enhancements (Potential Ideas)
 

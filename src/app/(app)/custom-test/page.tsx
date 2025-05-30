@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -19,6 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/useSound';
 
 
 const formSchema = z.object({
@@ -63,6 +65,8 @@ export default function CustomTestPage() {
   const [testState, setTestState] = useState<CustomTestState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3');
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3');
 
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -189,8 +193,10 @@ export default function CustomTestPage() {
         const isCorrect = userAnswer === q.answer;
         if (isCorrect) {
           score += 4;
+          playCorrectSound();
         } else if (userAnswer !== undefined) { // Incorrect and answered
           score -= 1;
+          playIncorrectSound();
         }
         return { ...q, userAnswer, isCorrect };
       });
@@ -210,7 +216,7 @@ export default function CustomTestPage() {
       };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]); // Added toast to dependency array
+  }, [toast, playCorrectSound, playIncorrectSound]); 
   
   const handleRetakeTest = () => {
      if (!testState) return;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -15,6 +16,7 @@ import { Loader2, HelpCircle, CheckCircle, XCircle, RotateCcw, Lightbulb } from 
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
+import { useSound } from '@/hooks/useSound';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -33,6 +35,8 @@ export default function QuizPage() {
   const [quizState, setQuizState] = useState<QuizState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3');
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3');
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -89,6 +93,9 @@ export default function QuizPage() {
     quizState.quiz.forEach((q, index) => {
       if (quizState.userAnswers[index] === q.answer) {
         score++;
+        playCorrectSound();
+      } else if (quizState.userAnswers[index] !== undefined) { // Only play incorrect sound if an answer was selected
+        playIncorrectSound();
       }
     });
     setQuizState({ ...quizState, score, showResults: true });
@@ -225,3 +232,4 @@ export default function QuizPage() {
     </div>
   );
 }
+
