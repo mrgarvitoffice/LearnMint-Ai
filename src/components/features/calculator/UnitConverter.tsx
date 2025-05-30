@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -64,50 +65,58 @@ export function UnitConverter() {
     outputValue: '',
   });
 
+  const { category, fromUnit, toUnit, inputValue, outputValue } = state;
+
   const handleConvert = useCallback(() => {
-    const { category, fromUnit: fromSymbol, toUnit: toSymbol, inputValue } = state;
-    const value = parseFloat(inputValue);
-    if (isNaN(value)) {
-      setState(s => ({ ...s, outputValue: 'Invalid input' }));
+    const valueNum = parseFloat(inputValue);
+    if (isNaN(valueNum)) {
+      if (outputValue !== 'Invalid input') {
+        setState(s => ({ ...s, outputValue: 'Invalid input' }));
+      }
       return;
     }
 
-    const units = unitsConfig[category];
-    const from = units.find(u => u.symbol === fromSymbol);
-    const to = units.find(u => u.symbol === toSymbol);
+    const currentUnitsInConfig = unitsConfig[category];
+    const fromUnitConfig = currentUnitsInConfig.find(u => u.symbol === fromUnit);
+    const toUnitConfig = currentUnitsInConfig.find(u => u.symbol === toUnit);
 
-    if (!from || !to) {
-      setState(s => ({ ...s, outputValue: 'Error' }));
+    if (!fromUnitConfig || !toUnitConfig) {
+      if (outputValue !== 'Error') {
+        setState(s => ({ ...s, outputValue: 'Error' }));
+      }
       return;
     }
     
     let result: number;
 
     if (category === 'Temperature') {
-        if (from.symbol === '°C') {
-            if (to.symbol === '°F') result = (value * 9/5) + 32;
-            else if (to.symbol === 'K') result = value + 273.15;
-            else result = value; // C to C
-        } else if (from.symbol === '°F') {
-            if (to.symbol === '°C') result = (value - 32) * 5/9;
-            else if (to.symbol === 'K') result = ((value - 32) * 5/9) + 273.15;
-            else result = value; // F to F
+        if (fromUnitConfig.symbol === '°C') {
+            if (toUnitConfig.symbol === '°F') result = (valueNum * 9/5) + 32;
+            else if (toUnitConfig.symbol === 'K') result = valueNum + 273.15;
+            else result = valueNum; // C to C
+        } else if (fromUnitConfig.symbol === '°F') {
+            if (toUnitConfig.symbol === '°C') result = (valueNum - 32) * 5/9;
+            else if (toUnitConfig.symbol === 'K') result = ((valueNum - 32) * 5/9) + 273.15;
+            else result = valueNum; // F to F
         } else { // Kelvin
-            if (to.symbol === '°C') result = value - 273.15;
-            else if (to.symbol === '°F') result = ((value - 273.15) * 9/5) + 32;
-            else result = value; // K to K
+            if (toUnitConfig.symbol === '°C') result = valueNum - 273.15;
+            else if (toUnitConfig.symbol === '°F') result = ((valueNum - 273.15) * 9/5) + 32;
+            else result = valueNum; // K to K
         }
     } else {
-        const valueInBaseUnit = value * from.factor;
-        result = valueInBaseUnit / to.factor;
+        const valueInBaseUnit = valueNum * fromUnitConfig.factor;
+        result = valueInBaseUnit / toUnitConfig.factor;
     }
     
-    setState(s => ({ ...s, outputValue: result.toLocaleString(undefined, {maximumFractionDigits: 5}) }));
-  }, [state]);
+    const newOutputValue = result.toLocaleString(undefined, {maximumFractionDigits: 5});
+    if (newOutputValue !== outputValue) {
+      setState(s => ({ ...s, outputValue: newOutputValue }));
+    }
+  }, [category, fromUnit, toUnit, inputValue, outputValue]); // Add setState if ESLint complains, but it's stable
   
   useEffect(() => {
     handleConvert();
-  }, [state.inputValue, state.fromUnit, state.toUnit, state.category, handleConvert]);
+  }, [handleConvert]);
 
 
   const handleCategoryChange = (newCategory: UnitCategory) => {
@@ -117,7 +126,7 @@ export function UnitConverter() {
       category: newCategory,
       fromUnit: defaultUnits[0].symbol,
       toUnit: defaultUnits.length > 1 ? defaultUnits[1].symbol : defaultUnits[0].symbol,
-      inputValue: '1', // Reset input value on category change
+      inputValue: '1', 
     }));
   };
   
@@ -126,7 +135,8 @@ export function UnitConverter() {
       ...s,
       fromUnit: s.toUnit,
       toUnit: s.fromUnit,
-      inputValue: s.outputValue, // Optionally swap values too, or just units
+      inputValue: s.outputValue === 'Invalid input' || s.outputValue === 'Error' ? '1' : s.outputValue,
+      // outputValue: s.inputValue, // if you want to swap output too
     }));
   };
 
@@ -140,9 +150,9 @@ export function UnitConverter() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="category-select">Category</Label>
           <Select value={state.category} onValueChange={(val) => handleCategoryChange(val as UnitCategory)}>
-            <SelectTrigger id="category">
+            <SelectTrigger id="category-select">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -163,7 +173,7 @@ export function UnitConverter() {
               onChange={(e) => setState(s => ({ ...s, inputValue: e.target.value }))}
             />
             <Select value={state.fromUnit} onValueChange={(val) => setState(s => ({ ...s, fromUnit: val }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="fromUnit-select"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {currentUnits.map(unit => (
                   <SelectItem key={unit.symbol} value={unit.symbol}>{unit.name} ({unit.symbol})</SelectItem>
@@ -180,7 +190,7 @@ export function UnitConverter() {
             <Label htmlFor="toValue">To</Label>
             <Input id="toValue" type="text" value={state.outputValue} readOnly className="bg-muted/50" />
              <Select value={state.toUnit} onValueChange={(val) => setState(s => ({ ...s, toUnit: val }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="toUnit-select"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {currentUnits.map(unit => (
                   <SelectItem key={unit.symbol} value={unit.symbol}>{unit.name} ({unit.symbol})</SelectItem>
