@@ -76,21 +76,25 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Effect to set the default voice preference for page announcements
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+      setVoicePreference('zia'); // Request 'zia' (female) voice
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
+  // Effect to speak the page title once the preferred voice might be active
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
+      if (voicePreference === 'zia' || (selectedVoice.name.toLowerCase().includes('zia') || selectedVoice.name.toLowerCase().includes('female'))) {
+        speak(PAGE_TITLE);
+        pageTitleSpokenRef.current = true;
+      }
     }
     return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -112,7 +116,7 @@ export default function DashboardPage() {
 
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
-    router.push(`/notes?topic=${encodeURIComponent(topic)}`);
+    router.push(`/study?topic=${encodeURIComponent(topic)}`);
   }
 
 
@@ -224,7 +228,7 @@ export default function DashboardPage() {
               </Button>
             )}
           </CardTitle>
-          <CardDescription>Quickly revisit topics you've generated notes for.</CardDescription>
+          <CardDescription>Quickly revisit topics you've generated study materials for.</CardDescription>
         </CardHeader>
         <CardContent>
           {recentTopics.length > 0 ? (
@@ -234,7 +238,7 @@ export default function DashboardPage() {
                   <button
                     onClick={() => handleRecentTopicClick(topic)}
                     className="truncate text-left hover:text-primary flex-grow"
-                    title={`Revisit notes for: ${topic}`}
+                    title={`Revisit study materials for: ${topic}`}
                   >
                     {topic}
                   </button>
@@ -245,7 +249,7 @@ export default function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">No recent topics found. Generate some notes to see them here!</p>
+            <p className="text-sm text-muted-foreground">No recent topics found. Generate some study materials to see them here!</p>
           )}
         </CardContent>
       </Card>
@@ -256,4 +260,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+    
+
     

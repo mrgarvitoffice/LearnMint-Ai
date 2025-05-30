@@ -16,12 +16,14 @@ const FlashcardSchema = z.object({
   definition: z.string().describe('A concise definition, explanation, or answer for the flashcard back. For complex topics, use 2-3 bullet points. Include formulas if relevant and concise enough for a flashcard.'),
 });
 
+// NOT EXPORTED as an object
 const GenerateFlashcardsInputSchema = z.object({
   topic: z.string().describe('The academic topic for which to generate flashcards.'),
   numFlashcards: z.number().min(1).max(50).describe('The number of flashcards to generate.'),
 });
 export type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
+// NOT EXPORTED as an object
 const GenerateFlashcardsOutputSchema = z.object({
   flashcards: z.array(FlashcardSchema).describe('An array of generated flashcards.'),
 });
@@ -84,3 +86,5 @@ export async function generateFlashcards(input: GenerateFlashcardsInput): Promis
     throw new Error(clientErrorMessage);
   }
 }
+
+    

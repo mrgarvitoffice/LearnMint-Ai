@@ -19,22 +19,26 @@ import type { QuizQuestion as QuizQuestionType } from '@/lib/types';
 interface QuizViewProps {
   questions: QuizQuestionType[] | null;
   topic: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
-const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
+const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'medium' }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Array<string | undefined>>([]);
+  // State to track if the current MCQ answer has been finalized (and feedback shown)
   const [isMcqAnswerFinalized, setIsMcqAnswerFinalized] = useState<boolean>(false);
+  // State to track if the current short answer has been submitted
   const [isShortAnswerSubmitted, setIsShortAnswerSubmitted] = useState<boolean>(false);
   const [quizFinished, setQuizFinished] = useState(false);
   const [score, setScore] = useState(0);
   const [shortAnswerValue, setShortAnswerValue] = useState('');
+  // State to track the selected MCQ option for immediate feedback UI
   const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
   
   const { playSound: playCorrectSound } = useSound('correct');
   const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const voicePreferenceWasSetRef = React.useRef(false);
 
   useEffect(() => {
@@ -44,6 +48,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
     }
   }, [supportedVoices, setVoicePreference]);
 
+  // Initialize/Reset quiz state when questions prop changes
   useEffect(() => {
     if (questions && questions.length > 0) {
       setUserAnswers(Array(questions.length).fill(undefined));
@@ -58,7 +63,10 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
   }, [questions]);
 
   const currentQuestion = questions ? questions[currentQuestionIndex] : null;
-  const isAnswerSubmittedForCurrent = currentQuestion?.type === 'multiple-choice' ? isMcqAnswerFinalized : isShortAnswerSubmitted;
+  const isAnswerSubmittedForCurrent = currentQuestion?.type === 'multiple-choice' 
+    ? isMcqAnswerFinalized 
+    : isShortAnswerSubmitted;
+
 
   const processAnswer = useCallback((answerToSubmit: string) => {
     if (!currentQuestion) return;
@@ -89,8 +97,8 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
   const handleMcqOptionClick = useCallback((optionValue: string) => {
     if (isMcqAnswerFinalized || !currentQuestion || currentQuestion.type !== 'multiple-choice') return;
     playClickSound();
-    setSelectedMcqOption(optionValue);
-    processAnswer(optionValue);
+    setSelectedMcqOption(optionValue); // For immediate UI update
+    processAnswer(optionValue); // Process correctness, score, and finalize
   }, [isMcqAnswerFinalized, currentQuestion, processAnswer, playClickSound]);
 
   const handleShortAnswerSubmit = useCallback(() => {
@@ -104,9 +112,11 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
     playClickSound();
     if (!questions || currentQuestionIndex >= questions.length - 1) return;
     setCurrentQuestionIndex(prev => prev + 1);
+    // Reset states for the new question
     setIsMcqAnswerFinalized(false);
     setIsShortAnswerSubmitted(false);
     setSelectedMcqOption(null);
+    // Pre-fill short answer input if user previously answered this question
     setShortAnswerValue(userAnswers[currentQuestionIndex + 1] || ''); 
   };
 
@@ -115,17 +125,20 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
     if (currentQuestionIndex <= 0) return;
     setCurrentQuestionIndex(prev => prev - 1);
     const prevAnswer = userAnswers[currentQuestionIndex - 1];
-    setIsMcqAnswerFinalized(!!prevAnswer && questions?.[currentQuestionIndex - 1]?.type === 'multiple-choice');
-    setIsShortAnswerSubmitted(!!prevAnswer && questions?.[currentQuestionIndex - 1]?.type === 'short-answer');
-    setSelectedMcqOption(prevAnswer || null);
-    setShortAnswerValue(prevAnswer || ''); 
+    const prevQuestionType = questions?.[currentQuestionIndex - 1]?.type;
+
+    setIsMcqAnswerFinalized(!!prevAnswer && prevQuestionType === 'multiple-choice');
+    setIsShortAnswerSubmitted(!!prevAnswer && prevQuestionType === 'short-answer');
+    setSelectedMcqOption(prevQuestionType === 'multiple-choice' ? prevAnswer || null : null);
+    setShortAnswerValue(prevQuestionType === 'short-answer' ? prevAnswer || '' : ''); 
   };
 
   const handleViewResults = () => {
     playClickSound();
     if (!questions) return;
     setQuizFinished(true);
-    if (selectedVoice && !isSpeaking && !isPaused) speak(`Quiz finished! Your final score is ${score} out of ${questions.length * 4}.`);
+    const finalScoreMessage = `Quiz finished! Your final score is ${score} out of ${questions.length * 4}.`;
+    if (selectedVoice && !isSpeaking && !isPaused) speak(finalScoreMessage);
   };
   
   const handleRestartQuiz = () => {
@@ -157,9 +170,9 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
       <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">Quiz Results</CardTitle>
-          <CardDescription>Topic: {topic} (Difficulty: Medium)</CardDescription>
+          <CardDescription>Topic: {topic} (Difficulty: {difficulty})</CardDescription>
           <p className="text-3xl font-bold mt-2">Your Score: {score} / {questions.length * 4}</p>
-          <Progress value={(score / (questions.length * 4 || 1)) * 100} className="w-3/4 mx-auto mt-3 h-3" />
+          <Progress value={((score / (questions.length * 4 || 1)) * 100)} className="w-3/4 mx-auto mt-3 h-3" />
         </CardHeader>
         <CardContent className="space-y-3 flex-1 overflow-y-auto p-4">
           {questions.map((q, index) => {
@@ -169,7 +182,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
               <Card key={index} className={cn("p-3", isCorrect ? "border-green-500 bg-green-500/10" : userAnswer !== undefined ? "border-destructive bg-destructive/10" : "border-border")}>
                 <p className="font-semibold text-sm mb-1">Q{index + 1}: <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none inline">{q.question}</ReactMarkdown></p>
                 <p className="text-xs">Your answer: <span className={cn("font-medium", isCorrect ? "text-green-700 dark:text-green-400" : "text-destructive")}>{userAnswer || "Not answered"}</span></p>
-                {!isCorrect && <p className="text-xs">Correct answer: <span className="font-medium text-green-700 dark:text-green-400">{q.answer}</span></p>}
+                {!isCorrect && <p className="text-xs">Correct answer: <span className="font-medium text-green-700 dark:text-green-500">{q.answer}</span></p>}
                 {q.explanation && (
                   <Alert variant="default" className="mt-1.5 p-2 text-xs bg-accent/20 border-accent/30">
                     <Lightbulb className="h-3.5 w-3.5 text-accent-foreground/80" />
@@ -188,15 +201,16 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
 
   if (!currentQuestion) return <div className="p-4 text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /><p className="text-muted-foreground mt-2">Loading question...</p></div>;
 
-  const isThisMcqCorrect = selectedMcqOption !== null && currentQuestion.type === 'multiple-choice' && selectedMcqOption.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
-  const isThisShortAnswerCorrect = isShortAnswerSubmitted && currentQuestion.type === 'short-answer' && userAnswers[currentQuestionIndex]?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
-  const isThisCorrect = isThisMcqCorrect || isThisShortAnswerCorrect;
+  // Feedback specific to the current question after submission
+  const isCurrentMcqCorrect = isMcqAnswerFinalized && selectedMcqOption?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
+  const isCurrentShortAnswerCorrect = isShortAnswerSubmitted && userAnswers[currentQuestionIndex]?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
+  const isCurrentAnswerCorrect = isCurrentMcqCorrect || isCurrentShortAnswerCorrect;
 
   return (
     <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> 
       <CardHeader>
         <CardTitle className="text-lg md:text-xl text-primary font-semibold">Quiz on: {topic}</CardTitle>
-        <CardDescription>Question {currentQuestionIndex + 1} of {questions.length} (Difficulty: Medium)</CardDescription>
+        <CardDescription>Question {currentQuestionIndex + 1} of {questions.length} (Difficulty: {difficulty})</CardDescription>
         <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} className="w-full mt-2 h-2.5" />
       </CardHeader>
       <CardContent className="space-y-4 flex-1 p-4 sm:p-6">
@@ -204,23 +218,40 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
 
         {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
           <RadioGroup 
-            value={selectedMcqOption || undefined}
-            onValueChange={(value) => !isMcqAnswerFinalized && handleMcqOptionClick(value)}
+            value={selectedMcqOption || undefined} // Controlled by selectedMcqOption for styling
+            // onValueChange is not used; click on Label triggers handleMcqOptionClick
             className="space-y-2"
           >
             {currentQuestion.options.map((option, i) => {
-              const isThisOptionTheSelectedOne = selectedMcqOption === option;
-              const isThisOptionTheCorrectAnswer = option === currentQuestion.answer;
+              const isThisOptionSelected = selectedMcqOption === option;
+              const isCorrectAnswer = option === currentQuestion.answer;
               return (
                 <Label key={i} htmlFor={`option-${i}-${currentQuestionIndex}`}
+                  onClick={() => handleMcqOptionClick(option)}
                   className={cn(
                     "flex items-center space-x-2 p-3 border rounded-md transition-all",
-                    isMcqAnswerFinalized && isThisOptionTheSelectedOne && isThisMcqCorrect && "bg-green-500/20 border-green-600 text-green-700 dark:text-green-400",
-                    isMcqAnswerFinalized && isThisOptionTheSelectedOne && !isThisMcqCorrect && "bg-destructive/20 border-destructive text-destructive-foreground",
-                    isMcqAnswerFinalized && !isThisOptionTheSelectedOne && isThisOptionTheCorrectAnswer && "border-green-600 ring-1 ring-green-500",
-                    !isMcqAnswerFinalized && "hover:bg-muted cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary"
+                    isMcqAnswerFinalized && isThisOptionSelected && isCorrectAnswer && "bg-green-500/20 border-green-600 text-green-700 dark:text-green-400 ring-2 ring-green-500",
+                    isMcqAnswerFinalized && isThisOptionSelected && !isCorrectAnswer && "bg-destructive/20 border-destructive text-destructive-foreground ring-2 ring-destructive",
+                    isMcqAnswerFinalized && !isThisOptionSelected && isCorrectAnswer && "border-green-600 bg-green-500/10", // Highlight correct if wrong one selected
+                    !isMcqAnswerFinalized && "hover:bg-muted cursor-pointer"
                   )}>
-                  <RadioGroupItem value={option} id={`option-${i}-${currentQuestionIndex}`} disabled={isMcqAnswerFinalized} />
+                  <RadioGroupItem 
+                    value={option} 
+                    id={`option-${i}-${currentQuestionIndex}`} 
+                    disabled={isMcqAnswerFinalized} 
+                    checked={selectedMcqOption === option} // Visually show selection
+                    className="sr-only" // Hide actual radio, label click handles it
+                  />
+                  <div className={cn(
+                      "w-4 h-4 rounded-full border border-primary flex items-center justify-center shrink-0",
+                      isMcqAnswerFinalized && isThisOptionSelected && isCorrectAnswer && "bg-green-600 border-green-700",
+                      isMcqAnswerFinalized && isThisOptionSelected && !isCorrectAnswer && "bg-destructive border-destructive",
+                      selectedMcqOption === option && !isMcqAnswerFinalized && "bg-primary/20"
+                  )}>
+                      {(isMcqAnswerFinalized && isThisOptionSelected && isCorrectAnswer) && <CheckCircle className="h-3 w-3 text-white" />}
+                      {(isMcqAnswerFinalized && isThisOptionSelected && !isCorrectAnswer) && <XCircle className="h-3 w-3 text-white" />}
+                      {(selectedMcqOption === option && !isMcqAnswerFinalized) && <div className="w-2 h-2 bg-primary rounded-full" />}
+                  </div>
                   <span className="text-sm sm:text-base">{option}</span>
                 </Label>
               );
@@ -242,11 +273,11 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
         )}
 
         {isAnswerSubmittedForCurrent && (
-          <Alert variant={isThisCorrect ? 'default' : 'destructive'} className={cn("mt-4", isThisCorrect ? "bg-green-500/10 border-green-500/50" : "bg-destructive/10 border-destructive/50")}>
-            {isThisCorrect ? <CheckCircle className="h-5 w-5 text-green-600"/> : <XCircle className="h-5 w-5 text-destructive"/>}
-            <AlertTitle>{isThisCorrect ? "Correct!" : "Incorrect!"}</AlertTitle>
+          <Alert variant={isCurrentAnswerCorrect ? 'default' : 'destructive'} className={cn("mt-4", isCurrentAnswerCorrect ? "bg-green-500/10 border-green-500/50" : "bg-destructive/10 border-destructive/50")}>
+            {isCurrentAnswerCorrect ? <CheckCircle className="h-5 w-5 text-green-600"/> : <XCircle className="h-5 w-5 text-destructive"/>}
+            <AlertTitle>{isCurrentAnswerCorrect ? "Correct!" : "Incorrect!"}</AlertTitle>
             <AlertDescription className="text-xs">
-              {!isThisCorrect && <p>Correct answer: <span className="font-semibold text-green-700 dark:text-green-500">{currentQuestion.answer}</span></p>}
+              {!isCurrentAnswerCorrect && <p>Correct answer: <span className="font-semibold text-green-700 dark:text-green-500">{currentQuestion.answer}</span></p>}
               {currentQuestion.explanation && <div className="mt-1 prose prose-xs dark:prose-invert max-w-none"><ReactMarkdown>{currentQuestion.explanation}</ReactMarkdown></div>}
             </AlertDescription>
           </Alert>
@@ -265,3 +296,5 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic }) => {
 };
 
 export default QuizView;
+
+    

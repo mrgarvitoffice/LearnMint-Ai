@@ -16,7 +16,7 @@ import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 
 import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
-import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, QuizQuestion, Flashcard, GenerateFlashcardsOutput } from '@/lib/types';
+import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QuizQuestion, Flashcard } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
 import QuizView from '@/components/study/QuizView';
@@ -60,27 +60,34 @@ function StudyPageContent() {
   const router = useRouter(); 
   const topicParam = searchParams.get("topic");
 
-  const [activeTopic, setActiveTopic] = useState<string>(""); 
+  const [activeTopic, setActiveTopic] = useState<string>(topicParam ? decodeURIComponent(topicParam) : "No topic provided"); 
   const [activeTab, setActiveTab] = useState<string>("notes");
 
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
   const queryClient = useQueryClient();
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
-  const initialFetchTriggeredRef = useRef(false);
+  const initialFetchTriggeredRef = useRef(false); // To trigger initial loads for Quiz/Flashcards if tab is active
 
    useEffect(() => {
     if (topicParam) {
       const decodedTopic = decodeURIComponent(topicParam);
-      setActiveTopic(decodedTopic);
-    } else {
+      if (decodedTopic !== activeTopic) { // Only update if different to avoid loops
+         setActiveTopic(decodedTopic);
+         // Invalidate queries if the topic changes to force refetch
+         queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
+         queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
+         queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
+         pageTitleSpokenRef.current = false; // Allow title to be spoken again for new topic
+      }
+    } else if (activeTopic !== "No topic provided") { // Handle case where topic is removed from URL
       setActiveTopic("No topic provided");
       toast({ title: "No Topic", description: "No topic was specified in the URL. Please generate materials from the main page.", variant: "destructive" });
     }
-  }, [topicParam, toast]);
+  }, [topicParam, activeTopic, toast, queryClient]);
 
 
   useEffect(() => {
@@ -93,19 +100,22 @@ function StudyPageContent() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic && activeTopic !== "No topic provided") {
-      speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
-      pageTitleSpokenRef.current = true;
+       if (voicePreference === 'zia' || (selectedVoice.name.toLowerCase().includes('zia') || selectedVoice.name.toLowerCase().includes('female'))) {
+        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
+        pageTitleSpokenRef.current = true;
+      }
     }
     return () => {
       isMounted = false;
+      cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
+  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak, activeTopic, cancelTTS]);
 
 
   const commonQueryOptions = {
     enabled: !!activeTopic && activeTopic !== "No topic provided",
     staleTime: 1000 * 60 * 1, 
-    gcTime: 1000 * 60 * 5, // Cache for 5 minutes
+    gcTime: 1000 * 60 * 5,
     retry: 1,
   };
 
@@ -164,27 +174,32 @@ function StudyPageContent() {
 
   useEffect(() => {
     if(commonQueryOptions.enabled && !initialFetchTriggeredRef.current) {
-        if (activeTab === 'quiz' && (!quizData || isErrorQuiz)) refetchQuiz();
-        if (activeTab === 'flashcards' && (!flashcardsData || isErrorFlashcards)) refetchFlashcards();
+        // Trigger initial fetches for all tabs regardless of current active tab
+        // This is to pre-load data. We can refine this if it's too aggressive.
+        refetchNotes(); 
+        refetchQuiz(); 
+        refetchFlashcards();
         initialFetchTriggeredRef.current = true;
     }
-  }, [commonQueryOptions.enabled, activeTab, refetchQuiz, refetchFlashcards, quizData, flashcardsData, isErrorQuiz, isErrorFlashcards]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commonQueryOptions.enabled, activeTopic]); // Added activeTopic to re-trigger if topic changes
 
 
   const handleRefreshContent = useCallback(() => {
     playClickSound();
     if (activeTopic && activeTopic !== "No topic provided") {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
-      if (activeTab === 'notes') refetchNotes();
-      else if (activeTab === 'quiz') refetchQuiz();
-      else if (activeTab === 'flashcards') refetchFlashcards();
-      else { // Default or if on an unknown tab, refetch all
-        refetchNotes(); refetchQuiz(); refetchFlashcards();
-      }
+      queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
+      queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
+      queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
+      // Manually refetch active tab content if needed, or all
+      refetchNotes();
+      refetchQuiz();
+      refetchFlashcards();
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, activeTab, refetchNotes, refetchQuiz, refetchFlashcards, toast, playClickSound]);
+  }, [activeTopic, refetchNotes, refetchQuiz, refetchFlashcards, toast, playClickSound, queryClient]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
@@ -249,7 +264,7 @@ function StudyPageContent() {
     <div className="container mx-auto max-w-5xl px-2 py-6 sm:px-4 sm:py-8 flex flex-col flex-1 min-h-[calc(100vh-8rem)]">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-2">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center sm:text-left truncate max-w-xl">
-          Study Hub for: <span className="text-primary">{topicParam ? decodeURIComponent(topicParam) : activeTopic}</span>
+          Study Hub for: <span className="text-primary">{activeTopic}</span>
         </h1>
         <Button onClick={handleRefreshContent} variant="outline" size="sm" className="active:scale-95" disabled={isLoadingNotes || isLoadingQuiz || isLoadingFlashcards || isFetchingNotes || isFetchingQuiz || isFetchingFlashcards}>
           <RefreshCw className="mr-2 h-4 w-4" /> Refresh Content
@@ -272,3 +287,5 @@ export default function StudyPage() {
     </Suspense>
   );
 }
+
+    

@@ -28,7 +28,6 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     isSpeaking,
     isPaused,
     selectedVoice,
-    setSelectedVoiceURI,
     setVoicePreference,
     supportedVoices,
     voicePreference
@@ -138,7 +137,10 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
               onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'kai' | 'zia' | null);}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
-              <SelectContent><SelectItem value="zia">Zia</SelectItem><SelectItem value="kai">Kai</SelectItem></SelectContent>
+              <SelectContent>
+                <SelectItem value="zia">Zia</SelectItem>
+                <SelectItem value="kai">Kai</SelectItem>
+              </SelectContent>
             </Select>
             <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
               {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
@@ -162,3 +164,5 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
+
+    

@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
-import FlashcardItem from './FlashcardItem';
+import FlashcardItem from './FlashcardItem'; // Ensure this component is created
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import type { Flashcard as FlashcardType } from '@/lib/types';
@@ -20,7 +20,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   useEffect(() => {
-    setCurrentCardIndex(0);
+    setCurrentCardIndex(0); // Reset index when flashcards data changes
   }, [flashcards]);
 
   const handleNextCard = () => {
@@ -95,3 +95,5 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 };
 
 export default FlashcardsView;
+
+    

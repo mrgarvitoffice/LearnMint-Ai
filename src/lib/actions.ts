@@ -26,7 +26,7 @@ export async function generateNotesAction(input: GenerateStudyNotesInput): Promi
 }
 
 export async function generateQuizAction(input: GenerateQuizQuestionsInput): Promise<GenerateQuizQuestionsOutput> {
-  console.log(`[Server Action] generateQuizAction called for topic: ${input.topic}, numQuestions: ${input.numQuestions}`);
+  console.log(`[Server Action] generateQuizAction called for topic: ${input.topic}, numQuestions: ${input.numQuestions}, difficulty: ${input.difficulty}`);
   try {
     const result = await generateQuizQuestions(input);
     if (!result || !result.questions || result.questions.length === 0) {
@@ -66,3 +66,5 @@ export async function generateFlashcardsAction(input: GenerateFlashcardsInput): 
     throw new Error(clientErrorMessage);
   }
 }
+
+    
