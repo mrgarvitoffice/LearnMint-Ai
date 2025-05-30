@@ -39,8 +39,9 @@ export default function LibraryPage() {
     }
     return () => { 
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
   const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
     queryKey: ['mathFact'], queryFn: fetchMathFact, staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false,

@@ -34,12 +34,14 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const { playSound: playCorrectSound } = useSound('correct');
   const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
-  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices, voicePreference } = useTTS();
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); 
+      // Voice preference for quiz feedback can be set here if needed,
+      // or inherit from page-level (StudyPage) preference
+      // For now, let's assume it inherits or uses a default from useTTS
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);

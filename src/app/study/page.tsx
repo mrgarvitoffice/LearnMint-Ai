@@ -17,7 +17,7 @@ import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 
 import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
-import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QuizQuestion, Flashcard } from '@/lib/types';
+import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
 import QuizView from '@/components/study/QuizView';
@@ -89,11 +89,10 @@ function StudyPageContent() {
     if (decodedTopic && decodedTopic !== activeTopic) { 
         setActiveTopic(decodedTopic);
         pageTitleSpokenRef.current = false; 
-        // Invalidate queries to refetch for the new topic
         queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
         queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
         queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
-    } else if (!decodedTopic && !activeTopic) { // Only redirect if activeTopic is also not set (initial load with no topic)
+    } else if (!decodedTopic && !activeTopic) { 
       toast({ title: "No Topic Specified", description: "Please generate materials from the main page or enter a topic.", variant: "destructive" });
       router.push('/notes'); 
     }
@@ -109,21 +108,22 @@ function StudyPageContent() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic && activeTopic !== "No topic provided") {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic, cancelTTS]);
 
 
   const commonQueryOptions = {
     enabled: !!activeTopic && activeTopic !== "No topic provided",
-    staleTime: 1000 * 60 * 1, // 1 minute before considering stale
-    gcTime: 1000 * 60 * 5,   // 5 minutes before garbage collecting
-    retry: 1, // Retry once on failure
+    staleTime: 1000 * 60 * 1, 
+    gcTime: 1000 * 60 * 5,   
+    retry: 1, 
   };
 
   const {
@@ -137,7 +137,6 @@ function StudyPageContent() {
     queryKey: ["studyNotes", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A valid topic is required to generate notes.");
-      // toast({title: "Generating Notes...", description: `Fetching notes for ${activeTopic}.`}) // Toast can be noisy on auto-refetch
       return generateNotesAction({ topic: activeTopic });
     },
     ...commonQueryOptions,
@@ -154,11 +153,10 @@ function StudyPageContent() {
     queryKey: ["quizQuestions", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
-      // toast({title: "Generating Quiz...", description: `Fetching 30 quiz questions for ${activeTopic}. Difficulty: Medium.`})
       return generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (!notesData && isLoadingNotes)), // Fetch if tab is active or if notes are still loading (initial load)
+    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (!notesData && isLoadingNotes)), 
   });
 
   const {
@@ -172,11 +170,10 @@ function StudyPageContent() {
     queryKey: ["flashcards", activeTopic],
     queryFn: async () => {
       if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
-      // toast({title: "Generating Flashcards...", description: `Fetching 20 flashcards for ${activeTopic}.`})
       return generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
     },
     ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (!notesData && isLoadingNotes)), // Fetch if tab is active or if notes are still loading
+    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (!notesData && isLoadingNotes)), 
   });
 
 
@@ -184,11 +181,10 @@ function StudyPageContent() {
     playClickSound();
     if (activeTopic && activeTopic !== "No topic provided") {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
-      pageTitleSpokenRef.current = false; // Allow title to be spoken again if needed
+      pageTitleSpokenRef.current = false; 
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      // Explicitly call refetch if immediate re-fetch is desired, invalidateQueries alone might wait for staleness
       refetchNotes();
       if(activeTab === 'quiz') refetchQuiz();
       if(activeTab === 'flashcards') refetchFlashcards();

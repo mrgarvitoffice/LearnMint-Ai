@@ -31,8 +31,9 @@ export default function ArcadePage() {
     }
     return () => { 
       isMounted = false; 
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">

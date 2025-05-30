@@ -61,8 +61,9 @@ export default function FlashcardsPage() {
     }
     return () => { 
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
      };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, isLoading, generatedFlashcardsData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {

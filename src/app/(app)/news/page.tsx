@@ -49,8 +49,9 @@ export default function NewsPage() {
     }
     return () => { 
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],

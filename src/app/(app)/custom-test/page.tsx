@@ -157,7 +157,7 @@ export default function CustomTestPage() {
       const calculatedPerformanceTag = getPerformanceTag(percentage);
       
       if (!resultAnnouncementSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
-         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Performance: ${calculatedPerformanceTag}!`;
+         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
          speak(ttsMessage);
          resultAnnouncementSpokenRef.current = true;
       }
@@ -176,7 +176,7 @@ export default function CustomTestPage() {
 
   useEffect(() => { 
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); // Default announcements to Luma
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -189,8 +189,9 @@ export default function CustomTestPage() {
     }
     return () => { 
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, testState, isLoading]);
 
   useEffect(() => { 
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
@@ -226,7 +227,7 @@ export default function CustomTestPage() {
           if (newTimeLeftVal <= 0) {
             if (currentTimerId) clearInterval(currentTimerId);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-            handleSubmitTest(true); // Call the memoized version
+            handleSubmitTest(true); 
             return { ...currentTestState, timeLeft: 0, isAutoSubmitting: true };
           }
           return { ...currentTestState, timeLeft: newTimeLeftVal };
@@ -235,7 +236,7 @@ export default function CustomTestPage() {
       overallTestTimerIdRef.current = currentTimerId;
     } else if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft <= 0 && !testState.showResults && !testState.isAutoSubmitting) {
         toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-        handleSubmitTest(true); // Call the memoized version
+        handleSubmitTest(true); 
     }
     return () => {
       if (currentTimerId) clearInterval(currentTimerId);
@@ -407,7 +408,7 @@ export default function CustomTestPage() {
     let textToPlay = "";
        if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
        else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
-        textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
+        textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Your performance is ${testState.performanceTag}!`;
       } else if (isLoading && !generatingMessageSpokenRef.current) {
         textToPlay = "Creating custom test. Please wait.";
       }
@@ -426,9 +427,9 @@ export default function CustomTestPage() {
   
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia') || selectedVoice?.name.toLowerCase().includes('female')) return 'luma';
-    if (selectedVoice?.name.toLowerCase().includes('kai') || selectedVoice?.name.toLowerCase().includes('male')) return 'kai';
-    return 'luma'; // Default if no preference and selected voice doesn't match
+    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
+    return 'luma'; 
   };
 
 
@@ -618,4 +619,3 @@ export default function CustomTestPage() {
     </div>
   );
 }
-

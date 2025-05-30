@@ -64,8 +64,9 @@ export default function QuizPage() {
     }
     return () => { 
       isMounted = false;
+      if(isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedQuizData]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, isLoading, generatedQuizData]);
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {

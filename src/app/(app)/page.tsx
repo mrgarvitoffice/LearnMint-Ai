@@ -16,13 +16,13 @@ const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const coreFeaturesListText = [
-  "<strong>AI Content Generation:</strong> Create notes, quizzes, & flashcards with AI.",
-  "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, & timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Engage with a witty AI for questions & 'singing'.",
-  "<strong>Scientific Calculator & Unit Converter:</strong> For calculations & unit conversions.",
-  "<strong>Daily News Digest:</strong> Filtered news articles from various sources.",
-  "<strong>Resource Library:</strong> Explore textbooks, search books/videos, & get Math Facts.",
-  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge) & more coming soon.",
+  "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards.",
+  "<strong>Custom Test Creation:</strong> Topic-based tests, difficulty levels, timers.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'. Voice input.",
+  "<strong>Scientific Calculator & Unit Converter:</strong> Calculations & conversions.",
+  "<strong>Daily News Digest:</strong> Filtered news by country, category, keywords.",
+  "<strong>Resource Library:</strong> OpenStax, Google Books/YouTube search, Math Facts.",
+  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge).",
 ];
 
 const exploreFeaturesCards = [
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); 
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -92,9 +92,11 @@ export default function DashboardPage() {
     }
     return () => { 
       isMounted = false;
-      // Optional: cancelTTS() if speech should stop on unmount and was initiated by this effect
+      if (isMounted && isSpeaking) { // Cancel speech if component unmounts while speaking
+        cancelTTS();
+      }
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {

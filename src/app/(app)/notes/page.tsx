@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation'; // For redirection if needed in future
+import { useRouter } from 'next/navigation'; 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,34 +22,32 @@ import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQu
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
 
 import AiGeneratedImage from '@/components/study/AiGeneratedImage';
-import NotesView from '@/components/study/NotesView'; // Will be used in TabsContent
-import QuizView from '@/components/study/QuizView'; // Will be used in TabsContent
-import FlashcardsView from '@/components/study/FlashcardsView'; // Will be used in TabsContent
+import NotesView from '@/components/study/NotesView';
+import QuizView from '@/components/study/QuizView';
+import FlashcardsView from '@/components/study/FlashcardsView';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PAGE_TITLE = "Generate Topper Notes";
-const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics"; // Updated key
+const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
 
 export default function GenerateNotesPage() {
   const router = useRouter();
   const { toast } = useToast();
 
   const [topic, setTopic] = useState<string>("");
-  
   const [isLoadingAll, setIsLoadingAll] = useState<boolean>(false);
   
   const [generatedNotesContent, setGeneratedNotesContent] = useState<string | null>(null);
   const [notesError, setNotesError] = useState<string | null>(null);
-  const [isLoadingNotes, setIsLoadingNotes] = useState<boolean>(false); // Individual loading state
+  const [isLoadingNotes, setIsLoadingNotes] = useState<boolean>(false);
 
   const [generatedQuizData, setGeneratedQuizData] = useState<GenerateQuizQuestionsOutput | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState<boolean>(false); // Individual loading state
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState<boolean>(false);
 
   const [generatedFlashcardsData, setGeneratedFlashcardsData] = useState<GenerateFlashcardsOutput | null>(null);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
-  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState<boolean>(false); // Individual loading state
-
+  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState<boolean>(false);
 
   const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
@@ -74,14 +72,15 @@ export default function GenerateNotesPage() {
     }
     return () => { 
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoadingAll, generatedNotesContent]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS, isLoadingAll, generatedNotesContent]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
   }, [transcript]);
 
-  useEffect(() => {
+  useEffect(() => { 
     if (voiceError) {
       toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
     }
@@ -105,9 +104,7 @@ export default function GenerateNotesPage() {
     setGeneratedFlashcardsData(null); setFlashcardsError(null);
     
     setIsLoadingAll(true);
-    setIsLoadingNotes(true); 
-    setIsLoadingQuiz(true); 
-    setIsLoadingFlashcards(true);
+    setIsLoadingNotes(true); setIsLoadingQuiz(true); setIsLoadingFlashcards(true);
     pageTitleSpokenRef.current = true; 
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
@@ -147,13 +144,16 @@ export default function GenerateNotesPage() {
     generatingMessageSpokenRef.current = false;
 
     const successfulGenerations = results.filter(r => r.status === 'fulfilled' && r.value.status === 'fulfilled').length;
-    const failedGenerations = results.filter(r => r.status === 'fulfilled' && r.value.status === 'rejected').map(r => (r.value as {reason: string}).reason);
-    
+    const failedItems = results
+        .filter(r => r.status === 'fulfilled' && r.value.status === 'rejected')
+        // @ts-ignore
+        .map(r => (r.value as { reason: string; error: Error }).reason);
+
     if (successfulGenerations > 0) {
-        toast({ title: 'Content Generation Complete!', description: `${successfulGenerations} section(s) generated.${failedGenerations.length > 0 ? ` Failed: ${failedGenerations.join(', ')}.` : ''}` });
+        toast({ title: 'Content Generation Complete!', description: `${successfulGenerations} section(s) generated.${failedItems.length > 0 ? ` Failed: ${failedItems.join(', ')}.` : ''}` });
         if (selectedVoice && !isSpeaking && !isPaused) speak("Study materials are ready! Check the tabs for details.");
     } else {
-        toast({ title: 'Generation Failed', description: 'Could not generate any study materials. Please check errors below.', variant: 'destructive' });
+        toast({ title: 'Generation Failed', description: `Could not generate any study materials. Failed: ${failedItems.join(', ') || 'Unknown error'}. Please check errors below or try again.`, variant: 'destructive' });
         if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.");
     }
   };
@@ -207,7 +207,7 @@ export default function GenerateNotesPage() {
             ) : (
               <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" />
             )}
-            {isLoadingAll ? "Generating All Materials..." : "Generate All Study Materials"}
+            {isLoadingAll ? "Generating All Materials..." : "Generate Study Materials"}
           </Button>
         </CardContent>
       </Card>

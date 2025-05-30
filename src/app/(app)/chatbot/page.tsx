@@ -46,30 +46,32 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); // Default page title announcement to Luma
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !chatbotVoicePreferenceSetRef.current) {
-        // The UI dropdown for Megumin's voice will default to 'luma' preference for her replies
-        // It will be set by the Select component's defaultValue or value prop.
+        // Ensure chatbot replies default to 'luma' (Megumin's voice)
+        setVoicePreference('luma'); 
         chatbotVoicePreferenceSetRef.current = true;
     }
-  }, [supportedVoices]);
+  }, [supportedVoices, setVoicePreference]);
 
 
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      // Page title is spoken by the page's default voice preference, which is set above.
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS();
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
 
 
   useEffect(() => {
@@ -87,13 +89,12 @@ export default function ChatbotPage() {
     };
     setMessages([initialGreeting]);
 
-    // Only speak if a voice is selected AND the current preference for chatbot replies is luma
     if (selectedVoice && voicePreference === 'luma' && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
       currentSpokenMessageRef.current = initialGreeting.content;
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
-  }, [selectedVoice, voicePreference, speak, isSpeaking, isPaused]);
+  }, [selectedVoice, voicePreference, speak, isSpeaking, isPaused]); // Only run once with these specific deps
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
@@ -154,9 +155,7 @@ export default function ChatbotPage() {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia') || selectedVoice?.name.toLowerCase().includes('female')) return 'luma';
-    if (selectedVoice?.name.toLowerCase().includes('kai') || selectedVoice?.name.toLowerCase().includes('male')) return 'kai';
-    return 'luma'; // Default if no preference and selected voice doesn't match
+    return 'luma'; // Default UI selection to Luma
   };
 
 

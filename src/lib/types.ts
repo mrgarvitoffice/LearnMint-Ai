@@ -2,28 +2,47 @@
 // For AI Generated Content
 export interface QuizQuestion {
   question: string;
-  options?: string[]; // Optional: only for multiple-choice (e.g., 3-4 options)
+  options?: string[]; 
   answer: string;
-  type: 'multiple-choice' | 'short-answer'; // To distinguish question types
-  explanation?: string; // Optional explanation for the answer
+  type: 'multiple-choice' | 'short-answer'; 
+  explanation?: string; 
   userAnswer?: string; 
   isCorrect?: boolean; 
 }
 
 export interface Flashcard {
   term: string;
-  definition: string; // Can include bullet points or formulas
+  definition: string; 
 }
 
 // Input/Output types for AI flows (matching Zod schemas in flows)
 export type GenerateStudyNotesInput = { topic: string };
 export type GenerateStudyNotesOutput = { notes: string };
 
-export type GenerateQuizQuestionsInput = { topic: string, numQuestions: number, difficulty?: 'easy' | 'medium' | 'hard' };
+export type GenerateQuizQuestionsInput = { 
+  topic: string, 
+  numQuestions: number, 
+  difficulty?: 'easy' | 'medium' | 'hard' 
+};
 export type GenerateQuizQuestionsOutput = { questions: QuizQuestion[] };
 
 export type GenerateFlashcardsInput = { topic: string, numFlashcards: number };
 export type GenerateFlashcardsOutput = { flashcards: Flashcard[] };
+
+// For Quiz Generation from Notes
+export type GenerateQuizFromNotesInput = {
+  notesContent: string;
+  numQuestions: number;
+};
+// Output type can reuse GenerateQuizQuestionsOutput if the structure is the same
+// or define a specific one if different. Assuming same for now.
+
+// For Flashcard Generation from Notes
+export type GenerateFlashcardsFromNotesInput = {
+  notesContent: string;
+  numFlashcards: number;
+};
+// Output type can reuse GenerateFlashcardsOutput.
 
 
 // For News API
@@ -127,3 +146,42 @@ export interface DefinitionChallengeWord {
   definition: string;
   hint: string; 
 }
+
+// For YouTube Search Flow
+export interface YoutubeVideoItem {
+  videoId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl: string;
+  channelTitle?: string;
+}
+export interface YoutubeSearchInput {
+  query: string;
+  maxResults?: number;
+}
+export interface YoutubeSearchOutput {
+  videos: YoutubeVideoItem[];
+}
+
+// For Google Books Search Flow
+export interface GoogleBookItem {
+  bookId: string;
+  title: string;
+  authors?: string[];
+  description?: string;
+  thumbnailUrl?: string;
+  publishedDate?: string;
+  pageCount?: number;
+  infoLink?: string;
+}
+export interface GoogleBooksSearchInput {
+  query: string;
+  maxResults?: number;
+}
+export interface GoogleBooksSearchOutput {
+  books: GoogleBookItem[];
+}
+
+// Generic type for TanStack Query useQuery error
+// This can be a basic Error or a more specific type if your actions throw custom errors
+export type QueryError = Error;

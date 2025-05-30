@@ -40,10 +40,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-        setVoicePreference('luma'); 
-        voicePreferenceWasSetRef.current = true;
+        // Default voice preference is set by the parent page (StudyPage)
+        // This component just reacts to the selectedVoice from the hook
+        voicePreferenceWasSetRef.current = true; 
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [supportedVoices]);
 
   useEffect(() => {
     if (notesContent) {
@@ -52,7 +53,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         .replace(/#+\s*/g, '') 
         .replace(/(\*\*|__)(.*?)\1/g, '$2') 
         .replace(/(\*|_)(.*?)\1/g, '$2')
-        .replace(/---|===/g, ''); // Remove horizontal rules
+        .replace(/---|===/g, ''); 
       setCleanedNotesForTTS(textForSpeech);
     }
   }, [notesContent]);
@@ -89,7 +90,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       .replace(/<[^>]+>/g, '')
       .replace(/(\r\n|\n|\r)/gm, "\n")
       .replace(/\n{3,}/g, "\n\n")
-      .replace(/---|===/g, ''); // Remove horizontal rules
+      .replace(/---|===/g, ''); 
 
     const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8;' });
     const link = document.createElement("a");
@@ -121,20 +122,39 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         }
         return child;
       }).flat();
-      return <p {...props} className="my-2">{newChildren}</p>;
+      return <p {...props} className="my-2 leading-relaxed">{newChildren}</p>;
     },
-    // Basic styling for headings, lists, etc. can be enhanced in globals.css with .prose
+    h1: (props: any) => <h1 className="text-3xl font-bold mt-6 mb-3 pb-2 border-b border-primary/30 text-primary">{props.children}</h1>,
+    h2: (props: any) => <h2 className="text-2xl font-semibold mt-5 mb-2.5 pb-1 border-b border-primary/20 text-primary/90">{props.children}</h2>,
+    h3: (props: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80">{props.children}</h3>,
+    ul: (props: any) => <ul className="list-disc pl-5 my-2 space-y-1">{props.children}</ul>,
+    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ol>,
+    li: (props: any) => <li className="mb-1">{props.children}</li>,
+    blockquote: (props: any) => <blockquote className="border-l-4 border-accent pl-4 py-2 my-3 italic bg-accent/10 text-accent-foreground/90 rounded-r-md">{props.children}</blockquote>,
+    code: (props: any) => {
+        const { className, children, ...rest } = props;
+        const match = /language-(\w+)/.exec(className || '');
+        return match ? (
+          <pre className="bg-muted/50 p-3 rounded-md overflow-x-auto text-sm my-2"><code className={className} {...rest}>{children}</code></pre>
+        ) : (
+          <code className="bg-muted/50 px-1 py-0.5 rounded-sm text-sm text-primary" {...rest}>{children}</code>
+        );
+    },
+    table: (props: any) => <div className="overflow-x-auto my-3"><table className="table-auto w-full border-collapse border border-border">{props.children}</table></div>,
+    th: (props: any) => <th className="border border-border px-3 py-1.5 bg-muted/40 font-medium text-left">{props.children}</th>,
+    td: (props: any) => <td className="border border-border px-3 py-1.5 text-left">{props.children}</td>,
   };
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia') || selectedVoice?.name.toLowerCase().includes('female')) return 'luma';
-    if (selectedVoice?.name.toLowerCase().includes('kai') || selectedVoice?.name.toLowerCase().includes('male')) return 'kai';
-    return 'luma';
+    // This part might need adjustment if selectedVoice can be null initially even with a preference
+    if (selectedVoice?.name.toLowerCase().includes('luma') || selectedVoice?.name.toLowerCase().includes('zia')) return 'luma';
+    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
+    return 'luma'; // Default UI selection
   };
 
   return (
-    <Card className="shadow-lg flex-1 flex flex-col min-h-0">
+    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
       <CardHeader className="sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <CardTitle className="text-base md:text-lg text-primary font-semibold flex items-center gap-2 truncate">
