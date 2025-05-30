@@ -5,23 +5,19 @@ import type { GoogleBookItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { BookOpen, ExternalLink, Eye, BookText } from 'lucide-react';
+import { BookOpen, ExternalLink, BookText } from 'lucide-react';
 
 interface BookResultItemProps {
   book: GoogleBookItem;
-  onPreviewRequest: (book: GoogleBookItem) => void;
+  onPreviewRequest: (book: GoogleBookItem) => void; // This will now trigger fullscreen or new tab
 }
 
 export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) {
-  const placeholderImage = `https://placehold.co/300x450.png?text=${encodeURIComponent(book.title.substring(0, 10) + '...')}`; // Higher res placeholder
+  const placeholderImage = `https://placehold.co/300x450.png?text=${encodeURIComponent(book.title.substring(0, 10) + '...')}`;
   const dataAiHintKeywords = book.title.toLowerCase().split(' ').slice(0, 2).join(' ');
 
   const handlePrimaryAction = () => {
-    if (book.embeddable) {
-      onPreviewRequest(book);
-    } else if (book.webReaderLink || book.infoLink) {
-      window.open(book.webReaderLink || book.infoLink!, '_blank', 'noopener,noreferrer');
-    }
+    onPreviewRequest(book); // Parent (LibraryPage) will handle if it's embeddable (fullscreen) or opens new tab
   };
 
   return (
@@ -32,7 +28,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             src={book.thumbnailUrl || placeholderImage}
             alt={`Cover of ${book.title}`}
             fill={true}
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px" // More specific sizes
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
             style={{ objectFit: book.thumbnailUrl ? 'cover' : 'contain' }}
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => {
@@ -41,11 +37,11 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
               target.src = placeholderImage;
               target.style.objectFit = 'contain';
             }}
-            quality={85} // Request higher quality for next/image optimization
+            quality={85}
           />
            {book.embeddable && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <BookText className="w-10 h-10 text-white/80" /> {/* Changed icon to BookText */}
+              <BookText className="w-10 h-10 text-white/80" />
             </div>
           )}
         </div>
@@ -58,20 +54,22 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
         {book.description || "No description available."}
       </CardContent>
       <CardFooter className="p-3 pt-1 flex-col items-stretch gap-1.5">
-        {book.embeddable && (
-          <Button variant="default" size="sm" onClick={() => onPreviewRequest(book)} className="w-full text-xs">
+        {book.embeddable ? (
+          <Button variant="default" size="sm" onClick={handlePrimaryAction} className="w-full text-xs">
             <BookText className="mr-1.5 h-3.5 w-3.5" /> Read in App
           </Button>
-        )}
-        {(book.infoLink) && (
-           <Button variant="outline" size="sm" asChild className="w-full text-xs">
-            <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
-              <BookOpen className="mr-1.5 h-3.5 w-3.5" /> More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
-            </a>
+        ) : (
+          <Button variant="outline" size="sm" onClick={handlePrimaryAction} className="w-full text-xs">
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> View on Google Books
           </Button>
         )}
-         {!book.embeddable && !book.infoLink && ( // Fallback if not embeddable and no infoLink
-            <p className="text-xs text-muted-foreground text-center py-1">No direct view options available.</p>
+        {/* Always show "More Info" as a secondary option if infoLink exists and is different from primary action if not embeddable */}
+        {book.infoLink && (book.embeddable || (!book.embeddable && book.infoLink !== (book.webReaderLink || book.infoLink))) && (
+           <Button variant="link" size="sm" asChild className="w-full text-xs justify-center h-auto py-1 px-2">
+            <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
+              More Info <ExternalLink className="ml-1 h-3 w-3" />
+            </a>
+          </Button>
         )}
       </CardFooter>
     </Card>

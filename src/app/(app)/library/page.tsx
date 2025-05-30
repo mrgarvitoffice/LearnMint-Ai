@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+// Dialog imports are removed as it's no longer used for book preview here
 import { MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSearchInput, GoogleBooksSearchInput, YoutubeSearchOutput, GoogleBooksSearchOutput } from '@/lib/types';
@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'; // Keep for YouTube
 
 const PAGE_TITLE = "LearnMint Knowledge Hub";
 
@@ -32,15 +33,15 @@ export default function LibraryPage() {
   const [selectedYoutubeVideo, setSelectedYoutubeVideo] = useState<YoutubeVideoItem | null>(null);
 
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
-  const [selectedBookForPreview, setSelectedBookForPreview] = useState<GoogleBookItem | null>(null);
   
+  // State for new direct fullscreen book viewer
+  const [fullscreenBook, setFullscreenBook] = useState<GoogleBookItem | null>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const { toast } = useToast();
-
-  const iframeContainerRef = useRef<HTMLDivElement>(null); 
-  const [isBookReaderFullScreen, setIsBookReaderFullScreen] = useState(false);
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -71,14 +72,6 @@ export default function LibraryPage() {
       setCurrentMathFact({ text: MATH_FACTS_FALLBACK[randomIndex] });
     }
   }, [mathFact, isLoadingMathFact]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsBookReaderFullScreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
 
   const handleRefreshMathFact = () => {
     refetchMathFact();
@@ -121,7 +114,6 @@ export default function LibraryPage() {
     }
   });
 
-
   const handleYoutubeSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
@@ -139,23 +131,55 @@ export default function LibraryPage() {
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9, country: 'US' });
     }
   };
-
-  const toggleBookReaderFullscreen = () => {
-    if (!iframeContainerRef.current) return;
-    if (!document.fullscreenElement) {
-      iframeContainerRef.current.requestFullscreen().catch(err => {
-        toast({
-            title: "Fullscreen Error",
-            description: `Could not enter fullscreen: ${err.message}`,
-            variant: "destructive"
-        });
-      });
+  
+  // --- New Fullscreen Book Viewer Logic ---
+  const openBookInFullscreen = (book: GoogleBookItem) => {
+    if (book.embeddable) {
+      setFullscreenBook(book);
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      // Fallback for non-embeddable books
+      window.open(book.webReaderLink || book.infoLink || `https://books.google.com/books?id=${book.bookId}`, '_blank', 'noopener,noreferrer');
+      toast({ title: "Opening on Google Books", description: "This book will be opened on the Google Books website." });
     }
   };
+
+  const closeFullscreenViewer = useCallback(() => {
+    if (document.fullscreenElement && fullscreenContainerRef.current === document.fullscreenElement) {
+      document.exitFullscreen().catch(err => console.error("Error exiting fullscreen:", err));
+    }
+    setFullscreenBook(null);
+  }, []);
+
+  useEffect(() => {
+    const handleActualFullscreenChange = () => {
+      // If browser fullscreen is exited (e.g., by Esc key) and our state still thinks a book should be fullscreen, reset state.
+      if (!document.fullscreenElement && fullscreenBook) {
+        setFullscreenBook(null); 
+      }
+    };
+
+    if (fullscreenBook && fullscreenContainerRef.current) {
+      fullscreenContainerRef.current.requestFullscreen()
+        .catch(err => {
+          toast({
+            title: "Fullscreen Mode Not Available",
+            description: `Could not enter fullscreen automatically: ${err.message}. Displaying in an overlay.`,
+            variant: "default", // Not destructive, as we still show the overlay
+          });
+          // The content will still be rendered in the fixed overlay even if browser fullscreen fails
+        });
+    }
+    
+    document.addEventListener('fullscreenchange', handleActualFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleActualFullscreenChange);
+      // Ensure fullscreen is exited if component unmounts or fullscreenBook changes while active
+      if (document.fullscreenElement && fullscreenContainerRef.current === document.fullscreenElement) {
+          document.exitFullscreen().catch(err => console.error("Error exiting fullscreen on cleanup:", err));
+      }
+    };
+  }, [fullscreenBook, toast]);
+  // --- End New Fullscreen Book Viewer Logic ---
 
   const otherResources = [
     { title: "Wikidata", description: "A free and open knowledge base that can be read and edited by humans and machines.", link: "https://www.wikidata.org/", icon: BookOpen },
@@ -165,208 +189,183 @@ export default function LibraryPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-10">
-      <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><BookMarked className="h-12 w-12 text-primary" /></div>
-          <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
-          <CardDescription>Explore a collection of educational resources and tools.</CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Card className="bg-secondary/30 border-orange-500/30 hover:shadow-xl transition-shadow duration-300 group">
-        <CardHeader className="pb-2 pt-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Quote className="h-7 w-7 text-orange-500/80 group-hover:text-orange-600 transition-colors" />
-            <CardTitle className="text-xl font-semibold text-orange-600 dark:text-orange-500 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">Math Fact of the Day</CardTitle>
+      {/* Fullscreen Book Viewer - renders as an overlay if fullscreenBook is set */}
+      {fullscreenBook && (
+        <div
+          ref={fullscreenContainerRef}
+          className="fixed inset-0 z-[100] flex flex-col bg-background" // High z-index, covers everything
+        >
+          <div className="flex items-center justify-between p-2 bg-muted/80 backdrop-blur-sm shadow-md">
+            <h3 className="text-lg font-semibold truncate text-foreground pl-2">{fullscreenBook.title}</h3>
+            <Button variant="ghost" size="icon" onClick={closeFullscreenViewer} aria-label="Close reader">
+              <X className="h-6 w-6 text-foreground" />
+            </Button>
           </div>
-          {isLoadingMathFact && !currentMathFact ? (
-            <div className="flex items-center space-x-2 text-muted-foreground py-3"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading math fact...</span></div>
-            ) : currentMathFact ? (
-            <CardDescription className="text-lg text-orange-700 dark:text-orange-400 font-medium pt-1 italic py-3">
-              "{currentMathFact.text}"
-            </CardDescription>
-            ) : (
-            <CardDescription className="text-lg text-muted-foreground py-3">Could not load math fact. Try refreshing!</CardDescription>
-            )
-          }
-        </CardHeader>
-        <CardFooter className="pt-2 pb-4">
-          <Button onClick={handleRefreshMathFact} variant="outline" size="sm" disabled={isLoadingMathFact} className="bg-background/70 group-hover:border-orange-500/50 group-hover:text-orange-600 transition-colors">
-            {isLoadingMathFact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}New Fact
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <section>
-        <Card>
-          <CardHeader><CardTitle className="text-xl flex items-center gap-2"><Youtube className="w-7 h-7 text-red-500" />Search & Play YouTube Videos</CardTitle></CardHeader>
-          <form onSubmit={handleYoutubeSearchSubmit}>
-            <CardContent className="flex gap-2">
-              <Input type="search" placeholder="Search for educational videos..." value={youtubeSearchTerm} onChange={(e) => setYoutubeSearchTerm(e.target.value)} disabled={youtubeSearchMutation.isPending}/>
-              <Button type="submit" disabled={youtubeSearchMutation.isPending || !youtubeSearchTerm.trim()}>
-                {youtubeSearchMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Search
-              </Button>
-            </CardContent>
-          </form>
-          {youtubeSearchMutation.isPending && youtubeResults.length === 0 && (
-             <div className="px-6 pb-6 flex items-center justify-center space-x-2 text-muted-foreground h-40">
-                <Loader2 className="h-6 w-6 animate-spin" /><span>Searching YouTube...</span>
-             </div>
-          )}
-          {youtubeResults.length > 0 && (
-            <div className="px-6 pb-6">
-              <h3 className="text-lg font-semibold mb-3 mt-4">Results:</h3>
-              <ScrollArea className="h-[400px] w-full pr-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {youtubeResults.map(video => (
-                    <YoutubeVideoResultItem
-                      key={video.videoId}
-                      video={video}
-                      onPlay={() => setSelectedYoutubeVideo(video)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-          {!youtubeSearchMutation.isPending && youtubeSearchMutation.isSuccess && youtubeResults.length === 0 && (
-             <div className="px-6 pb-6 text-center text-muted-foreground h-40 flex flex-col justify-center items-center">
-                <Video className="w-10 h-10 mb-2 opacity-50" />
-                <p>No videos found for "{youtubeSearchTerm}". Try a different search.</p>
-            </div>
-          )}
-        </Card>
-      </section>
-
-      {selectedYoutubeVideo && (
-        <Dialog open={!!selectedYoutubeVideo} onOpenChange={(isOpen) => { if (!isOpen) setSelectedYoutubeVideo(null); }}>
-          <DialogContent className="max-w-3xl p-0 border-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
-            <DialogHeader className="sr-only">
-              <DialogTitle>{selectedYoutubeVideo.title}</DialogTitle>
-            </DialogHeader>
-            <div className="aspect-video relative">
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${selectedYoutubeVideo.videoId}?autoplay=1`}
-                title={selectedYoutubeVideo.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="rounded-lg"
-              ></iframe>
-               <DialogClose asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8 z-10"
-                    aria-label="Close video player"
-                >
-                    <X className="h-5 w-5" />
-                </Button>
-              </DialogClose>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <section>
-        <Card>
-          <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search & Read Google Books</CardTitle></CardHeader>
-          <form onSubmit={handleGoogleBooksSearchSubmit}>
-            <CardContent className="flex gap-2">
-              <Input type="search" placeholder="Search for books and articles..." value={googleBooksSearchTerm} onChange={(e) => setGoogleBooksSearchTerm(e.target.value)} disabled={googleBooksSearchMutation.isPending}/>
-              <Button type="submit" disabled={googleBooksSearchMutation.isPending || !googleBooksSearchTerm.trim()}>
-                {googleBooksSearchMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Search
-              </Button>
-            </CardContent>
-          </form>
-          {googleBooksSearchMutation.isPending && googleBooksResults.length === 0 && (
-             <div className="px-6 pb-6 flex items-center justify-center space-x-2 text-muted-foreground h-40">
-                <Loader2 className="h-6 w-6 animate-spin" /><span>Searching Google Books...</span>
-             </div>
-          )}
-           {googleBooksResults.length > 0 && (
-            <div className="px-6 pb-6">
-              <h3 className="text-lg font-semibold mb-3 mt-4">Book Results:</h3>
-              <ScrollArea className="h-[400px] w-full pr-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {googleBooksResults.map(book => (
-                     <BookResultItem 
-                        key={book.bookId} 
-                        book={book} 
-                        onPreviewRequest={() => setSelectedBookForPreview(book)} 
-                      />
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-           {!googleBooksSearchMutation.isPending && googleBooksSearchMutation.isSuccess && googleBooksResults.length === 0 && (
-             <div className="px-6 pb-6 text-center text-muted-foreground h-40 flex flex-col justify-center items-center">
-                <BookOpen className="w-10 h-10 mb-2 opacity-50" />
-                <p>No books found for "{googleBooksSearchTerm}". Try a different search.</p>
-            </div>
-          )}
-        </Card>
-      </section>
-
-       {selectedBookForPreview && (
-        <Dialog open={!!selectedBookForPreview} onOpenChange={(isOpen) => { if (!isOpen) setSelectedBookForPreview(null); setIsBookReaderFullScreen(false); }}>
-          <DialogContent className="max-w-5xl h-[95vh] p-0 border-0 flex flex-col data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
-            <DialogHeader className="p-3 border-b flex flex-row items-center justify-between sticky top-0 bg-background z-10">
-                <DialogTitle className="truncate text-lg sm:text-xl">{selectedBookForPreview.title}</DialogTitle>
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={toggleBookReaderFullscreen} title={isBookReaderFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
-                        {isBookReaderFullScreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-                    </Button>
-                    <DialogClose asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
-                    </DialogClose>
-                </div>
-            </DialogHeader>
-            <div ref={iframeContainerRef} className="flex-1 overflow-hidden bg-background">
-                {selectedBookForPreview.embeddable ? (
-                <iframe
-                    src={`https://books.google.com/books?id=${selectedBookForPreview.bookId}&pg=PP1&output=embed`}
-                    title={`Read ${selectedBookForPreview.title}`}
-                    className="w-full h-full border-0"
-                    allowFullScreen
-                    allow="fullscreen" 
-                ></iframe>
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-muted flex-1">
-                        <BookText className="w-16 h-16 text-muted-foreground mb-4"/>
-                        <p className="text-lg text-muted-foreground">In-app reading/preview is not available for this book.</p>
-                        {(selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink) && (
-                            <Button asChild className="mt-4">
-                                <a href={selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink!} target="_blank" rel="noopener noreferrer">
-                                    View on Google Books <ExternalLink className="ml-2 h-4 w-4" />
-                                </a>
-                            </Button>
-                        )}
-                    </div>
-                )}
-            </div>
-             {selectedBookForPreview.infoLink && (
-                <div className="p-2 flex justify-end sticky bottom-0 bg-background z-10">
-                    <Button variant="link" asChild size="sm">
-                        <a href={selectedBookForPreview.infoLink} target="_blank" rel="noopener noreferrer">
-                            More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
-                        </a>
-                    </Button>
-                </div>
-             )}
-          </DialogContent>
-        </Dialog>
-      )}
-
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Other Helpful Resources</h2>
-         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-           {otherResources.map(resource => <ResourceCard key={resource.title} title={resource.title} description={resource.description} link={resource.link} icon={resource.icon} linkText="Visit Site"/>)}
+          <iframe
+            src={`https://books.google.com/books?id=${fullscreenBook.bookId}&pg=PP1&output=embed`}
+            title={`Read ${fullscreenBook.title}`}
+            className="w-full flex-1 border-0" // flex-1 makes it take remaining space
+            allow="fullscreen" // Allow iframe to potentially use its own fullscreen within our fullscreen
+          ></iframe>
         </div>
-      </section>
+      )}
+
+      {/* Rest of the Library Page content */}
+      {!fullscreenBook && (
+        <>
+          <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4"><BookMarked className="h-12 w-12 text-primary" /></div>
+              <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+              <CardDescription>Explore a collection of educational resources and tools.</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-secondary/30 border-orange-500/30 hover:shadow-xl transition-shadow duration-300 group">
+            <CardHeader className="pb-2 pt-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Quote className="h-7 w-7 text-orange-500/80 group-hover:text-orange-600 transition-colors" />
+                <CardTitle className="text-xl font-semibold text-orange-600 dark:text-orange-500 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">Math Fact of the Day</CardTitle>
+              </div>
+              {isLoadingMathFact && !currentMathFact ? (
+                <div className="flex items-center space-x-2 text-muted-foreground py-3"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading math fact...</span></div>
+                ) : currentMathFact ? (
+                <CardDescription className="text-lg text-orange-700 dark:text-orange-400 font-medium pt-1 italic py-3">
+                  "{currentMathFact.text}"
+                </CardDescription>
+                ) : (
+                <CardDescription className="text-lg text-muted-foreground py-3">Could not load math fact. Try refreshing!</CardDescription>
+                )
+              }
+            </CardHeader>
+            <CardFooter className="pt-2 pb-4">
+              <Button onClick={handleRefreshMathFact} variant="outline" size="sm" disabled={isLoadingMathFact} className="bg-background/70 group-hover:border-orange-500/50 group-hover:text-orange-600 transition-colors">
+                {isLoadingMathFact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}New Fact
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <section>
+            <Card>
+              <CardHeader><CardTitle className="text-xl flex items-center gap-2"><Youtube className="w-7 h-7 text-red-500" />Search & Play YouTube Videos</CardTitle></CardHeader>
+              <form onSubmit={handleYoutubeSearchSubmit}>
+                <CardContent className="flex gap-2">
+                  <Input type="search" placeholder="Search for educational videos..." value={youtubeSearchTerm} onChange={(e) => setYoutubeSearchTerm(e.target.value)} disabled={youtubeSearchMutation.isPending}/>
+                  <Button type="submit" disabled={youtubeSearchMutation.isPending || !youtubeSearchTerm.trim()}>
+                    {youtubeSearchMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Search
+                  </Button>
+                </CardContent>
+              </form>
+              {youtubeSearchMutation.isPending && youtubeResults.length === 0 && (
+                <div className="px-6 pb-6 flex items-center justify-center space-x-2 text-muted-foreground h-40">
+                    <Loader2 className="h-6 w-6 animate-spin" /><span>Searching YouTube...</span>
+                </div>
+              )}
+              {youtubeResults.length > 0 && (
+                <div className="px-6 pb-6">
+                  <h3 className="text-lg font-semibold mb-3 mt-4">Results:</h3>
+                  <ScrollArea className="h-[400px] w-full pr-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {youtubeResults.map(video => (
+                        <YoutubeVideoResultItem
+                          key={video.videoId}
+                          video={video}
+                          onPlay={() => setSelectedYoutubeVideo(video)}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+              {!youtubeSearchMutation.isPending && youtubeSearchMutation.isSuccess && youtubeResults.length === 0 && (
+                <div className="px-6 pb-6 text-center text-muted-foreground h-40 flex flex-col justify-center items-center">
+                    <Video className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No videos found for "{youtubeSearchTerm}". Try a different search.</p>
+                </div>
+              )}
+            </Card>
+          </section>
+
+          {selectedYoutubeVideo && (
+            <Dialog open={!!selectedYoutubeVideo} onOpenChange={(isOpen) => { if (!isOpen) setSelectedYoutubeVideo(null); }}>
+              <DialogContent className="max-w-3xl p-0 border-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>{selectedYoutubeVideo.title}</DialogTitle>
+                </DialogHeader>
+                <div className="aspect-video relative">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${selectedYoutubeVideo.videoId}?autoplay=1`}
+                    title={selectedYoutubeVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="rounded-lg"
+                  ></iframe>
+                  <DialogClose asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8 z-10"
+                        aria-label="Close video player"
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <section>
+            <Card>
+              <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search & Read Google Books</CardTitle></CardHeader>
+              <form onSubmit={handleGoogleBooksSearchSubmit}>
+                <CardContent className="flex gap-2">
+                  <Input type="search" placeholder="Search for books and articles..." value={googleBooksSearchTerm} onChange={(e) => setGoogleBooksSearchTerm(e.target.value)} disabled={googleBooksSearchMutation.isPending}/>
+                  <Button type="submit" disabled={googleBooksSearchMutation.isPending || !googleBooksSearchTerm.trim()}>
+                    {googleBooksSearchMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Search
+                  </Button>
+                </CardContent>
+              </form>
+              {googleBooksSearchMutation.isPending && googleBooksResults.length === 0 && (
+                <div className="px-6 pb-6 flex items-center justify-center space-x-2 text-muted-foreground h-40">
+                    <Loader2 className="h-6 w-6 animate-spin" /><span>Searching Google Books...</span>
+                </div>
+              )}
+              {googleBooksResults.length > 0 && (
+                <div className="px-6 pb-6">
+                  <h3 className="text-lg font-semibold mb-3 mt-4">Book Results:</h3>
+                  <ScrollArea className="h-[400px] w-full pr-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {googleBooksResults.map(book => (
+                        <BookResultItem 
+                            key={book.bookId} 
+                            book={book} 
+                            onPreviewRequest={openBookInFullscreen} // Updated to new handler
+                          />
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+              {!googleBooksSearchMutation.isPending && googleBooksSearchMutation.isSuccess && googleBooksResults.length === 0 && (
+                <div className="px-6 pb-6 text-center text-muted-foreground h-40 flex flex-col justify-center items-center">
+                    <BookOpen className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No books found for "{googleBooksSearchTerm}". Try a different search.</p>
+                </div>
+              )}
+            </Card>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Other Helpful Resources</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {otherResources.map(resource => <ResourceCard key={resource.title} title={resource.title} description={resource.description} link={resource.link} icon={resource.icon} linkText="Visit Site"/>)}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }
