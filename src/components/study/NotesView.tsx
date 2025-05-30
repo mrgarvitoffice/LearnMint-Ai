@@ -1,0 +1,176 @@
+
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Download, Volume2, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
+import { useTTS } from '@/hooks/useTTS';
+import { useSound } from '@/hooks/useSound';
+import { useToast } from '@/hooks/use-toast';
+import AiGeneratedImage from './AiGeneratedImage'; // Assuming this component is created
+
+interface NotesViewProps {
+  notesContent: string | null;
+  topic: string;
+}
+
+const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
+  const { 
+    speak, 
+    cancel: cancelTTS, 
+    isSpeaking, 
+    selectedVoice, 
+    setSelectedVoiceURI, 
+    setVoicePreference, 
+    supportedVoices 
+  } = useTTS();
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { toast } = useToast();
+  
+  const [speechState, setSpeechState] = useState<'idle' | 'playing' | 'paused'>('idle');
+  const notesContentRef = useRef<HTMLDivElement>(null);
+  const voicePreferenceWasSetRef = useRef(false);
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia'); // Default to Zia if available
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    // Update speechState if TTS finishes naturally or is cancelled by another source
+    if (!isSpeaking && (speechState === 'playing' || speechState === 'paused')) {
+        setSpeechState('idle');
+    }
+  }, [isSpeaking, speechState]);
+
+  const handleSpeakNotes = useCallback(() => {
+    playClickSound();
+    if (!notesContent) return;
+
+    const textToSpeak = notesContentRef.current?.innerText || notesContent;
+
+    if (speechState === 'playing') {
+        cancelTTS();
+        setSpeechState('paused');
+    } else if (speechState === 'paused') {
+        speak(textToSpeak); // Restart from beginning or implement resume logic
+        setSpeechState('playing');
+    } else { // 'idle'
+        speak(textToSpeak);
+        setSpeechState('playing');
+    }
+  }, [playClickSound, notesContent, speechState, cancelTTS, speak]);
+
+  const handleStopSpeakNotes = useCallback(() => {
+    playClickSound();
+    cancelTTS();
+    setSpeechState('idle');
+  }, [playClickSound, cancelTTS]);
+
+  const handleDownloadNotes = () => {
+    playClickSound();
+    if (!notesContent) {
+      toast({ title: "No Notes", description: "Nothing to download.", variant: "destructive" });
+      return;
+    }
+    // Basic stripping, can be improved
+    const plainText = notesContent
+      .replace(/\[VISUAL_PROMPT:[^\]]+\]/g, '') 
+      .replace(/#{1,6}\s?/g, '')       
+      .replace(/(\*\*|__)(.*?)\1/g, '$2') 
+      .replace(/(\*|_)(.*?)\1/g, '$2')   
+      .replace(/`{1,3}(.*?)`{1,3}/g, '$1')
+      .replace(/<[^>]+>/g, '') // Strip HTML tags that might be in markdown
+      .replace(/(\r\n|\n|\r)/gm, "\n") // Normalize line breaks
+      .replace(/\n{3,}/g, "\n\n"); // Reduce multiple blank lines
+
+    const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${topic.replace(/\s+/g, '_')}_notes.txt`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({ title: "Notes Downloaded", description: "Notes saved as a .txt file." });
+    if(selectedVoice && !isSpeaking) speak("Notes downloaded!");
+  };
+
+  const renderMarkdownWithPlaceholders = (markdownContent: string) => {
+    const parts = markdownContent.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('[VISUAL_PROMPT:')) {
+        const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1);
+        return <AiGeneratedImage key={`vis-${index}`} promptText={promptText} />;
+      }
+      return <ReactMarkdown key={`md-${index}`} remarkPlugins={[remarkGfm]} className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words">{part}</ReactMarkdown>;
+    });
+  };
+
+  if (!notesContent) {
+    return (
+      <Card className="mt-6 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg md:text-xl text-primary font-semibold">Study Notes for: {topic}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No notes available for this topic yet, or an error occurred.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mt-6 shadow-lg flex-1 flex flex-col">
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <CardTitle className="text-lg md:text-xl text-primary font-semibold flex items-center gap-2">
+            Study Notes for: {topic}
+          </CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')} defaultValue={selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai')? 'kai' : selectedVoice?.name.toLowerCase().includes('female') ? 'female' : 'male'}>
+              <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Type" /> </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zia">Zia (Female)</SelectItem>
+                <SelectItem value="kai">Kai (Male)</SelectItem>
+                <SelectItem value="female">Female (Default)</SelectItem>
+                <SelectItem value="male">Male (Default)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
+              <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Engine" /> </SelectTrigger>
+              <SelectContent>
+                {supportedVoices.length > 0 ? supportedVoices.map(voice => (
+                  <SelectItem key={voice.voiceURI} value={voice.voiceURI} className="text-xs"> {voice.name} ({voice.lang})</SelectItem>
+                )) : <SelectItem value="no-voices" disabled className="text-xs">No voices</SelectItem>}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title={speechState === 'playing' ? "Pause Notes" : speechState === 'paused' ? "Resume Notes" : "Speak Notes"}>
+              {speechState === 'playing' ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+            </Button>
+            <Button onClick={handleStopSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={speechState === 'idle'}>
+              <StopCircle className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleDownloadNotes} variant="outline" size="sm" className="h-8 text-xs"><Download className="mr-1.5 h-3.5 w-3.5"/>Download</Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-hidden">
+        <ScrollArea className="h-[calc(100vh-28rem)] sm:h-[calc(100vh-25rem)] w-full p-1 sm:p-4 border rounded-md bg-muted/20" ref={notesContentRef}>
+           {renderMarkdownWithPlaceholders(notesContent)}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default NotesView;

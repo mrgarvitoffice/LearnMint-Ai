@@ -1,14 +1,19 @@
 
+// Matches the more detailed QuizQuestionSchema from generate-quiz-questions.ts
 export interface QuizQuestion {
   question: string;
-  options: string[];
+  options?: string[]; // Optional: only for multiple-choice (e.g. 4 options)
   answer: string;
+  type: 'multiple-choice' | 'short-answer'; // To distinguish question types
   explanation?: string;
+  userAnswer?: string; // For Custom Test review
+  isCorrect?: boolean; // For Custom Test review
 }
 
+// Matches FlashcardSchema from generate-flashcards.ts
 export interface Flashcard {
   term: string;
-  definition: string;
+  definition: string; // Can include bullet points or formulas
 }
 
 export interface NewsArticle {
@@ -19,7 +24,7 @@ export interface NewsArticle {
   creator: string[] | null;
   video_url: string | null;
   description: string | null;
-  content?: string; // Optional, might not always be full
+  content?: string; 
   pubDate: string;
   image_url: string | null;
   source_id: string;
@@ -41,27 +46,26 @@ export interface NewsApiResponse {
 
 export interface MathFact {
   text: string;
-  number?: number; // Optional, depending on API
-  found?: boolean; // Optional
-  type?: string; // Optional
+  number?: number; 
+  found?: boolean; 
+  type?: string; 
 }
 
-// For Calculator
 export type CalculatorButtonType = 
   | 'digit' 
   | 'operator' 
-  | 'action' // (AC, +/-, %)
+  | 'action' 
   | 'equals'
   | 'decimal'
-  | 'memory' // (MC, MR, M+, M-) - for future
-  | 'scientific'; // (sin, cos, log, etc.)
+  | 'memory' 
+  | 'scientific';
 
 export interface CalculatorButtonConfig {
   value: string;
-  label: string; // What's displayed on the button
+  label: string; 
   type: CalculatorButtonType;
-  className?: string; // For specific styling
-  action?: string; // For scientific functions like 'sin', 'cos', etc. or actions like 'clear', 'toggleSign'
+  className?: string; 
+  action?: string; 
 }
 
 export type UnitCategory = 'Length' | 'Temperature' | 'Weight/Mass' | 'Volume' | 'Area' | 'Speed';
@@ -69,8 +73,8 @@ export type UnitCategory = 'Length' | 'Temperature' | 'Weight/Mass' | 'Volume' |
 export interface Unit {
   name: string;
   symbol: string;
-  factor: number; // Factor relative to a base unit within the category
-  offset?: number; // For units like Celsius/Fahrenheit
+  factor: number; 
+  offset?: number; 
 }
 
 export interface UnitConverterState {
@@ -81,17 +85,15 @@ export interface UnitConverterState {
   category: UnitCategory;
 }
 
-// For Chatbot
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  image?: string; // Base64 data URI for user images
+  image?: string; 
   timestamp: Date;
-  type?: 'typing_indicator'; // Added for typing indicator
+  type?: 'typing_indicator';
 }
 
-// For Custom Test
 export interface TestSettings {
   topics: string[];
   notes?: string;
@@ -99,25 +101,19 @@ export interface TestSettings {
   selectedRecentTopics?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   numQuestions: number;
-  timer?: number; // in minutes, 0 for no timer
-  perQuestionTimer?: number; // in seconds, 0 for no timer per question
+  timer?: number; 
+  perQuestionTimer?: number;
 }
 
-export interface TestQuestion extends QuizQuestion {
-  userAnswer?: string;
-  isCorrect?: boolean;
-}
+// For the /study page, using types from the AI flows
+export type { GenerateStudyNotesOutput, GenerateStudyNotesInput } from '@/ai/flows/generate-study-notes';
+export type { GenerateQuizQuestionsOutput, GenerateQuizQuestionsInput } from '@/ai/flows/generate-quiz-questions';
+export type { GenerateFlashcardsOutput, GenerateFlashcardsInput } from '@/ai/flows/generate-flashcards';
 
-export interface TestResult {
-  questions: TestQuestion[];
-  score: number;
-  totalQuestions: number;
-  timeTaken?: number; // in seconds
-}
 
-// For Definition Challenge Game
+// For Definition Challenge Game in /arcade
 export interface DefinitionChallengeWord {
   term: string;
   definition: string;
-  hint: string;
+  hint: string; 
 }
