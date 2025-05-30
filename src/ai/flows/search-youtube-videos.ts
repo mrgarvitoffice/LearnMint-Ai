@@ -19,13 +19,13 @@ const YoutubeVideoItemSchema = z.object({
   channelTitle: z.string().optional().describe('The title of the YouTube channel.'),
 });
 
-export const YoutubeSearchInputSchema = z.object({
+const YoutubeSearchInputSchema = z.object({
   query: z.string().describe('The search query for YouTube videos.'),
   maxResults: z.number().min(1).max(25).default(5).describe('Maximum number of results to return.'),
 });
 export type YoutubeSearchInput = z.infer<typeof YoutubeSearchInputSchema>;
 
-export const YoutubeSearchOutputSchema = z.object({
+const YoutubeSearchOutputSchema = z.object({
   videos: z.array(YoutubeVideoItemSchema).describe('A list of found YouTube videos.'),
 });
 export type YoutubeSearchOutput = z.infer<typeof YoutubeSearchOutputSchema>;

@@ -22,13 +22,13 @@ const GoogleBookItemSchema = z.object({
   infoLink: z.string().url().optional().describe('A link to more information about the book on Google Books.'),
 });
 
-export const GoogleBooksSearchInputSchema = z.object({
+const GoogleBooksSearchInputSchema = z.object({
   query: z.string().describe('The search query for Google Books.'),
   maxResults: z.number().min(1).max(40).default(10).describe('Maximum number of results to return (max 40 for Google Books API).'),
 });
 export type GoogleBooksSearchInput = z.infer<typeof GoogleBooksSearchInputSchema>;
 
-export const GoogleBooksSearchOutputSchema = z.object({
+const GoogleBooksSearchOutputSchema = z.object({
   books: z.array(GoogleBookItemSchema).describe('A list of found Google Books.'),
 });
 export type GoogleBooksSearchOutput = z.infer<typeof GoogleBooksSearchOutputSchema>;
