@@ -7,7 +7,7 @@ interface TTSHook {
   speak: (text: string) => void;
   pauseTTS: () => void;
   resumeTTS: () => void;
-  cancelTTS: () => void; // Renamed from stopTTS for clarity
+  cancelTTS: () => void;
   isSpeaking: boolean;
   isPaused: boolean;
   supportedVoices: SpeechSynthesisVoice[];
@@ -31,73 +31,94 @@ export function useTTS(): TTSHook {
 
       if (voices.length > 0) {
         let preferredVoice: SpeechSynthesisVoice | undefined;
-        const currentLangPrefix = selectedVoice?.lang.split('-')[0] || 'en'; // Prioritize current language if a voice is already selected
+        const currentLangPrefix = selectedVoice?.lang.split('-')[0] || 'en'; // Prioritize current language
 
+        // Determine target gender from preference
+        const isFemalePreference = voicePreference === 'female' || voicePreference === 'zia';
+        const isMalePreference = voicePreference === 'male' || voicePreference === 'kai';
+
+        // 1. Try specific names if preference is set
         if (voicePreference === 'zia') {
           preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('zia') && voice.lang.startsWith(currentLangPrefix));
         }
         if (!preferredVoice && voicePreference === 'kai') {
           preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(currentLangPrefix));
         }
-        
-        // General female preference if Zia not found or not preferred OR if preference is just 'female'
-        if (!preferredVoice && (voicePreference === 'female' || voicePreference === 'zia')) {
+
+        // 2. If specific name not found, try general gender preference
+        if (!preferredVoice && isFemalePreference) {
           preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.startsWith('en-US'));
-          if (!preferredVoice) { // If no US female, try any English female *not* Google UK
+          if (!preferredVoice) {
             preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.startsWith('en') && !voice.name.toLowerCase().includes('google uk english female'));
           }
-           // Removed the broader fallback to any English female to avoid Google UK English Female if other options exhausted
+          if (!preferredVoice) { // Last resort for any English female if others failed
+            preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('female') && voice.lang.startsWith('en'));
+          }
         }
-        // General male preference if Kai not found or not preferred OR if preference is just 'male'
-        if (!preferredVoice && (voicePreference === 'male' || voicePreference === 'kai')) {
+
+        if (!preferredVoice && isMalePreference) {
           preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('male') && voice.lang.startsWith('en-US'));
           if (!preferredVoice) {
             preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('male') && voice.lang.startsWith('en'));
           }
         }
+        
+        // 3. If still no voice, and a gender preference was set, try broader language fallbacks WHILE respecting gender
+        if (!preferredVoice && (isFemalePreference || isMalePreference)) {
+            const targetLang = 'en-US';
+            const broaderLang = 'en';
+            const genderKeyword = isFemalePreference ? 'female' : 'male';
 
-        // Broader fallbacks if still no preference match
-        if (!preferredVoice) {
-            // Try any US English voice, deprioritizing UK Female if possible
-            preferredVoice = voices.find(v => v.lang.startsWith('en-US') && !v.name.toLowerCase().includes('google uk english female'));
-            if (!preferredVoice) { // If still no match, try any US voice
-                preferredVoice = voices.find(v => v.lang.startsWith('en-US'));
+            preferredVoice = voices.find(v => v.lang.startsWith(targetLang) && v.name.toLowerCase().includes(genderKeyword));
+            if (!preferredVoice && isFemalePreference) { // Special deprioritization for Google UK Female
+                 preferredVoice = voices.find(v => v.lang.startsWith(broaderLang) && v.name.toLowerCase().includes(genderKeyword) && !v.name.toLowerCase().includes('google uk english female'));
+            } else if (!preferredVoice && isMalePreference) {
+                 preferredVoice = voices.find(v => v.lang.startsWith(broaderLang) && v.name.toLowerCase().includes(genderKeyword));
+            }
+            // If still no match after specific language+gender, try any language+gender
+            if (!preferredVoice) {
+                preferredVoice = voices.find(v => v.name.toLowerCase().includes(genderKeyword));
             }
         }
+
+        // 4. Absolute fallbacks if no voice preference or if all gendered searches fail
         if (!preferredVoice) {
-            // Try any English voice, deprioritizing UK Female if possible
+            preferredVoice = voices.find(v => v.lang.startsWith('en-US'));
+        }
+        if (!preferredVoice) {
             preferredVoice = voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('google uk english female'));
-             if (!preferredVoice) { // If still no match, try any English voice
-                preferredVoice = voices.find(v => v.lang.startsWith('en'));
-            }
+        }
+        if (!preferredVoice) {
+            preferredVoice = voices.find(v => v.lang.startsWith('en'));
         }
         
         if (preferredVoice) {
           setSelectedVoice(preferredVoice);
-        } else if (voices.length > 0 && !selectedVoice) { // Only set absolute fallback if no voice is selected at all
+        } else if (voices.length > 0 && !selectedVoice) { 
           setSelectedVoice(voices[0]); 
         }
       }
     }
-  }, [voicePreference, selectedVoice?.lang]); // Added selectedVoice?.lang to re-evaluate if user changes voice and then preference
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voicePreference]); // Removed selectedVoice?.lang to avoid potential loops; preference should drive this.
 
   useEffect(() => {
-    populateVoiceList(); // Initial population
+    populateVoiceList();
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.onvoiceschanged = populateVoiceList;
     }
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = null;
-        window.speechSynthesis.cancel(); // Clean up any speech on unmount
+        window.speechSynthesis.cancel();
       }
     };
-  }, [populateVoiceList]); // populateVoiceList is stable due to its own useCallback dependencies
+  }, [populateVoiceList]);
 
   const speak = useCallback((text: string) => {
     if (typeof window !== 'undefined' && window.speechSynthesis && text) {
-      window.speechSynthesis.cancel(); // Always cancel previous before speaking new
-      setIsPaused(false); // Ensure pause state is reset
+      window.speechSynthesis.cancel(); 
+      setIsPaused(false); 
 
       const utterance = new SpeechSynthesisUtterance(text);
       if (selectedVoice) {
@@ -116,36 +137,34 @@ export function useTTS(): TTSHook {
         setIsSpeaking(false);
         setIsPaused(false);
       };
-      // These are for browser-initiated pauses/resumes, not directly used by our controls but good to align state
       utterance.onpause = () => { 
-        setIsSpeaking(false); // Speech is not actively happening
+        setIsSpeaking(false); 
         setIsPaused(true);
       };
-       utterance.onresume = () => {
+      utterance.onresume = () => {
         setIsSpeaking(true);
         setIsPaused(false);
       };
 
-      // Use a small timeout to allow the cancel to process.
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             window.speechSynthesis.speak(utterance);
         }
-      }, 50);
+      }, 50); 
     }
-  }, [selectedVoice]); // Removed setIsSpeaking, setIsPaused from deps as they are managed internally
+  }, [selectedVoice]);
 
   const pauseTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && isSpeaking && !isPaused) {
       window.speechSynthesis.pause();
-      setIsPaused(true); // State update handled by utterance.onpause
+      // isPaused state will be set by utterance.onpause
     }
   }, [isSpeaking, isPaused]);
 
   const resumeTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && isPaused) {
       window.speechSynthesis.resume();
-      setIsPaused(false); // State update handled by utterance.onresume
+      // isPaused and isSpeaking states will be set by utterance.onresume
     }
   }, [isPaused]);
 
@@ -161,13 +180,7 @@ export function useTTS(): TTSHook {
     const voice = supportedVoices.find(v => v.voiceURI === uri);
     if (voice) {
       setSelectedVoice(voice);
-      // Infer preference from selected voice name
-      const voiceNameLower = voice.name.toLowerCase();
-      if (voiceNameLower.includes('zia')) setVoicePreference('zia');
-      else if (voiceNameLower.includes('kai')) setVoicePreference('kai');
-      else if (voiceNameLower.includes('female')) setVoicePreference('female');
-      else if (voiceNameLower.includes('male')) setVoicePreference('male');
-      else setVoicePreference(null); // Or keep current preference if no match
+      // Do NOT set voicePreference here. Let the main preference dropdown control that.
     }
   }, [supportedVoices]);
 
