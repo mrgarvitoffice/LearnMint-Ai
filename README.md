@@ -73,7 +73,7 @@ This section provides details about the application's user interface, frontend t
 
 ### 2. CRITICAL: Set up Environment Variables
 
-Create a file named `.env` in the root of your project. Add the following content, replacing placeholder values with your actual Firebase project configuration and API keys:
+Create a file named `.env` in the **root of your project**. Add the following content, replacing placeholder values with your actual Firebase project configuration and API keys:
 
 ```env
 # Firebase Project Configuration (Get these from your Firebase project settings)
@@ -118,6 +118,7 @@ GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 ```
 
 *   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes.
+*   Ensure there are **no extra spaces or quotes** around the variable names or their values in your `.env` file.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
 ### 3. Install Dependencies
@@ -127,7 +128,26 @@ npm install
 yarn install
 ```
 
-### 4. CRITICAL: Add Required Static Assets
+### 4. CRITICAL: Restart Your Development Server
+After creating or modifying your `.env` file, you **MUST stop and restart your Next.js development server** for the environment variables to be loaded.
+```bash
+# Stop your server (usually Ctrl+C in the terminal)
+# Then restart it:
+npm run dev -- --port 9002
+# or
+yarn dev --port 9002
+```
+
+**Troubleshooting `Firebase: Error (auth/invalid-api-key)`:**
+If you encounter this error, it means the Firebase API key your application is trying to use is incorrect or not being loaded.
+1.  **Verify `.env` File:** Double-check the `.env` file is in the project root, `NEXT_PUBLIC_FIREBASE_API_KEY` is spelled correctly, and its value is accurately copied from your Firebase project settings.
+2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file now includes a line:
+    `console.log("Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED");`
+    *   If it says `undefined`, your `.env` file is not being read correctly or the variable is missing/misspelled. Review step 1 and ensure you restarted the server.
+    *   If it shows the correct API key, the issue might be with the key itself in your Firebase/Google Cloud Console (e.g., restrictions, disabled key). See Firebase documentation for API key troubleshooting.
+3.  **Firebase Project Settings:** Ensure the "Email/Password", "Google", and "Anonymous" sign-in providers are enabled in your Firebase project's Authentication settings. Also, double-check the API key in your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
+
+### 5. CRITICAL: Add Required Static Assets
 *   **PWA Icons**:
     *   Create a folder `public/icons`.
     *   Add `icon-192x192.png` (192x192 pixels) and `icon-512x512.png` (512x512 pixels) to this folder. These are referenced in `public/manifest.json`.
@@ -141,7 +161,7 @@ yarn install
     *   Create a folder `public/images`.
     *   Add `kazuma-dp.jpg` for the chatbot avatar (or update path in `src/components/features/chatbot/ChatMessage.tsx`).
 
-### 5. Run the Development Server
+### 6. Run the Development Server
 ```bash
 npm run dev -- --port 9002
 # or
@@ -149,7 +169,7 @@ yarn dev --port 9002
 ```
 The application will typically be available at `http://localhost:9002`.
 
-### 6. Run Genkit Dev Server (Optional but Recommended for AI Flow Debugging)
+### 7. Run Genkit Dev Server (Optional but Recommended for AI Flow Debugging)
 In a separate terminal, run:
 ```bash
 npm run genkit:dev
@@ -259,3 +279,4 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 ---
 Made by MrGarvit
+
