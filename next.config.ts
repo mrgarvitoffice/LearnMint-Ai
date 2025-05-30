@@ -31,7 +31,13 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'assets3.cbsnewsstatic.com', // Ensured this is present
+        hostname: 'assets3.cbsnewsstatic.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i2-prod.dailyrecord.co.uk', // Added this new hostname
         port: '',
         pathname: '/**',
       },
