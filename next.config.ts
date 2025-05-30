@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -16,6 +17,20 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.mktw.net', // Added for MarketWatch news images
+        port: '',
+        pathname: '/**',
+      },
+      // Add other news image hostnames here as they appear
+      // For example, if you see errors for cdn.cnn.com, add:
+      // {
+      //   protocol: 'https',
+      //   hostname: 'cdn.cnn.com',
+      //   port: '',
+      //   pathname: '/**',
+      // },
     ],
   },
 };
