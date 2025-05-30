@@ -71,7 +71,9 @@ This section provides details about the application's user interface, frontend t
     *   Go to **Authentication** (under Build in the Firebase console) -> **Sign-in method** tab.
     *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, you may need to provide your project support email.
 
-### 2. CRITICAL: Set up Environment Variables
+### 2. CRITICAL: Set up Environment Variables or Use Temporary Hardcoded Config
+
+**RECOMMENDED (Long-Term): Use a `.env` file**
 
 Create a file named `.env` in the **root of your project**. Add the following content, replacing placeholder values with your actual Firebase project configuration and API keys:
 
@@ -123,6 +125,25 @@ GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 *   `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is optional. If you don't use Firebase Analytics, you can omit this line or leave the value blank.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
+**TEMPORARY (If .env is not working): Hardcode Firebase Config**
+
+If you are still having trouble with `.env` file loading, as a **temporary measure**, the Firebase configuration has been hardcoded with **placeholders** in `src/lib/firebase/config.ts`.
+You **MUST** edit this file and replace the placeholder strings with your **actual Firebase project credentials**:
+
+```typescript
+// In src/lib/firebase/config.ts (around line 27)
+const firebaseConfig: FirebaseOptions = {
+  apiKey: "YOUR_ACTUAL_FIREBASE_API_KEY", // REPLACE THIS
+  authDomain: "YOUR_ACTUAL_PROJECT_ID.firebaseapp.com", // REPLACE THIS
+  projectId: "YOUR_ACTUAL_PROJECT_ID", // REPLACE THIS
+  storageBucket: "YOUR_ACTUAL_PROJECT_ID.appspot.com", // REPLACE THIS
+  messagingSenderId: "YOUR_ACTUAL_MESSAGING_SENDER_ID", // REPLACE THIS
+  appId: "YOUR_ACTUAL_APP_ID", // REPLACE THIS
+  measurementId: "YOUR_ACTUAL_MEASUREMENT_ID" // OPTIONAL: REPLACE or remove if not used
+};
+```
+**It is crucial to fix your `.env` file setup for a proper long-term solution and then revert this hardcoding.**
+
 ### 3. Install Dependencies
 ```bash
 npm install
@@ -131,7 +152,7 @@ yarn install
 ```
 
 ### 4. CRITICAL: Restart Your Development Server
-After creating or modifying your `.env` file, you **MUST stop and restart your Next.js development server** for the environment variables to be loaded.
+After creating or modifying your `.env` file (or if `src/lib/firebase/config.ts` was changed), you **MUST stop and restart your Next.js development server** for the environment variables or hardcoded values to be loaded.
 ```bash
 # Stop your server (usually Ctrl+C in the terminal)
 # Then restart it:
@@ -142,18 +163,20 @@ yarn dev --port 9002
 
 **Troubleshooting Firebase Errors (e.g., `auth/invalid-api-key`, `auth/auth-domain-config-required`):**
 If you encounter Firebase errors:
-1.  **Verify `.env` File:**
-    *   Double-check that the `.env` file is in the project root.
+1.  **Check Terminal Logs First**:
+    *   The file `src/lib/firebase/config.ts` now includes `console.log` statements to show what API key and Auth Domain it's attempting to use (or if they are `undefined` when using `.env`).
+    *   You will also see **CRITICAL FIREBASE CONFIG ERROR** messages in the terminal if `NEXT_PUBLIC_FIREBASE_API_KEY` or `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are undefined when trying to load from `.env`. This is your primary clue that the `.env` file is not being read correctly or the variables are missing/misspelled.
+2.  **If Using `.env` File:**
+    *   Verify the `.env` file is in the project root.
     *   Ensure `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are spelled correctly and their values are accurately copied from your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
     *   Ensure no extra spaces or quotes around the variable names or values.
-2.  **Check Server Logs:** After restarting your server, look at the terminal output. The `src/lib/firebase/config.ts` file includes lines like:
-    *   `Firebase Config: Attempting to use API Key: YOUR_API_KEY_VALUE_OR_UNDEFINED`
-    *   `Firebase Config: Attempting to use Auth Domain: YOUR_AUTH_DOMAIN_VALUE_OR_UNDEFINED`
-    *   If either says `undefined` or shows an obviously incorrect value, your `.env` file is not being read correctly, the variable is missing/misspelled, or you haven't restarted the server. Review step 1 and ensure you restarted.
-    *   If the logs show `CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_API_KEY is UNDEFINED...` or `CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is UNDEFINED...`, this directly confirms the .env variable is not being loaded.
-3.  **Firebase Project Settings:**
+    *   **Make sure you restarted the server after any `.env` changes.**
+3.  **If Using Temporary Hardcoded Values (in `src/lib/firebase/config.ts`):**
+    *   Double-check that you replaced **all** placeholder strings (like `"YOUR_ACTUAL_FIREBASE_API_KEY"`) with your actual Firebase project credentials.
+    *   Ensure you restarted the server after editing `config.ts`.
+4.  **Firebase Project Settings:**
     *   Ensure the "Email/Password", "Google", and "Anonymous" sign-in providers are enabled in your Firebase project's Authentication settings.
-    *   Double-check the API key and Auth Domain in your Firebase project settings.
+    *   Double-check the API key and Auth Domain in your Firebase project settings match what you're trying to use.
 
 ### 5. CRITICAL: Add Required Static Assets
 *   **PWA Icons**:
@@ -219,10 +242,11 @@ This project is configured for deployment using Firebase Hosting with its `frame
 
 **Deployment Steps:**
 
-1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
+1.  **CRITICAL: Set Environment Variables in `.env` for Build (if NOT using hardcoded values in `config.ts`):**
     *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Firebase config, Google AI, Newsdata.io, YouTube, Google Books).
     *   Use `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you have configured separate keys for those features.
     *   Without these, the deployed app's features will not work. **Ensure `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are correct.**
+    *   **If you are using the temporary hardcoded values in `src/lib/firebase/config.ts`, ensure they are your PRODUCTION values before building.**
 
 2.  **CRITICAL: Add PWA Icons (Required for PWA):**
     *   Create a folder `public/icons`.
@@ -245,7 +269,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 6.  After deployment, the Firebase CLI will provide you with the **Hosting URL**.
 
 7.  **CRITICAL: Environment Variables for Deployed App (App Hosting)**:
-    When Firebase builds your Next.js app for App Hosting, it **does not automatically use your local `.env` file for the running backend functions.** You need to set up environment variables for your deployed application in the Google Cloud Console.
+    When Firebase builds your Next.js app for App Hosting, it **does not automatically use your local `.env` file OR hardcoded values from `src/lib/firebase/config.ts` for the running backend functions.** You need to set up environment variables for your deployed application in the Google Cloud Console.
     *   Go to your Firebase project in the Google Cloud Console: `https://console.cloud.google.com/run?project=YOUR_PROJECT_ID` (replace `YOUR_PROJECT_ID` with your Firebase project ID).
     *   Find your App Hosting service.
     *   Edit the service configuration (usually "Edit & Deploy New Revision").
