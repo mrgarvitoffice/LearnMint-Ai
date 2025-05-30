@@ -59,9 +59,9 @@ export function useTTS(): TTSHook {
   }, [voicePreference]);
 
   useEffect(() => {
-    populateVoiceList(); // Initial call
+    populateVoiceList(); 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = populateVoiceList; // Re-populate when voices change
+      window.speechSynthesis.onvoiceschanged = populateVoiceList; 
     }
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -69,7 +69,7 @@ export function useTTS(): TTSHook {
         window.speechSynthesis.cancel();
       }
     };
-  }, [populateVoiceList]); // populateVoiceList is now a dependency
+  }, [populateVoiceList]);
 
   const speak = useCallback((text: string) => {
     if (typeof window !== 'undefined' && window.speechSynthesis && text) {
@@ -88,20 +88,19 @@ export function useTTS(): TTSHook {
       };
       window.speechSynthesis.speak(utterance);
     }
-  }, [selectedVoice]);
+  }, [selectedVoice, setIsSpeaking]); // setIsSpeaking is stable
 
   const cancel = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+      setIsSpeaking(false); // Immediately update our state
     }
-  }, []);
+  }, [setIsSpeaking]); // setIsSpeaking is stable
 
   const setSelectedVoiceURI = useCallback((uri: string) => {
     const voice = supportedVoices.find(v => v.voiceURI === uri);
     if (voice) {
       setSelectedVoice(voice);
-      // Infer preference from selected voice to keep UI consistent if user manually picks
       if (voice.name.toLowerCase().includes('kai')) setVoicePreference('kai');
       else if (voice.name.toLowerCase().includes('zia')) setVoicePreference('zia');
       else if (voice.name.toLowerCase().includes('male')) setVoicePreference('male');

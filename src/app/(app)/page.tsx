@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react'; // Added useRef
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS, APP_NAME } from "@/lib/constants";
 import { ArrowRight, Lightbulb } from "lucide-react";
 import Link from "next/link";
-import { useTTS } from '@/hooks/useTTS'; // Import useTTS
+import { useTTS } from '@/hooks/useTTS'; 
 
 // Helper to get a specific icon if available, otherwise a default
 const getIcon = (title: string) => {
@@ -53,23 +53,30 @@ const otherFeatures = Array.from(uniqueOtherFeaturesMap.values());
 
 export default function DashboardPage() {
   const { speak, isSpeaking, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
-  const [hasWelcomed, setHasWelcomed] = useState(false);
+  const hasWelcomedRef = useRef(false);
+  const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    // Set the voice preference once when the component is ready and hasn't welcomed yet
-    if (!hasWelcomed && supportedVoices.length > 0) {
+    // Set the voice preference once when the component is ready and voices are available
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
       setVoicePreference('zia');
+      voicePreferenceWasSetRef.current = true;
     }
-  }, [setVoicePreference, hasWelcomed, supportedVoices.length]); // Rerun if supportedVoices length changes (voices load)
+  }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
-    // Attempt to speak when voices are ready, preference might have been set, and not already spoken
-    // Check selectedVoice to ensure preference has been processed by useTTS
-    if (supportedVoices.length > 0 && !isSpeaking && !hasWelcomed && selectedVoice) {
+    // Attempt to speak when voices are ready, preference has been set, not already spoken, and a voice is selected
+    if (
+      supportedVoices.length > 0 &&
+      voicePreferenceWasSetRef.current && 
+      selectedVoice &&                
+      !isSpeaking &&
+      !hasWelcomedRef.current         
+    ) {
       speak("Welcome to LearnMint!");
-      setHasWelcomed(true);
+      hasWelcomedRef.current = true;   
     }
-  }, [supportedVoices, isSpeaking, hasWelcomed, speak, selectedVoice]);
+  }, [supportedVoices, selectedVoice, isSpeaking, speak]);
 
 
   return (
