@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -260,29 +261,49 @@ const Sidebar = React.forwardRef<
 Sidebar.displayName = "Sidebar"
 
 const SidebarTrigger = React.forwardRef<
-  React.ElementRef<typeof Button>,
-  React.ComponentProps<typeof Button>
->(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  HTMLButtonElement,
+  React.ComponentProps<typeof Button> // Includes asChild, children, onClick, className etc.
+>(({ className, onClick, asChild = false, children, ...props }, ref) => {
+  const { toggleSidebar } = useSidebar();
 
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event); // Call original onClick if provided by the child or parent
+    toggleSidebar();
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    // When asChild is true, SidebarTrigger acts as a Slot.
+    // It clones its direct child (the 'children' prop) and merges props.
+    // 'props' here are those passed to SidebarTrigger itself (e.g., a custom className for the trigger area).
+    // 'className' is also explicitly passed to Slot to be merged.
+    return (
+      <Slot
+        ref={ref}
+        onClick={handleClick}
+        className={className} // Pass className intended for the Slot/trigger wrapper
+        {...props} // Spread other props passed to SidebarTrigger
+      >
+        {children}
+      </Slot>
+    );
+  }
+
+  // Default behavior: SidebarTrigger renders its own Button element
   return (
     <Button
       ref={ref}
       data-sidebar="trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
-      }}
-      {...props}
+      variant="ghost" // Default variant for the internally rendered button
+      size="icon"     // Default size for the internally rendered button
+      className={cn("h-7 w-7", className)} // className prop applies here too
+      onClick={handleClick}
+      {...props} // Spread other props (e.g., aria-label from default Button props)
     >
       <PanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
-  )
-})
+  );
+});
 SidebarTrigger.displayName = "SidebarTrigger"
 
 const SidebarRail = React.forwardRef<
