@@ -5,12 +5,12 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
-import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote, Smile } from "lucide-react"; // Added Smile
+import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote, Smile, Music } from "lucide-react"; // Added Music
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
-import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement'; // Added import
+import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -53,6 +53,8 @@ const motivationalQuotes = [
 export default function DashboardPage() {
   const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playCustomSound1 } = useSound('/sounds/custom-sound-1.mp3', 0.5); // Example path
+  const { playSound: playCustomSound2 } = useSound('/sounds/custom-sound-2.mp3', 0.5); // Example path
   const router = useRouter();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
@@ -79,10 +81,9 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Set default voice preference for page announcements
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
       console.log("Dashboard: Setting initial voice preference to luma");
-      setVoicePreference('luma'); // Default to Luma (female-implied)
+      setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -124,14 +125,13 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
-      <header className="text-center relative"> {/* Added relative for positioning */}
+      <header className="text-center relative">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
           {PAGE_TITLE}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
         </p>
-        {/* Example Interactive Element */}
         <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-75 hover:opacity-100 transition-opacity hidden sm:block">
           <InteractiveCharacterElement
             characterName="LearnMint Mascot"
@@ -210,6 +210,41 @@ export default function DashboardPage() {
           )}
         </div>
       </section>
+      
+      {/* Custom Sound Demo Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Music className="h-6 w-6 text-primary" />
+              <span>Custom Sound Demo</span>
+            </div>
+            <InteractiveCharacterElement
+              characterName="Sound Player"
+              Icon={Smile} 
+              initials="S"
+              containerClassName="p-1"
+              dataAiHint="emoji smile"
+            />
+          </CardTitle>
+          <CardDescription>
+            Place your <code>custom-sound-1.mp3</code> and <code>custom-sound-2.mp3</code> files in the <code>public/sounds/</code> directory to test them here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-4">
+          <Button onClick={() => playCustomSound1()} variant="outline" className="flex-1">
+            Play Custom Sound 1
+          </Button>
+          <Button onClick={() => playCustomSound2()} variant="outline" className="flex-1">
+            Play Custom Sound 2
+          </Button>
+        </CardContent>
+        <CardFooter>
+            <p className="text-xs text-muted-foreground">
+                You can use the <code>useSound</code> hook to play any MP3 file from your <code>public/sounds</code> folder.
+            </p>
+        </CardFooter>
+      </Card>
 
       <Card>
         <CardHeader>
