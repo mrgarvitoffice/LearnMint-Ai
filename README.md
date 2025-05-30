@@ -3,7 +3,7 @@
 
 LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a Daily News Digest feature, and placeholders for future library and game features.
 
-Firebase is used for potential future database and storage needs.
+**Firebase Authentication is used for user management (sign-up, sign-in, sign-out).** Firebase is also available for future database and storage needs.
 
 To get started, take a look at `src/app/(app)/page.tsx`.
 
@@ -23,6 +23,7 @@ This section provides details about the application's user interface, frontend t
 *   A global layout wraps all pages.
 *   It includes:
     *   `ThemeProvider` for light/dark mode.
+    *   `AuthProvider` for Firebase Authentication state management.
     *   `ReactQueryProvider` for data fetching and caching with TanStack Query.
     *   `AppHeader` (consistent across all pages).
     *   A main content area with responsive padding.
@@ -30,9 +31,10 @@ This section provides details about the application's user interface, frontend t
 
 ## Core Features
 
+*   **User Authentication**: Sign up, sign in, and sign out using Firebase Authentication (email/password).
 *   **AI Content Generation**: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI (powered by Genkit and Google Gemini models).
 *   **Custom Test Creation**: Build tests based on specific topics (single or multiple recent), difficulty levels, number of questions, optional custom notes, and timer settings.
-*   **Interactive AI Chatbot (Megumin)**: Engage with "Megumin," a witty AI assistant, for small talk, questions, and even "singing" (text-based). Supports voice input and user image uploads.
+*   **Interactive AI Chatbot (Kazuma)**: Engage with "Kazuma," a witty AI assistant, for small talk, questions, and even "singing" (text-based). Supports voice input and user image uploads.
 *   **Scientific Calculator & Unit Converter**: Perform basic and scientific calculations. Includes a Unit Converter (Length, Temperature, Weight/Mass, Volume, Area, Speed) and a history of the last 3 calculations.
 *   **Daily News Digest**: Browse news articles filtered by country, state/region (text input), city (text input), and general categories, powered by Newsdata.io.
 *   **Resource Library**:
@@ -52,6 +54,7 @@ This section provides details about the application's user interface, frontend t
 *   TypeScript
 *   Tailwind CSS
 *   ShadCN UI Components
+*   **Firebase Authentication**
 *   Genkit (for AI flows using Google Gemini models)
 *   Lucide Icons
 *   `@tanstack/react-query` (for fetching quotes, math facts, and news)
@@ -64,12 +67,23 @@ This section provides details about the application's user interface, frontend t
 ### 1. Prerequisites
 *   Node.js (LTS version recommended)
 *   npm or yarn
+*   A Firebase Project (create one at [firebase.google.com](https://firebase.google.com/)). Enable Email/Password sign-in method in Firebase Authentication.
 
 ### 2. CRITICAL: Set up Environment Variables
 
-Create a file named `.env` in the root of your project. Add the following content:
+Create a file named `.env` in the root of your project. Add the following content, replacing placeholder values with your actual Firebase project configuration and API keys:
 
 ```env
+# Firebase Project Configuration (Get these from your Firebase project settings)
+# Go to Project Settings > General tab > Your apps > Web app SDK snippet
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYOUR_FIREBASE_API_KEY
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=1:your-sender-id:web:your-app-id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional
+
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
 # Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
@@ -80,7 +94,7 @@ GOOGLE_API_KEY=AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M
 # set it here. If left blank, notes generation will use the main GOOGLE_API_KEY above.
 GOOGLE_API_KEY_NOTES=AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A
 
-# OPTIONAL: Separate API Key for AI Chatbot (Megumin)
+# OPTIONAL: Separate API Key for AI Chatbot (Kazuma)
 # If you want to use a different Gemini API key specifically for the chatbot,
 # set it here. If left blank, the chatbot will use the main GOOGLE_API_KEY above.
 GOOGLE_API_KEY_CHATBOT=AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg
@@ -176,7 +190,7 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Google AI, Newsdata.io, YouTube, Google Books).
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Firebase config, Google AI, Newsdata.io, YouTube, Google Books).
     *   Use `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you have configured separate keys for those features.
     *   Without these, the deployed app's features will not work.
 
@@ -207,12 +221,19 @@ This project is configured for deployment using Firebase Hosting with its `frame
     *   Edit the service configuration (usually "Edit & Deploy New Revision").
     *   Navigate to the "Variables & Secrets" or "Environment Variables" section.
     *   Add ALL your required production environment variables:
+        *   `NEXT_PUBLIC_FIREBASE_API_KEY`
+        *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+        *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+        *   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+        *   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+        *   `NEXT_PUBLIC_FIREBASE_APP_ID`
+        *   `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` (if you use it)
         *   `GOOGLE_API_KEY`
         *   `NEWSDATA_API_KEY`
         *   `YOUTUBE_API_KEY`
         *   `GOOGLE_BOOKS_API_KEY`
         *   (If used) `GOOGLE_API_KEY_NOTES`, `GOOGLE_API_KEY_CHATBOT`
-    *   Deploy the new revision with these environment variables. This step is crucial for Genkit AI features and other API-dependent features to work in the deployed environment.
+    *   Deploy the new revision with these environment variables. This step is crucial for Firebase Authentication, Genkit AI features, and other API-dependent features to work in the deployed environment.
 
 ## Customization
 
@@ -223,14 +244,13 @@ This project is configured for deployment using Firebase Hosting with its `frame
 ## Future Enhancements (Potential Ideas)
 
 *   **Advanced PWA Features**: Implement a service worker for offline caching of assets and basic content.
-*   **User Authentication**: Integrate an authentication solution (e.g., Clerk, Firebase Authentication, NextAuth.js) to manage users.
 *   **Full Library Content Integration**: Fully integrate YouTube video search & embedding, and Google Books search & display.
 *   **Multilingual Support**:
     *   UI Internationalization: Add support for multiple languages in the application's interface.
     *   AI Content Localization: Update Genkit prompts to accept a target language.
 *   **Educational Games (Tetris, Dino Runner)**: Develop the planned "LearnMint Arcade" Tetris and Dino Runner games.
-*   **User Progress Tracking (Requires Backend Database & Auth)**:
-    *   Integrate a backend database (e.g., Firebase Firestore) to store user profiles, test scores, and learning progress (linked to user IDs if auth is implemented).
+*   **User Progress Tracking (Requires Backend Database)**:
+    *   Integrate a backend database (e.g., Firebase Firestore) to store user profiles, test scores, and learning progress (linked to user IDs).
     *   Develop profile pages with features like progress charts, performance analysis, notification settings, etc.
 *   **Enhanced Test Features**: More detailed result breakdowns and answer explanations.
 *   **Direct AI Image Generation in Notes**: Replace visual prompt placeholders in notes with actual AI-generated images.

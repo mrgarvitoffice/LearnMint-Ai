@@ -2,8 +2,8 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { APP_NAME, NAV_ITEMS, type NavItem } from '@/lib/constants';
+import { usePathname, useRouter } from 'next/navigation'; // Added useRouter
+import { APP_NAME, NAV_ITEMS } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,12 +19,16 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
-import { LayoutGrid, PanelLeft, UserCircle, Moon, Sun, Laptop, Palette, LogIn, UserPlus, type LucideIcon } from 'lucide-react';
+import { LayoutGrid, PanelLeft, Moon, Sun, Palette, LogIn, LogOut, UserPlus, type LucideIcon, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import React from 'react';
 import { SidebarNav } from './SidebarNav';
 import { useSound } from '@/hooks/useSound';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { signOut } from 'firebase/auth'; // Import signOut
+import { auth } from '@/lib/firebase/config'; // Import Firebase auth instance
+import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
@@ -41,12 +45,27 @@ const dropdownLinksSpec: { title: string; href: string }[] = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
+  const { user } = useAuth(); // Get user from AuthContext
+  const { toast } = useToast();
 
   const handleThemeToggle = () => {
     playClickSound();
     setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleSignOut = async () => {
+    playClickSound();
+    try {
+      await signOut(auth);
+      toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
+      router.push('/sign-in'); // Redirect to sign-in page
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
+    }
   };
 
   const handleDropdownItemClick = (action?: () => void) => {
@@ -82,6 +101,13 @@ export function Header() {
                             <Palette className="h-5 w-5" /> Toggle Theme
                         </Button>
                     </SheetClose>
+                    {user && (
+                      <SheetClose asChild>
+                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignOut}>
+                            <LogOut className="h-5 w-5" /> Sign Out
+                        </Button>
+                      </SheetClose>
+                    )}
                 </div>
           </SheetContent>
         </Sheet>
@@ -134,7 +160,41 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        {/* UserButton and Sign In/Up buttons removed */}
+        
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => playClickSound()}>
+                <UserCircle className="h-6 w-6" />
+                <span className="sr-only">User menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">Account</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email || "User"}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" asChild onClick={() => playClickSound()}>
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button variant="default" size="sm" asChild onClick={() => playClickSound()}>
+              <Link href="/sign-up">Sign Up</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );

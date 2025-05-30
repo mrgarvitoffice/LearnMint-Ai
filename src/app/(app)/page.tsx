@@ -11,15 +11,16 @@ import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
-const PAGE_TITLE_BASE = `Welcome to ${APP_NAME}`; // Base title
+const PAGE_TITLE_BASE = `Welcome to ${APP_NAME}`;
 
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Quickly create notes, quizzes, & flashcards.",
   "<strong>Custom Test Creation:</strong> Design tests with specific topics, difficulty, and timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Chat with a witty AI for questions or fun. Voice input supported.",
+  "<strong>Interactive AI Chatbot (Kazuma):</strong> Chat with our witty AI for questions or fun. Voice input supported.",
   "<strong>Scientific Calculator & Unit Converter:</strong> For calculations and unit conversions.",
   "<strong>Daily News Digest:</strong> Stay updated with news, filterable by country and category.",
   "<strong>Resource Library:</strong> Access OpenStax samples, search books/videos, and get Math Facts.",
@@ -31,7 +32,7 @@ const exploreFeaturesCards = [
   { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests." },
   { title: "AI Quiz Creator", href: "/quiz", icon: HelpCircle, description: "Generate interactive quizzes." },
   { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards." },
-  { title: "AI Chatbot (Megumin)", href: "/chatbot", icon: Bot, description: "Chat with our witty AI." },
+  { title: "AI Chatbot (Kazuma)", href: "/chatbot", icon: Bot, description: "Chat with our witty AI." },
   { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations & convert." },
   { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with news." },
   { title: "LearnMint Arcade", href: "/arcade", icon: Gamepad2, description: "Play educational games." },
@@ -54,6 +55,7 @@ export default function DashboardPage() {
   const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
+  const { user } = useAuth(); // Get user from AuthContext
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
@@ -64,8 +66,12 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    setPageTitle(PAGE_TITLE_BASE); // Always set to base title
-  }, []);
+    if (user && user.email) { // Or user.displayName
+      setPageTitle(`Welcome back, ${user.email.split('@')[0]}!`);
+    } else {
+      setPageTitle(PAGE_TITLE_BASE);
+    }
+  }, [user]);
 
 
   useEffect(() => {
@@ -87,7 +93,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      console.log("Dashboard: Setting initial voice preference to luma");
       setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
@@ -96,7 +101,6 @@ export default function DashboardPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      console.log(`Dashboard: Attempting to speak pageTitle ("${pageTitle}") with voice: ${selectedVoice.name}`);
       speak(pageTitle);
       pageTitleSpokenRef.current = true;
     }
@@ -125,7 +129,7 @@ export default function DashboardPage() {
 
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
-    router.push(`/notes?topic=${encodeURIComponent(topic)}`);
+    router.push(`/study?topic=${encodeURIComponent(topic)}`); // Updated to /study page
   }
 
   return (
