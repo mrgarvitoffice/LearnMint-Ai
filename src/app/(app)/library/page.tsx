@@ -74,9 +74,9 @@ export default function LibraryPage() {
   };
 
   const otherResources = [
-    { title: "Wikipedia", description: "The Free Encyclopedia.", link: "https://www.wikipedia.org/", icon: BookOpen, dataAiHint: "encyclopedia reference" },
-    { title: "CK-12 Foundation", description: "Free K-12 STEM resources.", link: "https://www.ck12.org/", icon: Lightbulb, dataAiHint: "education STEM" },
-    { title: "Project Gutenberg", description: "Over 70,000 free eBooks.", link: "https://www.gutenberg.org/", icon: BookOpen, dataAiHint: "ebooks literature" },
+    { title: "Wikidata", description: "The free and open knowledge base that can be read and edited by humans and machines.", link: "https://www.wikidata.org/", icon: BookOpen },
+    { title: "CK-12 Foundation", description: "Free K-12 STEM resources.", link: "https://www.ck12.org/", icon: Lightbulb },
+    { title: "Project Gutenberg", description: "Over 70,000 free eBooks.", link: "https://www.gutenberg.org/", icon: Brain },
   ];
 
   return (
@@ -128,7 +128,7 @@ export default function LibraryPage() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">Other Helpful Resources</h2>
          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-           {otherResources.map(resource => <ResourceCard key={resource.title} title={resource.title} description={resource.description} link={resource.link} icon={resource.icon} imageUrl={`https://placehold.co/300x150.png?text=${encodeURIComponent(resource.title)}`} dataAiHint={resource.dataAiHint} linkText="Visit Site"/>)}
+           {otherResources.map(resource => <ResourceCard key={resource.title} title={resource.title} description={resource.description} link={resource.link} icon={resource.icon} linkText="Visit Site"/>)}
         </div>
       </section>
     </div>
