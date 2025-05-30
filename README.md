@@ -1,7 +1,7 @@
 
 # LearnMint - AI Powered Learning
 
-LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Megumin), a Daily News Digest feature, and placeholders for future library and game features.
+LearnMint is a Next.js application designed to be an AI-powered learning assistant. It focuses on generating study materials like notes, quizzes, and flashcards. It also includes a custom test creation feature, a scientific calculator with a unit converter, an interactive AI chatbot (Kazuma), a Daily News Digest feature, and placeholders for future library and game features.
 
 **Firebase Authentication is used for user management (sign-up, sign-in, sign-out).** Firebase is also available for future database and storage needs.
 
@@ -31,7 +31,7 @@ This section provides details about the application's user interface, frontend t
 
 ## Core Features
 
-*   **User Authentication**: Sign up, sign in, and sign out using Firebase Authentication (email/password).
+*   **User Authentication**: Sign up, sign in (Email/Password, Google, Anonymous), and sign out using Firebase Authentication.
 *   **AI Content Generation**: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI (powered by Genkit and Google Gemini models).
 *   **Custom Test Creation**: Build tests based on specific topics (single or multiple recent), difficulty levels, number of questions, optional custom notes, and timer settings.
 *   **Interactive AI Chatbot (Kazuma)**: Engage with "Kazuma," a witty AI assistant, for small talk, questions, and even "singing" (text-based). Supports voice input and user image uploads.
@@ -54,7 +54,7 @@ This section provides details about the application's user interface, frontend t
 *   TypeScript
 *   Tailwind CSS
 *   ShadCN UI Components
-*   **Firebase Authentication**
+*   **Firebase Authentication (Email/Password, Google, Anonymous)**
 *   Genkit (for AI flows using Google Gemini models)
 *   Lucide Icons
 *   `@tanstack/react-query` (for fetching quotes, math facts, and news)
@@ -67,7 +67,9 @@ This section provides details about the application's user interface, frontend t
 ### 1. Prerequisites
 *   Node.js (LTS version recommended)
 *   npm or yarn
-*   A Firebase Project (create one at [firebase.google.com](https://firebase.google.com/)). Enable Email/Password sign-in method in Firebase Authentication.
+*   A Firebase Project (create one at [firebase.google.com](https://firebase.google.com/)).
+    *   Go to **Authentication** -> **Sign-in method** tab.
+    *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, you may need to provide project support email.
 
 ### 2. CRITICAL: Set up Environment Variables
 
