@@ -22,7 +22,7 @@ export function useTTS(): TTSHook {
   const [isPaused, setIsPaused] = useState(false);
   const [supportedVoices, setSupportedVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const [voicePreference, setVoicePreference] = useState<'luma' | 'kai' | null>(null);
+  const [voicePreference, setVoicePreference] = useState<'luma' | 'kai' | null>(null); // 'luma' for female-implied, 'kai' for male-implied
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const populateVoiceList = useCallback(() => {
@@ -40,21 +40,23 @@ export function useTTS(): TTSHook {
     console.log("TTS: Available voices in browser:", voices.map(v => ({ name: v.name, lang: v.lang, default: v.default, URI: v.voiceURI.substring(0,40) })));
 
     let preferredVoice: SpeechSynthesisVoice | undefined;
-    const currentLangPrefix = 'en';
+    const currentLangPrefix = 'en'; // Target English voices
 
     if (voicePreference === 'luma') {
       console.log("TTS: Attempting to select 'luma' (female-implied) preference.");
-      // 1. Try "Luma" specifically (English)
-      preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('luma') && voice.lang.startsWith(currentLangPrefix));
+      // 1. Try "Luma" specifically (en-US then en-*)
+      preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('luma') && voice.lang.startsWith('en-US')) ||
+                       voices.find(voice => voice.name.toLowerCase().includes('luma') && voice.lang.startsWith(currentLangPrefix));
       if (preferredVoice) console.log("TTS: Found voice matching 'Luma':", preferredVoice.name);
 
-      // 2. Fallback: "Zia" (English) - as a previous female target
+      // 2. Fallback: "Zia" (en-US then en-*)
       if (!preferredVoice) {
-        preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('zia') && voice.lang.startsWith(currentLangPrefix));
+        preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('zia') && voice.lang.startsWith('en-US')) ||
+                         voices.find(voice => voice.name.toLowerCase().includes('zia') && voice.lang.startsWith(currentLangPrefix));
         if (preferredVoice) console.log("TTS: Fallback to 'Zia':", preferredVoice.name);
       }
       
-      // 3. Fallback: US Female
+      // 3. Fallback: US English Female
       if (!preferredVoice) {
         preferredVoice = voices.find(voice => voice.lang.startsWith('en-US') && voice.name.toLowerCase().includes('female'));
         if (preferredVoice) console.log("TTS: Fallback to 'en-US Female' voice:", preferredVoice.name);
@@ -64,12 +66,12 @@ export function useTTS(): TTSHook {
       if (!preferredVoice) {
           const otherEnglishFemaleVoices = voices.filter(voice => voice.lang.startsWith(currentLangPrefix) && voice.name.toLowerCase().includes('female'));
           if (otherEnglishFemaleVoices.length > 0) {
-              // Try to find one not "Google UK English Female" first
               preferredVoice = otherEnglishFemaleVoices.find(v => !v.name.toLowerCase().includes('google uk english female')) || otherEnglishFemaleVoices[0];
               if (preferredVoice) console.log("TTS: Fallback to other English Female (attempted to exclude UK Google first):", preferredVoice.name);
           }
       }
-       // 5. Last resort for English female: pick any 'female' English voice if previous failed
+
+      // 5. Fallback: Any English Female (last resort for female if not already found)
       if (!preferredVoice) {
         preferredVoice = voices.find(voice => voice.lang.startsWith(currentLangPrefix) && voice.name.toLowerCase().includes('female'));
         if (preferredVoice) console.log("TTS: Last resort fallback to any English Female voice:", preferredVoice.name);
@@ -77,11 +79,12 @@ export function useTTS(): TTSHook {
 
     } else if (voicePreference === 'kai') {
       console.log("TTS: Attempting to select 'kai' (male-implied) preference.");
-      // 1. Try "Kai" specifically (English)
-      preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(currentLangPrefix));
+      // 1. Try "Kai" specifically (en-US then en-*)
+      preferredVoice = voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith('en-US')) ||
+                       voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(currentLangPrefix));
       if (preferredVoice) console.log("TTS: Found voice matching 'Kai':", preferredVoice.name);
       
-      // 2. Fallback: US Male
+      // 2. Fallback: US English Male
       if (!preferredVoice) {
         preferredVoice = voices.find(voice => voice.lang.startsWith('en-US') && voice.name.toLowerCase().includes('male'));
         if (preferredVoice) console.log("TTS: Fallback to 'en-US Male' voice:", preferredVoice.name);
@@ -93,9 +96,9 @@ export function useTTS(): TTSHook {
       }
     }
 
-    // General fallbacks if no preference or preferred not found by name/gender
+    // General fallbacks if no preference match or preference not set
     if (!preferredVoice) {
-      console.log("TTS: No specific preference match or preference not set, trying general fallbacks.");
+      console.log("TTS: No specific preference match, or preference not set, trying general English fallbacks.");
       const defaultEnUSVoice = voices.find(v => v.lang.startsWith('en-US') && v.default);
       if (defaultEnUSVoice) {
         preferredVoice = defaultEnUSVoice;
@@ -105,28 +108,44 @@ export function useTTS(): TTSHook {
         preferredVoice = voices.find(v => v.lang.startsWith(currentLangPrefix) && v.default);
         if (preferredVoice) console.log("TTS: Fallback to default English (any region) voice:", preferredVoice.name);
       }
+
+      // Try any US English voice not explicitly male if 'luma' was preferred and no female found
+      if (!preferredVoice && voicePreference === 'luma') {
+        const usNonMaleVoices = voices.filter(v => v.lang.startsWith('en-US') && !v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('kai'));
+        if (usNonMaleVoices.length > 0) {
+            preferredVoice = usNonMaleVoices[0];
+            console.log("TTS: For 'luma' preference, fallback to first available non-male en-US voice:", preferredVoice.name);
+        }
+      }
+      // Or any other English voice not explicitly male
+      if (!preferredVoice && voicePreference === 'luma') {
+         const otherEnNonMaleVoices = voices.filter(v => v.lang.startsWith(currentLangPrefix) && !v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('kai'));
+         if (otherEnNonMaleVoices.length > 0) {
+            preferredVoice = otherEnNonMaleVoices[0];
+            console.log("TTS: For 'luma' preference, fallback to first available non-male other English voice:", preferredVoice.name);
+         }
+      }
+
+      // Fallback to any US English voice if still nothing
       if (!preferredVoice) {
         const usVoices = voices.filter(v => v.lang.startsWith('en-US'));
         if (usVoices.length > 0) {
-            preferredVoice = usVoices.find(v => voicePreference === 'luma' && v.name.toLowerCase().includes('female')) || 
-                             usVoices.find(v => voicePreference === 'kai' && v.name.toLowerCase().includes('male')) ||   
-                             usVoices[0];
-            if (preferredVoice) console.log("TTS: Fallback to first available en-US voice (gender preferred if set):", preferredVoice.name);
+            preferredVoice = usVoices[0];
+            if (preferredVoice) console.log("TTS: Fallback to first available en-US voice:", preferredVoice.name);
         }
       }
+      // Fallback to any other English voice
       if (!preferredVoice) {
          const otherEnVoices = voices.filter(v => v.lang.startsWith(currentLangPrefix));
          if (otherEnVoices.length > 0) {
-            preferredVoice = otherEnVoices.find(v => voicePreference === 'luma' && v.name.toLowerCase().includes('female')) ||
-                             otherEnVoices.find(v => voicePreference === 'kai' && v.name.toLowerCase().includes('male')) ||
-                             otherEnVoices[0];
-            if (preferredVoice) console.log("TTS: Fallback to first available other English voice (gender preferred if set):", preferredVoice.name);
+            preferredVoice = otherEnVoices[0];
+            if (preferredVoice) console.log("TTS: Fallback to first available other English voice:", preferredVoice.name);
          }
       }
     }
     
     if (!preferredVoice && voices.length > 0) {
-      preferredVoice = voices.find(v => v.default) || voices[0];
+      preferredVoice = voices.find(v => v.default) || voices[0]; // Browser's absolute default or just the first voice
       if (preferredVoice) console.log("TTS: Last resort - Fallback to system default or first available voice:", preferredVoice.name);
     }
     
@@ -135,14 +154,14 @@ export function useTTS(): TTSHook {
         console.log("TTS: Setting selected voice to:", preferredVoice.name, "| Lang:", preferredVoice.lang, "| URI snippet:", preferredVoice.voiceURI.substring(0,40));
         setSelectedVoice(preferredVoice);
       } else {
-        console.log("TTS: Preferred voice already selected or no better match found. Current:", selectedVoice.name);
+        console.log("TTS: Preferred voice logic resulted in currently selected voice. No change:", selectedVoice.name);
       }
     } else {
       console.warn("TTS: No suitable voice found after all checks.");
       if (selectedVoice !== null) setSelectedVoice(null);
     }
 
-  }, [voicePreference, selectedVoice, setSupportedVoices, setSelectedVoice]); // Added selectedVoice to dependencies
+  }, [voicePreference, selectedVoice, setSupportedVoices, setSelectedVoice]); // Added selectedVoice
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -164,8 +183,7 @@ export function useTTS(): TTSHook {
     if (typeof window !== 'undefined' && window.speechSynthesis && text && text.trim() !== "") {
       console.log("TTS: Speak called for:", `"${text.substring(0, 30)}..."`, "With selected voice:", selectedVoice?.name || "Default");
       
-      // Always cancel any ongoing speech before starting new speech
-      window.speechSynthesis.cancel();
+      window.speechSynthesis.cancel(); // Always cancel previous speech
       setIsSpeaking(false); // Reset speaking state immediately
       setIsPaused(false);   // Reset paused state
 
@@ -175,29 +193,31 @@ export function useTTS(): TTSHook {
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       } else {
-        console.warn("TTS: No voice selected, using browser default.");
+        console.warn("TTS: No voice selected, using browser default for this utterance.");
       }
       
-      utterance.onstart = () => { console.log("TTS: onstart event"); setIsSpeaking(true); setIsPaused(false); };
-      utterance.onend = () => { console.log("TTS: onend event"); setIsSpeaking(false); setIsPaused(false); utteranceRef.current = null; };
+      utterance.onstart = () => { console.log("TTS: onstart event for:", `"${utterance.text.substring(0, 30)}..."`); setIsSpeaking(true); setIsPaused(false); };
+      utterance.onend = () => { console.log("TTS: onend event for:", `"${utterance.text.substring(0, 30)}..."`); setIsSpeaking(false); setIsPaused(false); utteranceRef.current = null; };
       utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
         console.error('TTS: Speech synthesis error:', event.error, '| Utterance text:', `"${utterance.text.substring(0, 50)}..."`, '| Selected voice:', utterance.voice?.name || 'Default');
         setIsSpeaking(false); setIsPaused(false); utteranceRef.current = null;
       };
-      utterance.onpause = () => { console.log("TTS: onpause event"); setIsPaused(true); /* isSpeaking remains true */ };
-      utterance.onresume = () => { console.log("TTS: onresume event"); setIsPaused(false); setIsSpeaking(true);};
+      utterance.onpause = () => { console.log("TTS: onpause event for:", `"${utterance.text.substring(0, 30)}..."`); setIsPaused(true); /* isSpeaking should remain true */ };
+      utterance.onresume = () => { console.log("TTS: onresume event for:", `"${utterance.text.substring(0, 30)}..."`); setIsPaused(false); setIsSpeaking(true);}; // Make sure isSpeaking becomes true
       
       // Using a small timeout can sometimes help with "interrupted" errors or race conditions
       setTimeout(() => {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
+        if (typeof window !== 'undefined' && window.speechSynthesis && utteranceRef.current === utterance) { // Ensure this utterance is still the one we want to speak
            console.log("TTS: Calling window.speechSynthesis.speak now for:", `"${utterance.text.substring(0, 30)}..."`);
            window.speechSynthesis.speak(utterance);
+        } else if (utteranceRef.current !== utterance) {
+            console.log("TTS: Speak call aborted due to new utterance queued before timeout for:", `"${utterance.text.substring(0,30)}..."`);
         }
       }, 50); 
     } else {
-      console.warn("TTS: Speak called but conditions not met (no window, no speech synth, or empty text). Text was:", text);
+      console.warn("TTS: Speak called but conditions not met (no window, no speech synth, or empty text). Text was:", `"${text ? text.substring(0,30) : 'EMPTY' }..."`);
     }
-  }, [selectedVoice, setIsSpeaking, setIsPaused]); // Dependencies for useCallback
+  }, [selectedVoice, setIsSpeaking, setIsPaused]); 
 
   const pauseTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && isSpeaking && !isPaused) {
@@ -211,7 +231,7 @@ export function useTTS(): TTSHook {
     if (typeof window !== 'undefined' && window.speechSynthesis && isPaused) { 
       console.log("TTS: resumeTTS called");
       window.speechSynthesis.resume();
-      // onresume event should handle setIsPaused(false)
+      // onresume event should handle setIsPaused(false) and setIsSpeaking(true)
     }
   }, [isPaused]);
 
@@ -239,7 +259,7 @@ export function useTTS(): TTSHook {
   const handleSetVoicePreference = useCallback((preference: 'luma' | 'kai' | null) => {
     console.log("TTS: Setting voice preference to:", preference);
     setVoicePreference(preference);
-    // populateVoiceList will be triggered by useEffect due to voicePreference change
+    // populateVoiceList will be triggered by useEffect due to voicePreference change (or selectedVoice)
   }, [setVoicePreference]);
 
   return { 
@@ -256,3 +276,5 @@ export function useTTS(): TTSHook {
     voicePreference 
   };
 }
+
+    
