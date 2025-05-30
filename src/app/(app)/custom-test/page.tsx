@@ -154,7 +154,6 @@ export default function CustomTestPage() {
       clearInterval(overallTestTimerIdRef.current);
       overallTestTimerIdRef.current = null;
     }
-    setTestState(prev => prev ? { ...prev, timerId: undefined } : null);
   }, []);
   
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
@@ -185,10 +184,10 @@ export default function CustomTestPage() {
       const percentage = totalPossibleScore > 0 ? Math.max(0, (score / totalPossibleScore) * 100) : 0;
       const performanceTag = getPerformanceTag(percentage);
 
-      const resultMessage = `Your score is ${score} out of ${totalPossibleScore}. Performance: ${performanceTag}!`;
+      const resultMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${score} out of ${totalPossibleScore}. Performance: ${performanceTag}!`;
       
       if (!resultAnnouncementSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
-         speak(autoSubmitted ? `Test auto-submitted! ${resultMessage}` : `Test submitted! ${resultMessage}`);
+         speak(resultMessage);
          resultAnnouncementSpokenRef.current = true;
       }
 
@@ -204,8 +203,8 @@ export default function CustomTestPage() {
         isAutoSubmitting: autoSubmitted,
         timeLeft: autoSubmitted && prevTestState.timeLeft !== undefined ? 0 : prevTestState.timeLeft,
         performanceTag,
-        currentQuestionTimeLeft: undefined,
-        timerId: undefined,
+        currentQuestionTimeLeft: undefined, // Clear per-question timer on submit
+        timerId: undefined, // Clear overall timer ID
       };
     });
   }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, playCorrectSound, playIncorrectSound, getPerformanceTag, selectedVoice, isSpeaking, isPaused, speak, toast]);
@@ -226,9 +225,11 @@ export default function CustomTestPage() {
     }
     return () => {
       isMounted = false;
-      // Optional: cancelTTS() if it was this specific speak call, needs more complex logic
+      if (isMounted && pageTitleSpokenRef.current && (isSpeaking || isPaused)) {
+         // cancelTTS(); // Only cancel if this specific page's title was speaking
+      }
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading, cancelTTS]);
 
 
   useEffect(() => {
@@ -268,14 +269,6 @@ export default function CustomTestPage() {
     }
   }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
   
-  // Overall test timer effect
-  useEffect(() => {
-    if (testState?.timeLeft === 0 && !testState.isAutoSubmitting && !testState.showResults && testState.timerId) {
-      toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
-      handleSubmitTest(true);
-    }
-  }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, testState?.timerId, handleSubmitTest, toast]);
-
   const handleNextQuestion = useCallback(() => {
     playClickSound();
     if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) return;
@@ -287,6 +280,14 @@ export default function CustomTestPage() {
     });
   }, [testState, playClickSound, clearCurrentQuestionTimer]);
 
+  // Overall test timer effect
+  useEffect(() => {
+    if (testState?.timeLeft === 0 && !testState.isAutoSubmitting && !testState.showResults && testState.timerId) {
+      toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
+      handleSubmitTest(true); // Pass true to indicate auto-submission
+    }
+  }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, testState?.timerId, handleSubmitTest, toast]);
+
   // Effect for per-question timer
   useEffect(() => {
     clearCurrentQuestionTimer(); 
@@ -295,7 +296,6 @@ export default function CustomTestPage() {
       
       setTestState(prev => {
         if (!prev) return null;
-        // Ensure currentQuestionTimeLeft is initialized for the current question
         if (prev.currentQuestionTimeLeft === undefined || prev.currentQuestionTimeLeft > perQuestionDuration || prev.currentQuestionIndex !== (prev.questions.length > 0 ? prev.currentQuestionIndex : -1)) {
            return { ...prev, currentQuestionTimeLeft: perQuestionDuration };
         }
@@ -313,9 +313,9 @@ export default function CustomTestPage() {
             clearCurrentQuestionTimer();
             toast({ title: "Time's up for this question!", variant: "default" });
             if (prev.currentQuestionIndex < prev.questions.length - 1) {
-              handleNextQuestion(); // Automatically move to next question
+              handleNextQuestion(); 
             } else {
-              handleSubmitTest(true); // Auto-submit if it's the last question
+              handleSubmitTest(true); 
             }
             return { ...prev, currentQuestionTimeLeft: 0 };
           }
@@ -324,14 +324,16 @@ export default function CustomTestPage() {
       }, 1000);
     }
     return () => clearCurrentQuestionTimer();
-  // Ensure dependencies are correct to re-trigger timer on question change
   }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, testState?.isAutoSubmitting, handleNextQuestion, handleSubmitTest, toast, clearCurrentQuestionTimer]);
 
 
   const startTimer = (durationMinutes: number) => {
     if (durationMinutes <= 0) {
       setTestState(prev => prev ? { ...prev, timeLeft: undefined, timerId: undefined } : null);
-      overallTestTimerIdRef.current = null;
+      if (overallTestTimerIdRef.current) {
+        clearInterval(overallTestTimerIdRef.current);
+        overallTestTimerIdRef.current = null;
+      }
       return;
     }
 
@@ -346,11 +348,11 @@ export default function CustomTestPage() {
             const newTimeLeft = currentTestState.timeLeft - 1;
             return { ...currentTestState, timeLeft: newTimeLeft };
           }
-          if (overallTestTimerIdRef.current) {
+          if (currentTestState && typeof currentTestState.timeLeft === 'number' && currentTestState.timeLeft <= 0 && overallTestTimerIdRef.current) {
              clearInterval(overallTestTimerIdRef.current);
              overallTestTimerIdRef.current = null;
           }
-          return currentTestState ? { ...currentTestState, timerId: undefined } : null;
+          return currentTestState ? { ...currentTestState, timerId: overallTestTimerIdRef.current === null ? undefined : currentTestState.timerId } : null;
         });
       }, 1000);
       overallTestTimerIdRef.current = newTimerId;
@@ -361,8 +363,8 @@ export default function CustomTestPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
     setIsLoading(true);
-    setTestState(null);
-    resultAnnouncementSpokenRef.current = false;
+    setTestState(null); 
+    resultAnnouncementSpokenRef.current = false; 
     pageTitleSpokenRef.current = true; 
 
     if (selectedVoice && !isSpeaking && !isPaused) {
@@ -377,7 +379,7 @@ export default function CustomTestPage() {
       topicForAI = data.topics;
       topicsForSettings = [data.topics];
     } else if (data.sourceType === 'notes' && data.notes) {
-      topicForAI = `the following notes: ${data.notes}`;
+      topicForAI = `the following notes: ${data.notes}`; 
       topicsForSettings = ["Notes-based Test"];
     } else if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > 0) {
       topicForAI = data.selectedRecentTopics.join(', ');
@@ -401,11 +403,16 @@ export default function CustomTestPage() {
     };
     
     try {
-      const result = await generateQuiz({ topic: `${topicForAI} (Difficulty: ${settings.difficulty})`, numQuestions: settings.numQuestions });
+      const quizInputTopic = data.sourceType === 'notes' 
+        ? `questions based on the following notes: ${data.notes}`
+        : topicForAI;
+
+      const result = await generateQuiz({ topic: `${quizInputTopic} (Difficulty: ${settings.difficulty})`, numQuestions: settings.numQuestions });
+      
       if (result.quiz && result.quiz.length > 0) {
         setTestState({
           settings,
-          questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, type: q.options ? 'multiple-choice' : 'short-answer' })),
+          questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, type: q.options && q.options.length > 0 ? 'multiple-choice' : 'short-answer' })),
           userAnswers: Array(result.quiz.length).fill(undefined),
           currentQuestionIndex: 0,
           showResults: false,
@@ -456,8 +463,8 @@ export default function CustomTestPage() {
     if (!testState) return;
     const originalSettings = testState.settings;
     setIsLoading(true); 
-    setTestState(null);
-    resultAnnouncementSpokenRef.current = false;
+    setTestState(null); 
+    resultAnnouncementSpokenRef.current = false; 
 
     if (selectedVoice && !isSpeaking && !isPaused) {
       speak("Recreating test. Please wait.");
@@ -468,7 +475,7 @@ export default function CustomTestPage() {
     if (originalSettings.sourceType === 'topic' && originalSettings.topics.length > 0) {
         topicForAI = originalSettings.topics.join(', ');
     } else if (originalSettings.sourceType === 'notes' && originalSettings.notes) {
-        topicForAI = `the following notes: ${originalSettings.notes}`;
+        topicForAI = `questions based on the following notes: ${originalSettings.notes}`;
     } else if (originalSettings.sourceType === 'recent' && originalSettings.selectedRecentTopics && originalSettings.selectedRecentTopics.length > 0) {
         topicForAI = originalSettings.selectedRecentTopics.join(', ');
     }
@@ -478,7 +485,7 @@ export default function CustomTestPage() {
         if (result.quiz && result.quiz.length > 0) {
           setTestState({
             settings: originalSettings,
-            questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, type: q.options ? 'multiple-choice' : 'short-answer' })),
+            questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, type: q.options && q.options.length > 0 ? 'multiple-choice' : 'short-answer' })),
             userAnswers: Array(result.quiz.length).fill(undefined),
             currentQuestionIndex: 0,
             showResults: false,
@@ -510,8 +517,8 @@ export default function CustomTestPage() {
     setTestState(null);
     clearCurrentQuestionTimer();
     clearOverallTestTimer();
-    pageTitleSpokenRef.current = false;
-    resultAnnouncementSpokenRef.current = false;
+    pageTitleSpokenRef.current = false; 
+    resultAnnouncementSpokenRef.current = false; 
     setValue('topics', '');
     setValue('notes', '');
     setValue('selectedRecentTopics', []);
@@ -558,15 +565,27 @@ export default function CustomTestPage() {
     setValue('selectedRecentTopics', newSelected, { shouldValidate: true });
   };
 
-  const handleTTSPlayback = () => {
+  const handlePlaybackControl = () => {
+    playClickSound();
     if (isSpeaking && !isPaused) {
       pauseTTS();
     } else if (isPaused) {
       resumeTTS();
     } else {
-      // Decide what to speak - perhaps the current page title if nothing else relevant
-      if (!pageTitleSpokenRef.current) speak(PAGE_TITLE);
+      if (!pageTitleSpokenRef.current && !testState && !isLoading) {
+        speak(PAGE_TITLE);
+        pageTitleSpokenRef.current = true;
+      } else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
+        const resultMessage = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Performance: ${testState.performanceTag}!`;
+        speak(resultMessage);
+        resultAnnouncementSpokenRef.current = true;
+      }
     }
+  };
+
+  const handleStopTTS = () => {
+    playClickSound();
+    cancelTTS();
   };
 
   if (!testState) {
@@ -576,23 +595,23 @@ export default function CustomTestPage() {
           <CardHeader className="text-center">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
                 <div className="inline-block p-3 bg-primary/80 rounded-full mx-auto sm:mx-0 mb-2 sm:mb-0">
-                    <TestTubeDiagonal className="w-10 h-10 text-primary-foreground" />
+                    <TestTubeDiagonal className="w-7 h-7 text-primary-foreground" />
                 </div>
                  <div className="flex items-center gap-1 self-center sm:self-end">
                      <Select 
                         value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')} 
-                        onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}
+                        onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia');}}
                       >
                         <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="zia">Zia</SelectItem>
-                          <SelectItem value="kai">Kai</SelectItem>
+                          <SelectItem value="zia">Zia (Female)</SelectItem>
+                          <SelectItem value="kai">Kai (Male)</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button onClick={handleTTSPlayback} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
+                      <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
                         {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
                       </Button>
-                      <Button onClick={cancelTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}>
+                      <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}>
                         <StopCircle className="h-4 w-4" />
                       </Button>
                 </div>
@@ -712,7 +731,7 @@ export default function CustomTestPage() {
               </div>
             </CardContent>
             <CardFooter className="justify-center p-6">
-              <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px]">
+              <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px] transition-colors duration-200 ease-in-out">
                 {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <TestTubeDiagonal className="w-5 h-5 mr-2" />}
                 Generate Test
               </Button>
@@ -723,7 +742,7 @@ export default function CustomTestPage() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !testState) { // Show full page loader only if testState is null (initial generation)
     return (
         <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
             <Loader2 className="w-16 h-16 animate-spin text-primary mb-6" />
@@ -761,14 +780,14 @@ export default function CustomTestPage() {
               <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
               <Controller
                 name={`userAnswers.${testState.currentQuestionIndex}` as any} 
-                control={control}
-                render={({ field }) => (
+                control={control} 
+                render={({ field }) => ( 
                   <RadioGroup
                     onValueChange={(value) => { playClickSound(); handleAnswerSelect(value); }}
                     value={testState.userAnswers[testState.currentQuestionIndex]}
                     className="space-y-3"
                   >
-                    {currentQuestionData.options?.map((option, i) => ( // Ensure options exist
+                    {currentQuestionData.options?.map((option, i) => ( 
                       <Label key={i} htmlFor={`option-${i}-${testState.currentQuestionIndex}`} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer transition-all">
                         <RadioGroupItem value={option} id={`option-${i}-${testState.currentQuestionIndex}`} />
                         <span className="text-base">{option}</span>
@@ -792,7 +811,7 @@ export default function CustomTestPage() {
             <CardHeader className="text-center border-b pb-4">
               <CardTitle className="text-3xl font-bold text-primary">Test Results</CardTitle>
               <CardDescription className="text-lg">
-                You scored {testState.score} out of {testState.questions.length * 4} ({((testState.score / (testState.questions.length * 4)) * 100).toFixed(1)}%)
+                You scored {testState.score} out of {testState.questions.length * 4} ({((testState.score / (testState.questions.length * 4 || 1)) * 100).toFixed(1)}%)
               </CardDescription>
               {testState.performanceTag && (
                 <Badge 
@@ -832,7 +851,7 @@ export default function CustomTestPage() {
                     {q.explanation && (
                        <Alert variant="default" className="mt-2 bg-accent/10 border-accent/30">
                           <Lightbulb className="h-4 w-4 text-accent-foreground/80" />
-                          <AlertTitle className="text-accent-foreground/90">Explanation</AlertTitle>
+                          <AlertTitle className="text-accent-foreground/90 text-sm">Explanation</AlertTitle>
                           <AlertDescription className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
                              <ReactMarkdown>{q.explanation}</ReactMarkdown>
                           </AlertDescription>
@@ -861,4 +880,3 @@ export default function CustomTestPage() {
     </div>
   );
 }
-

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react'; // Removed Volume2
+import { Download, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
@@ -41,13 +41,13 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Default to Zia preference
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
 
-  const handleSpeakNotes = useCallback(() => {
+  const handlePlaybackControl = useCallback(() => {
     playClickSound();
     if (!notesContent) return;
     const textToSpeak = notesContentRef.current?.innerText || notesContent;
@@ -61,7 +61,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     }
   }, [playClickSound, notesContent, isSpeaking, isPaused, pauseTTS, resumeTTS, speak]);
 
-  const handleStopSpeakNotes = useCallback(() => {
+  const handleStopTTS = useCallback(() => {
     playClickSound();
     cancelTTS();
   }, [playClickSound, cancelTTS]);
@@ -131,7 +131,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
           <div className="flex items-center gap-2 flex-wrap">
             <Select 
               value={voicePreference || (selectedVoice?.name.toLowerCase().includes('zia') ? 'zia' : selectedVoice?.name.toLowerCase().includes('kai') ? 'kai' : 'female')} 
-              onValueChange={(value) => setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia')}
+              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'male' | 'female' | 'kai' | 'zia');}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Type" /> </SelectTrigger>
               <SelectContent>
@@ -139,7 +139,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
                 <SelectItem value="kai">Kai (Male)</SelectItem>
               </SelectContent>
             </Select>
-            <Select onValueChange={setSelectedVoiceURI} value={selectedVoice?.voiceURI}>
+            <Select onValueChange={(uri) => {playClickSound(); setSelectedVoiceURI(uri);}} value={selectedVoice?.voiceURI}>
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Engine" /> </SelectTrigger>
               <SelectContent>
                 {supportedVoices.length > 0 ? supportedVoices.map(voice => (
@@ -147,10 +147,10 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
                 )) : <SelectItem value="no-voices" disabled className="text-xs">No voices</SelectItem>}
               </SelectContent>
             </Select>
-            <Button onClick={handleSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
+            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
               {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
-            <Button onClick={handleStopSpeakNotes} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
+            <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
               <StopCircle className="h-4 w-4" />
             </Button>
             <Button onClick={handleDownloadNotes} variant="outline" size="sm" className="h-8 text-xs"><Download className="mr-1.5 h-3.5 w-3.5"/>Download</Button>

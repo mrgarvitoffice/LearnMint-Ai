@@ -8,7 +8,7 @@ import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { meguminChatbot, type MeguminChatbotInput } from '@/ai/flows/ai-chatbot';
-import { Bot, PlayCircle, PauseCircle, StopCircle } from 'lucide-react'; // Added TTS control icons
+import { Bot, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -42,7 +42,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Default to Zia for Megumin
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -71,11 +71,11 @@ export default function ChatbotPage() {
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice]); // Only trigger on selectedVoice change (after preference set)
+  }, [selectedVoice]); 
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS(); // Stop any ongoing speech before sending new message
+    cancelTTS(); 
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString() + '-user',
@@ -134,14 +134,20 @@ export default function ChatbotPage() {
     }
   };
   
-  const handleTTSPlayback = () => {
+  const handlePlaybackControl = () => {
+    if (!currentSpokenMessageRef.current) return;
+
     if (isSpeaking && !isPaused) {
       pauseTTS();
     } else if (isPaused) {
       resumeTTS();
-    } else if (currentSpokenMessageRef.current) {
+    } else {
       speak(currentSpokenMessageRef.current);
     }
+  };
+
+  const handleStopTTS = () => {
+    cancelTTS();
   };
 
 
@@ -181,10 +187,10 @@ export default function ChatbotPage() {
                   )) : <SelectItem value="no-voices" disabled className="text-xs">No voices available</SelectItem>}
                 </SelectContent>
               </Select>
-              <Button onClick={handleTTSPlayback} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
+              <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
                 {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
               </Button>
-              <Button onClick={cancelTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused}>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused}>
                 <StopCircle className="h-4 w-4" />
               </Button>
             </div>
