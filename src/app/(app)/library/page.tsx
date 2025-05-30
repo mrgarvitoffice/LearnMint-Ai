@@ -9,13 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
-import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError } from '@/lib/types';
+import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSearchInput, GoogleBooksSearchInput, YoutubeSearchOutput, GoogleBooksSearchOutput } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
 import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
-import { searchYoutubeVideos, type YoutubeSearchInput, type YoutubeSearchOutput } from '@/ai/flows/search-youtube-videos';
-import { searchGoogleBooks, type GoogleBooksSearchInput, type GoogleBooksSearchOutput } from '@/ai/flows/search-google-books';
+import { directYoutubeSearch } from '@/lib/actions'; // Import directYoutubeSearch
+import { searchGoogleBooks } from '@/ai/flows/search-google-books';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +32,7 @@ export default function LibraryPage() {
   const [selectedYoutubeVideo, setSelectedYoutubeVideo] = useState<YoutubeVideoItem | null>(null);
 
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
-  const [selectedGoogleBook, setSelectedGoogleBook] = useState<GoogleBookItem | null>(null);
+  // const [selectedGoogleBook, setSelectedGoogleBook] = useState<GoogleBookItem | null>(null); // Kept for consistency, but not used in UI yet
 
 
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
@@ -76,7 +76,7 @@ export default function LibraryPage() {
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
-    mutationFn: searchYoutubeVideos,
+    mutationFn: directYoutubeSearch, // Use direct server action
     onSuccess: (data) => {
       if (data.videos && data.videos.length > 0) {
         setYoutubeResults(data.videos);
@@ -87,14 +87,14 @@ export default function LibraryPage() {
       }
     },
     onError: (error) => {
-      console.error("YouTube search error:", error);
+      console.error("YouTube search error (direct action):", error);
       toast({ title: "YouTube Search Error", description: error.message || "Could not fetch videos. Ensure YOUTUBE_API_KEY is valid and YouTube Data API v3 is enabled.", variant: "destructive" });
       setYoutubeResults([]);
     }
   });
 
   const googleBooksSearchMutation = useMutation<GoogleBooksSearchOutput, QueryError, GoogleBooksSearchInput>({
-    mutationFn: searchGoogleBooks,
+    mutationFn: searchGoogleBooks, // This still uses Genkit flow as per previous setup
     onSuccess: (data) => {
       if (data.books && data.books.length > 0) {
         setGoogleBooksResults(data.books);
@@ -116,7 +116,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
-      setYoutubeResults([]); // Clear previous results
+      setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 9 });
     }
   };
@@ -125,7 +125,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
-      setGoogleBooksResults([]); // Clear previous results
+      setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
     }
   };

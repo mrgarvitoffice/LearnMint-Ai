@@ -3,6 +3,7 @@
 import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
+import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem } from './types';
 
 export async function generateNotesAction(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
   console.log(`[Server Action] generateNotesAction called for topic: ${input.topic}`);
@@ -61,5 +62,46 @@ export async function generateFlashcardsAction(input: GenerateFlashcardsInput): 
       clientErrorMessage = `Flashcard Generation: Failed. Error: ${error.message.substring(0, 150)}. Check server logs for full details.`;
     }
     throw new Error(clientErrorMessage);
+  }
+}
+
+export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<YoutubeSearchOutput> {
+  console.log(`[Server Action] directYoutubeSearch called for query: ${input.query}, maxResults: ${input.maxResults}`);
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
+    console.error("YOUTUBE_API_KEY is not configured for direct search.");
+    throw new Error('YouTube API key is not configured.');
+  }
+
+  const params = new URLSearchParams({
+    key: apiKey,
+    part: 'snippet',
+    q: input.query,
+    type: 'video',
+    maxResults: (input.maxResults || 9).toString(),
+  });
+
+  try {
+    const response = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Direct YouTube API Error:', errorData);
+      throw new Error(`YouTube API request failed: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const videos: YoutubeVideoItem[] = data.items?.map((item: any) => ({
+      videoId: item.id.videoId,
+      title: item.snippet.title,
+      description: item.snippet.description,
+      thumbnailUrl: item.snippet.thumbnails.default.url,
+      channelTitle: item.snippet.channelTitle,
+      publishedAt: item.snippet.publishedAt,
+    })) || [];
+
+    return { videos };
+  } catch (error: any) {
+    console.error("[Server Action Error - directYoutubeSearch] Error fetching from YouTube API:", error);
+    throw new Error(error.message || "Failed to fetch YouTube videos directly.");
   }
 }
