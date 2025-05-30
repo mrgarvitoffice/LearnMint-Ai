@@ -100,6 +100,7 @@ export interface TestSettings {
   difficulty: 'easy' | 'medium' | 'hard';
   numQuestions: number;
   timer?: number; // in minutes, 0 for no timer
+  perQuestionTimer?: number; // in seconds, 0 for no timer per question
 }
 
 export interface TestQuestion extends QuizQuestion {

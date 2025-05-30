@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import type { TestSettings, TestQuestion } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle, TimerIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -38,6 +38,7 @@ const formSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   numQuestions: z.coerce.number().min(1, 'Min 1 question').max(50, 'Max 50 questions').default(5),
   timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0),
+  perQuestionTimer: z.coerce.number().min(0, 'Per-question timer cannot be negative').optional().default(0),
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'topic' && (!data.topics || data.topics.trim().length < 3)) {
     ctx.addIssue({
@@ -62,10 +63,10 @@ const formSchema = z.object({
   }
   if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > MAX_RECENT_TOPICS_SELECT) {
     ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `You can select a maximum of ${MAX_RECENT_TOPICS_SELECT} recent topics.`,
-        path: ['selectedRecentTopics'],
-      });
+      code: z.ZodIssueCode.custom,
+      message: `You can select a maximum of ${MAX_RECENT_TOPICS_SELECT} recent topics.`,
+      path: ['selectedRecentTopics'],
+    });
   }
 });
 
@@ -107,66 +108,21 @@ export default function CustomTestPage() {
       difficulty: 'medium',
       numQuestions: 5,
       timer: 0,
+      perQuestionTimer: 0,
       selectedRecentTopics: [],
     }
   });
 
   const sourceType = watch('sourceType');
 
-  useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('female');
-      voicePreferenceWasSetRef.current = true;
-    }
-  }, [supportedVoices, setVoicePreference]);
-
-  // Effect for speaking the page title
-  useEffect(() => {
-    let isEffectMounted = true; // To track if the effect is still mounted when speak might be called
-
-    if (
-      selectedVoice && // A voice is selected
-      !isTTSSpeaking && // TTS is not currently speaking
-      !pageTitleSpokenRef.current && // This page's title hasn't been spoken yet
-      !testState && // No test is active or results shown (i.e., initial page state)
-      !isLoading // Not in a general loading state
-    ) {
-      // Set ref immediately BEFORE calling speak to prevent race conditions from rapid re-renders
-      pageTitleSpokenRef.current = true; 
-      if (isEffectMounted) { // Check if still mounted before calling speak
-        speak(PAGE_TITLE);
-      }
-    }
-
-    return () => {
-      isEffectMounted = false;
-      // If the component unmounts while this specific title was intended to be spoken,
-      // and if we knew it was *this* speak call, we might cancel.
-      // However, broad cancellation here can interrupt other TTS.
-      // For title announcements, it's often okay if they get cut off on unmount.
-    };
-  }, [selectedVoice, isTTSSpeaking, speak, testState, isLoading, cancelTTS]); // cancelTTS is included if used in cleanup logic
-
-
-  useEffect(() => {
-    if (transcript) {
-      setValue('topics', transcript);
-    }
-  }, [transcript, setValue]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedTopics = localStorage.getItem('learnmint-recent-topics');
-      if (storedTopics) {
-        try {
-            setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY));
-        } catch (e) {
-            console.error("Failed to parse recent topics from localStorage", e);
-            localStorage.removeItem('learnmint-recent-topics');
-        }
-      }
-    }
-  }, []);
+  const getPerformanceTag = (percentage: number): string => {
+    if (percentage === 100) return "Conqueror";
+    if (percentage >= 90) return "Ace";
+    if (percentage >= 80) return "Diamond";
+    if (percentage >= 70) return "Gold";
+    if (percentage >= 50) return "Bronze";
+    return "Keep Practicing!";
+  };
 
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     playClickSound();
@@ -195,10 +151,12 @@ export default function CustomTestPage() {
       const performanceTag = getPerformanceTag(percentage);
 
       const resultMessage = `Your score is ${score} out of ${totalPossibleScore}. Your performance: ${performanceTag}! Review your answers below.`;
+      const ttsMessage = autoSubmitted ? `Test auto-submitted! ${resultMessage}` : `Test submitted! ${resultMessage}`;
+      
       if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) {
          toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Score: ${score}/${totalPossibleScore}. Performance: ${performanceTag}.`});
          if (selectedVoice && !isTTSSpeaking) {
-           speak(autoSubmitted ? `Test auto-submitted! ${resultMessage}` : `Test submitted! ${resultMessage}`);
+           speak(ttsMessage);
          }
       }
 
@@ -213,7 +171,60 @@ export default function CustomTestPage() {
         performanceTag,
       };
     });
-  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]);
+  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking, getPerformanceTag]); // Added getPerformanceTag
+
+
+  useEffect(() => {
+    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      setVoicePreference('zia');
+      voicePreferenceWasSetRef.current = true;
+    }
+  }, [supportedVoices, setVoicePreference]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (
+      selectedVoice &&
+      !isTTSSpeaking &&
+      !pageTitleSpokenRef.current &&
+      !testState && 
+      !isLoading 
+    ) {
+      pageTitleSpokenRef.current = true;
+      if(isMounted) speak(PAGE_TITLE);
+    }
+    return () => {
+      isMounted = false;
+      if (pageTitleSpokenRef.current && isTTSSpeaking && !testState && !isLoading){
+        // Only cancel if this specific speak call was the one active for the title
+        // This is tricky to determine perfectly, but cancelling on unmount if it was likely the title is a safe bet.
+        // cancelTTS(); 
+        // Consider if broad cancelTTS() here is too aggressive if other TTS is desired on page change.
+      }
+    };
+  }, [selectedVoice, isTTSSpeaking, speak, testState, isLoading, cancelTTS]);
+
+
+  useEffect(() => {
+    if (transcript) {
+      setValue('topics', transcript);
+    }
+  }, [transcript, setValue]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedTopics = localStorage.getItem('learnmint-recent-topics');
+      if (storedTopics) {
+        try {
+            setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY));
+        } catch (e) {
+            console.error("Failed to parse recent topics from localStorage", e);
+            localStorage.removeItem('learnmint-recent-topics');
+        }
+      }
+    }
+  }, []);
+
 
   useEffect(() => {
     if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
@@ -225,15 +236,6 @@ export default function CustomTestPage() {
     }
   }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
 
-
-  const getPerformanceTag = (percentage: number): string => {
-    if (percentage === 100) return "Conqueror";
-    if (percentage >= 90) return "Ace";
-    if (percentage >= 80) return "Diamond";
-    if (percentage >= 70) return "Gold";
-    if (percentage >= 50) return "Bronze";
-    return "Keep Practicing!";
-  };
 
   useEffect(() => {
     let currentTimerId: NodeJS.Timeout | undefined;
@@ -326,6 +328,7 @@ export default function CustomTestPage() {
           difficulty: data.difficulty,
           numQuestions: result.quiz.length,
           timer: data.timer,
+          perQuestionTimer: data.perQuestionTimer,
         };
         setTestState({
           settings: testSettings,
@@ -390,6 +393,7 @@ export default function CustomTestPage() {
         difficulty: testState.settings.difficulty,
         numQuestions: testState.settings.numQuestions,
         timer: testState.settings.timer || 0,
+        perQuestionTimer: testState.settings.perQuestionTimer || 0,
      }).finally(() => setIsLoading(false));
   }
 
@@ -401,6 +405,7 @@ export default function CustomTestPage() {
     setValue('notes', '');
     setValue('selectedRecentTopics', []);
     setValue('sourceType', 'topic');
+    setValue('perQuestionTimer', 0);
     pageTitleSpokenRef.current = false; 
     if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoading && !testState) { 
         speak(PAGE_TITLE);
@@ -536,34 +541,40 @@ export default function CustomTestPage() {
             )}
 
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty</Label>
-                <Controller
-                  name="difficulty"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={(value) => { playClickSound(); field.onChange(value);}} defaultValue={field.value}>
-                      <SelectTrigger id="difficulty"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="numQuestions">Number of Questions (1-50)</Label>
-                <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out" />
-                {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timer">Timer (minutes, 0 for none)</Label>
-                <Input id="timer" type="number" {...register('timer')} className="transition-colors duration-200 ease-in-out" />
-                {errors.timer && <p className="text-sm text-destructive">{errors.timer.message}</p>}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <div className="space-y-2">
+                    <Label htmlFor="difficulty">Difficulty</Label>
+                    <Controller
+                    name="difficulty"
+                    control={control}
+                    render={({ field }) => (
+                        <Select onValueChange={(value) => { playClickSound(); field.onChange(value);}} defaultValue={field.value}>
+                        <SelectTrigger id="difficulty" className="transition-colors duration-200 ease-in-out"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="easy">Easy</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="hard">Hard</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    )}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="numQuestions">Number of Questions (1-50)</Label>
+                    <Input id="numQuestions" type="number" {...register('numQuestions')} className="transition-colors duration-200 ease-in-out" />
+                    {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="timer">Overall Timer (minutes, 0 for none)</Label>
+                    <Input id="timer" type="number" {...register('timer')} className="transition-colors duration-200 ease-in-out" />
+                    {errors.timer && <p className="text-sm text-destructive">{errors.timer.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="perQuestionTimer">Time per Question (seconds, 0 for none)</Label>
+                    <Input id="perQuestionTimer" type="number" {...register('perQuestionTimer')} className="transition-colors duration-200 ease-in-out" />
+                    {errors.perQuestionTimer && <p className="text-sm text-destructive">{errors.perQuestionTimer.message}</p>}
+                    <p className="text-xs text-muted-foreground">Note: Per-question timer enforcement is a future enhancement. This setting is currently for planning.</p>
+                </div>
             </div>
           </CardContent>
           <CardFooter>
@@ -583,12 +594,19 @@ export default function CustomTestPage() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Custom Test: Question {testState.currentQuestionIndex + 1} of {testState.questions.length}</CardTitle>
-              {testState.settings.timer && testState.settings.timer > 0 && typeof testState.timeLeft === 'number' && (
-                <div className={`flex items-center gap-2 text-lg font-medium ${testState.timeLeft <= 60 ? 'text-destructive animate-pulse' : 'text-primary'}`}>
-                  <Clock className="w-5 h-5" />
-                  <span>{formatTime(testState.timeLeft)}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-4">
+                {testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0 && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <TimerIcon className="w-4 h-4" /> Per Q: {testState.settings.perQuestionTimer}s (UI Only)
+                    </div>
+                )}
+                {testState.settings.timer && testState.settings.timer > 0 && typeof testState.timeLeft === 'number' && (
+                    <div className={`flex items-center gap-2 text-lg font-medium ${testState.timeLeft <= 60 ? 'text-destructive animate-pulse' : 'text-primary'}`}>
+                    <Clock className="w-5 h-5" />
+                    <span>{formatTime(testState.timeLeft)}</span>
+                    </div>
+                )}
+              </div>
             </div>
             <Progress value={((testState.currentQuestionIndex + 1) / testState.questions.length) * 100} className="w-full mt-2" />
              {testState.isAutoSubmitting && (
@@ -634,16 +652,11 @@ export default function CustomTestPage() {
     const totalPossibleScore = testState.questions.length * 4;
     const percentage = totalPossibleScore > 0 ? Math.max(0, (testState.score / totalPossibleScore) * 100) : 0;
     
-    let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default";
-    if (testState.performanceTag === "Conqueror" || testState.performanceTag === "Ace") {
-        badgeVariant = "default"; 
-    } else if (testState.performanceTag === "Diamond" || testState.performanceTag === "Gold") {
-        badgeVariant = "secondary";
-    } else if (testState.performanceTag === "Bronze") {
-        badgeVariant = "outline";
-    } else { 
-        badgeVariant = "destructive";
-    }
+    let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default"; // default for Ace/Conqueror (primary-like)
+    if (percentage >= 80 && percentage < 90) badgeVariant = "secondary"; // Diamond (secondary-like)
+    else if (percentage >= 70 && percentage < 80) badgeVariant = "default"; // Gold (primary-like, slightly less intense than Ace)
+    else if (percentage >= 50 && percentage < 70) badgeVariant = "outline"; // Bronze (outline)
+    else if (percentage < 50) badgeVariant = "destructive"; // Keep Practicing (destructive)
 
 
     return (
@@ -655,7 +668,7 @@ export default function CustomTestPage() {
           </CardDescription>
           {testState.performanceTag && (
             <div className="mt-3">
-                <Badge variant={badgeVariant} className="text-lg px-4 py-2">
+                <Badge variant={badgeVariant} className="text-lg px-4 py-2 shadow-lg">
                     <Award className="w-5 h-5 mr-2"/>
                     {testState.performanceTag}
                 </Badge>
