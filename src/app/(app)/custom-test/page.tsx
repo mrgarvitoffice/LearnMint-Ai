@@ -12,11 +12,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz'; // Reusing quiz generator for now
+import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import type { TestSettings, TestQuestion, TestResult } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import ReactMarkdown from 'react-markdown';
 
 const formSchema = z.object({
   sourceType: z.enum(['topic', 'notes']).default('topic'),
@@ -53,6 +54,7 @@ interface CustomTestState {
   score: number;
   timeLeft?: number; // in seconds
   timerId?: NodeJS.Timeout;
+  isAutoSubmitting?: boolean;
 }
 
 export default function CustomTestPage() {
@@ -67,39 +69,53 @@ export default function CustomTestPage() {
   const sourceType = watch('sourceType');
 
   useEffect(() => {
-    if (testState?.timerId && testState.timeLeft === 0) {
-      clearInterval(testState.timerId);
-      handleSubmitTest(true); // Force submit if time runs out
-      toast({ title: "Time's Up!", description: "Your test has been submitted automatically.", variant: "default" });
+    let currentTimerId: NodeJS.Timeout | undefined;
+    if (testState?.timerId) {
+      currentTimerId = testState.timerId;
+    }
+    if (testState?.timeLeft === 0 && !testState.isAutoSubmitting && !testState.showResults) {
+      setTestState(prev => prev ? { ...prev, isAutoSubmitting: true } : null);
+      toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
+      handleSubmitTest(true); 
     }
     return () => {
-      if (testState?.timerId) clearInterval(testState.timerId);
+      if (currentTimerId) clearInterval(currentTimerId);
     };
-  }, [testState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, testState?.timerId]);
+
 
   const startTimer = (durationMinutes: number) => {
     if (durationMinutes <= 0) return;
-    setTestState(prev => prev ? {...prev, timeLeft: durationMinutes * 60} : null);
-    const timerId = setInterval(() => {
-      setTestState(prev => {
-        if (prev && prev.timeLeft && prev.timeLeft > 0) {
-          return {...prev, timeLeft: prev.timeLeft - 1};
-        }
-        if (prev && prev.timerId) clearInterval(prev.timerId);
-        return prev;
-      });
-    }, 1000);
-    setTestState(prev => prev ? {...prev, timerId} : null);
+    
+    setTestState(prev => {
+      if (!prev) return null;
+      // Clear any existing timer before starting a new one
+      if (prev.timerId) clearInterval(prev.timerId);
+
+      const newTimerId = setInterval(() => {
+        setTestState(currentTestState => {
+          if (currentTestState && currentTestState.timeLeft && currentTestState.timeLeft > 0 && !currentTestState.showResults && !currentTestState.isAutoSubmitting) {
+            return {...currentTestState, timeLeft: currentTestState.timeLeft - 1};
+          }
+          // If time runs out or conditions change, clear interval from within
+          if (currentTestState?.timerId && (currentTestState.timeLeft === 0 || currentTestState.showResults || currentTestState.isAutoSubmitting)) {
+             clearInterval(currentTestState.timerId);
+             return {...currentTestState, timerId: undefined}; // Clear timerId from state
+          }
+          return currentTestState;
+        });
+      }, 1000);
+      return {...prev, timeLeft: durationMinutes * 60, timerId: newTimerId, isAutoSubmitting: false };
+    });
   };
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     setIsLoading(true);
-    setTestState(null);
+    setTestState(null); // Clear previous test state
     try {
       let topicForAI = data.topics || "general knowledge";
       if (data.sourceType === 'notes' && data.notes) {
-        // For now, we use a simplified approach. Ideally, a different AI flow would process notes.
-        // We'll use the first few words of notes as a "topic" for the existing quiz generator.
         topicForAI = data.notes.split(' ').slice(0, 5).join(' ') + ` (based on provided notes, difficulty: ${data.difficulty})`;
       } else if (data.topics) {
         topicForAI = `${data.topics} (difficulty: ${data.difficulty})`;
@@ -112,7 +128,7 @@ export default function CustomTestPage() {
           topics: data.topics ? data.topics.split(',').map(t => t.trim()) : [],
           notes: data.notes,
           difficulty: data.difficulty,
-          numQuestions: result.quiz.length, // Use actual number of questions returned
+          numQuestions: result.quiz.length,
           timer: data.timer,
         };
         setTestState({
@@ -122,6 +138,9 @@ export default function CustomTestPage() {
           currentQuestionIndex: 0,
           showResults: false,
           score: 0,
+          timeLeft: data.timer && data.timer > 0 ? data.timer * 60 : undefined,
+          timerId: undefined,
+          isAutoSubmitting: false,
         });
         if (data.timer && data.timer > 0) {
           startTimer(data.timer);
@@ -139,60 +158,69 @@ export default function CustomTestPage() {
   };
   
   const handleAnswerSelect = (answer: string) => {
-    if (!testState || testState.showResults) return;
+    if (!testState || testState.showResults || testState.isAutoSubmitting) return;
     const newUserAnswers = [...testState.userAnswers];
     newUserAnswers[testState.currentQuestionIndex] = answer;
     setTestState({ ...testState, userAnswers: newUserAnswers });
   };
 
   const handleNextQuestion = () => {
-    if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1) return;
+    if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) return;
     setTestState({ ...testState, currentQuestionIndex: testState.currentQuestionIndex + 1 });
   };
 
   const handlePrevQuestion = () => {
-    if (!testState || testState.currentQuestionIndex <= 0) return;
+    if (!testState || testState.currentQuestionIndex <= 0 || testState.isAutoSubmitting) return;
     setTestState({ ...testState, currentQuestionIndex: testState.currentQuestionIndex - 1 });
   };
 
-  const handleSubmitTest = (autoSubmitted = false) => {
-    if (!testState) return;
-    if (testState.timerId) clearInterval(testState.timerId);
-
-    let score = 0;
-    const updatedQuestions = testState.questions.map((q, index) => {
-      const userAnswer = testState.userAnswers[index];
-      const isCorrect = userAnswer === q.answer;
-      if (isCorrect) {
-        score += 4;
-      } else if (userAnswer !== undefined) { // Incorrect and answered
-        score -= 1;
+  const handleSubmitTest = useCallback((autoSubmitted = false) => {
+    setTestState(prevTestState => {
+      if (!prevTestState || prevTestState.showResults) return prevTestState; // Already submitted or no state
+      if (prevTestState.timerId) {
+        clearInterval(prevTestState.timerId);
       }
-      return { ...q, userAnswer, isCorrect };
+
+      let score = 0;
+      const updatedQuestions = prevTestState.questions.map((q, index) => {
+        const userAnswer = prevTestState.userAnswers[index];
+        const isCorrect = userAnswer === q.answer;
+        if (isCorrect) {
+          score += 4;
+        } else if (userAnswer !== undefined) { // Incorrect and answered
+          score -= 1;
+        }
+        return { ...q, userAnswer, isCorrect };
+      });
+
+      if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) { // Prevent multiple toasts for auto-submit
+         toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Your score is ${score}. Review your answers below.`});
+      }
+      
+      return { 
+        ...prevTestState, 
+        questions: updatedQuestions, 
+        score, 
+        showResults: true, 
+        timerId: undefined, 
+        isAutoSubmitting: autoSubmitted, // ensure this is set if auto-submitted
+        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft // Ensure timeLeft is 0 if auto-submitted due to timer
+      };
     });
-    setTestState({ ...testState, questions: updatedQuestions, score, showResults: true, timerId: undefined });
-    if(!autoSubmitted) toast({ title: "Test Submitted!", description: `Your score is ${score}.`});
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]); // Added toast to dependency array
   
   const handleRetakeTest = () => {
      if (!testState) return;
-     setTestState(prev => {
-       if (!prev) return null;
-       const newState = {
-        ...prev,
-        questions: prev.questions.map(q => ({...q, userAnswer: undefined, isCorrect: undefined })),
-        userAnswers: Array(prev.questions.length).fill(undefined),
-        currentQuestionIndex: 0,
-        showResults: false,
-        score: 0,
-        timeLeft: prev.settings.timer ? prev.settings.timer * 60 : undefined,
-        timerId: undefined,
-       };
-       if (newState.settings.timer && newState.settings.timer > 0) {
-         startTimer(newState.settings.timer);
-       }
-       return newState;
-     });
+     setIsLoading(true); // Show loader while regenerating
+     onSubmit({ // Re-submit the form with original settings
+        sourceType: testState.settings.notes ? 'notes' : 'topic',
+        topics: testState.settings.topics.join(','),
+        notes: testState.settings.notes,
+        difficulty: testState.settings.difficulty,
+        numQuestions: testState.settings.numQuestions,
+        timer: testState.settings.timer || 0,
+     }).finally(() => setIsLoading(false));
   }
   
   const handleNewTest = () => {
@@ -208,7 +236,7 @@ export default function CustomTestPage() {
 
   const currentQuestionData = testState?.questions[testState.currentQuestionIndex];
 
-  if (isLoading) {
+  if (isLoading && !testState) { // Show full page loader only when initially generating
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -293,7 +321,10 @@ export default function CustomTestPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit">Generate Test</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Generate Test
+            </Button>
           </CardFooter>
         </form>
       </Card>
@@ -307,35 +338,46 @@ export default function CustomTestPage() {
             <div className="flex justify-between items-center">
               <CardTitle>Custom Test: Question {testState.currentQuestionIndex + 1} of {testState.questions.length}</CardTitle>
               {testState.settings.timer && testState.settings.timer > 0 && typeof testState.timeLeft === 'number' && (
-                <div className="flex items-center gap-2 text-lg font-medium text-primary">
+                <div className={`flex items-center gap-2 text-lg font-medium ${testState.timeLeft <= 60 ? 'text-destructive animate-pulse' : 'text-primary'}`}>
                   <Clock className="w-5 h-5" />
                   <span>{formatTime(testState.timeLeft)}</span>
                 </div>
               )}
             </div>
             <Progress value={((testState.currentQuestionIndex + 1) / testState.questions.length) * 100} className="w-full mt-2" />
+             {testState.isAutoSubmitting && (
+                <Alert variant="destructive" className="mt-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Submitting...</AlertTitle>
+                    <AlertDescription>Time ran out. Your test is being submitted.</AlertDescription>
+                </Alert>
+            )}
           </CardHeader>
           <CardContent className="space-y-6">
-            <p className="text-lg font-semibold">{currentQuestionData.question}</p>
+            <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
              <RadioGroup
                 onValueChange={(value) => handleAnswerSelect(value)}
                 value={testState.userAnswers[testState.currentQuestionIndex]}
                 className="space-y-2"
+                disabled={testState.isAutoSubmitting}
               >
                 {currentQuestionData.options.map((option, i) => (
-                  <Label key={i} htmlFor={`option-${i}`} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer">
-                    <RadioGroupItem value={option} id={`option-${i}`} />
+                  <Label key={i} htmlFor={`option-${i}`} className={cn("flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary", testState.isAutoSubmitting ? "cursor-not-allowed opacity-70" : "cursor-pointer")}>
+                    <RadioGroupItem value={option} id={`option-${i}`} disabled={testState.isAutoSubmitting}/>
                     <span>{option}</span>
                   </Label>
                 ))}
               </RadioGroup>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handlePrevQuestion} disabled={testState.currentQuestionIndex === 0}>Previous</Button>
+            <Button variant="outline" onClick={handlePrevQuestion} disabled={testState.currentQuestionIndex === 0 || !!testState.isAutoSubmitting}>Previous</Button>
             {testState.currentQuestionIndex < testState.questions.length - 1 ? (
-              <Button onClick={handleNextQuestion}>Next</Button>
+              <Button onClick={handleNextQuestion} disabled={!!testState.isAutoSubmitting}>Next</Button>
             ) : (
-              <Button onClick={() => handleSubmitTest(false)} variant="default">Submit Test</Button>
+              <Button onClick={() => handleSubmitTest(false)} variant="default" disabled={!!testState.isAutoSubmitting}>
+                {isLoading && testState.isAutoSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Submit Test
+              </Button>
             )}
           </CardFooter>
         </Card>
@@ -350,29 +392,38 @@ export default function CustomTestPage() {
           <CardDescription>
             You scored {testState.score} out of {testState.questions.length * 4} (Correct: +4, Incorrect: -1).
             {testState.settings.timer && testState.settings.timer > 0 && testState.timeLeft !== undefined && (
-                <span> Time taken: {formatTime(testState.settings.timer * 60 - testState.timeLeft)}.</span>
+                <span> Time taken: {formatTime(testState.settings.timer * 60 - (testState.timeLeft > 0 ? testState.timeLeft : 0))}.</span>
             )}
           </CardDescription>
-          <Progress value={(testState.score / (testState.questions.length * 4)) * 100} className="w-full mt-2" />
+          <Progress value={Math.max(0, (testState.score / (testState.questions.length * 4)) * 100)} className="w-full mt-2" />
         </CardHeader>
         <CardContent className="space-y-4">
           {testState.questions.map((q, index) => (
-            <Card key={index} className={q.isCorrect ? 'border-green-500 bg-green-500/10' : 'border-destructive bg-destructive/10'}>
+            <Card key={index} className={q.isCorrect === undefined ? '' : q.isCorrect ? 'border-green-500 bg-green-500/10' : 'border-destructive bg-destructive/10'}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                   {q.isCorrect ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-destructive" />}
-                  Question {index + 1}: {q.question}
+                   {q.isCorrect === undefined ? null : q.isCorrect ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-destructive" />}
+                  Question {index + 1}: <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none inline">{q.question}</ReactMarkdown>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm">
+              <CardContent className="text-sm space-y-1">
                 <p>Your answer: <span className="font-medium">{q.userAnswer || 'Not answered'}</span></p>
                 <p>Correct answer: <span className="font-medium">{q.answer}</span></p>
+                {q.explanation && (
+                  <Alert variant="default" className="mt-2 bg-blue-500/10 border-blue-500/30">
+                    <Lightbulb className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-700 dark:text-blue-400">Explanation</AlertTitle>
+                    <AlertDescription className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                       <ReactMarkdown>{q.explanation}</ReactMarkdown>
+                    </AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
           ))}
         </CardContent>
         <CardFooter className="flex gap-2">
-            <Button onClick={handleRetakeTest}><RotateCcw className="w-4 h-4 mr-2"/>Retake Test</Button>
+            <Button onClick={handleRetakeTest} disabled={isLoading}><RotateCcw className="w-4 h-4 mr-2"/>Retake Test</Button>
             <Button variant="outline" onClick={handleNewTest}>Create New Test</Button>
         </CardFooter>
       </Card>

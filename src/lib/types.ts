@@ -2,6 +2,7 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   answer: string;
+  explanation?: string; // Added optional explanation
 }
 
 export interface Flashcard {
@@ -97,7 +98,7 @@ export interface TestSettings {
   timer?: number; // in minutes, 0 for no timer
 }
 
-export interface TestQuestion extends QuizQuestion {
+export interface TestQuestion extends QuizQuestion { // Inherits explanation from QuizQuestion
   userAnswer?: string;
   isCorrect?: boolean;
 }

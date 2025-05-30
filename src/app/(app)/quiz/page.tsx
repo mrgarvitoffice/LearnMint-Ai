@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput, type GenerateQuizInput } from '@/ai/flows/generate-quiz';
-import { Loader2, HelpCircle, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { Loader2, HelpCircle, CheckCircle, XCircle, RotateCcw, Lightbulb } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import ReactMarkdown from 'react-markdown';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -91,17 +92,17 @@ export default function QuizPage() {
       }
     });
     setQuizState({ ...quizState, score, showResults: true });
+    toast({ title: "Quiz Submitted!", description: `Your score is ${score} out of ${quizState.quiz.length}.`});
   };
 
   const handleRetakeQuiz = () => {
     if (!quizState) return;
-     setQuizState({
-      ...quizState,
-      userAnswers: Array(quizState.quiz.length).fill(undefined),
-      currentQuestionIndex: 0,
-      showResults: false,
-      score: 0,
-    });
+     // Re-fetch quiz with the same parameters
+    const originalSettings = {
+        topic: quizState.quiz[0] ? quizState.quiz[0].question.split(" about ")[1] || "previous topic" : "previous topic", // Attempt to get topic, fallback
+        numQuestions: quizState.quiz.length
+    }
+     onSubmit(originalSettings as FormData); // Type assertion if needed, or reconstruct FormData more carefully
   }
   
   const handleNewQuiz = () => {
@@ -149,7 +150,7 @@ export default function QuizPage() {
             <Progress value={((quizState.currentQuestionIndex + 1) / quizState.quiz.length) * 100} className="w-full mt-2" />
           </CardHeader>
           <CardContent className="space-y-6">
-            <p className="text-lg font-semibold">{currentQuestionData.question}</p>
+            <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
             <Controller
               name={`userAnswers.${quizState.currentQuestionIndex}` as any} // Controller name needs to be unique per question for RHF state if used
               control={control}
@@ -160,8 +161,8 @@ export default function QuizPage() {
                   className="space-y-2"
                 >
                   {currentQuestionData.options.map((option, i) => (
-                    <Label key={i} htmlFor={`option-${i}`} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer">
-                      <RadioGroupItem value={option} id={`option-${i}`} />
+                    <Label key={i} htmlFor={`option-${i}-${quizState.currentQuestionIndex}`} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer">
+                      <RadioGroupItem value={option} id={`option-${i}-${quizState.currentQuestionIndex}`} />
                       <span>{option}</span>
                     </Label>
                   ))}
@@ -191,18 +192,27 @@ export default function QuizPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                      {quizState.userAnswers[index] === q.answer ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-destructive" />}
-                    Question {index + 1}: {q.question}
+                    Question {index + 1}: <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none inline">{q.question}</ReactMarkdown>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm">
+                <CardContent className="text-sm space-y-1">
                   <p>Your answer: <span className="font-medium">{quizState.userAnswers[index] || 'Not answered'}</span></p>
                   <p>Correct answer: <span className="font-medium">{q.answer}</span></p>
+                  {q.explanation && (
+                     <Alert variant="default" className="mt-2 bg-blue-500/10 border-blue-500/30">
+                        <Lightbulb className="h-4 w-4 text-blue-600" />
+                        <AlertTitle className="text-blue-700 dark:text-blue-400">Explanation</AlertTitle>
+                        <AlertDescription className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                           <ReactMarkdown>{q.explanation}</ReactMarkdown>
+                        </AlertDescription>
+                      </Alert>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </CardContent>
           <CardFooter className="flex gap-2">
-            <Button onClick={handleRetakeQuiz}><RotateCcw className="w-4 h-4 mr-2"/>Retake Quiz</Button>
+            <Button onClick={handleRetakeQuiz} disabled={isLoading}><RotateCcw className="w-4 h-4 mr-2"/>Retake Quiz</Button>
             <Button variant="outline" onClick={handleNewQuiz}>Create New Quiz</Button>
           </CardFooter>
         </Card>
