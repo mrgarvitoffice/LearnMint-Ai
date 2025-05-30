@@ -72,17 +72,17 @@ Create a file named `.env` in the root of your project. Add the following conten
 # For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
 # Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
 # Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
-GOOGLE_API_KEY=AIzaSyD0LVemqManYsFHV_k7c5mOsUVklcnvWCo
+GOOGLE_API_KEY=AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M
 
 # OPTIONAL: Separate API Key for Study Notes Generation
 # If you want to use a different Gemini API key specifically for generating study notes,
 # set it here. If left blank, notes generation will use the main GOOGLE_API_KEY above.
-GOOGLE_API_KEY_NOTES=
+GOOGLE_API_KEY_NOTES=AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A
 
 # OPTIONAL: Separate API Key for AI Chatbot (Megumin)
 # If you want to use a different Gemini API key specifically for the chatbot,
 # set it here. If left blank, the chatbot will use the main GOOGLE_API_KEY above.
-GOOGLE_API_KEY_CHATBOT=
+GOOGLE_API_KEY_CHATBOT=AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg
 
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
