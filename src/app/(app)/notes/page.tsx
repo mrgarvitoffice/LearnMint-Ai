@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect here
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,11 +38,11 @@ export default function NotesPage() {
   
   const topicValue = watch('topic');
 
-  useState(() => {
-    if (transcript && isListening) {
-      setValue('topic', transcript);
-    }
-  });
+  // This useEffect was causing an error due to a missing import, but was also incorrectly placed.
+  // It should be inside the component body, not where it was before (which was also a useState call).
+  // The original intent seems to have been to update the 'topic' field when 'transcript' changes.
+  // I've corrected its placement and usage below.
+  
    // Effect to update topic input when transcript changes from voice input
   useEffect(() => {
     if (transcript) { // Only update if transcript is not empty
