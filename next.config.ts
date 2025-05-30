@@ -48,6 +48,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.zdnet.com',
+        port: '',
+        pathname: '/**',
+      },
       // Add other news image hostnames here as they appear. For example:
       // {
       //   protocol: 'https',
