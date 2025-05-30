@@ -40,7 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
       { title: 'Note Generator', href: '/notes', icon: FileText, label: 'AI' },
       { title: 'Quiz Creator', href: '/quiz', icon: HelpCircle, label: 'AI' },
       { title: 'Flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
-      { title: 'AI Chatbot (Kazuma)', href: '/chatbot', icon: Bot, label: 'AI' }, // Updated label
+      { title: 'AI Chatbot (Kazuma)', href: '/chatbot', icon: Bot, label: 'AI' },
     ],
   },
   { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal },
@@ -124,4 +124,11 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Democracy", definition: "A system of government by the whole population or all the eligible members of a state, typically through elected representatives.", hint: "Rule by the people, ancient Greek origins." },
   { term: "Mitosis", definition: "A type of cell division that results in two daughter cells each having the same number and kind of chromosomes as the parent nucleus.", hint: "Cellular reproduction, not meiosis." },
   { term: "Ecosystem", definition: "A biological community of interacting organisms and their physical environment.", hint: "Includes living and non-living components in an area." },
+  { term: "Metaphor", definition: "A figure of speech in which a word or phrase is applied to an object or action to which it is not literally applicable.", hint: "Comparing without 'like' or 'as'." },
+  { term: "Algorithm", definition: "A process or set of rules to be followed in calculations or other problem-solving operations, especially by a computer.", hint: "Step-by-step instructions." },
+  { term: "Renaissance", definition: "The revival of art and literature under the influence of classical models in the 14th–16th centuries.", hint: "French for 'rebirth'." },
+  { term: "Evaporation", definition: "The process of turning from liquid into vapor.", hint: "Water cycle component." },
+  { term: "Hypothesis", definition: "A supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation.", hint: "Educated guess in science." },
+  { term: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
+  { term: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
 ];
