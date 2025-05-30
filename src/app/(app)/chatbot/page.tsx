@@ -24,9 +24,20 @@ export default function ChatbotPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  
-  const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference, voicePreference } = useTTS();
-  
+
+  const {
+    speak,
+    pauseTTS,
+    resumeTTS,
+    cancelTTS,
+    isSpeaking,
+    isPaused,
+    supportedVoices,
+    selectedVoice,
+    setVoicePreference,
+    voicePreference
+  } = useTTS();
+
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const initialGreetingSpokenRef = useRef(false);
@@ -34,7 +45,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('megumin'); // Default to Megumin for page title
+      setVoicePreference('megumin');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -45,8 +56,12 @@ export default function ChatbotPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+    return () => {
+      isMounted = false;
+      if (isMounted && isSpeaking) cancelTTS(); // Cancel speech if component unmounts while speaking
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak, cancelTTS]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -54,7 +69,7 @@ export default function ChatbotPage() {
       if (viewport) viewport.scrollTop = viewport.scrollHeight;
     }
   }, [messages]);
-  
+
   useEffect(() => {
     const initialGreeting: ChatMessageType = {
       id: 'initial-greeting', role: 'assistant',
@@ -63,17 +78,17 @@ export default function ChatbotPage() {
     };
     setMessages([initialGreeting]);
 
-    if (selectedVoice && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused && voicePreference === 'megumin') { // Ensure megumin preference is active for her voice
+    if (selectedVoice && voicePreference === 'megumin' && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
       currentSpokenMessageRef.current = initialGreeting.content;
       speak(initialGreeting.content);
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice, voicePreference]); // Depend on voicePreference as well
+  }, [selectedVoice, voicePreference]); // Ensure speak dependency is present if used
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS();
+    cancelTTS(); // Cancel any ongoing speech from previous reply
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicator: ChatMessageType = { id: TYPING_INDICATOR_ID, role: 'assistant', content: "Megumin is conjuring a response...", timestamp: new Date(), type: 'typing_indicator' };
@@ -85,13 +100,13 @@ export default function ChatbotPage() {
       const input: MeguminChatbotInput = { message: messageText };
       if (image) input.image = image;
       const response = await meguminChatbot(input);
-      
+
       const assistantMessage: ChatMessageType = { id: Date.now().toString() + '-assistant', role: 'assistant', content: response.response, timestamp: new Date() };
-      
+
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
-      
-      if (selectedVoice && !isSpeaking && !isPaused && voicePreference === 'megumin') { // Ensure Megumin's voice preference for her replies
+
+      if (selectedVoice && voicePreference === 'megumin' && !isSpeaking && !isPaused) {
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
@@ -103,13 +118,16 @@ export default function ChatbotPage() {
       setMessages(prev => [...prev, errorMessage]);
     } finally { setIsLoading(false); }
   };
-  
+
   const handlePlaybackControl = () => {
     playClickSound();
     let textToPlay = currentSpokenMessageRef.current;
     if (!textToPlay && messages.length > 0) {
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
       if (lastAssistantMessage) textToPlay = lastAssistantMessage.content;
+    }
+    if (!textToPlay && messages.length > 0 && messages[0].role === 'assistant') { // For initial greeting if nothing else current
+        textToPlay = messages[0].content;
     }
     if (!textToPlay) return;
 
@@ -132,8 +150,8 @@ export default function ChatbotPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
-              <Select 
-                value={voicePreference || ''} 
+              <Select
+                value={voicePreference || ''}
                 onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'megumin' | 'kai' | null);}}
               >
                 <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
@@ -142,7 +160,7 @@ export default function ChatbotPage() {
                   <SelectItem value="kai">Kai</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
                 {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
               </Button>
@@ -160,4 +178,6 @@ export default function ChatbotPage() {
         </ScrollArea>
       </CardContent>
       <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-    </Card
+    </Card>
+  );
+}
