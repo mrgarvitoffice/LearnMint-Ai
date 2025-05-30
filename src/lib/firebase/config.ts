@@ -8,18 +8,6 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
-// TEMPORARILY HARDCODED - User needs to fix .env file setup
-const firebaseConfig: FirebaseOptions = {
-  apiKey: "AIzaSyCNcktsyCTevZebTrc4aBnG4b0pRbYx4tk",
-  authDomain: "learnflow-go3hi.firebaseapp.com",
-  projectId: "learnflow-go3hi",
-  storageBucket: "learnflow-go3hi.firebasestorage.app",
-  messagingSenderId: "245611903044",
-  appId: "1:245611903044:web:007b0b6b76181d06c1a411"
-};
-
-// Original environment variable loading logic - commented out for temporary fix
-/*
 const apiKeyFromEnv = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const authDomainFromEnv = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
 
@@ -48,7 +36,7 @@ if (!authDomainFromEnv) {
   console.error("************************************************************************************");
 }
 
-const firebaseConfigFromEnv: FirebaseOptions = {
+const firebaseConfig: FirebaseOptions = {
   apiKey: apiKeyFromEnv,
   authDomain: authDomainFromEnv,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -59,15 +47,14 @@ const firebaseConfigFromEnv: FirebaseOptions = {
 
 // Conditionally add measurementId if it's set in the environment
 if (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID.trim() !== '') {
-  firebaseConfigFromEnv.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
+  firebaseConfig.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 }
-*/
+
 
 // Initialize Firebase
 let app;
-// Use the hardcoded config for now
 if (!getApps().length) {
-  app = initializeApp(firebaseConfig); // Using the hardcoded config
+  app = initializeApp(firebaseConfig);
 } else {
   app = getApp();
 }

@@ -31,7 +31,7 @@ This section provides details about the application's user interface, frontend t
 
 ## Core Features
 
-*   **User Authentication**: Sign up, sign in (Email/Password, Google, Anonymous), and sign out using Firebase Authentication.
+*   **User Authentication**: Sign up (Email/Password, Google), sign in (Email/Password, Anonymous), and sign out using Firebase Authentication.
 *   **AI Content Generation**: Create comprehensive study notes, multiple-choice quizzes, and flashcards for any topic using AI (powered by Genkit and Google Gemini models).
 *   **Custom Test Creation**: Build tests based on specific topics (single or multiple recent), difficulty levels, number of questions, optional custom notes, and timer settings.
 *   **Interactive AI Chatbot (Kazuma)**: Engage with "Kazuma," a witty AI assistant, for small talk, questions, and even "singing" (text-based). Supports voice input and user image uploads.
@@ -71,11 +71,7 @@ This section provides details about the application's user interface, frontend t
     *   Go to **Authentication** (under Build in the Firebase console) -> **Sign-in method** tab.
     *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, you may need to provide your project support email.
 
-### 2. CRITICAL: Set up Environment Variables (IMPORTANT NOTE)
-
-**CURRENT STATUS: For ease of initial setup due to persistent environment variable loading issues, the Firebase configuration has been TEMPORARILY HARDCODED in `src/lib/firebase/config.ts`.**
-
-**RECOMMENDED ACTION: You should still set up your `.env` file correctly as described below. Once your `.env` file is working and your server correctly loads the variables (check server logs!), you should request to revert the hardcoding in `src/lib/firebase/config.ts` to use these environment variables for better security and flexibility.**
+### 2. CRITICAL: Set up Environment Variables
 
 Create a file named `.env` in the **root of your project**. Add the following content, replacing placeholder values with your actual Firebase project configuration and API keys:
 
@@ -123,6 +119,7 @@ GOOGLE_BOOKS_API_KEY=AIzaSyDCKxyoBNfq6mH3FcSeNq6DDgVBKihWhYw
 
 *   You **MUST** use valid API keys for the respective services for associated features to work. The keys provided above are for example purposes.
 *   Ensure there are **no extra spaces or quotes** around the variable names or their values in your `.env` file.
+*   **CRITICAL:** Both `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are **absolutely essential** for Firebase Authentication to work. Ensure they are correctly copied from your Firebase project settings.
 *   `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is optional. If you don't use Firebase Analytics, you can omit this line or leave the value blank.
 *   `OPENROUTER_API_KEY` is noted but **not currently used** by the application.
 
@@ -144,7 +141,7 @@ yarn dev --port 9002
 ```
 
 **Troubleshooting Firebase Errors (e.g., `auth/invalid-api-key`, `auth/auth-domain-config-required`):**
-If you encounter Firebase errors AFTER you've ensured your `.env` file is correctly set up AND you've requested to revert the temporary hardcoding:
+If you encounter Firebase errors:
 1.  **Verify `.env` File:**
     *   Double-check that the `.env` file is in the project root.
     *   Ensure `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are spelled correctly and their values are accurately copied from your Firebase project settings (General tab -> Your apps -> SDK setup and configuration).
@@ -223,9 +220,9 @@ This project is configured for deployment using Firebase Hosting with its `frame
 **Deployment Steps:**
 
 1.  **CRITICAL: Set Environment Variables in `.env` for Build:**
-    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Firebase config, Google AI, Newsdata.io, YouTube, Google Books). **This is especially important if you revert the temporary hardcoding of Firebase keys.**
+    *   Before building, ensure your local `.env` file is populated with your **valid production** API keys (Firebase config, Google AI, Newsdata.io, YouTube, Google Books).
     *   Use `GOOGLE_API_KEY_NOTES` and `GOOGLE_API_KEY_CHATBOT` if you have configured separate keys for those features.
-    *   Without these, the deployed app's features will not work.
+    *   Without these, the deployed app's features will not work. **Ensure `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are correct.**
 
 2.  **CRITICAL: Add PWA Icons (Required for PWA):**
     *   Create a folder `public/icons`.
