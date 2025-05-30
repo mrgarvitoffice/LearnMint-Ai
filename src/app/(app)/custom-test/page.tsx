@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,10 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import type { TestSettings, TestQuestion, TestResult } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
+import { cn } from '@/lib/utils';
+
 
 const formSchema = z.object({
   sourceType: z.enum(['topic', 'notes']).default('topic'),
@@ -133,7 +135,7 @@ export default function CustomTestPage() {
         };
         setTestState({
           settings: testSettings,
-          questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined })),
+          questions: result.quiz.map(q => ({ ...q, userAnswer: undefined, isCorrect: undefined, explanation: q.explanation })),
           userAnswers: Array(result.quiz.length).fill(undefined),
           currentQuestionIndex: 0,
           showResults: false,
@@ -437,3 +439,5 @@ export default function CustomTestPage() {
     </Alert>
   );
 }
+
+    
