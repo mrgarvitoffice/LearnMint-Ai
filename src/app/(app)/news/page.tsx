@@ -10,7 +10,7 @@ import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added AlertTitle
 
 const ALL_CATEGORIES_VALUE = "_all_categories_"; // Consistent with NewsFilters
 
@@ -24,7 +24,7 @@ interface NewsPageFilters {
 
 const initialFilters: NewsPageFilters = {
   query: '',
-  country: 'us', // Default to US
+  country: '', // Default to Any Country (represented by empty string)
   stateOrRegion: '',
   city: '',
   category: 'top', // Default to top headlines
@@ -46,7 +46,7 @@ export default function NewsPage() {
     queryKey: ['news', appliedFilters],
     queryFn: ({ pageParam }) => fetchNews({ 
         query: appliedFilters.query,
-        country: appliedFilters.country,
+        country: appliedFilters.country, // Empty string means no specific country filter for API
         stateOrRegion: appliedFilters.stateOrRegion,
         city: appliedFilters.city,
         category: appliedFilters.category === ALL_CATEGORIES_VALUE ? '' : appliedFilters.category, 
@@ -59,7 +59,7 @@ export default function NewsPage() {
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      // If country is cleared, also clear state/region and city
+      // If country is cleared (set to "" which represents 'Any Country'), also clear state/region and city
       if (name === 'country' && !value) {
         newFilters.stateOrRegion = '';
         newFilters.city = '';
@@ -82,13 +82,13 @@ export default function NewsPage() {
 
   return (
     <div className="space-y-8">
-      <Card>
+      <Card className="shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <Newspaper className="w-7 h-7 text-primary" />
+          <CardTitle className="flex items-center gap-2 text-2xl text-primary">
+            <Newspaper className="w-7 h-7" />
             Daily News Digest
           </CardTitle>
-          <CardDescription>Stay updated with the latest news from around the world. Filter by keywords, country, category, and more.</CardDescription>
+          <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
         <CardContent>
           <NewsFilters 
@@ -104,25 +104,27 @@ export default function NewsPage() {
       {isLoading && (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="ml-4 text-lg">Fetching latest news...</p>
+          <p className="ml-4 text-lg text-muted-foreground">Fetching latest news...</p>
         </div>
       )}
 
       {isError && (
         <Alert variant="destructive" className="mt-6">
           <AlertTriangle className="h-5 w-5" />
+          <AlertTitle>News API Error</AlertTitle>
           <AlertDescription>
             Error fetching news: {error instanceof Error ? error.message : "An unknown error occurred."} 
             This could be due to an invalid or rate-limited API key for Newsdata.io, or a network issue. 
-            Please check your NEWSDATA_API_KEY in your .env file.
+            Please check your NEWSDATA_API_KEY in your .env file and ensure it's set correctly in your Firebase environment variables if deployed.
           </AlertDescription>
         </Alert>
       )}
 
       {!isLoading && !isError && articles.length === 0 && (
         <div className="text-center py-10">
-          <p className="text-xl text-muted-foreground">No news articles found for your current filters.</p>
-          <p className="text-sm text-muted-foreground">Try adjusting your search or filters, or check if the Newsdata.io API key is working.</p>
+          <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+          <p className="text-xl text-muted-foreground">No news articles found.</p>
+          <p className="text-sm text-muted-foreground/80">Try adjusting your search or filters, or check if the Newsdata.io API key is working.</p>
         </div>
       )}
 

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RotateCcw } from "lucide-react";
 
 const ALL_CATEGORIES_VALUE = "_all_categories_"; // Special value for "All Categories"
+const ANY_COUNTRY_VALUE = "_any_country_"; // Special value for "Any Country"
 
 interface NewsFiltersProps {
   filters: {
@@ -25,10 +26,10 @@ interface NewsFiltersProps {
 }
 
 export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFilters, isLoading }: NewsFiltersProps) {
-  const isCountrySelected = !!filters.country;
+  const isCountrySelected = !!filters.country && filters.country !== ANY_COUNTRY_VALUE;
 
   return (
-    <div className="space-y-6 p-4 border rounded-lg bg-card">
+    <div className="space-y-6 p-4 border rounded-lg bg-card shadow-md">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
         <div className="space-y-1.5">
           <Label htmlFor="query">Search Keywords</Label>
@@ -38,21 +39,22 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
             value={filters.query}
             onChange={(e) => onFilterChange('query', e.target.value)}
             disabled={isLoading}
+            className="bg-input/50"
           />
         </div>
         
         <div className="space-y-1.5">
           <Label htmlFor="country-select">Country</Label>
           <Select
-            value={filters.country}
-            onValueChange={(value) => onFilterChange('country', value)}
+            value={filters.country || ANY_COUNTRY_VALUE}
+            onValueChange={(value) => onFilterChange('country', value === ANY_COUNTRY_VALUE ? "" : value)}
             disabled={isLoading}
           >
-            <SelectTrigger id="country-select">
+            <SelectTrigger id="country-select" className="bg-input/50">
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any Country</SelectItem> {/* Option for no country filter */}
+              <SelectItem value={ANY_COUNTRY_VALUE}>Any Country</SelectItem>
               {NEWS_COUNTRIES.map(country => (
                 <SelectItem key={country.value} value={country.value}>{country.label} ({country.value.toUpperCase()})</SelectItem>
               ))}
@@ -69,6 +71,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
             onChange={(e) => onFilterChange('stateOrRegion', e.target.value)}
             disabled={isLoading || !isCountrySelected}
             title={!isCountrySelected ? "Select a country to enable" : ""}
+            className="bg-input/50 disabled:opacity-50"
           />
         </div>
 
@@ -81,17 +84,18 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
             onChange={(e) => onFilterChange('city', e.target.value)}
             disabled={isLoading || !isCountrySelected}
             title={!isCountrySelected ? "Select a country to enable" : ""}
+            className="bg-input/50 disabled:opacity-50"
           />
         </div>
         
         <div className="space-y-1.5">
           <Label htmlFor="category-select">Category</Label>
           <Select
-            value={filters.category || ALL_CATEGORIES_VALUE} // Use ALL_CATEGORIES_VALUE if filters.category is empty
+            value={filters.category || ALL_CATEGORIES_VALUE}
             onValueChange={(value) => onFilterChange('category', value === ALL_CATEGORIES_VALUE ? "" : value)}
             disabled={isLoading}
           >
-            <SelectTrigger id="category-select">
+            <SelectTrigger id="category-select" className="bg-input/50">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -111,7 +115,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
           <RotateCcw className="w-4 h-4 mr-2" /> Reset Filters
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
+      <p className="text-xs text-muted-foreground/80 mt-2">
         Note: State/Region and City filters are applied as part of the keyword search when a country is selected.
         For broad searches without a specific country, leave the country field as "Any Country".
       </p>
