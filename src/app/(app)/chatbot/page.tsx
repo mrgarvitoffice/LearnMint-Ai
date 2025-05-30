@@ -69,7 +69,7 @@ export default function ChatbotPage() {
       initialGreetingSpokenRef.current = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVoice]); 
+  }, [selectedVoice]); // Removed speak from deps to avoid re-speaking on voice change after initial.
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
@@ -157,3 +157,6 @@ export default function ChatbotPage() {
     </Card>
   );
 }
+
+
+    

@@ -77,7 +77,7 @@ export default function FlashcardsPage() {
     setIsLoading(true);
     setFlashcardsData(null);
     setCurrentCardIndex(0);
-    pageTitleSpokenRef.current = true; 
+    pageTitleSpokenRef.current = true; // Prevent page title announcement again
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
@@ -123,7 +123,7 @@ export default function FlashcardsPage() {
     playClickSound();
     setFlashcardsData(null); 
     setCurrentCardIndex(0);
-    pageTitleSpokenRef.current = false; 
+    pageTitleSpokenRef.current = false; // Allow title to be spoken again
   }
 
   if (!flashcardsData) {
@@ -198,3 +198,6 @@ export default function FlashcardsPage() {
     </div>
   );
 }
+
+
+    

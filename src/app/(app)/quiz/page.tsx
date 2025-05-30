@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions';
 import type { GenerateQuizQuestionsOutput, QuizQuestion } from '@/lib/types';
 import { Loader2, HelpCircle, Sparkles } from 'lucide-react';
-import { QuizView } from '@/components/study/QuizView'; 
+import QuizView from '@/components/study/QuizView'; 
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 
@@ -46,6 +46,7 @@ export default function QuizPage() {
     }
   });
   const topicValue = watch('topic');
+  const difficultyValue = watch('difficulty');
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -77,7 +78,7 @@ export default function QuizPage() {
     playClickSound();
     setIsLoading(true);
     setGeneratedQuizData(null);
-    pageTitleSpokenRef.current = true; 
+    pageTitleSpokenRef.current = true; // Prevent page title announcement again
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating quiz. Please wait.");
@@ -112,13 +113,13 @@ export default function QuizPage() {
   const handleNewQuiz = () => {
     playClickSound();
     setGeneratedQuizData(null);
-    pageTitleSpokenRef.current = false;
+    pageTitleSpokenRef.current = false; // Allow title to be spoken again
   }
 
   if (generatedQuizData && generatedQuizData.questions && topicValue) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
-        <QuizView questions={generatedQuizData.questions} topic={topicValue} />
+        <QuizView questions={generatedQuizData.questions} topic={topicValue} difficulty={difficultyValue} />
         <div className="text-center">
             <Button onClick={handleNewQuiz} variant="outline" size="lg">Create New Quiz</Button>
         </div>
@@ -180,3 +181,6 @@ export default function QuizPage() {
     </div>
   );
 }
+
+
+    

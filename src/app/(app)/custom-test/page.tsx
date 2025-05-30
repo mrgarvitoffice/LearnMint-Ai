@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions'; 
 import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Sparkles } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -79,7 +79,7 @@ export default function CustomTestPage() {
   const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   
-  const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setSelectedVoiceURI, setVoicePreference, voicePreference } = useTTS();
+  const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
   const pageTitleSpokenRef = useRef(false);
@@ -179,7 +179,7 @@ export default function CustomTestPage() {
             if (currentTimerId) clearInterval(currentTimerId); return currentTestState;
           }
           const newTimeLeftVal = currentTestState.timeLeft - 1;
-          if (newTimeLeftVal <= 0) { // Changed to <= 0 for safety
+          if (newTimeLeftVal <= 0) { 
             if (currentTimerId) clearInterval(currentTimerId);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
             handleSubmitTest(true); 
@@ -238,7 +238,9 @@ export default function CustomTestPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false;
+    };
   }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
 
   useEffect(() => { // Generation Message TTS
@@ -265,11 +267,13 @@ export default function CustomTestPage() {
   
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
-    setIsLoading(true); setTestState(null); resultAnnouncementSpokenRef.current = false; pageTitleSpokenRef.current = true; 
+    setIsLoading(true); setTestState(null); 
+    resultAnnouncementSpokenRef.current = false; 
+    pageTitleSpokenRef.current = true; // To prevent title announcement again right after generating
 
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Creating custom test. Please wait.");
-      generatingMessageSpokenRef.current = true;
+      generatingMessageSpokenRef.current = true; 
     }
 
     let topicForAI = ""; let topicsForSettings: string[] = [];
@@ -366,6 +370,7 @@ export default function CustomTestPage() {
   const handleNewTest = () => {
     playClickSound(); setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
     pageTitleSpokenRef.current = false; resultAnnouncementSpokenRef.current = false; 
+    generatingMessageSpokenRef.current = false;
     setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []);
     setValue('difficulty', 'medium'); setValue('numQuestions', 5); setValue('timer', 0); setValue('perQuestionTimer', 0);
   };
@@ -421,7 +426,7 @@ export default function CustomTestPage() {
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-10 w-10 text-primary" /></div>
              <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
-                <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center sm:text-left">{PAGE_TITLE}</CardTitle>
+                <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
                  <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
                      <Select value={voicePreference || ''} onValueChange={(value) => {playClickSound(); setVoicePreference(value as 'kai' | 'zia' | null);}}>
                         <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
@@ -595,3 +600,5 @@ export default function CustomTestPage() {
   );
 }
 
+
+    

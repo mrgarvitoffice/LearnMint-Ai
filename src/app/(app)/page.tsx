@@ -16,24 +16,25 @@ const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const coreFeaturesListText = [
-  "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards via AI.",
-  "<strong>Custom Test Creation:</strong> Tests with specific topics, difficulty, & timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'. Supports voice input.",
+  "<strong>AI Content Generation:</strong> Create notes, quizzes, & flashcards.",
+  "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, & timers.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'.",
   "<strong>Scientific Calculator & Unit Converter:</strong> Calculations & unit conversions.",
-  "<strong>Daily News Digest:</strong> News filtered by country, category, & keywords.",
-  "<strong>Resource Library:</strong> OpenStax textbooks, Google Books/YouTube search, Math Facts.",
+  "<strong>Daily News Digest:</strong> Filtered news articles.",
+  "<strong>Resource Library:</strong> Textbooks, Google Books/YouTube search, Math Facts.",
   "<strong>Educational Game:</strong> 'Word Game' & more soon.",
 ];
 
 const exploreFeaturesCards = [
   { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
-  { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests from topics or notes." },
-  { title: "AI Quiz Creator", href: "/quiz", icon: HelpCircle, description: "Generate interactive quizzes on demand." },
-  { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards for review." },
-  { title: "AI Chatbot (Megumin)", href: "/chatbot", icon: Bot, description: "Chat with our witty AI assistant." },
-  { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations and convert units." },
-  { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with the latest news." },
-  { title: "LearnMint Arcade", href: "/arcade", icon: Gamepad2, description: "Play fun and educational games." },
+  { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests." },
+  { title: "AI Quiz Creator", href: "/quiz", icon: HelpCircle, description: "Generate interactive quizzes." },
+  { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards." },
+  { title: "AI Chatbot (Megumin)", href: "/chatbot", icon: Bot, description: "Chat with our witty AI." },
+  { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations & convert." },
+  { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with news." },
+  { title: "LearnMint Arcade", href: "/arcade", icon: Gamepad2, description: "Play educational games." },
+  { title: "Resource Library", href: "/library", icon: BookMarked, description: "Explore learning resources." },
 ];
 
 const motivationalQuotes = [
@@ -49,7 +50,7 @@ const motivationalQuotes = [
 
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
 
@@ -76,25 +77,24 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Effect to set the default voice preference for page announcements
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Request 'zia' (female) voice
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
-  // Effect to speak the page title once the preferred voice might be active
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      if (voicePreference === 'zia' || (selectedVoice.name.toLowerCase().includes('zia') || selectedVoice.name.toLowerCase().includes('female'))) {
-        speak(PAGE_TITLE);
-        pageTitleSpokenRef.current = true;
-      }
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; };
-  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak]);
+    return () => { 
+      isMounted = false;
+      // Optional: cancelTTS() here if needed, but page announcements are usually short
+    };
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -181,26 +181,8 @@ export default function DashboardPage() {
               </Link>
             );
           })}
-           <Link href="/library" legacyBehavior>
-             <a className="block h-full">
-                <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group">
-                    <CardHeader className="pb-2 pt-4">
-                        <div className="flex items-center gap-3 mb-2">
-                            <BookMarked className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
-                            <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Resource Library</CardTitle>
-                        </div>
-                        <CardDescription className="text-xs text-muted-foreground/80 pt-1">Access textbooks, math facts, and search external resources.</CardDescription>
-                    </CardHeader>
-                    <CardFooter className="pt-2 pb-4">
-                        <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent/80">
-                            Open Library <ArrowRight className="ml-1 h-3 w-3" />
-                        </Button>
-                    </CardFooter>
-                </Card>
-             </a>
-           </Link>
            {dailyQuote && (
-            <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group col-span-1 sm:col-span-2 lg:col-span-1">
+            <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group"> {/* Removed explicit col-span here */}
               <CardHeader className="pb-2 pt-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />

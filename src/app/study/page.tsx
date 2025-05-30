@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2, Home } from "lucide-react"; 
@@ -70,20 +71,19 @@ function StudyPageContent() {
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
-  const initialFetchTriggeredRef = useRef(false); // To trigger initial loads for Quiz/Flashcards if tab is active
+  const initialFetchTriggeredRef = useRef(false);
 
    useEffect(() => {
     if (topicParam) {
       const decodedTopic = decodeURIComponent(topicParam);
-      if (decodedTopic !== activeTopic) { // Only update if different to avoid loops
+      if (decodedTopic !== activeTopic) { 
          setActiveTopic(decodedTopic);
-         // Invalidate queries if the topic changes to force refetch
          queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
          queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
          queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
-         pageTitleSpokenRef.current = false; // Allow title to be spoken again for new topic
+         pageTitleSpokenRef.current = false; 
       }
-    } else if (activeTopic !== "No topic provided") { // Handle case where topic is removed from URL
+    } else if (activeTopic !== "No topic provided") { 
       setActiveTopic("No topic provided");
       toast({ title: "No Topic", description: "No topic was specified in the URL. Please generate materials from the main page.", variant: "destructive" });
     }
@@ -100,16 +100,13 @@ function StudyPageContent() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic && activeTopic !== "No topic provided") {
-       if (voicePreference === 'zia' || (selectedVoice.name.toLowerCase().includes('zia') || selectedVoice.name.toLowerCase().includes('female'))) {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
-      }
     }
     return () => {
       isMounted = false;
-      cancelTTS();
     };
-  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak, activeTopic, cancelTTS]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
 
 
   const commonQueryOptions = {
@@ -173,26 +170,23 @@ function StudyPageContent() {
   });
 
   useEffect(() => {
-    if(commonQueryOptions.enabled && !initialFetchTriggeredRef.current) {
-        // Trigger initial fetches for all tabs regardless of current active tab
-        // This is to pre-load data. We can refine this if it's too aggressive.
+    if(commonQueryOptions.enabled && !initialFetchTriggeredRef.current && activeTopic && activeTopic !== "No topic provided") {
         refetchNotes(); 
         refetchQuiz(); 
         refetchFlashcards();
         initialFetchTriggeredRef.current = true;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commonQueryOptions.enabled, activeTopic]); // Added activeTopic to re-trigger if topic changes
+  }, [commonQueryOptions.enabled, activeTopic, refetchNotes, refetchQuiz, refetchFlashcards]);
 
 
   const handleRefreshContent = useCallback(() => {
     playClickSound();
     if (activeTopic && activeTopic !== "No topic provided") {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
+      pageTitleSpokenRef.current = false; // Allow title to be spoken again
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      // Manually refetch active tab content if needed, or all
       refetchNotes();
       refetchQuiz();
       refetchFlashcards();
@@ -225,9 +219,9 @@ function StudyPageContent() {
     return (
       <Tabs defaultValue="notes" value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col min-h-0">
         <TabsList className="grid w-full grid-cols-1 xs:grid-cols-3 mb-4 sm:mb-6 mx-auto md:max-w-md sticky top-[calc(theme(spacing.16)_+_1px)] sm:top-0 z-10 bg-background/80 backdrop-blur-sm py-1.5">
-          <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {(isLoadingNotes || (isFetchingNotes && !notesData)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-          <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz || (isFetchingQuiz && !quizData)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-          <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {(isLoadingNotes || (isFetchingNotes && !notesData && !isErrorNotes)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz || (isFetchingQuiz && !quizData && !isErrorQuiz)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData && !isErrorFlashcards)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
@@ -238,7 +232,7 @@ function StudyPageContent() {
         <TabsContent value="quiz" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
            {(isLoadingQuiz || (isFetchingQuiz && !quizData && !isErrorQuiz)) ? <QuizLoadingSkeleton /> :
             isErrorQuiz ? <ErrorDisplay error={quizErrorObj} onRetry={refetchQuiz} contentType="quiz questions" /> :
-            quizData?.questions && quizData.questions.length > 0 ? <QuizView questions={quizData.questions} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No quiz questions generated or an error occurred.</p>}
+            quizData?.questions && quizData.questions.length > 0 ? <QuizView questions={quizData.questions} topic={activeTopic} difficulty="medium" /> : <p className="text-muted-foreground p-4 text-center">No quiz questions generated or an error occurred.</p>}
         </TabsContent>
         <TabsContent value="flashcards" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
            {(isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData && !isErrorFlashcards)) ? <FlashcardsLoadingSkeleton /> :
@@ -287,5 +281,6 @@ export default function StudyPage() {
     </Suspense>
   );
 }
+
 
     

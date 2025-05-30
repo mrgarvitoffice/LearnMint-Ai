@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation'; // Added useSearchParams
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const PAGE_TITLE = "Generate Study Materials";
-const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
+const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics"; // Corrected key
 
 const NotesLoadingSkeleton = () => ( <div className="p-4 space-y-3"><Skeleton className="h-8 w-3/4" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-32 w-full mt-4" /></div> );
 const QuizLoadingSkeleton = () => ( <div className="p-4 space-y-3"><Skeleton className="h-6 w-1/2 mb-4" />{[...Array(3)].map((_, i) => ( <div key={i} className="space-y-2 mb-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div> ))}</div> );
@@ -46,65 +46,36 @@ const ErrorDisplay = ({ error, onRetry, contentType }: { error: string | null, o
 
 function GenerateNotesPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const topicFromQuery = searchParams.get("topic");
-
-  const [topic, setTopic] = useState<string>(topicFromQuery || "");
-  const [activeTopic, setActiveTopic] = useState<string | null>(topicFromQuery || null);
-  
-  const [generatedNotesContent, setGeneratedNotesContent] = useState<string | null>(null);
-  const [generatedQuizData, setGeneratedQuizData] = useState<QuizQuestion[] | null>(null);
-  const [generatedFlashcardsData, setGeneratedFlashcardsData] = useState<Flashcard[] | null>(null);
-
-  const [isLoadingAllMaterials, setIsLoadingAllMaterials] = useState<boolean>(false);
-  const [isLoadingNotes, setIsLoadingNotes] = useState<boolean>(false);
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState<boolean>(false);
-  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState<boolean>(false);
-  
-  const [errorNotes, setErrorNotes] = useState<string | null>(null);
-  const [errorQuiz, setErrorQuiz] = useState<string | null>(null);
-  const [errorFlashcards, setErrorFlashcards] = useState<string | null>(null);
-  
-  const [activeTab, setActiveTab] = useState<string>("notes");
-  const [materialsGenerated, setMaterialsGenerated] = useState(false);
-
   const { toast } = useToast();
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
+
+  const [topic, setTopic] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS, pauseTTS, resumeTTS } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
+  const generatingMessageSpokenRef = useRef(false);
 
-  useEffect(() => {
-    if (topicFromQuery && !activeTopic) {
-      setActiveTopic(topicFromQuery);
-      setTopic(topicFromQuery);
-      // Automatically trigger generation if topic is from query
-      if (topicFromQuery.trim().length >= 3) {
-        handleGenerateAllMaterials(topicFromQuery);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicFromQuery]); // Only run when topicFromQuery changes
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAllMaterials && !materialsGenerated) {
-      if (voicePreference === 'zia' || (selectedVoice.name.toLowerCase().includes('zia') || selectedVoice.name.toLowerCase().includes('female'))) {
-        speak(PAGE_TITLE);
-        pageTitleSpokenRef.current = true;
-      }
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading) {
+      speak(PAGE_TITLE);
+      pageTitleSpokenRef.current = true;
     }
-    return () => { isMounted = false; cancelTTS(); };
-  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak, isLoadingAllMaterials, materialsGenerated, cancelTTS]);
+    return () => { isMounted = false; };
+  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
@@ -113,7 +84,7 @@ function GenerateNotesPageContent() {
   useEffect(() => {
     if (voiceError) {
       toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
-      setErrorNotes(`Voice input error: ${voiceError}`);
+      setError(`Voice input error: ${voiceError}`);
     }
   }, [voiceError, toast]);
 
@@ -123,162 +94,92 @@ function GenerateNotesPageContent() {
     else { setTopic(""); startListening(); }
   }, [isListening, startListening, stopListening, playClickSound]);
 
-  const handleGenerateAllMaterials = useCallback(async (currentTopic?: string) => {
+  const handleGenerate = useCallback(async () => {
     playClickSound();
-    const topicToGenerate = (currentTopic || topic).trim();
-
-    if (topicToGenerate.length < 3) {
+    if (topic.trim().length < 3) {
+      setError("Please enter a topic with at least 3 characters.");
       toast({ title: "Invalid Topic", description: "Topic must be at least 3 characters long.", variant: "destructive" });
       return;
     }
+    setError(null);
+    setIsLoading(true);
+    if(selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+        speak("Generating study materials, please wait.");
+        generatingMessageSpokenRef.current = true;
+    }
     
-    setActiveTopic(topicToGenerate);
-    setErrorNotes(null); setErrorQuiz(null); setErrorFlashcards(null);
-    setGeneratedNotesContent(null); setGeneratedQuizData(null); setGeneratedFlashcardsData(null);
-    
-    setIsLoadingAllMaterials(true);
-    setMaterialsGenerated(true);
-    setActiveTab("notes");
-
-    if (selectedVoice && !isSpeaking && !isPaused) speak("Generating all study materials. Please wait.");
 
     try {
       const storedTopics = localStorage.getItem(RECENT_TOPICS_LS_KEY);
       let recentTopicsArray = storedTopics ? JSON.parse(storedTopics) : [];
-      if (!recentTopicsArray.includes(topicToGenerate)) {
-        recentTopicsArray.unshift(topicToGenerate);
-      } else { 
-        recentTopicsArray = recentTopicsArray.filter(t => t !== topicToGenerate);
-        recentTopicsArray.unshift(topicToGenerate);
+      const trimmedTopic = topic.trim();
+      if (!recentTopicsArray.includes(trimmedTopic)) {
+        recentTopicsArray.unshift(trimmedTopic);
+        recentTopicsArray = recentTopicsArray.slice(0, 10); 
+        localStorage.setItem(RECENT_TOPICS_LS_KEY, JSON.stringify(recentTopicsArray));
       }
-      recentTopicsArray = recentTopicsArray.slice(0, 10);
-      localStorage.setItem(RECENT_TOPICS_LS_KEY, JSON.stringify(recentTopicsArray));
-    } catch (e) { console.error("Failed to save recent topic to localStorage", e); }
-
-    setIsLoadingNotes(true); setIsLoadingQuiz(true); setIsLoadingFlashcards(true);
-    
-    const notesPromise = generateNotesAction({ topic: topicToGenerate }).catch(e => ({ error: e.message || "Failed to generate notes.", type: 'notes' }));
-    const quizPromise = generateQuizAction({ topic: topicToGenerate, numQuestions: 30, difficulty: 'medium' }).catch(e => ({ error: e.message || "Failed to generate quiz.", type: 'quiz' }));
-    const flashcardsPromise = generateFlashcardsAction({ topic: topicToGenerate, numFlashcards: 20 }).catch(e => ({ error: e.message || "Failed to generate flashcards.", type: 'flashcards' }));
-    
-    const results = await Promise.allSettled([notesPromise, quizPromise, flashcardsPromise]);
-    let allSuccessful = true;
-    let successMessage = "Study materials are ready!";
-
-    if (results[0].status === 'fulfilled' && !(results[0].value as any).error) {
-      setGeneratedNotesContent((results[0].value as GenerateStudyNotesOutput).notes);
-    } else {
-      const errorMsg = results[0].status === 'rejected' ? results[0].reason?.message : (results[0].value as any).error;
-      setErrorNotes(errorMsg || "Failed to generate notes.");
-      allSuccessful = false;
+    } catch (e) {
+      console.error("Failed to save recent topic to localStorage", e);
     }
-    setIsLoadingNotes(false);
 
-    if (results[1].status === 'fulfilled' && !(results[1].value as any).error) {
-      setGeneratedQuizData((results[1].value as GenerateQuizQuestionsOutput).questions);
-    } else {
-       const errorMsg = results[1].status === 'rejected' ? results[1].reason?.message : (results[1].value as any).error;
-      setErrorQuiz(errorMsg || "Failed to generate quiz.");
-      allSuccessful = false;
-    }
-    setIsLoadingQuiz(false);
-
-    if (results[2].status === 'fulfilled' && !(results[2].value as any).error) {
-      setGeneratedFlashcardsData((results[2].value as GenerateFlashcardsOutput).flashcards);
-    } else {
-       const errorMsg = results[2].status === 'rejected' ? results[2].reason?.message : (results[2].value as any).error;
-      setErrorFlashcards(errorMsg || "Failed to generate flashcards.");
-      allSuccessful = false;
-    }
-    setIsLoadingFlashcards(false);
-    
-    setIsLoadingAllMaterials(false);
-
-    if (selectedVoice && !isSpeaking && !isPaused) {
-      if (allSuccessful) {
-        toast({ title: "Success!", description: successMessage });
-        speak(successMessage);
-      } else {
-        successMessage = "Some materials failed to generate. Check individual tabs.";
-        toast({ title: "Partial Success", description: successMessage, variant: "default" });
-        speak(successMessage);
-      }
-    }
-  }, [topic, toast, playClickSound, speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, router]);
-
-  const handleTabChange = (value: string) => { playClickSound(); setActiveTab(value); };
+    router.push(`/study?topic=${encodeURIComponent(topic.trim())}`);
+    // setIsLoading(false); // isLoading state will persist until navigation is complete
+    // setTopic(""); // Let topic persist in input for now
+    generatingMessageSpokenRef.current = false; // Reset after navigation attempt
+  }, [topic, router, toast, playClickSound, speak, selectedVoice, isSpeaking, isPaused]);
   
   return (
-    <div className="container mx-auto max-w-5xl px-2 py-6 sm:px-4 sm:py-8 flex flex-col flex-1 min-h-[calc(100vh-8rem)] space-y-6">
-      <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
+    <div className="container mx-auto max-w-xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] space-y-8">
+        <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4"><GraduationCap className="h-10 w-10 text-primary" /></div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
-          <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">
-            Enter any academic topic, and LearnMint AI will craft detailed notes, a challenging quiz, and insightful flashcards for you.
-          </CardDescription>
+            <div className="flex items-center justify-center mb-4">
+            <GraduationCap className="h-12 w-12 text-primary" />
+            </div>
+            <CardTitle className="text-center text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+            <CardDescription className="text-center text-sm sm:text-base text-muted-foreground px-2">
+            Enter any academic topic, and LearnMint AI will generate comprehensive study notes, a quiz, and flashcards for you.
+            </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
-          <div className="relative">
-            <Input id="topicInput" value={topic} onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Quantum Physics, Cell Biology"
-              className="text-base py-3 px-4 pr-12 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
-              aria-label="Study Topic"
-              onKeyDown={(e) => e.key === 'Enter' && !isLoadingAllMaterials && topic.trim().length >=3 && handleGenerateAllMaterials()}
+            <div className="relative">
+            <Input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g., Quantum Physics, Cell Biology, World War II"
+                className="text-base sm:text-lg py-3 px-4 pr-12 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
+                aria-label="Study Topic"
+                onKeyDown={(e) => e.key === 'Enter' && !isLoading && topic.trim().length >=3 && handleGenerate()}
             />
             {browserSupportsSpeechRecognition && (
-              <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                onClick={handleVoiceCommand} disabled={isLoadingAllMaterials || isListening} aria-label="Use Voice Input" title="Use Voice Input">
+                <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                onClick={handleVoiceCommand}
+                disabled={isLoading || isListening}
+                aria-label="Use Voice Input"
+                title="Use Voice Input"
+                >
                 <Mic className={`h-5 w-5 ${isListening ? 'text-destructive animate-pulse' : 'text-muted-foreground hover:text-primary'}`} />
-              </Button>
+                </Button>
             )}
-          </div>
-          {(errorNotes && !isLoadingNotes && !isLoadingAllMaterials) && <p className="text-sm text-destructive text-center">{errorNotes}</p>}
-          <Button onClick={() => handleGenerateAllMaterials()} disabled={isLoadingAllMaterials || topic.trim().length < 3}
-            className="w-full text-base py-3 group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg transition-all duration-300 ease-in-out hover:shadow-primary/50 active:scale-95"
-            size="lg">
-            {isLoadingAllMaterials ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" />}
-            {isLoadingAllMaterials ? "Generating All Materials..." : "Generate All Study Materials"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {materialsGenerated && activeTopic && (
-        <Card className="w-full shadow-xl mt-2 flex-1 flex flex-col min-h-0">
-           <CardHeader className="pb-2">
-             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-center sm:text-left">
-                    Study Hub for: <span className="text-primary">{activeTopic}</span>
-                </CardTitle>
             </div>
-          </CardHeader>
-          <CardContent className="p-2 sm:p-4 flex-1 flex flex-col min-h-0">
-            <Tabs defaultValue="notes" value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col min-h-0">
-              <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 mx-auto md:max-w-md sticky top-[calc(theme(spacing.16)_+_1px)] sm:top-0 z-10 bg-background/80 backdrop-blur-sm py-1.5">
-                <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {isLoadingNotes && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-                <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {isLoadingQuiz && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-                <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {isLoadingFlashcards && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
-                {isLoadingNotes ? <NotesLoadingSkeleton /> :
-                 errorNotes ? <ErrorDisplay error={errorNotes} contentType="notes" /> :
-                 generatedNotesContent && activeTopic ? <NotesView notesContent={generatedNotesContent} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No notes generated or an error occurred.</p>}
-              </TabsContent>
-              <TabsContent value="quiz" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
-                 {isLoadingQuiz ? <QuizLoadingSkeleton /> :
-                  errorQuiz ? <ErrorDisplay error={errorQuiz} contentType="quiz questions" /> :
-                  generatedQuizData && generatedQuizData.length > 0 && activeTopic ? <QuizView questions={generatedQuizData} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No quiz questions generated or an error occurred.</p>}
-              </TabsContent>
-              <TabsContent value="flashcards" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
-                 {isLoadingFlashcards ? <FlashcardsLoadingSkeleton /> :
-                  errorFlashcards ? <ErrorDisplay error={errorFlashcards} contentType="flashcards" /> :
-                  generatedFlashcardsData && generatedFlashcardsData.length > 0 && activeTopic ? <FlashcardsView flashcards={generatedFlashcardsData} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No flashcards generated or an error occurred.</p>}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
+            <Button
+            onClick={handleGenerate}
+            disabled={isLoading || topic.trim().length < 3}
+            className="w-full text-base sm:text-lg py-3 transition-all duration-300 ease-in-out group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-primary/50 active:scale-95"
+            size="lg"
+            >
+            {isLoading ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+                <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" />
+            )}
+            {isLoading ? "Generating..." : "Get Topper Notes"}
+            </Button>
+        </CardContent>
         </Card>
-      )}
     </div>
   );
 }
@@ -291,5 +192,6 @@ export default function NotesPage() {
     </Suspense>
   );
 }
+    
 
     

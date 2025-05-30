@@ -73,8 +73,8 @@ export default function NewsPage() {
     });
   };
 
-  const handleApplyFilters = () => { setAppliedFilters(filters); };
-  const handleResetFilters = () => { setFilters(initialFilters); setAppliedFilters(initialFilters); };
+  const handleApplyFilters = () => { setAppliedFilters(filters); pageTitleSpokenRef.current = true; /* Prevent re-announcement on filter apply */ };
+  const handleResetFilters = () => { setFilters(initialFilters); setAppliedFilters(initialFilters); pageTitleSpokenRef.current = true; };
 
   const articles = data?.pages.flatMap(page => page.results) ?? [];
 
@@ -130,3 +130,6 @@ export default function NewsPage() {
     </div>
   );
 }
+
+
+    
