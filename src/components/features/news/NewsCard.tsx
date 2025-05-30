@@ -1,7 +1,8 @@
+
 import type { NewsArticle } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
+// Removed import for next/image
 import { ExternalLink, CalendarDays, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -10,33 +11,24 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article }: NewsCardProps) {
-  const placeholderImage = `https://placehold.co/600x400.png?text=${article.category?.[0] || 'News'}`;
-  const dataAiHint = article.category?.[0] || 'news article';
+  const placeholderImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(article.category?.[0] || 'News')}`;
+  const dataAiHint = article.category?.[0] || 'news article'; // Keep for potential future use if we revert or for other tooling
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    (e.target as HTMLImageElement).src = placeholderImage;
+  };
 
   return (
     <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-      {article.image_url ? (
-        <div className="relative w-full h-48">
-          <Image 
-            src={article.image_url} 
-            alt={article.title} 
-            layout="fill" 
-            objectFit="cover"
-            data-ai-hint={dataAiHint}
-            onError={(e) => { (e.target as HTMLImageElement).src = placeholderImage; }}
-          />
-        </div>
-      ) : (
-         <div className="relative w-full h-48">
-          <Image 
-            src={placeholderImage}
-            alt={article.title} 
-            layout="fill" 
-            objectFit="cover"
-            data-ai-hint={dataAiHint}
-          />
-        </div>
-      )}
+      <div className="relative w-full h-48 overflow-hidden"> {/* Added overflow-hidden here */}
+        <img
+          src={article.image_url || placeholderImage}
+          alt={article.title || "News article image"}
+          className="w-full h-full object-cover" // Tailwind classes for layout="fill" objectFit="cover" equivalent
+          onError={handleImageError}
+          loading="lazy" // Add lazy loading for standard img tag
+        />
+      </div>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg leading-tight">{article.title}</CardTitle>
         <CardDescription className="text-xs text-muted-foreground pt-1">
