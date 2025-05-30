@@ -12,7 +12,7 @@ import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSearchInput, GoogleBooksSearchInput, YoutubeSearchOutput, GoogleBooksSearchOutput } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
-import { BookResultItem } from '@/components/features/library/BookResultItem'; // New component
+import { BookResultItem } from '@/components/features/library/BookResultItem';
 import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { directYoutubeSearch, directGoogleBooksSearch } from '@/lib/actions'; 
@@ -93,7 +93,7 @@ export default function LibraryPage() {
   });
 
   const googleBooksSearchMutation = useMutation<GoogleBooksSearchOutput, QueryError, GoogleBooksSearchInput>({
-    mutationFn: (input) => directGoogleBooksSearch({...input, country: 'US'}), // Defaulting country here
+    mutationFn: (input) => directGoogleBooksSearch({...input, country: 'US'}), 
     onSuccess: (data) => {
       if (data.books && data.books.length > 0) {
         setGoogleBooksResults(data.books);
@@ -260,13 +260,13 @@ export default function LibraryPage() {
            {googleBooksResults.length > 0 && (
             <div className="px-6 pb-6">
               <h3 className="text-lg font-semibold mb-3 mt-4">Book Results:</h3>
-              <ScrollArea className="h-[400px] w-full pr-3"> {/* Ensure enough height for scrolling */}
+              <ScrollArea className="h-[400px] w-full pr-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {googleBooksResults.map(book => (
                      <BookResultItem 
                         key={book.bookId} 
                         book={book} 
-                        onPreviewRequest={setSelectedBookForPreview} 
+                        onPreviewRequest={() => setSelectedBookForPreview(book)} 
                       />
                   ))}
                 </div>
@@ -285,39 +285,43 @@ export default function LibraryPage() {
        {selectedBookForPreview && (
         <Dialog open={!!selectedBookForPreview} onOpenChange={(isOpen) => { if (!isOpen) setSelectedBookForPreview(null); }}>
           <DialogContent className="max-w-4xl h-[90vh] p-0 border-0 flex flex-col data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
-            <DialogHeader className="p-4 border-b flex flex-row items-center justify-between">
-              <DialogTitle className="truncate text-lg">{selectedBookForPreview.title}</DialogTitle>
+            <DialogHeader className="p-4 border-b flex flex-row items-center justify-between sticky top-0 bg-background z-10">
+              <DialogTitle className="truncate text-lg sm:text-xl">{selectedBookForPreview.title}</DialogTitle>
               <DialogClose asChild>
                 <Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
               </DialogClose>
             </DialogHeader>
-            {selectedBookForPreview.embeddable ? (
-              <iframe
-                src={`https://books.google.com/books?id=${selectedBookForPreview.bookId}&pg=PP1&output=embed`}
-                title={`Preview of ${selectedBookForPreview.title}`}
-                className="w-full flex-1 border-0"
-                allowFullScreen
-              ></iframe>
-            ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                    <BookOpen className="w-16 h-16 text-muted-foreground mb-4"/>
-                    <p className="text-lg text-muted-foreground">Preview not available for this book.</p>
-                    {selectedBookForPreview.webReaderLink && (
-                        <Button asChild className="mt-4">
-                            <a href={selectedBookForPreview.webReaderLink} target="_blank" rel="noopener noreferrer">
-                                View on Google Books <ExternalLink className="ml-2 h-4 w-4" />
-                            </a>
-                        </Button>
-                    )}
+            <div className="flex-1 overflow-hidden">
+                {selectedBookForPreview.embeddable ? (
+                <iframe
+                    src={`https://books.google.com/books?id=${selectedBookForPreview.bookId}&pg=PP1&output=embed`}
+                    title={`Preview of ${selectedBookForPreview.title}`}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                ></iframe>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center h-full">
+                        <BookOpen className="w-16 h-16 text-muted-foreground mb-4"/>
+                        <p className="text-lg text-muted-foreground">Preview not available for this book.</p>
+                        {(selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink) && (
+                            <Button asChild className="mt-4">
+                                <a href={selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink!} target="_blank" rel="noopener noreferrer">
+                                    View on Google Books <ExternalLink className="ml-2 h-4 w-4" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                )}
+            </div>
+             {(selectedBookForPreview.infoLink) && (
+                <div className="p-3 border-t text-center sticky bottom-0 bg-background z-10">
+                    <Button variant="link" asChild size="sm">
+                        <a href={selectedBookForPreview.infoLink} target="_blank" rel="noopener noreferrer">
+                            More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
+                        </a>
+                    </Button>
                 </div>
-            )}
-             <div className="p-3 border-t text-center">
-                 <Button variant="link" asChild size="sm">
-                     <a href={selectedBookForPreview.infoLink} target="_blank" rel="noopener noreferrer">
-                        More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
-                     </a>
-                 </Button>
-             </div>
+             )}
           </DialogContent>
         </Dialog>
       )}
@@ -332,3 +336,4 @@ export default function LibraryPage() {
     </div>
   );
 }
+

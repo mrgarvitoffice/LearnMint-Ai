@@ -20,7 +20,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
     if (book.embeddable) {
       onPreviewRequest(book);
     } else if (book.webReaderLink || book.infoLink) {
-      window.open(book.webReaderLink || book.infoLink, '_blank', 'noopener,noreferrer');
+      window.open(book.webReaderLink || book.infoLink!, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -32,13 +32,14 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             src={book.thumbnailUrl || placeholderImage}
             alt={`Cover of ${book.title}`}
             fill={true}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            style={{ objectFit: 'cover' }} // Use cover for better fill, contain for placeholder might be better
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px" // Adjusted sizes
+            style={{ objectFit: book.thumbnailUrl ? 'cover' : 'contain' }} // Cover for real images, contain for placeholder
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => {
-              (e.target as HTMLImageElement).srcset = placeholderImage;
-              (e.target as HTMLImageElement).src = placeholderImage;
-              (e.target as HTMLImageElement).style.objectFit = 'contain'; // Ensure placeholder is visible
+              const target = e.target as HTMLImageElement;
+              target.srcset = placeholderImage;
+              target.src = placeholderImage;
+              target.style.objectFit = 'contain'; // Ensure placeholder text is visible
             }}
           />
            {book.embeddable && (
@@ -61,10 +62,10 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview in App
           </Button>
         )}
-        {(book.webReaderLink || book.infoLink) && (
+        {(book.infoLink) && (
            <Button variant="outline" size="sm" asChild className="w-full text-xs">
-            <a href={book.webReaderLink || book.infoLink} target="_blank" rel="noopener noreferrer">
-              <BookOpen className="mr-1.5 h-3.5 w-3.5" /> View on Google Books <ExternalLink className="ml-1 h-3 w-3" />
+            <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
+              <BookOpen className="mr-1.5 h-3.5 w-3.5" /> More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
             </a>
           </Button>
         )}
