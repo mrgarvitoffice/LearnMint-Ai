@@ -16,7 +16,8 @@ const GenerateQuizInputSchema = z.object({
 });
 export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
 
-const GenerateQuizOutputSchema = z.object({ // Removed export from const
+// Output schema is defined locally, not exported as an object
+const GenerateQuizOutputSchema = z.object({
   quiz: z.array(
     z.object({
       question: z.string().describe('The quiz question.'),
@@ -27,10 +28,6 @@ const GenerateQuizOutputSchema = z.object({ // Removed export from const
   ).describe('The generated quiz, including explanations for answers.'),
 });
 export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
-
-export async function generateQuiz(input: GenerateQuizInput): Promise<GenerateQuizOutput> {
-  return generateQuizFlow(input);
-}
 
 const prompt = ai.definePrompt({
   name: 'generateQuizPrompt',
@@ -51,6 +48,27 @@ const generateQuizFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+     if (!output || !output.quiz || !Array.isArray(output.quiz) || output.quiz.length === 0) {
+        console.error("[AI Flow Error - Quiz] AI returned empty or invalid quiz data:", output);
+        throw new Error("AI failed to generate quiz questions in the expected format.");
+    }
     return output!;
   }
 );
+
+export async function generateQuiz(input: GenerateQuizInput): Promise<GenerateQuizOutput> {
+  console.log(`[Server Action] generateQuiz called for topic: ${input.topic}, numQuestions: ${input.numQuestions}`);
+  try {
+    const result = await generateQuizFlow(input);
+    return result;
+  } catch (error: any) {
+    console.error("[Server Action Error - generateQuiz] Error in flow execution:", error.message, error.stack);
+    let clientErrorMessage = "Failed to generate quiz. Please try again.";
+    if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY"))) {
+      clientErrorMessage = "Quiz Generation: Failed due to an API key issue. Please check server configuration.";
+    } else if (error.message) {
+      clientErrorMessage = `Quiz Generation: Failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
+    }
+    throw new Error(clientErrorMessage);
+  }
+}

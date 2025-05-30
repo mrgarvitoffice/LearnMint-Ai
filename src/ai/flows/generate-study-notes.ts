@@ -1,6 +1,4 @@
-// src/ai/flows/generate-study-notes.ts
 'use server';
-
 /**
  * @fileOverview A study note generation AI agent.
  *
@@ -26,10 +24,6 @@ const GenerateStudyNotesOutputSchema = z.object({
 });
 export type GenerateStudyNotesOutput = z.infer<typeof GenerateStudyNotesOutputSchema>;
 
-export async function generateStudyNotes(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
-  return generateStudyNotesFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'generateStudyNotesPrompt',
   input: {schema: GenerateStudyNotesInputSchema},
@@ -49,10 +43,10 @@ Please generate study notes on this topic with the following characteristics:
     *   Start with a brief, **exciting introductory paragraph** that hooks the reader.
     *   Employ a clear hierarchy of headings:
         *   A **main, attention-grabbing title** for the overall topic, perhaps with emojis (e.g., using '# Main Topic Title 🚀✨').
-        *   **Prominent major section headings** (e.g., using '## Key Concept Unveiled! 🤔' or '# Another Big Section! 💡').
+        *   **Prominent major section headings** (e.g., using '## Key Concept Unveiled! 🤔' or '# Another Big Section! 💡'). Make these visually distinct from sub-headings.
         *   **Clearly distinct sub-headings** for sub-topics, making them smaller but still clear (e.g., '### Diving Deeper: ...' or '#### Specific Examples:'). Create a "big text, small text" visual flow.
     *   Provide detailed information in a **point-wise manner** using bullet points ('- ') or numbered lists ('1. ').
-    *   Pay meticulous attention to **spacing and layout** throughout the document. Use line breaks effectively to separate ideas and make the notes scannable and easy on the eyes.
+    *   Pay meticulous attention to **spacing and layout** throughout the document. Use line breaks effectively to separate ideas and make the notes scannable and easy on the eyes. Make the notes look good and visually appealing through excellent Markdown formatting.
 
 3.  **Content & Emphasis:**
     *   Ensure the information is accurate, comprehensive, and clearly explained.
@@ -96,9 +90,25 @@ const generateStudyNotesFlow = ai.defineFlow(
         console.error("[AI Flow Error - Notes] AI returned empty or invalid notes data:", output);
         // Fallback or more specific error handling can be added here
         // For now, returning a structured error or a default note
-        return { notes: "# Error\n\nSorry, the AI failed to generate notes for this topic in the expected style. Please try again or rephrase your topic." };
+        throw new Error("AI failed to generate notes in the expected style. The returned data was empty or invalid.");
     }
     return output;
   }
 );
 
+export async function generateStudyNotes(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
+  console.log(`[Server Action] generateStudyNotes called for topic: ${input.topic}`);
+  try {
+    const result = await generateStudyNotesFlow(input);
+    return result;
+  } catch (error: any) {
+    console.error("[Server Action Error - generateStudyNotes] Error in flow execution:", error.message, error.stack);
+    let clientErrorMessage = "Failed to generate study notes. Please try again.";
+    if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY"))) {
+      clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration.";
+    } else if (error.message) {
+      clientErrorMessage = `Study Notes: Generation failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
+    }
+    throw new Error(clientErrorMessage);
+  }
+}
