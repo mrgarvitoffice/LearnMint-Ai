@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Image as ImageIcon } from 'lucide-react'; // Using ImageIcon for visual placeholder icon
 import Image from 'next/image'; // Use next/image for placeholders too
 
 interface AiGeneratedImageProps {
@@ -21,17 +21,20 @@ const AiGeneratedImage: React.FC<AiGeneratedImageProps> = ({ promptText }) => {
   const hintKeywords = promptText.toLowerCase().split(/\s+/).slice(0, 2).join(" ");
 
   return (
-    <div className="my-6 p-3 sm:p-4 border border-dashed border-primary/50 rounded-lg bg-background/30 text-center shadow-md">
-      <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Visual Aid Suggested</p>
-      <p className="font-semibold text-primary mb-2 text-sm sm:text-base">{promptText}</p>
-      <div className="aspect-video bg-muted rounded overflow-hidden flex items-center justify-center mb-3 ring-1 ring-border">
+    <div className="my-6 p-3 sm:p-4 border border-dashed border-primary/50 rounded-lg bg-muted/10 text-center shadow-md">
+      <div className="flex items-center justify-center text-xs text-primary/80 mb-1 uppercase tracking-wider">
+        <ImageIcon className="w-4 h-4 mr-2" />
+        <span>Visual Aid Suggested</span>
+      </div>
+      <p className="font-semibold text-foreground/90 mb-2 text-sm sm:text-base italic">"{promptText}"</p>
+      <div className="aspect-video bg-muted/30 rounded overflow-hidden flex items-center justify-center mb-3 ring-1 ring-border/50">
         <Image
             src={placeholderUrl}
-            alt={`Placeholder: ${promptText}`}
-            width={600} // Provide explicit width for non-fill layout
-            height={400} // Provide explicit height
-            className="max-w-full max-h-full object-contain" // Still useful for containment
-            data-ai-hint={hintKeywords} // For potential future image replacement tools
+            alt={`Placeholder for: ${promptText}`}
+            width={600} 
+            height={400} 
+            className="max-w-full max-h-full object-contain"
+            data-ai-hint={hintKeywords}
         />
       </div>
       <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm">
@@ -44,3 +47,5 @@ const AiGeneratedImage: React.FC<AiGeneratedImageProps> = ({ promptText }) => {
 };
 
 export default AiGeneratedImage;
+
+    

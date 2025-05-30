@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
-import { ArrowRight, Lightbulb, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
+import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -17,16 +17,16 @@ const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Notes, quizzes, & flashcards via AI.",
-  "<strong>Custom Test Creation:</strong> Build tests with specific topics, difficulty, & timers.",
-  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'. Supports voice input.",
+  "<strong>Custom Test Creation:</strong> Tests with specific topics, difficulty, & timers.",
+  "<strong>Interactive AI Chatbot (Megumin):</strong> Witty AI for questions & 'singing'.",
   "<strong>Scientific Calculator & Unit Converter:</strong> Calculations & unit conversions.",
-  "<strong>Daily News Digest:</strong> Browse news filtered by country, category, & keywords.",
-  "<strong>Resource Library:</strong> Explore textbooks, search Google Books & YouTube, get Math Facts.",
-  "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge).",
+  "<strong>Daily News Digest:</strong> News filtered by country, category, & keywords.",
+  "<strong>Resource Library:</strong> Textbooks, Google Books/YouTube search, Math Facts.",
+  "<strong>Educational Game:</strong> 'Word Game' (Definition Challenge) & more soon.",
 ];
 
 const exploreFeaturesCards = [
-  { title: "Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
+  { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
   { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests from topics or notes." },
   { title: "AI Quiz Creator", href: "/quiz", icon: HelpCircle, description: "Generate interactive quizzes on demand." },
   { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards for review." },
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); // Default to Zia for welcome
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -134,12 +134,9 @@ export default function DashboardPage() {
             <Brain className="h-7 w-7 text-primary" />
             <CardTitle className="text-2xl text-primary">Core Features Overview</CardTitle>
           </div>
-          <CardDescription className="text-muted-foreground pt-1">
-            LearnMint offers a suite of AI-driven tools and resources to enhance your learning experience:
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
+           <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
             {coreFeaturesListText.map((feature, index) => (
               <li key={index} className="text-sm md:text-base" dangerouslySetInnerHTML={{ __html: feature }} />
             ))}
@@ -242,4 +239,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+    
+
     

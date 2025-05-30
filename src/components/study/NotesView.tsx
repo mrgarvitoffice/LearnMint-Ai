@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react'; // Added Loader2
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import AiGeneratedImage from './AiGeneratedImage';
+import AiGeneratedImage from './AiGeneratedImage'; // Assuming this component exists
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -41,7 +41,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('zia'); // Default to Zia/female for notes
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -49,11 +49,13 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   const handlePlaybackControl = useCallback(() => {
     playClickSound();
-    if (!notesContent) return;
+    if (!notesContent) {
+        toast({title: "No Content", description: "Nothing to speak.", variant: "destructive"});
+        return;
+    }
     
-    // Get text from the rendered Markdown content to avoid speaking raw markdown
     const textToSpeak = notesContentRef.current?.innerText || 
-                        notesContent.replace(/\[VISUAL_PROMPT:[^\]]+\]/g, ''); // Fallback, less ideal
+                        notesContent.replace(/\[VISUAL_PROMPT:[^\]]+\]/g, ''); 
 
     if (isSpeaking && !isPaused) {
       pauseTTS();
@@ -62,7 +64,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     } else {
       speak(textToSpeak);
     }
-  }, [playClickSound, notesContent, isSpeaking, isPaused, pauseTTS, resumeTTS, speak]);
+  }, [playClickSound, notesContent, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
   const handleStopTTS = useCallback(() => {
     playClickSound();
@@ -82,9 +84,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       .replace(/(\*\*|__)(.*?)\1/g, '$2')
       .replace(/(\*|_)(.*?)\1/g, '$2')
       .replace(/`{1,3}(.*?)`{1,3}/g, '$1')
-      .replace(/<[^>]+>/g, '') // Basic HTML tag stripping
-      .replace(/(\r\n|\n|\r)/gm, "\n") // Normalize line breaks
-      .replace(/\n{3,}/g, "\n\n"); // Reduce multiple blank lines
+      .replace(/<[^>]+>/g, '') 
+      .replace(/(\r\n|\n|\r)/gm, "\n") 
+      .replace(/\n{3,}/g, "\n\n"); 
 
     const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8;' });
     const link = document.createElement("a");
@@ -102,10 +104,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   
   const renderMarkdownWithPlaceholders = (markdownContent: string) => {
     if (!markdownContent) return null;
+    // Split by the visual prompt pattern, keeping the delimiter
     const parts = markdownContent.split(/(\[VISUAL_PROMPT:[^\]]+\])/g);
     return parts.map((part, index) => {
       if (part.startsWith('[VISUAL_PROMPT:')) {
-        const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1);
+        const promptText = part.substring('[VISUAL_PROMPT:'.length, part.length - 1).trim();
         return <AiGeneratedImage key={`vis-${index}`} promptText={promptText} />;
       }
       return <ReactMarkdown key={`md-${index}`} remarkPlugins={[remarkGfm]} className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words">{part}</ReactMarkdown>;
@@ -113,7 +116,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   };
 
 
-  if (!notesContent) {
+  if (!notesContent) { // This handles null or empty string
     return (
       <Card className="shadow-lg flex-1 flex flex-col min-h-0">
         <CardHeader>
@@ -144,6 +147,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
                 <SelectItem value="kai">Kai</SelectItem>
               </SelectContent>
             </Select>
+             {/* Optional: Detailed voice engine selector if needed
             <Select onValueChange={(uri) => {playClickSound(); setSelectedVoiceURI(uri);}} value={selectedVoice?.voiceURI}>
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice Engine" /> </SelectTrigger>
               <SelectContent>
@@ -152,6 +156,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
                 )) : <SelectItem value="no-voices" disabled className="text-xs">No voices</SelectItem>}
               </SelectContent>
             </Select>
+            */}
             <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
               {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
@@ -174,3 +179,5 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
+
+    

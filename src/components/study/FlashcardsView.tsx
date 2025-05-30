@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; // Added Loader2
 import FlashcardItem from './FlashcardItem';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
@@ -18,6 +18,11 @@ interface FlashcardsViewProps {
 const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+
+  // Reset currentCardIndex if flashcards prop changes (e.g., new topic loaded)
+  useEffect(() => {
+    setCurrentCardIndex(0);
+  }, [flashcards]);
 
   const handleNextCard = () => {
     playClickSound();
@@ -35,7 +40,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 
   if (!flashcards || flashcards.length === 0) {
     return (
-      <Card className="mt-6 shadow-lg flex-1 flex flex-col">
+      <Card className="mt-0 shadow-lg flex-1 flex flex-col"> {/* Changed mt-6 to mt-0 */}
         <CardHeader>
           <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         </CardHeader>
@@ -48,8 +53,22 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   
   const currentFlashcard = flashcards[currentCardIndex];
 
+  if (!currentFlashcard) { // Should not happen if flashcards.length > 0, but good guard
+    return (
+        <Card className="mt-0 shadow-lg flex-1 flex flex-col">
+            <CardHeader>
+                <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex items-center justify-center">
+                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                 <p className="ml-3 text-muted-foreground">Loading flashcard...</p>
+            </CardContent>
+        </Card>
+    );
+  }
+
   return (
-    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> {/* Changed mt-6 to mt-0 */}
+    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> 
       <CardHeader>
         <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         <CardDescription>
@@ -58,13 +77,11 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
         <Progress value={((currentCardIndex + 1) / flashcards.length) * 100} className="w-full mt-2 h-2" />
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
-        {currentFlashcard && (
-          <FlashcardItem
+        <FlashcardItem
             flashcard={currentFlashcard}
             isCurrent={true} 
             className="w-full max-w-md h-64 sm:h-72 md:h-80" 
-          />
-        )}
+        />
       </CardContent>
       <CardFooter className="flex justify-between p-4 sm:p-6 border-t">
         <Button variant="outline" onClick={handlePrevCard} disabled={currentCardIndex === 0} className="px-3 sm:px-4">
@@ -79,3 +96,5 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 };
 
 export default FlashcardsView;
+
+    

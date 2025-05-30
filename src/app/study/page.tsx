@@ -2,21 +2,21 @@
 "use client";
 
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2 } from "lucide-react";
+import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2, Home } from "lucide-react"; // Added Home
 
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 
 import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
-import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput } from '@/lib/types';
+import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, QuizQuestion, Flashcard, GenerateFlashcardsOutput } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
 import QuizView from '@/components/study/QuizView';
@@ -27,17 +27,14 @@ const PAGE_TITLE_BASE = "Study Hub";
 
 const NotesLoadingSkeleton = () => (
   <div className="p-4 space-y-3">
-    <Skeleton className="h-8 w-3/4" />
-    <Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" />
+    <Skeleton className="h-8 w-3/4" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" />
     <Skeleton className="h-32 w-full mt-4" />
   </div>
 );
 const QuizLoadingSkeleton = () => (
   <div className="p-4 space-y-3">
     <Skeleton className="h-6 w-1/2 mb-4" />
-    {[...Array(3)].map((_, i) => (
-      <div key={i} className="space-y-2 mb-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div>
-    ))}
+    {[...Array(3)].map((_, i) => ( <div key={i} className="space-y-2 mb-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div>))}
   </div>
 );
 const FlashcardsLoadingSkeleton = () => (
@@ -60,9 +57,10 @@ const ErrorDisplay = ({ error, onRetry, contentType }: { error: Error | null, on
 
 function StudyPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter(); // For navigation
   const topicParam = searchParams.get("topic");
 
-  const [activeTopic, setActiveTopic] = useState<string>(""); // Renamed from 'topic' to avoid conflict
+  const [activeTopic, setActiveTopic] = useState<string>(""); 
   const [activeTab, setActiveTab] = useState<string>("notes");
 
   const { toast } = useToast();
@@ -78,11 +76,11 @@ function StudyPageContent() {
     if (topicParam) {
       const decodedTopic = decodeURIComponent(topicParam);
       setActiveTopic(decodedTopic);
-      // Save to recent topics is handled by the generation page before redirect
     } else {
       setActiveTopic("No topic provided");
+      toast({ title: "No Topic", description: "No topic was specified in the URL. Please generate materials from the main page.", variant: "destructive" });
     }
-  }, [topicParam]);
+  }, [topicParam, toast]);
 
 
   useEffect(() => {
@@ -100,13 +98,15 @@ function StudyPageContent() {
     }
     return () => {
       isMounted = false;
+      cancelTTS(); // Stop any ongoing speech on unmount
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic, cancelTTS]);
 
 
   const commonQueryOptions = {
     enabled: !!activeTopic && activeTopic !== "No topic provided",
     staleTime: 1000 * 60 * 1, 
+    gcTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: 1,
   };
 
@@ -114,7 +114,7 @@ function StudyPageContent() {
     data: notesData,
     isLoading: isLoadingNotes,
     isError: isErrorNotes,
-    error: notesError,
+    error: notesErrorObj, // Renamed to avoid conflict with error type in ErrorDisplay
     refetch: refetchNotes,
     isFetching: isFetchingNotes,
   } = useQuery<GenerateStudyNotesOutput, Error>({
@@ -131,7 +131,7 @@ function StudyPageContent() {
     data: quizData,
     isLoading: isLoadingQuiz,
     isError: isErrorQuiz,
-    error: quizError,
+    error: quizErrorObj, // Renamed
     refetch: refetchQuiz,
     isFetching: isFetchingQuiz,
   } = useQuery<GenerateQuizQuestionsOutput, Error>({
@@ -149,7 +149,7 @@ function StudyPageContent() {
     data: flashcardsData,
     isLoading: isLoadingFlashcards,
     isError: isErrorFlashcards,
-    error: flashcardsError,
+    error: flashcardsErrorObj, // Renamed
     refetch: refetchFlashcards,
     isFetching: isFetchingFlashcards,
   } = useQuery<GenerateFlashcardsOutput, Error>({
@@ -165,13 +165,11 @@ function StudyPageContent() {
 
   useEffect(() => {
     if(commonQueryOptions.enabled && !initialFetchTriggeredRef.current) {
-        // Notes will fetch automatically due to enabled:true by default if topic exists
-        // refetchNotes(); // Not strictly needed if enabled is managed well
         if (activeTab === 'quiz' && (!quizData || isErrorQuiz)) refetchQuiz();
         if (activeTab === 'flashcards' && (!flashcardsData || isErrorFlashcards)) refetchFlashcards();
         initialFetchTriggeredRef.current = true;
     }
-  }, [commonQueryOptions.enabled, activeTab, refetchNotes, refetchQuiz, refetchFlashcards, quizData, flashcardsData, isErrorQuiz, isErrorFlashcards]);
+  }, [commonQueryOptions.enabled, activeTab, refetchQuiz, refetchFlashcards, quizData, flashcardsData, isErrorQuiz, isErrorFlashcards]);
 
 
   const handleRefreshContent = useCallback(() => {
@@ -181,14 +179,15 @@ function StudyPageContent() {
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      // Directly refetch based on current tab or all
+      
+      // Optionally, directly trigger refetches if immediate reload is desired for all tabs
       refetchNotes();
-      if (activeTab === 'quiz' || !quizData) refetchQuiz(); // Refetch if active or no data
-      if (activeTab === 'flashcards' || !flashcardsData) refetchFlashcards(); // Refetch if active or no data
+      refetchQuiz();
+      refetchFlashcards();
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, queryClient, toast, playClickSound, refetchNotes, refetchQuiz, refetchFlashcards, activeTab, quizData, flashcardsData]);
+  }, [activeTopic, queryClient, toast, playClickSound, refetchNotes, refetchQuiz, refetchFlashcards]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
@@ -203,7 +202,10 @@ function StudyPageContent() {
         <Alert variant="destructive" className="mt-6">
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle>No Topic Specified</AlertTitle>
-          <AlertDescription>Please go back to the generation page and enter a topic first.</AlertDescription>
+          <AlertDescription>
+            Please go back to the generation page and enter a topic first.
+            <Button onClick={() => router.push('/notes')} variant="link" className="pl-2 text-destructive h-auto py-0">Go to Generate</Button>
+          </AlertDescription>
         </Alert>
       );
     }
@@ -218,17 +220,17 @@ function StudyPageContent() {
 
         <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
           {(isLoadingNotes || (isFetchingNotes && !notesData && !isErrorNotes)) ? <NotesLoadingSkeleton /> :
-           isErrorNotes ? <ErrorDisplay error={notesError} onRetry={refetchNotes} contentType="notes" /> :
+           isErrorNotes ? <ErrorDisplay error={notesErrorObj} onRetry={refetchNotes} contentType="notes" /> :
            notesData?.notes ? <NotesView notesContent={notesData.notes} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No notes generated or an error occurred.</p>}
         </TabsContent>
         <TabsContent value="quiz" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
            {(isLoadingQuiz || (isFetchingQuiz && !quizData && !isErrorQuiz)) ? <QuizLoadingSkeleton /> :
-            isErrorQuiz ? <ErrorDisplay error={quizError} onRetry={refetchQuiz} contentType="quiz questions" /> :
+            isErrorQuiz ? <ErrorDisplay error={quizErrorObj} onRetry={refetchQuiz} contentType="quiz questions" /> :
             quizData?.questions && quizData.questions.length > 0 ? <QuizView questions={quizData.questions} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No quiz questions generated or an error occurred.</p>}
         </TabsContent>
         <TabsContent value="flashcards" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
            {(isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData && !isErrorFlashcards)) ? <FlashcardsLoadingSkeleton /> :
-            isErrorFlashcards ? <ErrorDisplay error={flashcardsError} onRetry={refetchFlashcards} contentType="flashcards" /> :
+            isErrorFlashcards ? <ErrorDisplay error={flashcardsErrorObj} onRetry={refetchFlashcards} contentType="flashcards" /> :
             flashcardsData?.flashcards && flashcardsData.flashcards.length > 0 ? <FlashcardsView flashcards={flashcardsData.flashcards} topic={activeTopic} /> : <p className="text-muted-foreground p-4 text-center">No flashcards generated or an error occurred.</p>}
         </TabsContent>
       </Tabs>
@@ -241,6 +243,7 @@ function StudyPageContent() {
       <div className="container mx-auto max-w-5xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-muted-foreground">Loading study materials...</p>
+         <Button onClick={() => router.push('/notes')} variant="outline" className="mt-4"><Home className="mr-2 h-4 w-4"/> Go to Generate Page</Button>
       </div>
     );
   }
@@ -272,3 +275,5 @@ export default function StudyPage() {
     </Suspense>
   );
 }
+
+    
