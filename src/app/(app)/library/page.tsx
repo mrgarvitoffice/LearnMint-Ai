@@ -39,7 +39,7 @@ export default function LibraryPage() {
   const voicePreferenceWasSetRef = useRef(false);
   const { toast } = useToast();
 
-  const iframeContainerRef = useRef<HTMLDivElement>(null); // Ref for the iframe's direct container
+  const iframeContainerRef = useRef<HTMLDivElement>(null); 
   const [isBookReaderFullScreen, setIsBookReaderFullScreen] = useState(false);
 
   useEffect(() => {
@@ -311,7 +311,7 @@ export default function LibraryPage() {
       </section>
 
        {selectedBookForPreview && (
-        <Dialog open={!!selectedBookForPreview} onOpenChange={(isOpen) => { if (!isOpen) setSelectedBookForPreview(null); }}>
+        <Dialog open={!!selectedBookForPreview} onOpenChange={(isOpen) => { if (!isOpen) setSelectedBookForPreview(null); setIsBookReaderFullScreen(false); /* Exit fullscreen when dialog closes */ }}>
           <DialogContent className="max-w-4xl h-[90vh] p-0 border-0 flex flex-col data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
             <DialogHeader className="p-3 border-b flex flex-row items-center justify-between sticky top-0 bg-background z-10">
                 <DialogTitle className="truncate text-lg sm:text-xl">{selectedBookForPreview.title}</DialogTitle>
@@ -324,7 +324,7 @@ export default function LibraryPage() {
                     </DialogClose>
                 </div>
             </DialogHeader>
-            <div ref={iframeContainerRef} className="flex-1 overflow-hidden bg-background"> {/* Added bg-background or bg-black for better fullscreen visibility */}
+            <div ref={iframeContainerRef} className="flex-1 overflow-hidden bg-background">
                 {selectedBookForPreview.embeddable ? (
                 <iframe
                     src={`https://books.google.com/books?id=${selectedBookForPreview.bookId}&pg=PP1&output=embed`}
@@ -334,7 +334,7 @@ export default function LibraryPage() {
                     allow="fullscreen" 
                 ></iframe>
                 ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-muted">
+                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-muted flex-1">
                         <BookText className="w-16 h-16 text-muted-foreground mb-4"/>
                         <p className="text-lg text-muted-foreground">In-app reading/preview is not available for this book.</p>
                         {(selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink) && (
@@ -348,7 +348,7 @@ export default function LibraryPage() {
                 )}
             </div>
              {(selectedBookForPreview.infoLink) && (
-                <div className="p-2 border-t flex justify-end sticky bottom-0 bg-background z-10"> {/* justify-end for bottom-right */}
+                <div className="p-2 flex justify-end sticky bottom-0 bg-background z-10">
                     <Button variant="link" asChild size="sm">
                         <a href={selectedBookForPreview.infoLink} target="_blank" rel="noopener noreferrer">
                             More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
@@ -370,5 +370,3 @@ export default function LibraryPage() {
     </div>
   );
 }
-
-
