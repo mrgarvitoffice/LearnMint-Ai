@@ -23,6 +23,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'http', // Google Books thumbnails can be http
+        hostname: 'books.google.com',
+        port: '',
+        pathname: '/books/content/**',
+      },
+      {
+        protocol: 'https', // Also allow https for Google Books thumbnails
+        hostname: 'books.google.com',
+        port: '',
+        pathname: '/books/content/**',
+      },
       // News API image hostnames - more may need to be added as new sources appear
       {
         protocol: 'https',
@@ -78,3 +90,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

@@ -33,8 +33,6 @@ export default function LibraryPage() {
 
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
   
-
-
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
@@ -117,7 +115,7 @@ export default function LibraryPage() {
     if (youtubeSearchTerm.trim()) {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
-      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 }); // Updated to 8 results
+      youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
     }
   };
 
@@ -149,13 +147,13 @@ export default function LibraryPage() {
       <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 group">
         <CardHeader className="pb-2 pt-4">
           <div className="flex items-center gap-3 mb-2">
-            <Quote className="h-7 w-7 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
-            <CardTitle className="text-xl font-semibold text-secondary-foreground group-hover:text-accent transition-colors">Math Fact of the Day</CardTitle>
+            <Quote className="h-7 w-7 text-secondary-foreground/80 group-hover:text-orange-500 transition-colors" />
+            <CardTitle className="text-xl font-semibold text-secondary-foreground group-hover:text-orange-500 transition-colors">Math Fact of the Day</CardTitle>
           </div>
           {isLoadingMathFact && !currentMathFact ? (
             <div className="flex items-center space-x-2 text-muted-foreground py-3"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading math fact...</span></div>
             ) : currentMathFact ? (
-            <CardDescription className="text-lg text-accent-foreground font-medium pt-1 italic py-3">
+            <CardDescription className="text-lg text-orange-600 dark:text-orange-400 font-medium pt-1 italic py-3">
               "{currentMathFact.text}"
             </CardDescription>
             ) : (
@@ -164,7 +162,7 @@ export default function LibraryPage() {
           }
         </CardHeader>
         <CardFooter className="pt-2 pb-4">
-          <Button onClick={handleRefreshMathFact} variant="outline" size="sm" disabled={isLoadingMathFact} className="bg-background/70 group-hover:border-accent/50 group-hover:text-accent transition-colors">
+          <Button onClick={handleRefreshMathFact} variant="outline" size="sm" disabled={isLoadingMathFact} className="bg-background/70 group-hover:border-orange-500/50 group-hover:text-orange-600 transition-colors">
             {isLoadingMathFact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}New Fact
           </Button>
         </CardFooter>
@@ -264,21 +262,33 @@ export default function LibraryPage() {
               <ScrollArea className="h-[400px] w-full pr-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {googleBooksResults.map(book => (
-                     <Card key={book.bookId} className="flex flex-col overflow-hidden">
-                        <CardHeader className="p-3">
-                           {book.thumbnailUrl && (
-                             <div className="relative w-full aspect-[2/3] mb-2 rounded overflow-hidden bg-muted">
-                               <Image src={book.thumbnailUrl} alt={book.title} fill={true} style={{objectFit: 'contain'}} data-ai-hint="book cover" />
+                     <Card key={book.bookId} className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 group">
+                        <CardHeader className="p-3 pb-2">
+                           {book.thumbnailUrl ? (
+                             <div className="relative w-full aspect-[2/3] mb-2 rounded overflow-hidden bg-muted group-hover:opacity-90 transition-opacity">
+                               <Image 
+                                 src={book.thumbnailUrl} 
+                                 alt={book.title} 
+                                 fill={true} 
+                                 style={{objectFit: 'contain'}} 
+                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                 data-ai-hint="book cover"
+                                 onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/128x192.png?text=${encodeURIComponent(book.title.substring(0,10)+'...')}`; }}
+                                />
+                             </div>
+                           ) : (
+                             <div className="relative w-full aspect-[2/3] mb-2 rounded overflow-hidden bg-muted flex items-center justify-center">
+                               <BookOpen className="w-12 h-12 text-muted-foreground/50" />
                              </div>
                            )}
-                           <CardTitle className="text-sm font-semibold line-clamp-2">{book.title}</CardTitle>
-                           {book.authors && <CardDescription className="text-xs line-clamp-1">{book.authors.join(', ')}</CardDescription>}
+                           <CardTitle className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</CardTitle>
+                           {book.authors && <CardDescription className="text-xs line-clamp-1 pt-0.5">{book.authors.join(', ')}</CardDescription>}
                         </CardHeader>
-                        <CardContent className="p-3 pt-0 text-xs line-clamp-3 flex-grow">
+                        <CardContent className="p-3 pt-0 text-xs line-clamp-3 flex-grow text-muted-foreground">
                            {book.description || "No description available."}
                         </CardContent>
-                        <CardFooter className="p-3 pt-0">
-                           <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
+                        <CardFooter className="p-3 pt-1">
+                           <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs text-primary hover:text-primary/80">
                              <a href={book.infoLink} target="_blank" rel="noopener noreferrer">View on Google Books <ExternalLink className="ml-1 h-3 w-3" /></a>
                            </Button>
                         </CardFooter>
@@ -306,3 +316,4 @@ export default function LibraryPage() {
     </div>
   );
 }
+
