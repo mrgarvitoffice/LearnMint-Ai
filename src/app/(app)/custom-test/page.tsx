@@ -65,8 +65,8 @@ export default function CustomTestPage() {
   const [testState, setTestState] = useState<CustomTestState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3');
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3');
+  const { playSound: playCorrectSound } = useSound('correct', 0.5);
+  const { playSound: playIncorrectSound } = useSound('incorrect', 0.4);
 
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -96,7 +96,6 @@ export default function CustomTestPage() {
     
     setTestState(prev => {
       if (!prev) return null;
-      // Clear any existing timer before starting a new one
       if (prev.timerId) clearInterval(prev.timerId);
 
       const newTimerId = setInterval(() => {
@@ -104,10 +103,9 @@ export default function CustomTestPage() {
           if (currentTestState && currentTestState.timeLeft && currentTestState.timeLeft > 0 && !currentTestState.showResults && !currentTestState.isAutoSubmitting) {
             return {...currentTestState, timeLeft: currentTestState.timeLeft - 1};
           }
-          // If time runs out or conditions change, clear interval from within
           if (currentTestState?.timerId && (currentTestState.timeLeft === 0 || currentTestState.showResults || currentTestState.isAutoSubmitting)) {
              clearInterval(currentTestState.timerId);
-             return {...currentTestState, timerId: undefined}; // Clear timerId from state
+             return {...currentTestState, timerId: undefined}; 
           }
           return currentTestState;
         });
@@ -118,7 +116,7 @@ export default function CustomTestPage() {
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     setIsLoading(true);
-    setTestState(null); // Clear previous test state
+    setTestState(null); 
     try {
       let topicForAI = data.topics || "general knowledge";
       if (data.sourceType === 'notes' && data.notes) {
@@ -182,7 +180,7 @@ export default function CustomTestPage() {
 
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     setTestState(prevTestState => {
-      if (!prevTestState || prevTestState.showResults) return prevTestState; // Already submitted or no state
+      if (!prevTestState || prevTestState.showResults) return prevTestState;
       if (prevTestState.timerId) {
         clearInterval(prevTestState.timerId);
       }
@@ -194,14 +192,14 @@ export default function CustomTestPage() {
         if (isCorrect) {
           score += 4;
           playCorrectSound();
-        } else if (userAnswer !== undefined) { // Incorrect and answered
+        } else if (userAnswer !== undefined) { 
           score -= 1;
           playIncorrectSound();
         }
         return { ...q, userAnswer, isCorrect };
       });
 
-      if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) { // Prevent multiple toasts for auto-submit
+      if (!autoSubmitted || (autoSubmitted && !prevTestState.showResults)) {
          toast({ title: autoSubmitted ? "Test Auto-Submitted!" : "Test Submitted!", description: `Your score is ${score}. Review your answers below.`});
       }
       
@@ -211,8 +209,8 @@ export default function CustomTestPage() {
         score, 
         showResults: true, 
         timerId: undefined, 
-        isAutoSubmitting: autoSubmitted, // ensure this is set if auto-submitted
-        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft // Ensure timeLeft is 0 if auto-submitted due to timer
+        isAutoSubmitting: autoSubmitted,
+        timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft 
       };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -220,8 +218,8 @@ export default function CustomTestPage() {
   
   const handleRetakeTest = () => {
      if (!testState) return;
-     setIsLoading(true); // Show loader while regenerating
-     onSubmit({ // Re-submit the form with original settings
+     setIsLoading(true); 
+     onSubmit({ 
         sourceType: testState.settings.notes ? 'notes' : 'topic',
         topics: testState.settings.topics.join(','),
         notes: testState.settings.notes,
@@ -244,7 +242,7 @@ export default function CustomTestPage() {
 
   const currentQuestionData = testState?.questions[testState.currentQuestionIndex];
 
-  if (isLoading && !testState) { // Show full page loader only when initially generating
+  if (isLoading && !testState) { 
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />

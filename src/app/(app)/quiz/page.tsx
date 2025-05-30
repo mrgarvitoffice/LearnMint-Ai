@@ -35,8 +35,8 @@ export default function QuizPage() {
   const [quizState, setQuizState] = useState<QuizState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3');
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3');
+  const { playSound: playCorrectSound } = useSound('correct', 0.5); 
+  const { playSound: playIncorrectSound } = useSound('incorrect', 0.4); 
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -94,7 +94,7 @@ export default function QuizPage() {
       if (quizState.userAnswers[index] === q.answer) {
         score++;
         playCorrectSound();
-      } else if (quizState.userAnswers[index] !== undefined) { // Only play incorrect sound if an answer was selected
+      } else if (quizState.userAnswers[index] !== undefined) { 
         playIncorrectSound();
       }
     });
@@ -104,12 +104,11 @@ export default function QuizPage() {
 
   const handleRetakeQuiz = () => {
     if (!quizState) return;
-     // Re-fetch quiz with the same parameters
     const originalSettings = {
-        topic: quizState.quiz[0] ? quizState.quiz[0].question.split(" about ")[1] || "previous topic" : "previous topic", // Attempt to get topic, fallback
+        topic: quizState.quiz[0] ? quizState.quiz[0].question.split(" about ")[1]?.split(" (difficulty")[0] || "previous topic" : "previous topic",
         numQuestions: quizState.quiz.length
     }
-     onSubmit(originalSettings as FormData); // Type assertion if needed, or reconstruct FormData more carefully
+     onSubmit(originalSettings as FormData); 
   }
   
   const handleNewQuiz = () => {
@@ -159,7 +158,7 @@ export default function QuizPage() {
           <CardContent className="space-y-6">
             <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
             <Controller
-              name={`userAnswers.${quizState.currentQuestionIndex}` as any} // Controller name needs to be unique per question for RHF state if used
+              name={`userAnswers.${quizState.currentQuestionIndex}` as any} 
               control={control}
               render={({ field }) => (
                 <RadioGroup
