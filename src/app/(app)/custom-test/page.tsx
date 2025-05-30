@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
 import type { TestSettings, TestQuestion } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, FileText, BookOpen, Award, HelpCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
-import { Badge } from '@/components/ui/badge'; // Import Badge
+import { Badge } from '@/components/ui/badge';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -36,7 +36,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
   selectedRecentTopics: z.array(z.string()).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
-  numQuestions: z.coerce.number().min(1, 'Min 1 question').max(50, 'Max 50 questions').default(5), // Updated max to 50
+  numQuestions: z.coerce.number().min(1, 'Min 1 question').max(50, 'Max 50 questions').default(5),
   timer: z.coerce.number().min(0, 'Timer cannot be negative').default(0),
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'topic' && (!data.topics || data.topics.trim().length < 3)) {
@@ -81,7 +81,7 @@ interface CustomTestState {
   timeLeft?: number;
   timerId?: NodeJS.Timeout;
   isAutoSubmitting?: boolean;
-  performanceTag?: string; // Added for performance tag
+  performanceTag?: string;
 }
 
 export default function CustomTestPage() {
@@ -92,6 +92,7 @@ export default function CustomTestPage() {
   const { playSound: playCorrectSound } = useSound('correct');
   const { playSound: playIncorrectSound } = useSound('incorrect');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  
   const { speak, isSpeaking: isTTSSpeaking, supportedVoices, setVoicePreference, selectedVoice, cancel: cancelTTS } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
@@ -119,18 +120,33 @@ export default function CustomTestPage() {
     }
   }, [supportedVoices, setVoicePreference]);
 
+  // Effect for speaking the page title
   useEffect(() => {
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !testState) {
-      speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
-    }
-    return () => {
-      if (pageTitleSpokenRef.current) {
-          cancelTTS();
-          pageTitleSpokenRef.current = false;
+    let isEffectMounted = true; // To track if the effect is still mounted when speak might be called
+
+    if (
+      selectedVoice && // A voice is selected
+      !isTTSSpeaking && // TTS is not currently speaking
+      !pageTitleSpokenRef.current && // This page's title hasn't been spoken yet
+      !testState && // No test is active or results shown (i.e., initial page state)
+      !isLoading // Not in a general loading state
+    ) {
+      // Set ref immediately BEFORE calling speak to prevent race conditions from rapid re-renders
+      pageTitleSpokenRef.current = true; 
+      if (isEffectMounted) { // Check if still mounted before calling speak
+        speak(PAGE_TITLE);
       }
+    }
+
+    return () => {
+      isEffectMounted = false;
+      // If the component unmounts while this specific title was intended to be spoken,
+      // and if we knew it was *this* speak call, we might cancel.
+      // However, broad cancellation here can interrupt other TTS.
+      // For title announcements, it's often okay if they get cut off on unmount.
     };
-  }, [selectedVoice, isTTSSpeaking, speak, cancelTTS, testState]);
+  }, [selectedVoice, isTTSSpeaking, speak, testState, isLoading, cancelTTS]); // cancelTTS is included if used in cleanup logic
+
 
   useEffect(() => {
     if (transcript) {
@@ -152,26 +168,6 @@ export default function CustomTestPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
-      speak("Creating custom test. Please wait.");
-      generatingMessageSpokenRef.current = true;
-    }
-    if (!isLoading && generatingMessageSpokenRef.current) { // Reset when loading finishes
-      generatingMessageSpokenRef.current = false;
-    }
-  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
-
-
-  const getPerformanceTag = (percentage: number): string => {
-    if (percentage === 100) return "Conqueror";
-    if (percentage >= 90) return "Ace";
-    if (percentage >= 80) return "Diamond";
-    if (percentage >= 70) return "Gold";
-    if (percentage >= 50) return "Bronze";
-    return "Keep Practicing!";
-  };
-
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     playClickSound();
     setTestState(prevTestState => {
@@ -187,7 +183,7 @@ export default function CustomTestPage() {
         if (isCorrect) {
           score += 4;
           playCorrectSound();
-        } else if (userAnswer !== undefined && userAnswer !== "") { // Check if an answer was actually given
+        } else if (userAnswer !== undefined && userAnswer !== "") { 
           score -= 1;
           playIncorrectSound();
         }
@@ -214,10 +210,30 @@ export default function CustomTestPage() {
         timerId: undefined,
         isAutoSubmitting: autoSubmitted,
         timeLeft: autoSubmitted ? 0 : prevTestState.timeLeft,
-        performanceTag, // Store the tag
+        performanceTag,
       };
     });
-  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking, setVoicePreference]); // Added setVoicePreference to dep array if used in speak
+  }, [toast, playCorrectSound, playIncorrectSound, playClickSound, speak, selectedVoice, isTTSSpeaking]);
+
+  useEffect(() => {
+    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isTTSSpeaking) {
+      speak("Creating custom test. Please wait.");
+      generatingMessageSpokenRef.current = true;
+    }
+    if (!isLoading && generatingMessageSpokenRef.current) { 
+      generatingMessageSpokenRef.current = false;
+    }
+  }, [isLoading, selectedVoice, isTTSSpeaking, speak]);
+
+
+  const getPerformanceTag = (percentage: number): string => {
+    if (percentage === 100) return "Conqueror";
+    if (percentage >= 90) return "Ace";
+    if (percentage >= 80) return "Diamond";
+    if (percentage >= 70) return "Gold";
+    if (percentage >= 50) return "Bronze";
+    return "Keep Practicing!";
+  };
 
   useEffect(() => {
     let currentTimerId: NodeJS.Timeout | undefined;
@@ -261,7 +277,7 @@ export default function CustomTestPage() {
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playClickSound();
     setIsLoading(true);
-    setTestState(null); // Reset previous test state
+    setTestState(null); 
 
     try {
       let topicForAI = "general knowledge";
@@ -292,14 +308,14 @@ export default function CustomTestPage() {
         selectedRecentTopicsForSettings = data.selectedRecentTopics;
       }
 
-      if (selectedVoice && !isTTSSpeaking && !generatingMessageSpokenRef.current) { // Use ref here
+      if (selectedVoice && !isTTSSpeaking && !generatingMessageSpokenRef.current) { 
           speak("Creating custom test. Please wait.");
           generatingMessageSpokenRef.current = true;
       }
 
       const result: GenerateQuizOutput = await generateQuiz({ topic: topicForAI, numQuestions: data.numQuestions });
 
-      generatingMessageSpokenRef.current = false; // Reset after generation
+      generatingMessageSpokenRef.current = false;
 
       if (result.quiz && result.quiz.length > 0) {
         const testSettings: TestSettings = {
@@ -365,7 +381,7 @@ export default function CustomTestPage() {
      playClickSound();
      if (!testState) return;
      setIsLoading(true);
-     setTestState(null); // Clear current test state before retrying
+     setTestState(null); 
      onSubmit({
         sourceType: testState.settings.sourceType || 'topic',
         topics: testState.settings.sourceType === 'topic' ? testState.settings.topics.join(',') : undefined,
@@ -385,8 +401,8 @@ export default function CustomTestPage() {
     setValue('notes', '');
     setValue('selectedRecentTopics', []);
     setValue('sourceType', 'topic');
-    pageTitleSpokenRef.current = false; // Allow page title to be spoken again
-    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current) { // Re-speak title if conditions met
+    pageTitleSpokenRef.current = false; 
+    if (selectedVoice && !isTTSSpeaking && !pageTitleSpokenRef.current && !isLoading && !testState) { 
         speak(PAGE_TITLE);
         pageTitleSpokenRef.current = true;
     }
@@ -502,7 +518,7 @@ export default function CustomTestPage() {
                                   field.onChange([...currentSelection, topic]);
                                 } else {
                                   toast({ title: "Limit Reached", description: `You can only select up to ${MAX_RECENT_TOPICS_SELECT} topics.`, variant: "destructive"});
-                                  return false; // Prevent checking
+                                  return false; 
                                 }
                               } else {
                                 field.onChange(currentSelection.filter(t => t !== topic));
@@ -617,16 +633,15 @@ export default function CustomTestPage() {
   if (testState.showResults) {
     const totalPossibleScore = testState.questions.length * 4;
     const percentage = totalPossibleScore > 0 ? Math.max(0, (testState.score / totalPossibleScore) * 100) : 0;
-    // Performance tag is now available in testState.performanceTag
-
+    
     let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default";
     if (testState.performanceTag === "Conqueror" || testState.performanceTag === "Ace") {
-        badgeVariant = "default"; // Primary color
+        badgeVariant = "default"; 
     } else if (testState.performanceTag === "Diamond" || testState.performanceTag === "Gold") {
         badgeVariant = "secondary";
     } else if (testState.performanceTag === "Bronze") {
         badgeVariant = "outline";
-    } else { // Keep Practicing
+    } else { 
         badgeVariant = "destructive";
     }
 
@@ -693,6 +708,3 @@ export default function CustomTestPage() {
     </Alert>
   );
 }
-
-
-    
