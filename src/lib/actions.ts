@@ -92,7 +92,7 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
     const data = await response.json();
     const videos: YoutubeVideoItem[] = data.items?.map((item: any) => {
       let thumbnailUrl = item.snippet.thumbnails.default?.url;
-      if (item.snippet.thumbnails.medium?.url) { // Prefer medium thumbnail
+      if (item.snippet.thumbnails.medium?.url) { 
         thumbnailUrl = item.snippet.thumbnails.medium.url;
       } else if (item.snippet.thumbnails.high?.url) { 
         thumbnailUrl = item.snippet.thumbnails.high.url;
@@ -125,7 +125,6 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   const params = new URLSearchParams({
     q: input.query,
     maxResults: (input.maxResults || 9).toString(),
-    // projection: 'full', // Request more details, including accessInfo
   });
   if (apiKey) {
     params.append('key', apiKey);
@@ -146,8 +145,9 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
     const books: GoogleBookItem[] = data.items?.map((item: any) => {
       const imageLinks = item.volumeInfo?.imageLinks;
       let thumbnailUrl = imageLinks?.smallThumbnail || imageLinks?.thumbnail; // Default
-      if (imageLinks?.medium) thumbnailUrl = imageLinks.medium;
-      else if (imageLinks?.large) thumbnailUrl = imageLinks.large;
+      // Prioritize higher quality thumbnails
+      if (imageLinks?.large) thumbnailUrl = imageLinks.large;
+      else if (imageLinks?.medium) thumbnailUrl = imageLinks.medium;
       
       return {
         bookId: item.id,

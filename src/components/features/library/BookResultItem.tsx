@@ -5,7 +5,7 @@ import type { GoogleBookItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { BookOpen, ExternalLink, Eye } from 'lucide-react';
+import { BookOpen, ExternalLink, Eye, BookText } from 'lucide-react';
 
 interface BookResultItemProps {
   book: GoogleBookItem;
@@ -13,7 +13,7 @@ interface BookResultItemProps {
 }
 
 export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) {
-  const placeholderImage = `https://placehold.co/128x192.png?text=${encodeURIComponent(book.title.substring(0, 10) + '...')}`;
+  const placeholderImage = `https://placehold.co/300x450.png?text=${encodeURIComponent(book.title.substring(0, 10) + '...')}`; // Higher res placeholder
   const dataAiHintKeywords = book.title.toLowerCase().split(' ').slice(0, 2).join(' ');
 
   const handlePrimaryAction = () => {
@@ -32,19 +32,20 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             src={book.thumbnailUrl || placeholderImage}
             alt={`Cover of ${book.title}`}
             fill={true}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px" // Adjusted sizes
-            style={{ objectFit: book.thumbnailUrl ? 'cover' : 'contain' }} // Cover for real images, contain for placeholder
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px" // More specific sizes
+            style={{ objectFit: book.thumbnailUrl ? 'cover' : 'contain' }}
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.srcset = placeholderImage;
               target.src = placeholderImage;
-              target.style.objectFit = 'contain'; // Ensure placeholder text is visible
+              target.style.objectFit = 'contain';
             }}
+            quality={85} // Request higher quality for next/image optimization
           />
            {book.embeddable && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <Eye className="w-10 h-10 text-white/80" />
+              <BookText className="w-10 h-10 text-white/80" /> {/* Changed icon to BookText */}
             </div>
           )}
         </div>
@@ -59,7 +60,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
       <CardFooter className="p-3 pt-1 flex-col items-stretch gap-1.5">
         {book.embeddable && (
           <Button variant="default" size="sm" onClick={() => onPreviewRequest(book)} className="w-full text-xs">
-            <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview in App
+            <BookText className="mr-1.5 h-3.5 w-3.5" /> Read in App
           </Button>
         )}
         {(book.infoLink) && (
@@ -68,6 +69,9 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
               <BookOpen className="mr-1.5 h-3.5 w-3.5" /> More Info on Google Books <ExternalLink className="ml-1 h-3 w-3" />
             </a>
           </Button>
+        )}
+         {!book.embeddable && !book.infoLink && ( // Fallback if not embeddable and no infoLink
+            <p className="text-xs text-muted-foreground text-center py-1">No direct view options available.</p>
         )}
       </CardFooter>
     </Card>

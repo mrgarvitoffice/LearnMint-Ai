@@ -13,7 +13,7 @@ import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSea
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
 import { BookResultItem } from '@/components/features/library/BookResultItem';
-import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye } from 'lucide-react';
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye, BookText } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { directYoutubeSearch, directGoogleBooksSearch } from '@/lib/actions'; 
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -243,7 +243,7 @@ export default function LibraryPage() {
 
       <section>
         <Card>
-          <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search & Preview Google Books</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search & Read Google Books</CardTitle></CardHeader>
           <form onSubmit={handleGoogleBooksSearchSubmit}>
             <CardContent className="flex gap-2">
               <Input type="search" placeholder="Search for books and articles..." value={googleBooksSearchTerm} onChange={(e) => setGoogleBooksSearchTerm(e.target.value)} disabled={googleBooksSearchMutation.isPending}/>
@@ -295,14 +295,14 @@ export default function LibraryPage() {
                 {selectedBookForPreview.embeddable ? (
                 <iframe
                     src={`https://books.google.com/books?id=${selectedBookForPreview.bookId}&pg=PP1&output=embed`}
-                    title={`Preview of ${selectedBookForPreview.title}`}
+                    title={`Read ${selectedBookForPreview.title}`}
                     className="w-full h-full border-0"
                     allowFullScreen
                 ></iframe>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center h-full">
-                        <BookOpen className="w-16 h-16 text-muted-foreground mb-4"/>
-                        <p className="text-lg text-muted-foreground">Preview not available for this book.</p>
+                        <BookText className="w-16 h-16 text-muted-foreground mb-4"/>
+                        <p className="text-lg text-muted-foreground">In-app reading is not available for this book.</p>
                         {(selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink) && (
                             <Button asChild className="mt-4">
                                 <a href={selectedBookForPreview.webReaderLink || selectedBookForPreview.infoLink!} target="_blank" rel="noopener noreferrer">
@@ -336,4 +336,3 @@ export default function LibraryPage() {
     </div>
   );
 }
-
