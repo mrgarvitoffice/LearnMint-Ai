@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation'; // Added useRouter
+import { usePathname, useRouter } from 'next/navigation'; 
 import { APP_NAME, NAV_ITEMS } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel, // Added missing import
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
@@ -20,16 +20,17 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
-import { LayoutGrid, PanelLeft, Moon, Sun, Palette, LogIn, LogOut, UserPlus, type LucideIcon, UserCircle } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Added Avatar imports
+import { LayoutGrid, PanelLeft, Palette, LogOut, UserPlus, type LucideIcon, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import React from 'react';
 import { SidebarNav } from './SidebarNav';
 import { useSound } from '@/hooks/useSound';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
-import { signOut } from 'firebase/auth'; // Import signOut
-import { auth } from '@/lib/firebase/config'; // Import Firebase auth instance
-import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useAuth } from '@/contexts/AuthContext'; 
+import { signOut } from 'firebase/auth'; 
+import { auth } from '@/lib/firebase/config'; 
+import { useToast } from '@/hooks/use-toast'; 
 
 const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
@@ -49,7 +50,7 @@ export function Header() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
-  const { user } = useAuth(); // Get user from AuthContext
+  const { user } = useAuth(); 
   const { toast } = useToast();
 
   const handleThemeToggle = () => {
@@ -62,7 +63,7 @@ export function Header() {
     try {
       await signOut(auth);
       toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
-      router.push('/sign-in'); // Redirect to sign-in page
+      router.push('/sign-in'); 
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
@@ -165,18 +166,33 @@ export function Header() {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => playClickSound()}>
-                <UserCircle className="h-6 w-6" />
+              <Button variant="ghost" className="rounded-full w-9 h-9 p-0 border-2 border-transparent hover:border-primary focus-visible:border-primary" onClick={() => playClickSound()}>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.photoURL || undefined} alt={user.email || "User avatar"} />
+                  <AvatarFallback>
+                    <UserCircle className="h-5 w-5 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
                 <span className="sr-only">User menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-64"> {/* Increased width for better display */}
               <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Account</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email || "User"}
-                  </p>
+                <div className="flex items-center gap-3 p-1">
+                  <Avatar className="h-10 w-10">  {/* Slightly larger avatar in dropdown */}
+                    <AvatarImage src={user.photoURL || undefined} alt={user.email || "User avatar"} />
+                    <AvatarFallback>
+                        <UserCircle className="h-6 w-6 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col space-y-0.5">
+                    <p className="text-sm font-medium leading-none truncate max-w-[150px]">
+                      {user.displayName || user.email?.split('@')[0] || "User"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground truncate max-w-[150px]">
+                      {user.email || "Authenticated User"}
+                    </p>
+                  </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

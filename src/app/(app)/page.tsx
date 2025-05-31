@@ -11,11 +11,11 @@ import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext'; 
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
-const PAGE_TITLE_BASE = `Welcome to ${APP_NAME}`;
+const PAGE_TITLE = `Welcome to ${APP_NAME}`; // Static page title
 
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Quickly create notes, quizzes, & flashcards.",
@@ -62,19 +62,6 @@ export default function DashboardPage() {
   
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
-  const [pageTitle, setPageTitle] = useState(PAGE_TITLE_BASE);
-
-
-  useEffect(() => {
-    if (user && user.displayName) {
-      setPageTitle(`Welcome back, ${user.displayName}!`);
-    } else if (user && user.email) { 
-      setPageTitle(`Welcome back, ${user.email.split('@')[0]}!`);
-    } else {
-      setPageTitle(PAGE_TITLE_BASE);
-    }
-  }, [user]);
-
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
@@ -103,13 +90,13 @@ export default function DashboardPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(pageTitle);
+      speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, pageTitle]);
+  }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -138,7 +125,7 @@ export default function DashboardPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <header className="text-center relative">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
-          {pageTitle}
+          {PAGE_TITLE}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
