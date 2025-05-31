@@ -67,15 +67,16 @@ Embark on your AI-enhanced learning adventure!
 
 Create a file named `.env` in the **root of your project**. Populate it with your actual Firebase project configuration and API keys. **This step is absolutely essential for the app to function.**
 
-**MrGarvit has provided the following keys for enhanced functionality. Please distribute them as suggested or as per your preference across the available slots in your `.env` file:**
-*   `AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo`
-*   `AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY`
-*   `AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs`
+**MrGarvit has provided the following Gemini API keys for enhanced functionality. Please distribute them as suggested or as per your preference across the available slots in your `.env` file:**
+*   Main/General Use: `AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo`
+*   Notes (Text) & Derived Content: `AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY`
+*   AI Chatbot (Kazuma): `AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs`
+*   **Image Generation (Crucial): `AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc`** (NEW - Ensure this key has access to Gemini 2.0 Flash or equivalent image models)
 
 ```env
 # Firebase Project Configuration (Get these from your Firebase project settings)
 # Go to Project Settings > General tab > Your apps > Web app SDK snippet
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYOUR_FIREBASE_API_KEY
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYOUR_FIREBASE_API_KEY_FROM_MRGARVIT_OR_YOURS # e.g., one of the Firebase keys if needed
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com # CRITICAL for Firebase Auth
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
@@ -88,25 +89,24 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional for Firebas
 # Ensure the associated Google Cloud project has the "Generative Language API" (or Vertex AI for newer models) enabled and billing configured.
 
 # Main/Default Gemini API Key (Used for general AI tasks if specific ones below are not set)
-# Suggestion: Use one of MrGarvit's provided keys here, e.g., AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo
-GOOGLE_API_KEY=AIzaSyYOUR_MAIN_GEMINI_API_KEY
+# Suggestion from MrGarvit: AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo
+GOOGLE_API_KEY=AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo
 
-# Optional: Separate API Key for Study Notes (Text Generation part)
-# If blank, notes text generation will use GOOGLE_API_KEY.
-# Suggestion: Use one of MrGarvit's provided keys here, e.g., AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY
-GOOGLE_API_KEY_NOTES=
+# Optional: Separate API Key for Study Notes (Text Generation part) & Derived Content (Quiz/Flashcards from Notes)
+# If blank, these features will use GOOGLE_API_KEY.
+# Suggestion from MrGarvit: AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY
+GOOGLE_API_KEY_NOTES=AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY
 
 # Optional: Separate API Key for AI Chatbot (Kazuma)
 # If blank, the chatbot will use GOOGLE_API_KEY.
-# Suggestion: Use one of MrGarvit's provided keys here, e.g., AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs
-GOOGLE_API_KEY_CHATBOT=
+# Suggestion from MrGarvit: AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs
+GOOGLE_API_KEY_CHATBOT=AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs
 
-# Optional: Separate API Key for Image Generation within Notes
+# CRITICAL: API Key for Image Generation within Notes (Gemini 2.0 Flash or equivalent)
 # If blank, image generation will attempt to use GOOGLE_API_KEY_NOTES, then GOOGLE_API_KEY.
-# Highly Recommended: Use a dedicated key or one of MrGarvit's provided keys. 
-# Image generation can be resource-intensive. Ensure "gemini-2.0-flash-exp" or equivalent image model is supported.
-# e.g., AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY (can be same as NOTES key if that key has image model access)
-GOOGLE_API_KEY_IMAGES=
+# Highly Recommended: Use the dedicated key provided by MrGarvit.
+# Suggestion from MrGarvit: AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
+GOOGLE_API_KEY_IMAGES=AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
 
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
@@ -121,10 +121,11 @@ YOUTUBE_API_KEY=AIzaSyYOUR_YOUTUBE_API_KEY
 GOOGLE_BOOKS_API_KEY=AIzaSyYOUR_GOOGLE_BOOKS_API_KEY
 ```
 
-*   **Valid API Keys are Mandatory!** The example keys above will not work. Use the ones provided by MrGarvit or your own.
+*   **Valid API Keys are Mandatory!** The example Firebase keys above (`AIzaSyYOUR_FIREBASE_API_KEY_FROM_MRGARVIT_OR_YOURS`) will not work. Use the ones provided by MrGarvit for Firebase or your own. Use the Gemini keys MrGarvit provided for the Gemini features.
 *   Ensure **no extra spaces or quotes** around variable names or values.
 *   **CRITICAL:** `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are **essential** for Firebase Authentication.
 *   The `console.log` statements in `src/lib/firebase/config.ts` will show you in the **server terminal** if `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, or `NEXT_PUBLIC_FIREBASE_PROJECT_ID` are `undefined`. This is your primary clue if your `.env` file isn't being read correctly.
+*   **CRITICAL for Image Generation:** The key assigned to `GOOGLE_API_KEY_IMAGES` (now suggested as `AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc`) **MUST** have the "Generative Language API" (or Vertex AI for newer models, specifically the "Gemini API") enabled in its associated Google Cloud Project, **billing MUST be enabled** for that project, and the key must have permissions to use image-capable models like `gemini-2.0-flash-exp`.
 
 ### 3. Install Dependencies
 ```bash
@@ -209,3 +210,4 @@ LearnMint aims to continuously evolve and empower learners. Here's a glimpse of 
 
 ---
 Made with 🧠 and ✨ by **MrGarvit**
+
