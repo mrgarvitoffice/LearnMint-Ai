@@ -75,10 +75,10 @@ export default function ChatbotPage() {
     let characterVoicePref: 'kai' | 'luma' | null = null;
 
     if (selectedCharacter === 'kazuma') {
-      greetingText = "Yo, Kazuma here. Ask your questions, I guess. Try not to cause trouble.";
+      greetingText = "Yo, Kazuma here. Ask your questions, I guess.";
       characterVoicePref = 'kai';
     } else if (selectedCharacter === 'megumin') {
-      greetingText = "Waga na wa Megumin! Master of EXPLOSION magic! Ask away, if you dare!";
+      greetingText = "It is I, Megumin! Master of EXPLOSION magic! Ask away!";
       characterVoicePref = 'luma';
     }
     
@@ -254,3 +254,6 @@ export default function ChatbotPage() {
     </Card>
   );
 }
+
+
+    
