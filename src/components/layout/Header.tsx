@@ -20,7 +20,7 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Added Avatar imports
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LayoutGrid, PanelLeft, Palette, LogOut, UserPlus, type LucideIcon, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -168,7 +168,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="rounded-full w-9 h-9 p-0 border-2 border-transparent hover:border-primary focus-visible:border-primary" onClick={() => playClickSound()}>
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.photoURL || undefined} alt={user.email || "User avatar"} />
+                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User avatar"} />
                   <AvatarFallback>
                     <UserCircle className="h-5 w-5 text-muted-foreground" />
                   </AvatarFallback>
@@ -176,11 +176,11 @@ export function Header() {
                 <span className="sr-only">User menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64"> {/* Increased width for better display */}
+            <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex items-center gap-3 p-1">
-                  <Avatar className="h-10 w-10">  {/* Slightly larger avatar in dropdown */}
-                    <AvatarImage src={user.photoURL || undefined} alt={user.email || "User avatar"} />
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User avatar"} />
                     <AvatarFallback>
                         <UserCircle className="h-6 w-6 text-muted-foreground" />
                     </AvatarFallback>
