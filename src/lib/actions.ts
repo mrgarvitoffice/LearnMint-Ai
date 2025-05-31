@@ -307,4 +307,3 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
     throw new Error(error.message || "Failed to fetch Google Books directly.");
   }
 }
-```
