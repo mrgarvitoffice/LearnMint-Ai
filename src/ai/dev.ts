@@ -13,6 +13,7 @@ import '@/ai/flows/generate-quiz-from-notes';
 import '@/ai/flows/generate-flashcards-from-notes';
 import '@/ai/flows/search-youtube-videos';
 import '@/ai/flows/search-google-books';
+import '@/ai/flows/generate-image-from-prompt'; // Added new image generation flow
 
 // The Genkit dev server will pick up flows defined with ai.defineFlow(...)
 // Just importing the files that contain ai.defineFlow is sufficient for the dev UI.

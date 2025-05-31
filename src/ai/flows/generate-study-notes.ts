@@ -10,6 +10,7 @@
 
 import {aiForNotes} from '@/ai/genkit'; 
 import {z} from 'zod';
+import { generateImageFromPrompt } from './generate-image-from-prompt'; // Import the new image generation flow
 
 const GenerateStudyNotesInputSchema = z.object({ topic: z.string().describe('The academic topic for which to generate study notes.') });
 export type GenerateStudyNotesInput = z.infer<typeof GenerateStudyNotesInputSchema>;
@@ -51,9 +52,9 @@ Please generate study notes on this topic with the following characteristics:
     *   Use \`blockquotes\` for highlighting critical pieces of information, direct definitions, important summaries, or memorable facts.
     *   If comparing concepts (e.g., Prokaryotic vs. Eukaryotic cells), format this information in a **clear Markdown table**.
 
-4.  **Visuals (Placeholders ONLY):**
+4.  **Visuals (Placeholders ONLY - for initial text generation):**
     *   Where a diagram, chart, or image would significantly enhance understanding, insert a placeholder in the exact format: \`[VISUAL_PROMPT: descriptive query for the image]\`. For example: \`[VISUAL_PROMPT: diagram of a plant cell's organelles]\` or \`[VISUAL_PROMPT: timeline of World War 2 major European events]\`.
-    *   **Do NOT generate actual images or image URLs yourself.** Only use the textual placeholder format described above.
+    *   **Do NOT generate actual images or image URLs yourself.** Only use the textual placeholder format described above. This text generation step should *only* produce the placeholders. A subsequent step will handle image generation. Limit to a maximum of 3-4 such visual prompts per notes document.
 
 5.  **Conclusion:**
     *   End with a **concluding summary or a section to remember key facts**, perhaps with a fun, thematic title (e.g., "Remember These CELL-ebrated Facts! 🥳").
@@ -90,26 +91,75 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
     outputSchema: GenerateStudyNotesOutputSchema,
   },
   async (input) => {
-    console.log(`[AI Flow - Notes] Generating notes for topic: ${input.topic}`);
-    const { output } = await generateStudyNotesPrompt(input);
-    if (!output || typeof output.notes !== 'string' || output.notes.trim() === '') {
-      console.error("[AI Flow Error - Notes] AI returned empty or invalid notes data:", output);
-      throw new Error("AI failed to generate notes in the expected style. The returned data was empty or invalid.");
+    console.log(`[AI Flow - Notes Text] Generating notes text for topic: ${input.topic}`);
+    const textGenerationResult = await generateStudyNotesPrompt(input);
+    
+    if (!textGenerationResult.output || typeof textGenerationResult.output.notes !== 'string' || textGenerationResult.output.notes.trim() === '') {
+      console.error("[AI Flow Error - Notes Text] AI returned empty or invalid notes data:", textGenerationResult.output);
+      throw new Error("AI failed to generate notes text in the expected style. The returned data was empty or invalid.");
     }
-    console.log(`[AI Flow - Notes] Successfully generated notes for topic: ${input.topic}. Length: ${output.notes.length}`);
-    return output;
+    
+    let notesWithPlaceholders = textGenerationResult.output.notes;
+    console.log(`[AI Flow - Notes Text] Successfully generated notes text for topic: ${input.topic}. Length: ${notesWithPlaceholders.length}`);
+
+    // Image generation step
+    const visualPromptRegex = /\[VISUAL_PROMPT:\s*([^\]]+)\]/g;
+    let match;
+    const imagePromises = [];
+    const visualPrompts: { fullMatch: string, promptText: string }[] = [];
+
+    // First, collect all visual prompts
+    while ((match = visualPromptRegex.exec(notesWithPlaceholders)) !== null) {
+      visualPrompts.push({ fullMatch: match[0], promptText: match[1].trim() });
+    }
+    
+    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process.`);
+
+    if (visualPrompts.length > 0) {
+        const imageGenerationResults = await Promise.all(
+            visualPrompts.map(vp => 
+                generateImageFromPrompt({ prompt: vp.promptText })
+                .then(imageResult => ({ ...vp, imageResult })) // Attach original prompt info to result
+                .catch(error => {
+                    console.error(`[AI Flow Error - Image Sub-flow] Failed to generate image for prompt "${vp.promptText}":`, error);
+                    return { ...vp, imageResult: { imageDataUri: null, error: error.message || "Unknown image generation error" } };
+                })
+            )
+        );
+
+        let finalNotes = notesWithPlaceholders;
+        for (const result of imageGenerationResults) {
+            if (result.imageResult.imageDataUri) {
+                console.log(`[AI Flow - Notes Images] Successfully generated image for: "${result.promptText.substring(0,30)}...". Replacing placeholder.`);
+                // Replace the specific placeholder with the Markdown image tag
+                // Ensure to escape special characters in promptText if it's used in a regex directly, or use string replacement
+                const markdownImage = `![Visual for: ${result.promptText.replace(/"/g, "'")}](${result.imageResult.imageDataUri})`;
+                finalNotes = finalNotes.replace(result.fullMatch, markdownImage);
+            } else {
+                console.warn(`[AI Flow - Notes Images] Failed to generate image for prompt: "${result.promptText}". Error: ${result.imageResult.error}. Placeholder will remain.`);
+                // Optionally, replace with a "generation failed" message or leave placeholder
+                // finalNotes = finalNotes.replace(result.fullMatch, `[IMAGE GENERATION FAILED for: ${result.promptText}]`);
+            }
+        }
+        console.log(`[AI Flow - Notes Images] Finished processing all visual prompts. Final notes length: ${finalNotes.length}`);
+        return { notes: finalNotes };
+    } else {
+         console.log(`[AI Flow - Notes Images] No visual prompts found. Returning original notes.`);
+         return { notes: notesWithPlaceholders };
+    }
   }
 );
 
 export async function generateStudyNotes(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
   console.log(`[AI Wrapper] generateStudyNotes called for topic: ${input.topic}. Using notes-specific AI configuration if GOOGLE_API_KEY_NOTES is set.`);
   try {
+    // The flow now handles both text and image generation internally
     return await generateStudyNotesFlow(input);
   } catch (error: any) {
     console.error("[AI Wrapper Error - generateStudyNotes] Error in flow execution:", error.message, error.stack);
     let clientErrorMessage = "Failed to generate study notes. Please try again.";
     if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
-      clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration (GOOGLE_API_KEY or GOOGLE_API_KEY_NOTES) and ensure billing is enabled for the Google Cloud project.";
+      clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration (GOOGLE_API_KEY or GOOGLE_API_KEY_NOTES or GOOGLE_API_KEY_IMAGES) and ensure billing is enabled for the Google Cloud project.";
     } else if (error.message) {
       clientErrorMessage = `Study Notes: Generation failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
     }

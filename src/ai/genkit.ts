@@ -5,6 +5,8 @@ import {googleAI} from '@genkit-ai/googleai';
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
+const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
+
 
 const knownDemoKeys = [
   "YOUR_GOOGLE_AI_API_KEY_HERE", 
@@ -71,17 +73,17 @@ export const ai = genkit({
   },
 });
 
-// Genkit instance for Study Notes
+// Genkit instance for Study Notes (text part)
 let notesInstanceKey = GOOGLE_API_KEY;
 if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '' && GOOGLE_API_KEY_NOTES !== GOOGLE_API_KEY) {
-  console.log(`INFO: Using separate GOOGLE_API_KEY_NOTES for study notes generation.`);
+  console.log(`INFO: Using separate GOOGLE_API_KEY_NOTES for study notes text generation.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES, 'GOOGLE_API_KEY_NOTES');
   notesInstanceKey = GOOGLE_API_KEY_NOTES;
 } else {
   if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES === GOOGLE_API_KEY) {
-    console.log("INFO: GOOGLE_API_KEY_NOTES is set but is the same as GOOGLE_API_KEY. Notes will use the main AI configuration.");
+    console.log("INFO: GOOGLE_API_KEY_NOTES is set but is the same as GOOGLE_API_KEY. Notes text will use the main AI configuration.");
   } else if (!GOOGLE_API_KEY_NOTES || GOOGLE_API_KEY_NOTES.trim() === '') {
-    console.log("INFO: GOOGLE_API_KEY_NOTES is not set. Notes will use the main AI configuration.");
+    console.log("INFO: GOOGLE_API_KEY_NOTES is not set. Notes text will use the main AI configuration.");
   }
 }
 export const aiForNotes = genkit({
@@ -110,4 +112,34 @@ export const aiForChatbot = genkit({
   model: 'googleai/gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
   defaultModelConfig: { /* Can have its own specific config if needed */ },
+});
+
+// Genkit instance for Image Generation
+let imageInstanceKey = GOOGLE_API_KEY_NOTES || GOOGLE_API_KEY; // Fallback to notes key, then main key
+if (GOOGLE_API_KEY_IMAGES && GOOGLE_API_KEY_IMAGES.trim() !== '') {
+  console.log(`INFO: Using separate GOOGLE_API_KEY_IMAGES for image generation.`);
+  isApiKeyPlaceholder(GOOGLE_API_KEY_IMAGES, 'GOOGLE_API_KEY_IMAGES');
+  imageInstanceKey = GOOGLE_API_KEY_IMAGES;
+} else {
+    if (GOOGLE_API_KEY_IMAGES === '') { // Explicitly blank means don't try
+      console.log("INFO: GOOGLE_API_KEY_IMAGES is explicitly blank. Image generation might use fallback keys or fail if they are also not configured.");
+    } else { // Not set, or set to be same as another
+      console.log("INFO: GOOGLE_API_KEY_IMAGES is not set or is same as another key. Image generation will use fallback (Notes key or Main key).");
+    }
+}
+export const aiForImages = genkit({
+  plugins: [googleAI({ apiKey: imageInstanceKey })],
+  // IMPORTANT: Image generation models might differ.
+  // `gemini-2.0-flash-exp` is often cited for image generation capabilities.
+  // This might need adjustment based on available models for the key.
+  model: 'googleai/gemini-2.0-flash-exp',
+  enableTracingAndMetrics: true,
+  defaultModelConfig: {
+    safetySettings: [ // Stricter safety for image generation by default
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' }, // More sensitive to explicit
+    ],
+  }
 });

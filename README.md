@@ -1,9 +1,9 @@
 
-# LearnMint 🌱 - Your AI-Powered Study Revolution!
+# LearnMint 🌱 - Your AI-Powered Study Revolution! Crafted by MrGarvit!
 
-Welcome to **LearnMint**, the ultimate Next.js application engineered by **MrGarvit** to transform your study sessions into a dynamic and productive experience! Wave goodbye to tedious material preparation and hello to AI-driven learning that's tailored, engaging, and lightning-fast.
+Welcome to **LearnMint**, the ultimate Next.js application engineered by the visionary **MrGarvit** to transform your study sessions into a dynamic and productive experience! Wave goodbye to tedious material preparation and hello to AI-driven learning that's tailored, engaging, and lightning-fast.
 
-With LearnMint, you're not just studying; you're minting knowledge with cutting-edge AI, crafted with passion by MrGarvit.
+With LearnMint, you're not just studying; you're minting knowledge with cutting-edge AI, passionately crafted by **MrGarvit**.
 
 ## Core Philosophy & Design ✨
 
@@ -18,9 +18,10 @@ With LearnMint, you're not just studying; you're minting knowledge with cutting-
 
 *   **User Authentication**: Secure and easy sign-up (Email/Password, Google) and sign-in (Email/Password, Anonymous). Your learning journey, personalized and protected by Firebase.
 *   **🧠 AI Content Generation Suite**:
-    *   **Topper Notes**: Generate comprehensive, engaging, and well-structured study notes on *any* topic. Think top-student quality, complete with Markdown formatting, emojis, and visual prompt placeholders.
+    *   **Topper Notes with AI Images**: Generate comprehensive, engaging, and well-structured study notes on *any* topic. Think top-student quality, complete with Markdown formatting, emojis, and **AI-generated images** embedded directly from `[VISUAL_PROMPT: ...]` placeholders!
     *   **AI Quiz Creator**: Instantly create multiple-choice and short-answer quizzes on demand, with varying difficulty levels and detailed explanations.
     *   **AI Flashcard Factory**: Quickly produce sets of flashcards for rapid review and memorization.
+    *   **Contextual Content Generation**: After generating notes, easily create quizzes or flashcards *directly from that note content* with dedicated buttons.
 *   **🔬 Custom Test Creation Lab**: Take control! Build tailored tests based on single or multiple topics (including recent studies), set difficulty, number of questions, custom notes, and even timers (overall and per-question).
 *   **🤖 Interactive AI Chatbot - "Kazuma"**: Your witty, sometimes reluctant, but always helpful AI companion. Ask Kazuma anything, engage in small talk, or even request a (text-based) song! Supports voice input and user image uploads for interactive fun.
 *   **📐 Precision Toolkit - Calculator & Converter**: A powerful scientific calculator for all your mathematical needs, plus a comprehensive unit converter (Length, Temperature, Weight/Mass, Volume, Area, Speed) with calculation history.
@@ -43,7 +44,7 @@ With LearnMint, you're not just studying; you're minting knowledge with cutting-
 *   **Tailwind CSS**
 *   **ShadCN UI Components**
 *   **Firebase Authentication** (Email/Password, Google, Anonymous)
-*   **Genkit** (AI flows powered by Google Gemini models)
+*   **Genkit** (AI flows powered by Google Gemini models for text and image generation)
 *   **Lucide Icons**
 *   `@tanstack/react-query` (for robust data fetching)
 *   Newsdata.io (for live news - **requires user API key**)
@@ -66,6 +67,11 @@ Embark on your AI-enhanced learning adventure!
 
 Create a file named `.env` in the **root of your project**. Populate it with your actual Firebase project configuration and API keys. **This step is absolutely essential for the app to function.**
 
+**MrGarvit has provided the following keys for enhanced functionality. Please distribute them as suggested or as per your preference across the available slots in your `.env` file:**
+*   `AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo`
+*   `AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY`
+*   `AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs`
+
 ```env
 # Firebase Project Configuration (Get these from your Firebase project settings)
 # Go to Project Settings > General tab > Your apps > Web app SDK snippet
@@ -77,17 +83,30 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=1:your-sender-id:web:your-app-id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional for Firebase Analytics
 
-# For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI)
-# Get your key from Google AI Studio: https://aistudio.google.com/app/apikey
-# Ensure the associated Google Cloud project has the "Generative Language API" enabled and billing configured.
-GOOGLE_API_KEY=AIzaSyYOUR_GEMINI_API_KEY
+# For Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI, Image Generation)
+# Get your keys from Google AI Studio: https://aistudio.google.com/app/apikey
+# Ensure the associated Google Cloud project has the "Generative Language API" (or Vertex AI for newer models) enabled and billing configured.
 
-# OPTIONAL: Separate API Key for Study Notes Generation
-# If blank, notes generation will use the main GOOGLE_API_KEY above.
+# Main/Default Gemini API Key (Used for general AI tasks if specific ones below are not set)
+# Suggestion: Use one of MrGarvit's provided keys here, e.g., AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo
+GOOGLE_API_KEY=AIzaSyYOUR_MAIN_GEMINI_API_KEY
+
+# Optional: Separate API Key for Study Notes (Text Generation part)
+# If blank, notes text generation will use GOOGLE_API_KEY.
+# Suggestion: Use one of MrGarvit's provided keys here, e.g., AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY
 GOOGLE_API_KEY_NOTES=
-# OPTIONAL: Separate API Key for AI Chatbot (Kazuma)
-# If blank, the chatbot will use the main GOOGLE_API_KEY above.
+
+# Optional: Separate API Key for AI Chatbot (Kazuma)
+# If blank, the chatbot will use GOOGLE_API_KEY.
+# Suggestion: Use one of MrGarvit's provided keys here, e.g., AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs
 GOOGLE_API_KEY_CHATBOT=
+
+# Optional: Separate API Key for Image Generation within Notes
+# If blank, image generation will attempt to use GOOGLE_API_KEY_NOTES, then GOOGLE_API_KEY.
+# Highly Recommended: Use a dedicated key or one of MrGarvit's provided keys. 
+# Image generation can be resource-intensive. Ensure "gemini-2.0-flash-exp" or equivalent image model is supported.
+# e.g., AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY (can be same as NOTES key if that key has image model access)
+GOOGLE_API_KEY_IMAGES=
 
 # For Daily News Digest Feature
 # Get your free key from Newsdata.io: https://newsdata.io
@@ -102,7 +121,7 @@ YOUTUBE_API_KEY=AIzaSyYOUR_YOUTUBE_API_KEY
 GOOGLE_BOOKS_API_KEY=AIzaSyYOUR_GOOGLE_BOOKS_API_KEY
 ```
 
-*   **Valid API Keys are Mandatory!** The example keys above will not work.
+*   **Valid API Keys are Mandatory!** The example keys above will not work. Use the ones provided by MrGarvit or your own.
 *   Ensure **no extra spaces or quotes** around variable names or values.
 *   **CRITICAL:** `NEXT_PUBLIC_FIREBASE_API_KEY` and `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are **essential** for Firebase Authentication.
 *   The `console.log` statements in `src/lib/firebase/config.ts` will show you in the **server terminal** if `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, or `NEXT_PUBLIC_FIREBASE_PROJECT_ID` are `undefined`. This is your primary clue if your `.env` file isn't being read correctly.
@@ -138,7 +157,7 @@ yarn dev --port 9002
 Access at `http://localhost:9002`.
 
 ### 7. Run Genkit Dev Server (Optional but Recommended)
-For debugging AI flows (notes, quizzes, chatbot):
+For debugging AI flows (notes, quizzes, chatbot, image generation):
 ```bash
 npm run genkit:dev
 # or
@@ -166,7 +185,7 @@ LearnMint is configured for Firebase Hosting using `frameworksBackend` for Next.
     *   Go to `https://console.cloud.google.com/run?project=YOUR_PROJECT_ID`.
     *   Find your App Hosting service.
     *   Edit configuration -> "Variables & Secrets".
-    *   Add **ALL** required production environment variables (e.g., `NEXT_PUBLIC_FIREBASE_API_KEY`, `GOOGLE_API_KEY`, `NEWSDATA_API_KEY`, etc.).
+    *   Add **ALL** required production environment variables (e.g., `NEXT_PUBLIC_FIREBASE_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_API_KEY_NOTES`, `GOOGLE_API_KEY_CHATBOT`, `GOOGLE_API_KEY_IMAGES`, `NEWSDATA_API_KEY`, etc.).
     *   Deploy the new revision with these variables. **This is crucial for deployed features to work.**
 
 ## 🎨 Customization
@@ -175,7 +194,7 @@ LearnMint is configured for Firebase Hosting using `frameworksBackend` for Next.
 *   **AI Prompts**: Tweak prompts in `src/ai/flows/` to alter AI-generated content.
 *   **Sound Effects**: Replace files in `public/sounds/`.
 
-## 🚀 Future Vision
+## 🚀 Future Vision (Envisioned by MrGarvit)
 
 LearnMint aims to continuously evolve and empower learners. Here's a glimpse of what **MrGarvit** envisions for the future:
 
@@ -186,7 +205,7 @@ LearnMint aims to continuously evolve and empower learners. Here's a glimpse of 
 *   📚 **Deeper Content Integration**: Seamlessly integrate resources from platforms like YouTube and Google Books directly within the app, providing a richer, more contextual learning experience.
 *   📱 **Enhanced PWA Features**: Implement robust offline capabilities for notes, flashcards, and quizzes, allowing students to study anytime, anywhere, even without an internet connection.
 *   🎯 **Personalized Learning Paths**: Leverage AI to suggest personalized study plans and resources based on individual learning styles, progress, and goals.
-*   🖼️ **Direct AI Image Generation**: Integrate AI image generation to replace `[VISUAL_PROMPT]` placeholders in notes with actual, relevant visuals, further enhancing the learning material.
+*   🖼️ **Enhanced AI Image Integration**: Continuously refine the AI image generation within notes for even better relevance and quality, potentially offering user controls or style choices for visuals.
 
 ---
 Made with 🧠 and ✨ by **MrGarvit**
