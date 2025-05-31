@@ -277,10 +277,10 @@ LearnMint aims to continuously evolve and empower learners. Here's a glimpse of 
 
 ## 💖 Creator's Note 💖
 
-This project, **LearnMint**, is a labor of love and a demonstration of cutting-edge AI application in education, brought to life by **MrGarvit**. It's designed to be a powerful tool for students and a showcase of modern web development practices.
+This project, **LearnMint**, is a demonstration of cutting-edge AI application in education, brought to life by **MrGarvit**. It's designed to be a powerful tool for students and a showcase of modern web development practices.
 
 Enjoy minting your knowledge!
 
 ---
 Made with 🧠, ✨, and a lot of ☕ by **MrGarvit**!
-```
+``` 
