@@ -40,7 +40,6 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      // Default voice preference for quiz feedback is set by the parent page (StudyPage)
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -88,7 +87,12 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   }, [isAnswerFinalized, currentQuestion, finalizeAnswer, playClickSound, setSelectedMcqOption]);
 
   const handleShortAnswerSubmit = useCallback(() => {
-    if (isAnswerFinalized || !currentQuestion || currentQuestion.type !== 'short-answer' || !shortAnswerValue.trim()) return;
+    if (isAnswerFinalized || !currentQuestion || !shortAnswerValue.trim()) return;
+    // This check ensures it only submits if it's effectively a short answer question
+    const isEffectivelyShortAnswer = currentQuestion.type === 'short-answer' || 
+                                 (currentQuestion.type === 'multiple-choice' && (!currentQuestion.options || currentQuestion.options.length === 0));
+    if (!isEffectivelyShortAnswer) return;
+
     playClickSound();
     finalizeAnswer(shortAnswerValue);
   }, [isAnswerFinalized, currentQuestion, shortAnswerValue, finalizeAnswer, playClickSound]);
@@ -107,7 +111,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
     setIsAnswerFinalized(!!nextUserAnswer); 
     setSelectedMcqOption(nextQuestionData?.type === 'multiple-choice' && nextUserAnswer ? nextUserAnswer : null);
-    setShortAnswerValue(nextQuestionData?.type === 'short-answer' && nextUserAnswer ? nextUserAnswer : ''); 
+    setShortAnswerValue(nextUserAnswer || ''); 
   };
 
   const handlePrevQuestion = () => {
@@ -121,7 +125,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
     setIsAnswerFinalized(!!prevUserAnswer);
     setSelectedMcqOption(prevQuestionData?.type === 'multiple-choice' && prevUserAnswer ? prevUserAnswer : null);
-    setShortAnswerValue(prevQuestionData?.type === 'short-answer' && prevUserAnswer ? prevUserAnswer : ''); 
+    setShortAnswerValue(prevUserAnswer || ''); 
   };
 
   const handleViewResults = () => {
@@ -195,6 +199,13 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   const isCurrentAnswerCorrect = isAnswerFinalized && userAnswers[currentQuestionIndex]?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
 
+  // Determine effective type for rendering
+  const isEffectivelyMultipleChoice = currentQuestion.type === 'multiple-choice' && 
+                                      currentQuestion.options && currentQuestion.options.length > 0;
+  const isEffectivelyShortAnswer = currentQuestion.type === 'short-answer' || 
+                                   (currentQuestion.type === 'multiple-choice' && (!currentQuestion.options || currentQuestion.options.length === 0));
+
+
   return (
     <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> 
       <CardHeader>
@@ -205,7 +216,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
       <CardContent className="space-y-4 flex-1 p-4 sm:p-6">
         <div className="text-base sm:text-lg font-semibold mb-4"><ReactMarkdown className="prose dark:prose-invert max-w-none">{currentQuestion.question}</ReactMarkdown></div>
 
-        {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
+        {isEffectivelyMultipleChoice && currentQuestion.options && (
           <RadioGroup 
             value={selectedMcqOption || undefined} 
             className="space-y-2"
@@ -248,7 +259,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
           </RadioGroup>
         )}
 
-        {currentQuestion.type === 'short-answer' && (
+        {isEffectivelyShortAnswer && (
           <div className="space-y-2">
             <Input type="text" placeholder="Type your answer here..." value={shortAnswerValue}
               onChange={(e) => setShortAnswerValue(e.target.value)}
@@ -260,6 +271,17 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
             )}
           </div>
         )}
+
+        {!isEffectivelyMultipleChoice && !isEffectivelyShortAnswer && currentQuestion && (
+             <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-5 w-5"/>
+                <AlertTitle>Question Format Error</AlertTitle>
+                <AlertDescription className="text-xs">
+                This question is not in a recognizable format (e.g., multiple-choice with missing options, or an unknown type). Please check the AI generation source or skip this question.
+                </AlertDescription>
+            </Alert>
+        )}
+
 
         {isAnswerFinalized && (
           <Alert variant={isCurrentAnswerCorrect ? 'default' : 'destructive'} className={cn("mt-4", isCurrentAnswerCorrect ? "bg-green-500/10 border-green-500/50" : "bg-destructive/10 border-destructive/50")}>
@@ -285,5 +307,3 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 };
 
 export default QuizView;
-
-    
