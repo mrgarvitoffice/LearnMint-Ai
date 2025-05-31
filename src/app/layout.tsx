@@ -30,7 +30,12 @@ export const metadata: Metadata = {
   title: 'LearnMint - AI Powered Learning', // Default title for all pages
   description: 'AI-powered learning assistant for notes, quizzes, flashcards, and more.', // Default description
   manifest: '/manifest.json', // Path to the PWA manifest file
-  themeColor: '#00FFFF', // Cyan color, adjust as needed
+  // themeColor was moved here from a direct meta tag in the head
+  // to let Next.js manage it and prevent whitespace issues.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#00FFFF' }, // Cyan for light mode
+    { media: '(prefers-color-scheme: dark)', color: 'hsl(220 30% 10%)' } // Dark Blue/Charcoal for dark mode (matches --background)
+  ]
 };
 
 /**
@@ -50,8 +55,8 @@ export default function RootLayout({
 }>) {
   return (
     // HTML element with language and suppressed hydration warning (common for Next.js + ThemeProvider)
+    // Next.js will automatically generate the <head> tag and populate it from the metadata object.
     <html lang="en" suppressHydrationWarning={true}>
-      <head />
       {/* Body element with font classes applied and antialiasing for smoother text */}
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         {/* AppProviders wraps children with ThemeProvider and QueryClientProvider */}
