@@ -3,33 +3,101 @@
 import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
-import { generateQuizFromNotes, type GenerateQuizFromNotesInput } from "@/ai/flows/generate-quiz-from-notes";
-import { generateFlashcardsFromNotes, type GenerateFlashcardsFromNotesInput } from "@/ai/flows/generate-flashcards-from-notes";
+// generateQuizFromNotes and generateFlashcardsFromNotes are no longer needed here for the primary notes generation flow
+// but might be used elsewhere if there are other flows that derive content from existing notes.
+// For this specific request, the main notes page will use topic-based generation for all.
 
 import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
-export async function generateNotesAction(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
-  console.log(`[Server Action] generateNotesAction called for topic: ${input.topic}`);
-  try {
-    const result = await generateStudyNotes(input);
-    if (!result || !result.notes) {
-      throw new Error("AI returned empty or invalid notes data.");
-    }
-    return result;
-  } catch (error: any) {
-    console.error("[Server Action Error - Notes] Error generating notes:", error);
-    let clientErrorMessage = "Failed to generate study notes. Please try again.";
-    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid") || error.message.includes("API_KEY_INVALID"))) {
-      clientErrorMessage = "Study Notes: Generation failed due to an API key issue. Please check server configuration (GOOGLE_API_KEY, GOOGLE_API_KEY_NOTES, or GOOGLE_API_KEY_IMAGES).";
-    } else if (error.message) {
-      clientErrorMessage = `Study Notes: Generation failed. Error: ${error.message.substring(0, 150)}. Check server logs for full details.`;
-    }
-    throw new Error(clientErrorMessage);
-  }
+export interface CombinedStudyMaterialsOutput {
+  notesOutput: GenerateStudyNotesOutput;
+  quizOutput?: GenerateQuizQuestionsOutput;
+  flashcardsOutput?: GenerateFlashcardsOutput;
+  quizError?: string;
+  flashcardsError?: string;
 }
 
+export async function generateNotesAction(input: GenerateStudyNotesInput): Promise<CombinedStudyMaterialsOutput> {
+  console.log(`[Server Action] generateNotesAction (combined) called for topic: ${input.topic}`);
+  
+  let notesResult: GenerateStudyNotesOutput;
+  try {
+    notesResult = await generateStudyNotes(input);
+    if (!notesResult || !notesResult.notes) {
+      throw new Error("AI returned empty or invalid notes data.");
+    }
+  } catch (error: any) {
+    console.error("[Server Action Error - Notes] Error generating notes:", error);
+    let clientErrorMessage = "Failed to generate study notes. This is the primary step and it failed.";
+    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid") || error.message.includes("API_KEY_INVALID"))) {
+      clientErrorMessage = "Study Notes: Generation failed due to an API key issue (primary step). Check server configuration (GOOGLE_API_KEY, GOOGLE_API_KEY_NOTES, or GOOGLE_API_KEY_IMAGES).";
+    } else if (error.message) {
+      clientErrorMessage = `Study Notes: Generation failed (primary step). Error: ${error.message.substring(0, 150)}. Check server logs for full details.`;
+    }
+    // If notes (primary content) fail, we throw the error and don't proceed.
+    throw new Error(clientErrorMessage);
+  }
+
+  // Notes generated successfully, now attempt quiz and flashcards for the same topic
+  const quizInput: GenerateQuizQuestionsInput = { topic: input.topic, numQuestions: 30, difficulty: 'medium' as const };
+  const flashcardsInput: GenerateFlashcardsInput = { topic: input.topic, numFlashcards: 20 };
+
+  let quizData: GenerateQuizQuestionsOutput | undefined;
+  let flashcardsData: GenerateFlashcardsOutput | undefined;
+  let quizGenError: string | undefined;
+  let flashcardsGenError: string | undefined;
+
+  console.log(`[Server Action - Combined] Attempting to generate quiz for topic: ${input.topic}`);
+  console.log(`[Server Action - Combined] Attempting to generate flashcards for topic: ${input.topic}`);
+
+  // Using Promise.allSettled to ensure all attempts are made, even if one fails
+  const results = await Promise.allSettled([
+    generateQuizQuestions(quizInput),
+    generateFlashcards(flashcardsInput)
+  ]);
+
+  const quizResultOutcome = results[0];
+  if (quizResultOutcome.status === 'fulfilled') {
+    if (quizResultOutcome.value && quizResultOutcome.value.questions && quizResultOutcome.value.questions.length > 0) {
+      quizData = quizResultOutcome.value;
+      console.log(`[Server Action - Combined] Quiz generated successfully for topic: ${input.topic}`);
+    } else {
+      quizGenError = "AI returned no quiz questions or invalid quiz data.";
+      console.warn(`[Server Action - Combined] Quiz generation for topic "${input.topic}" resulted in empty/invalid data from AI.`);
+    }
+  } else {
+    // quizResultOutcome.status === 'rejected'
+    console.error(`[Server Action Error - Combined Quiz Gen] Error generating quiz for topic "${input.topic}":`, quizResultOutcome.reason);
+    quizGenError = quizResultOutcome.reason?.message?.substring(0, 150) || "Failed to generate quiz questions.";
+  }
+
+  const flashcardsResultOutcome = results[1];
+  if (flashcardsResultOutcome.status === 'fulfilled') {
+     if (flashcardsResultOutcome.value && flashcardsResultOutcome.value.flashcards && flashcardsResultOutcome.value.flashcards.length > 0) {
+      flashcardsData = flashcardsResultOutcome.value;
+      console.log(`[Server Action - Combined] Flashcards generated successfully for topic: ${input.topic}`);
+    } else {
+      flashcardsGenError = "AI returned no flashcards or invalid flashcard data.";
+      console.warn(`[Server Action - Combined] Flashcard generation for topic "${input.topic}" resulted in empty/invalid data from AI.`);
+    }
+  } else {
+    // flashcardsResultOutcome.status === 'rejected'
+    console.error(`[Server Action Error - Combined Flashcard Gen] Error generating flashcards for topic "${input.topic}":`, flashcardsResultOutcome.reason);
+    flashcardsGenError = flashcardsResultOutcome.reason?.message?.substring(0, 150) || "Failed to generate flashcards.";
+  }
+  
+  return {
+    notesOutput: notesResult,
+    quizOutput: quizData,
+    flashcardsOutput: flashcardsData,
+    quizError: quizGenError,
+    flashcardsError: flashcardsGenError,
+  };
+}
+
+// Keep original generateQuizAction for the dedicated /quiz page
 export async function generateQuizAction(input: GenerateQuizQuestionsInput): Promise<GenerateQuizQuestionsOutput> {
-  console.log(`[Server Action] generateQuizAction called for topic: ${input.topic}, numQuestions: ${input.numQuestions}, difficulty: ${input.difficulty}`);
+  console.log(`[Server Action] generateQuizAction (standalone) called for topic: ${input.topic}, numQuestions: ${input.numQuestions}, difficulty: ${input.difficulty}`);
   try {
     const result = await generateQuizQuestions(input);
     if (!result || !result.questions || result.questions.length === 0) {
@@ -37,7 +105,7 @@ export async function generateQuizAction(input: GenerateQuizQuestionsInput): Pro
     }
     return result;
   } catch (error: any) {
-    console.error("[Server Action Error - Quiz] Error generating quiz:", error);
+    console.error("[Server Action Error - Standalone Quiz] Error generating quiz:", error);
     let clientErrorMessage = "Failed to generate quiz. Please try again.";
      if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid") || error.message.includes("API_KEY_INVALID"))) {
       clientErrorMessage = "Quiz Generation: Failed due to an API key issue. Please check server configuration.";
@@ -48,8 +116,9 @@ export async function generateQuizAction(input: GenerateQuizQuestionsInput): Pro
   }
 }
 
+// Keep original generateFlashcardsAction for the dedicated /flashcards page
 export async function generateFlashcardsAction(input: GenerateFlashcardsInput): Promise<GenerateFlashcardsOutput> {
-  console.log(`[Server Action] generateFlashcardsAction called for topic: ${input.topic}, numFlashcards: ${input.numFlashcards}`);
+  console.log(`[Server Action] generateFlashcardsAction (standalone) called for topic: ${input.topic}, numFlashcards: ${input.numFlashcards}`);
   try {
     const result = await generateFlashcards(input);
      if (!result || !result.flashcards || result.flashcards.length === 0) {
@@ -57,7 +126,7 @@ export async function generateFlashcardsAction(input: GenerateFlashcardsInput): 
     }
     return result;
   } catch (error: any) {
-    console.error("[Server Action Error - Flashcards] Error generating flashcards:", error);
+    console.error("[Server Action Error - Standalone Flashcards] Error generating flashcards:", error);
     let clientErrorMessage = "Failed to generate flashcards. Please try again.";
     if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid") || error.message.includes("API_KEY_INVALID"))) {
       clientErrorMessage = "Flashcard Generation: Failed due to an API key issue. Please check server configuration.";
@@ -68,46 +137,11 @@ export async function generateFlashcardsAction(input: GenerateFlashcardsInput): 
   }
 }
 
-export async function generateQuizFromNotesAction(input: GenerateQuizFromNotesInput): Promise<GenerateQuizQuestionsOutput> {
-  console.log(`[Server Action] generateQuizFromNotesAction called, numQuestions: ${input.numQuestions}, notes length: ${input.notesContent.length}`);
-  try {
-    // The output of generateQuizFromNotes is compatible with GenerateQuizQuestionsOutput
-    const result = await generateQuizFromNotes(input);
-    if (!result || !result.quiz || result.quiz.length === 0) { // generateQuizFromNotes returns { quiz: QuizQuestion[] }
-      throw new Error("AI returned empty or invalid quiz data from notes.");
-    }
-    return { questions: result.quiz }; // Adapt to GenerateQuizQuestionsOutput structure
-  } catch (error: any) {
-    console.error("[Server Action Error - Quiz from Notes] Error generating quiz:", error);
-    let clientErrorMessage = "Failed to generate quiz from notes. Please try again.";
-    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
-      clientErrorMessage = "Quiz from Notes: Generation failed due to an API key issue. Check server configuration.";
-    } else if (error.message) {
-      clientErrorMessage = `Quiz from Notes: Generation failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
-    }
-    throw new Error(clientErrorMessage);
-  }
-}
 
-export async function generateFlashcardsFromNotesAction(input: GenerateFlashcardsFromNotesInput): Promise<GenerateFlashcardsOutput> {
-  console.log(`[Server Action] generateFlashcardsFromNotesAction called, numFlashcards: ${input.numFlashcards}, notes length: ${input.notesContent.length}`);
-  try {
-    const result = await generateFlashcardsFromNotes(input);
-    if (!result || !result.flashcards || result.flashcards.length === 0) {
-      throw new Error("AI returned empty or invalid flashcard data from notes.");
-    }
-    return result;
-  } catch (error: any) {
-    console.error("[Server Action Error - Flashcards from Notes] Error generating flashcards:", error);
-    let clientErrorMessage = "Failed to generate flashcards from notes. Please try again.";
-    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
-      clientErrorMessage = "Flashcards from Notes: Generation failed due to an API key issue. Check server configuration.";
-    } else if (error.message) {
-      clientErrorMessage = `Flashcards from Notes: Generation failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
-    }
-    throw new Error(clientErrorMessage);
-  }
-}
+// Functions generateQuizFromNotesAction and generateFlashcardsFromNotesAction are removed as per the new flow
+// These functions are not needed if the main generation page directly uses topic for all three.
+// If they were used elsewhere for deriving content from *already displayed* notes, they would need to be kept.
+// Based on the request, they seem redundant for the notes page's primary generation flow.
 
 
 // Direct API call functions (YouTube, Google Books) remain unchanged
