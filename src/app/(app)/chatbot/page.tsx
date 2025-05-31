@@ -8,14 +8,14 @@ import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { kazumaChatbot, type KazumaChatbotInput } from '@/ai/flows/ai-chatbot';
-import { meguminChatbot, type MeguminChatbotInput } from '@/ai/flows/megumin-chatbot'; // Import Megumin's flow
+import { meguminChatbot, type MeguminChatbotInput } from '@/ai/flows/megumin-chatbot';
 import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Import Avatar components
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const PAGE_TITLE_CHATBOT = "AI Chat Central";
 const TYPING_INDICATOR_ID = 'typing-indicator';
@@ -26,6 +26,7 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<ChatbotCharacter>('kazuma');
+  const [currentCharacterGreeting, setCurrentCharacterGreeting] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
@@ -48,15 +49,13 @@ export default function ChatbotPage() {
   const currentSpokenMessageRef = useRef<string | null>(null);
   const initialGreetingSpokenRef = useRef(false);
 
-  // Set a general voice preference for page announcements first
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); // Default to Luma (female) for page announcements
+      setVoicePreference('luma');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
-  // Speak page title once the general voice preference is set
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && voicePreference === 'luma' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
@@ -66,42 +65,46 @@ export default function ChatbotPage() {
     return () => { isMounted = false; };
   }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak]);
 
-
-  // Handle character-specific setup (greeting, voice) when selectedCharacter changes
+  // Effect to set character voice preference and greeting text
   useEffect(() => {
-    cancelTTS(); // Stop any previous TTS
-    initialGreetingSpokenRef.current = false; // Allow new greeting to be spoken
+    cancelTTS();
+    initialGreetingSpokenRef.current = false; 
     let greetingText = "";
-    let characterVoicePref: 'kai' | 'luma' | null = null; // Luma as a stand-in for Megumin's voice
+    let characterVoicePref: 'kai' | 'luma' | null = null;
 
     if (selectedCharacter === 'kazuma') {
       greetingText = "Yo. Kazuma here. Don't expect too much, but I guess I can answer your questions or whatever. Just try not to get us into too much trouble, okay?";
       characterVoicePref = 'kai';
     } else if (selectedCharacter === 'megumin') {
       greetingText = "Waga na wa Megumin! Arch Wizard of the Crimson Demons and master of EXPLOSION magic! Ask me anything, but prepare for an EXPLOSIVE answer!";
-      characterVoicePref = 'luma'; // Or 'shimmer' if you find it, for now use 'luma' for Megumin
+      characterVoicePref = 'luma';
     }
-
-    setVoicePreference(characterVoicePref); // Set the character's preferred voice
+    
+    setVoicePreference(characterVoicePref);
+    setCurrentCharacterGreeting(greetingText); // Set the greeting to be spoken
 
     const initialGreetingMessage: ChatMessageType = {
-      id: `${selectedCharacter}-initial-greeting`, role: 'assistant',
+      id: `${selectedCharacter}-initial-greeting-${Date.now()}`, role: 'assistant',
       content: greetingText, timestamp: new Date()
     };
     setMessages([initialGreetingMessage]);
 
-    // Delay speaking the greeting slightly to allow voice preference to apply
-    const speakGreetingTimeout = setTimeout(() => {
-        if (selectedVoice && voicePreference === characterVoicePref && !initialGreetingSpokenRef.current && !isSpeaking && !isPaused) {
-            currentSpokenMessageRef.current = greetingText;
-            speak(greetingText);
-            initialGreetingSpokenRef.current = true;
-        }
-    }, 200);
-    
-    return () => clearTimeout(speakGreetingTimeout);
+  }, [selectedCharacter, cancelTTS, setVoicePreference]);
 
-  }, [selectedCharacter, speak, cancelTTS, setVoicePreference, selectedVoice, voicePreference, isSpeaking, isPaused]);
+
+  // Effect to speak the greeting when voice preference and selectedVoice are ready
+  useEffect(() => {
+    const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+    if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
+        voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
+      
+      console.log(`Chatbot: Attempting to speak greeting for ${selectedCharacter} with voice ${selectedVoice.name}`);
+      currentSpokenMessageRef.current = currentCharacterGreeting;
+      speak(currentCharacterGreeting);
+      initialGreetingSpokenRef.current = true;
+      // setCurrentCharacterGreeting(null); // Clear after speaking to prevent re-speaking on other effect triggers
+    }
+  }, [currentCharacterGreeting, selectedVoice, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
 
 
   useEffect(() => {
@@ -113,7 +116,7 @@ export default function ChatbotPage() {
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS();
+    cancelTTS(); // Stop any current TTS before sending new message
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicatorMessage = selectedCharacter === 'kazuma'
@@ -160,10 +163,23 @@ export default function ChatbotPage() {
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
       if (lastAssistantMessage) textToPlay = lastAssistantMessage.content;
     }
-    if (!textToPlay && messages.length > 0 && messages[0].role === 'assistant') {
+    if (!textToPlay && messages.length > 0 && messages[0].role === 'assistant') { // Fallback to initial greeting if nothing else
         textToPlay = messages[0].content;
     }
     if (!textToPlay) return;
+
+    // Ensure correct voice is selected for playback
+    const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+    if (voicePreference !== characterExpectedVoicePref) {
+        setVoicePreference(characterExpectedVoicePref);
+        // Give a moment for voice preference to apply before speaking
+        setTimeout(() => {
+            if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay!);
+            else if (isSpeaking && !isPaused) pauseTTS();
+            else if (isPaused) resumeTTS();
+        }, 100);
+        return;
+    }
 
     if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay);
     else if (isSpeaking && !isPaused) pauseTTS();
@@ -175,18 +191,17 @@ export default function ChatbotPage() {
   const handleCharacterChange = (value: ChatbotCharacter) => {
     playClickSound();
     setSelectedCharacter(value);
+    // The useEffect for selectedCharacter will handle voice preference and greeting
   };
 
   const getCurrentCharacterAvatar = () => {
     if (selectedCharacter === 'kazuma') return "/images/kazuma-dp.jpg";
-    // For Megumin, you'll need to add 'megumin-dp.jpg' to public/images
-    // Using Kazuma's as a placeholder with data-ai-hint for now
-    return "/images/kazuma-dp.jpg"; // Placeholder for Megumin
+    return "/images/kazuma-dp.jpg"; // Placeholder for Megumin, needs public/images/megumin-dp.jpg
   };
   
   const getCurrentCharacterAIName = () => selectedCharacter === 'kazuma' ? 'Kazuma AI' : 'Megumin AI';
   const getCurrentCharacterAIDescription = () => selectedCharacter === 'kazuma' ? 'Your pragmatic (and slightly reluctant) AI companion.' : 'The Arch Wizard of EXPLOSION!';
-  const getCurrentCharacterAvatarHint = () => selectedCharacter === 'kazuma' ? 'Kazuma Satou' : 'Megumin';
+  const getCurrentCharacterAvatarHint = () => selectedCharacter === 'kazuma' ? 'Kazuma Satou' : 'Megumin crimson demon';
 
 
   return (
@@ -237,6 +252,3 @@ export default function ChatbotPage() {
     </Card>
   );
 }
-
-
-    
