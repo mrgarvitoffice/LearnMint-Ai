@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Avatar component
 // Lucide icons for UI elements
-import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn } from 'lucide-react';
+import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn, DownloadCloud } from 'lucide-react'; // Added DownloadCloud
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useTheme } from 'next-themes'; // Hook for theme management
 import React from 'react';
@@ -34,6 +34,7 @@ import { useAuth } from '@/contexts/AuthContext'; // Authentication context hook
 import { signOut } from 'firebase/auth'; // Firebase sign-out function
 import { auth } from '@/lib/firebase/config'; // Firebase auth instance
 import { useToast } from '@/hooks/use-toast'; // Hook for displaying toast notifications
+import InstallPWAButton from '@/components/features/pwa/InstallPWAButton'; // Import the InstallPWAButton
 
 // Primary navigation links displayed directly in the header on larger screens
 const primaryLinksSpec: { title: string; href: string }[] = [
@@ -121,7 +122,7 @@ export function Header() {
               <div className="flex items-center border-b border-sidebar-border p-4">
                 <SheetClose asChild>
                   <Link href="/" className="flex items-center gap-2 font-semibold text-lg text-sidebar-primary" onClick={() => playClickSound()}>
-                    <Logo />
+                    <Logo size={28} /> {/* Adjusted size for mobile header logo */}
                     <span>{APP_NAME}</span>
                   </Link>
                 </SheetClose>
@@ -130,7 +131,7 @@ export function Header() {
               <div className="flex-1 overflow-y-auto">
                  <SidebarNav items={NAV_ITEMS} />
               </div>
-              {/* Mobile Sidebar Footer Actions (Theme Toggle, Sign Out/In) */}
+              {/* Mobile Sidebar Footer Actions (Theme Toggle, Sign Out/In, Install App) */}
                <div className="mt-auto border-t border-sidebar-border p-4 space-y-1">
                     <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleThemeToggle}>
@@ -152,6 +153,12 @@ export function Header() {
                         </Button>
                       </SheetClose>
                     )}
+                    <div className="pt-2"> {/* Wrapper for InstallPWAButton to ensure it's also sheet-closed if needed */}
+                        <SheetClose asChild>
+                            {/* InstallPWAButton might manage its own SheetClose or not be part of it if it has complex logic */}
+                            <InstallPWAButton /> 
+                        </SheetClose>
+                    </div>
                 </div>
           </SheetContent>
         </Sheet>
@@ -159,7 +166,7 @@ export function Header() {
 
       {/* Desktop Logo and App Name */}
       <Link href="/" className="mr-4 hidden items-center gap-2 md:flex" onClick={() => playClickSound()}>
-        <Logo />
+        <Logo size={32} /> {/* Standard size for desktop header logo */}
         <span className="font-bold text-xl text-primary">
           {APP_NAME}
         </span>
@@ -177,8 +184,13 @@ export function Header() {
         ))}
       </nav>
 
-      {/* Right-aligned Header Items (More Options Dropdown, User Profile) */}
+      {/* Right-aligned Header Items (More Options Dropdown, User Profile, Install Button) */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
+         {/* Install PWA Button (Desktop) */}
+        <div className="hidden sm:flex">
+          <InstallPWAButton />
+        </div>
+
         {/* "More Options" Dropdown (Desktop) */}
         <div className="hidden md:flex">
           <DropdownMenu>

@@ -1,8 +1,21 @@
-import type { SVGProps } from 'react';
-import { Sparkles } from 'lucide-react';
+import type { ImgHTMLAttributes } from 'react';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
-export function Logo(props: SVGProps<SVGSVGElement>) {
+interface LogoProps extends ImgHTMLAttributes<HTMLImageElement> {
+  size?: number;
+}
+
+export function Logo({ size = 24, className, ...props }: LogoProps) {
   return (
-    <Sparkles className="h-6 w-6 text-primary" {...props} />
+    <Image
+      src="/icons/icon-192x192.png" // Using the 192x192 PNG as the primary logo image
+      alt="LearnMint Logo"
+      width={size}
+      height={size}
+      className={cn("rounded-sm", className)} // Added rounded-sm for a slightly softer look
+      priority // Ensures logo loads quickly, good for LCP
+      {...props}
+    />
   );
 }

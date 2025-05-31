@@ -28,9 +28,20 @@ const geistMono = Geist_Mono({
 // Defines metadata for SEO and PWA (Progressive Web App) features.
 export const metadata: Metadata = {
   title: 'LearnMint - AI Powered Learning', // Default title for all pages
-  description: 'AI-powered learning assistant for notes, quizzes, flashcards, and more.', // Default description
+  description: 'AI-powered learning assistant for notes, quizzes, flashcards, and more by MrGarvit.',
   manifest: '/manifest.json', // Path to the PWA manifest file
-  themeColor: '#00FFFF', // Simplified to a single color string for diagnostics
+  icons: {
+    icon: [
+      { url: '/icons/icon-192x192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icons/icon-512x512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: '/icons/icon-192x192.png', // Apple touch icon
+    shortcut: '/icons/icon-192x192.png', // General shortcut icon
+  },
+  themeColor: [ // Handles theme color for light and dark modes
+    { media: '(prefers-color-scheme: light)', color: 'hsl(0 0% 100%)' }, // Light theme (white)
+    { media: '(prefers-color-scheme: dark)', color: 'hsl(220 30% 10%)' }  // Dark theme (dark blue/charcoal)
+  ],
 };
 
 /**
@@ -49,8 +60,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // HTML element with language and suppressed hydration warning (common for Next.js + ThemeProvider)
-    // Next.js will automatically generate the <head> tag and populate it from the metadata object.
     <html lang="en" suppressHydrationWarning={true}>
       {/* No explicit <head> tag here; Next.js manages it via the metadata object. */}
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
