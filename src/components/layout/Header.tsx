@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Avatar component
 // Lucide icons for UI elements
-import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn } from 'lucide-react'; // Removed DownloadCloud, InstallPWAButton handles its own icon
+import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useTheme } from 'next-themes'; // Hook for theme management
 import React from 'react';
@@ -152,8 +152,7 @@ export function Header() {
                         </Button>
                       </SheetClose>
                     )}
-                    {/* InstallPWAButton will handle its own SheetClose if necessary or be independent */}
-                    <div className="w-full"> {/* Wrapper to allow InstallPWAButton to take full width if needed */}
+                    <div className="w-full">
                         <InstallPWAButton />
                     </div>
                 </div>
@@ -183,11 +182,11 @@ export function Header() {
 
       {/* Right-aligned Header Items */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <div className="hidden sm:flex"> {/* Install button on desktop */}
-          <InstallPWAButton />
-        </div>
+        {/* InstallPWAButton now attempts to render on all screen sizes here */}
+        <InstallPWAButton />
 
-        <div className="hidden md:flex"> {/* "More Options" Dropdown on desktop */}
+        {/* "More Options" Dropdown on desktop */}
+        <div className="hidden md:flex">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => playClickSound()}>
@@ -281,5 +280,3 @@ export function Header() {
     </header>
   );
 }
-
-    

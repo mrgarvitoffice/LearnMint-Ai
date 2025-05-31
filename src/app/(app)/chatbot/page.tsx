@@ -41,7 +41,8 @@ export default function ChatbotPage() {
     supportedVoices,
     selectedVoice,
     setVoicePreference,
-    voicePreference
+    voicePreference,
+    utteranceRef // Added from previous for potential check
   } = useTTS();
 
   const pageTitleSpokenRef = useRef(false);
@@ -51,24 +52,30 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma');
+      // Initial voice preference will be set by character selection effect
+      // setVoicePreference('luma'); // Defaulting to luma initially might be okay, or let character effect handle
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && voicePreference === 'luma' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE_CHATBOT);
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      // Only speak page title if a character-specific voice isn't about to speak a greeting
+      const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+      if (voicePreference !== characterExpectedVoicePref || !currentCharacterGreeting) {
+         speak(PAGE_TITLE_CHATBOT);
+      }
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak, currentCharacterGreeting, selectedCharacter]);
 
   // Effect to set character voice preference and greeting text
   useEffect(() => {
-    cancelTTS();
-    initialGreetingSpokenRef.current = false; 
+    cancelTTS(); // Stop any ongoing speech when character changes
+    initialGreetingSpokenRef.current = false;
+    pageTitleSpokenRef.current = true; // Assume character greeting will take precedence over page title
     let greetingText = "";
     let characterVoicePref: 'kai' | 'luma' | null = null;
 
@@ -81,7 +88,7 @@ export default function ChatbotPage() {
     }
     
     setVoicePreference(characterVoicePref);
-    setCurrentCharacterGreeting(greetingText); // Set the greeting to be spoken
+    setCurrentCharacterGreeting(greetingText);
 
     const initialGreetingMessage: ChatMessageType = {
       id: `${selectedCharacter}-initial-greeting-${Date.now()}`, role: 'assistant',
@@ -100,9 +107,20 @@ export default function ChatbotPage() {
       
       console.log(`Chatbot: Attempting to speak greeting for ${selectedCharacter} with voice ${selectedVoice.name}`);
       currentSpokenMessageRef.current = currentCharacterGreeting;
-      speak(currentCharacterGreeting);
+      
+      // Defer the speak call slightly. This *might* help with "not-allowed" in some cases,
+      // but it's not a guaranteed fix for strict browser autoplay policies.
+      setTimeout(() => {
+        // Check if still relevant (e.g., user hasn't quickly switched characters again)
+        // and no other speech has been queued by useTTS itself.
+        // utteranceRef is not directly exposed by the hook, so we rely on isSpeaking/isPaused.
+        if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'kazuma' : 'megumin') && !isSpeaking && !isPaused) {
+            speak(currentCharacterGreeting);
+        } else {
+            console.log("Chatbot: Speak call for greeting deferred, but conditions changed or speech already active. Skipping.");
+        }
+      }, 150); // Slightly increased delay
       initialGreetingSpokenRef.current = true;
-      // setCurrentCharacterGreeting(null); // Clear after speaking to prevent re-speaking on other effect triggers
     }
   }, [currentCharacterGreeting, selectedVoice, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
 
@@ -116,7 +134,7 @@ export default function ChatbotPage() {
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS(); // Stop any current TTS before sending new message
+    cancelTTS(); 
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicatorMessage = selectedCharacter === 'kazuma'
@@ -163,16 +181,14 @@ export default function ChatbotPage() {
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
       if (lastAssistantMessage) textToPlay = lastAssistantMessage.content;
     }
-    if (!textToPlay && messages.length > 0 && messages[0].role === 'assistant') { // Fallback to initial greeting if nothing else
+    if (!textToPlay && messages.length > 0 && messages[0].role === 'assistant') { 
         textToPlay = messages[0].content;
     }
     if (!textToPlay) return;
 
-    // Ensure correct voice is selected for playback
     const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
     if (voicePreference !== characterExpectedVoicePref) {
         setVoicePreference(characterExpectedVoicePref);
-        // Give a moment for voice preference to apply before speaking
         setTimeout(() => {
             if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay!);
             else if (isSpeaking && !isPaused) pauseTTS();
@@ -191,12 +207,11 @@ export default function ChatbotPage() {
   const handleCharacterChange = (value: ChatbotCharacter) => {
     playClickSound();
     setSelectedCharacter(value);
-    // The useEffect for selectedCharacter will handle voice preference and greeting
   };
 
   const getCurrentCharacterAvatar = () => {
     if (selectedCharacter === 'kazuma') return "/images/kazuma-dp.jpg";
-    return "/images/kazuma-dp.jpg"; // Placeholder for Megumin, needs public/images/megumin-dp.jpg
+    return "/images/megumin-dp.jpg"; // Ensure megumin-dp.jpg is in public/images
   };
   
   const getCurrentCharacterAIName = () => selectedCharacter === 'kazuma' ? 'Kazuma AI' : 'Megumin AI';
