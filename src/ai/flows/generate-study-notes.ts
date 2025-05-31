@@ -35,6 +35,8 @@ Please generate study notes on this topic with the following characteristics:
     *   Write in an **enthusiastic, conversational, and highly engaging tone**, as if you're an excited teacher explaining the concepts.
     *   Use **relevant emojis** (like 🚀, ✨, 🤔, 🧠, 💪, ⚡, 🕰️, 🌟, 🌱, 🐾, 🥳, etc.) to add visual appeal and thematic cues next to headings or key points where appropriate. Make it fun!
     *   Use catchy or question-based phrases for section introductions or summaries.
+    *   Make key enthusiastic statements really **pop** and stand out using bolding or other Markdown emphasis! For example:
+        > **A cell is the smallest structural and functional unit of an organism. Think of it as the tiny, self-contained powerhouse of life! It's amazing what these little guys can do!** 🤩
 
 2.  **Structure & Formatting (Markdown):**
     *   Start with a brief, **exciting introductory paragraph** that hooks the reader.
@@ -166,3 +168,5 @@ export async function generateStudyNotes(input: GenerateStudyNotesInput): Promis
     throw new Error(clientErrorMessage);
   }
 }
+
+    
