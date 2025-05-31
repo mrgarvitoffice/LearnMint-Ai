@@ -38,16 +38,10 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
     console.log(`[AI Flow - Image] Attempting to generate image for prompt: "${input.prompt.substring(0, 50)}..."`);
     try {
       const { media, finishReason, text } = await aiForImages.generate({
-        // Ensure this model is correct and supports image generation for your key.
-        // gemini-2.0-flash-exp is an experimental model that was mentioned to support this.
         model: 'googleai/gemini-2.0-flash-exp', 
         prompt: input.prompt,
         config: {
-          // IMPORTANT: Image generation requires 'IMAGE' in responseModalities.
-          // Some models/APIs require TEXT as well, even if you only want the image.
           responseModalities: ['TEXT', 'IMAGE'], 
-          // Optional: Adjust temperature for creativity. Lower might be better for specific diagrams.
-          // temperature: 0.4, 
         },
       });
 
@@ -56,12 +50,13 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
          return { imageDataUri: null, error: `Image generation failed or was blocked. Reason: ${finishReason}. Detail: ${text || 'No additional detail.'}` };
       }
       
-      if (media && media.url) {
+      if (media && media.url && media.url.startsWith('data:image')) {
         console.log(`[AI Flow - Image] Successfully generated image for prompt: "${input.prompt.substring(0, 50)}...". URI length: ${media.url.length}`);
         return { imageDataUri: media.url, error: undefined };
       } else {
-        console.warn('[AI Flow - Image] Image generation succeeded according to finishReason, but no media URL was returned. LLM text response:', text);
-        return { imageDataUri: null, error: `Image generation did not return an image. Detail: ${text || 'No image data received.'}` };
+        const reason = (media && media.url) ? `Invalid image data URL received (does not start with 'data:image'): ${media.url.substring(0,100)}...` : 'No media URL was returned.';
+        console.warn(`[AI Flow - Image] Image generation did not produce a valid data URI. ${reason}. LLM text response:`, text);
+        return { imageDataUri: null, error: `Image generation did not return a valid image data URI. ${reason}. Detail: ${text || 'No image data received.'}` };
       }
     } catch (error: any) {
       console.error(`[AI Flow Error - Image] Error generating image for prompt "${input.prompt.substring(0,50)}...":`, error);
@@ -69,14 +64,17 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
       if (error.message) {
         errorMessage = error.message;
         if (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY_IMAGES")) {
-          errorMessage = "Image Generation: API key issue. Check GOOGLE_API_KEY_IMAGES and billing.";
-        } else if (error.message.includes("model") && error.message.includes("does not support image modality")) {
-            errorMessage = "Image Generation: The configured model (gemini-2.0-flash-exp or fallback) does not support image generation with the current API key or settings.";
+          errorMessage = "Image Generation: API key issue. Check GOOGLE_API_KEY_IMAGES (and its fallbacks) and ensure billing is enabled and the Generative Language API is active for the project associated with the key.";
+        } else if (error.message.includes("model") && (error.message.includes("does not support image modality") || error.message.includes("not found"))) {
+            errorMessage = "Image Generation: The configured model (gemini-2.0-flash-exp) does not support image generation or was not found with the current API key/settings. Ensure the key has access to this model.";
         } else if (error.message.includes("quota")) {
             errorMessage = "Image Generation: Quota exceeded. Please check your Google Cloud project quotas for Generative Language API.";
+        } else if (error.message.includes("billing")) {
+             errorMessage = "Image Generation: Billing issue. Please ensure billing is enabled for the Google Cloud project associated with the API key being used for images.";
         }
       }
       return { imageDataUri: null, error: errorMessage };
     }
   }
 );
+
