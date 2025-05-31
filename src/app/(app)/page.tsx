@@ -55,7 +55,7 @@ export default function DashboardPage() {
   const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
-  const { user } = useAuth(); // Get user from AuthContext
+  const { user } = useAuth(); 
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
@@ -66,7 +66,9 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    if (user && user.email) { // Or user.displayName
+    if (user && user.displayName) {
+      setPageTitle(`Welcome back, ${user.displayName}!`);
+    } else if (user && user.email) { 
       setPageTitle(`Welcome back, ${user.email.split('@')[0]}!`);
     } else {
       setPageTitle(PAGE_TITLE_BASE);
@@ -129,7 +131,7 @@ export default function DashboardPage() {
 
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
-    router.push(`/study?topic=${encodeURIComponent(topic)}`); // Updated to /study page
+    router.push(`/study?topic=${encodeURIComponent(topic)}`);
   }
 
   return (
@@ -256,8 +258,8 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
       
-      <div className="text-center text-sm text-muted-foreground mt-12 py-4">
-        Made by - MrGarvit
+      <div className="text-center text-sm text-muted-foreground mt-12 py-4 border-t border-border/50">
+        Made with <Sparkles className="inline-block h-4 w-4 text-accent" /> by MrGarvit
       </div>
     </div>
   );
