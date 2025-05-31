@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation'; 
+import { usePathname, useRouter } from 'next/navigation';
 import { APP_NAME, NAV_ITEMS } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
@@ -21,16 +21,16 @@ import {
   SheetClose,
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutGrid, PanelLeft, Palette, LogOut, UserPlus, type LucideIcon, UserCircle } from 'lucide-react';
+import { LayoutGrid, PanelLeft, Palette, LogOut, UserPlus, type LucideIcon, UserCircle, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import React from 'react';
 import { SidebarNav } from './SidebarNav';
 import { useSound } from '@/hooks/useSound';
-import { useAuth } from '@/contexts/AuthContext'; 
-import { signOut } from 'firebase/auth'; 
-import { auth } from '@/lib/firebase/config'; 
-import { useToast } from '@/hooks/use-toast'; 
+import { useAuth } from '@/contexts/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+import { useToast } from '@/hooks/use-toast';
 
 const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
@@ -50,7 +50,7 @@ export function Header() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const handleThemeToggle = () => {
@@ -63,12 +63,17 @@ export function Header() {
     try {
       await signOut(auth);
       toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
-      router.push('/sign-in'); 
+      router.push('/sign-in');
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
     }
   };
+
+  const handleSignInRedirect = () => {
+    playClickSound();
+    router.push('/sign-in');
+  }
 
   const handleDropdownItemClick = (action?: () => void) => {
     playClickSound();
@@ -103,10 +108,17 @@ export function Header() {
                             <Palette className="h-5 w-5" /> Toggle Theme
                         </Button>
                     </SheetClose>
-                    {user && (
+                    {user && !user.isAnonymous && (
                       <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignOut}>
                             <LogOut className="h-5 w-5" /> Sign Out
+                        </Button>
+                      </SheetClose>
+                    )}
+                    {user && user.isAnonymous && (
+                       <SheetClose asChild>
+                        <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignInRedirect}>
+                            <LogIn className="h-5 w-5" /> Sign In / Sign Up
                         </Button>
                       </SheetClose>
                     )}
@@ -187,19 +199,31 @@ export function Header() {
                   </Avatar>
                   <div className="flex flex-col space-y-0.5">
                     <p className="text-sm font-medium leading-none truncate max-w-[150px]">
-                      {user.displayName || user.email?.split('@')[0] || "User"}
+                      {user.isAnonymous ? "Guest User" : (user.displayName || user.email?.split('@')[0] || "User")}
                     </p>
-                    <p className="text-xs leading-none text-muted-foreground truncate max-w-[150px]">
-                      {user.email || "Authenticated User"}
-                    </p>
+                    {!user.isAnonymous && user.email && (
+                      <p className="text-xs leading-none text-muted-foreground truncate max-w-[150px]">
+                        {user.email}
+                      </p>
+                    )}
+                     {user.isAnonymous && (
+                       <p className="text-xs leading-none text-muted-foreground">Anonymous Session</p>
+                    )}
                   </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </DropdownMenuItem>
+              {user.isAnonymous ? (
+                <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignInRedirect)} className="text-primary focus:bg-accent focus:text-accent-foreground">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In / Sign Up
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
