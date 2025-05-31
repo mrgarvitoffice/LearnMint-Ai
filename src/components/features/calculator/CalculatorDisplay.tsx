@@ -1,6 +1,7 @@
+
 interface CalculatorDisplayProps {
-  mainDisplay: string;
-  historyDisplay?: string;
+  mainDisplay: string; // This will show the current expression or result
+  historyDisplay?: string; // This will show the previous calculation or mode
 }
 
 export function CalculatorDisplay({ mainDisplay, historyDisplay }: CalculatorDisplayProps) {
@@ -11,9 +12,11 @@ export function CalculatorDisplay({ mainDisplay, historyDisplay }: CalculatorDis
           {historyDisplay}
         </div>
       )}
-      <div className="text-3xl md:text-4xl font-mono font-bold text-foreground break-all" title={mainDisplay}>
+      <div className="text-3xl md:text-4xl font-mono font-bold text-foreground break-all" title={mainDisplay || "0"}>
         {mainDisplay || "0"}
       </div>
     </div>
   );
 }
+
+    

@@ -32,21 +32,24 @@ const calculatorButtonsConfig: CalculatorButtonConfig[] = [
 ];
 
 const scientificButtonsConfig: CalculatorButtonConfig[] = [
-  { value: 'sin', label: 'sin', type: 'scientific', action: 'sin' }, { value: 'cos', label: 'cos', type: 'scientific', action: 'cos' },
-  { value: 'tan', label: 'tan', type: 'scientific', action: 'tan' }, { value: 'log', label: 'log', type: 'scientific', action: 'log10' }, 
-  { value: 'ln', label: 'ln', type: 'scientific', action: 'log' }, { value: 'sqrt', label: '√', type: 'scientific', action: 'sqrt' },
+  { value: 'sin(', label: 'sin', type: 'scientific', action: 'sin' }, { value: 'cos(', label: 'cos', type: 'scientific', action: 'cos' },
+  { value: 'tan(', label: 'tan', type: 'scientific', action: 'tan' }, { value: 'log10(', label: 'log', type: 'scientific', action: 'log10' }, 
+  { value: 'log(', label: 'ln', type: 'scientific', action: 'log' }, { value: 'sqrt(', label: '√', type: 'scientific', action: 'sqrt' },
   { value: '(', label: '(', type: 'operator' }, { value: ')', label: ')', type: 'operator' },
-  { value: 'x^y', label: 'xʸ', type: 'operator', value: '**' }, { value: 'PI', label: 'π', type: 'digit', value: Math.PI.toString()},
-  { value: 'E', label: 'e', type: 'digit', value: Math.E.toString()}, { value: 'deg', label: 'DEG', type: 'action', action: 'toggleMode' }, 
+  { value: '**', label: 'xʸ', type: 'operator', }, { value: 'Math.PI', label: 'π', type: 'digit', action: 'pi' }, // action 'pi' for visual 'π'
+  { value: 'Math.E', label: 'e', type: 'digit', action: 'e' }, { value: 'deg', label: 'DEG', type: 'action', action: 'toggleMode' }, 
 ];
 
 
 export default function CalculatorPage() {
-  const [mainDisplay, setMainDisplay] = useState('');
-  const [currentExpression, setCurrentExpression] = useState('');
-  const [historyDisplay, setHistoryDisplay] = useState('');
+  const [visualExpression, setVisualExpression] = useState(''); // Main display, e.g., "2 × sin(30)"
+  const [internalExpression, setInternalExpression] = useState(''); // For eval, e.g., "2 * Math.sin( (30*Math.PI/180) )"
+  const [previousCalculation, setPreviousCalculation] = useState(''); // Small top display, "expr = result"
+  
   const [calculationHistory, setCalculationHistory] = useState<{ expression: string, result: string }[]>([]);
   const [isRadians, setIsRadians] = useState(true); 
+  const [justEvaluated, setJustEvaluated] = useState(false);
+
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
   const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
@@ -88,78 +91,120 @@ export default function CalculatorPage() {
     }
   }, [calculationHistory]);
 
+  const toRadians = (degrees: number) => degrees * (Math.PI / 180);
 
-  const evaluateExpression = (expr: string): string => {
+  const evaluateInternalExpression = (expr: string): string => {
     try {
-      const sanitizedExpr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+      // Pre-process for trig functions if in DEG mode
+      let exprToEval = expr;
+      if (!isRadians) {
+        exprToEval = exprToEval.replace(/Math\.sin\(([^)]+)\)/g, (_, p1) => `Math.sin(${toRadians(eval(p1))})`);
+        exprToEval = exprToEval.replace(/Math\.cos\(([^)]+)\)/g, (_, p1) => `Math.cos(${toRadians(eval(p1))})`);
+        exprToEval = exprToEval.replace(/Math\.tan\(([^)]+)\)/g, (_, p1) => `Math.tan(${toRadians(eval(p1))})`);
+      }
       // eslint-disable-next-line no-eval
-      let result = eval(sanitizedExpr);
-      if (typeof result === 'number' && !Number.isFinite(result)) return 'Error';
-      return String(Number(result.toFixed(10))); 
-    } catch (error) { return 'Error'; }
+      let result = eval(exprToEval);
+      if (typeof result === 'number' && !Number.isFinite(result)) return 'Error: Div by Zero or Invalid Op';
+      if (typeof result === 'number' && result.toString().length > 15) return result.toPrecision(10);
+      return String(result);
+    } catch (error) { return 'Error: Invalid Expression'; }
   };
 
   const handleButtonClick = (value: string, type: CalculatorButtonConfig['type'], action?: string) => {
     playSound();
-    if (mainDisplay === 'Error') { setMainDisplay(''); setCurrentExpression(''); setHistoryDisplay(''); }
+    if (visualExpression.startsWith('Error')) {
+      setVisualExpression(''); setInternalExpression(''); setPreviousCalculation('');
+    }
+    if (justEvaluated && type !== 'operator' && type !== 'equals') {
+        setVisualExpression(''); setInternalExpression(''); 
+    }
+    setJustEvaluated(false);
+
 
     switch (type) {
       case 'digit':
-        if (value === Math.PI.toString() || value === Math.E.toString()) {
-          setMainDisplay(prev => prev + parseFloat(value).toFixed(8)); setCurrentExpression(prev => prev + parseFloat(value).toFixed(8));
-        } else { setMainDisplay(prev => prev + value); setCurrentExpression(prev => prev + value); }
+        if (action === 'pi') {
+          setVisualExpression(prev => prev + 'π'); setInternalExpression(prev => prev + 'Math.PI');
+        } else if (action === 'e') {
+          setVisualExpression(prev => prev + 'e'); setInternalExpression(prev => prev + 'Math.E');
+        } else {
+          setVisualExpression(prev => prev + value); setInternalExpression(prev => prev + value);
+        }
         break;
       case 'decimal':
-        if (!mainDisplay.includes('.')) { setMainDisplay(prev => prev + '.'); setCurrentExpression(prev => prev + '.');}
+        // Basic check: only add if no decimal in current last number segment
+        const segments = visualExpression.split(/[\+\-\×\÷\(\)\^\s]/);
+        const lastSegment = segments[segments.length - 1];
+        if (!lastSegment.includes('.')) {
+            setVisualExpression(prev => prev + '.'); setInternalExpression(prev => prev + '.');
+        }
         break;
       case 'operator':
-        if(currentExpression.endsWith('(') && ['+', '-', '*', '/'].includes(value)) return;
-        setCurrentExpression(prev => prev + value); setHistoryDisplay(prev => prev + mainDisplay + ` ${value === '**' ? '^' : value} `); setMainDisplay('');
+        const lastCharVisual = visualExpression.slice(-1);
+        const isLastCharOp = ['+', '−', '×', '÷', '^'].includes(lastCharVisual);
+        if (isLastCharOp && value !== '(' && value !== ')') { // Replace last operator unless it's parenthesis
+             setVisualExpression(prev => prev.slice(0, -1) + (calculatorButtonsConfig.find(b=>b.value===value)?.label || value) );
+             setInternalExpression(prev => prev.slice(0, -1) + value);
+        } else {
+            setVisualExpression(prev => prev + (calculatorButtonsConfig.find(b=>b.value===value)?.label || value));
+            setInternalExpression(prev => prev + value);
+        }
         break;
       case 'equals':
-        if (currentExpression) {
-          const finalExpression = currentExpression; const result = evaluateExpression(finalExpression);
-          setMainDisplay(result); setHistoryDisplay(prev => prev + mainDisplay + ' =');
-          if (result !== 'Error') setCalculationHistory(prev => [{expression: finalExpression.replace(/\*/g, '×').replace(/\//g, '÷'), result}, ...prev.slice(0,2)]);
-          setCurrentExpression(result === 'Error' ? '' : result);
+        if (internalExpression) {
+          const result = evaluateInternalExpression(internalExpression);
+          setPreviousCalculation(visualExpression + (result.startsWith('Error') ? '' : ' = ' + result));
+          setVisualExpression(result); 
+          setInternalExpression(result.startsWith('Error') ? '' : result);
+          if (!result.startsWith('Error')) {
+             setCalculationHistory(prev => [{expression: visualExpression, result}, ...prev.slice(0,2)]);
+             setJustEvaluated(true);
+          }
         }
         break;
       case 'action': performAction(action || value); break;
-      case 'scientific': performScientificAction(action || value); break;
+      case 'scientific': // e.g. value = "sin(", action = "sin"
+        setVisualExpression(prev => prev + (scientificButtonsConfig.find(b=>b.action===action)?.label || action) + '(');
+        if (action === 'log10') setInternalExpression(prev => prev + 'Math.log10(');
+        else if (action === 'log') setInternalExpression(prev => prev + 'Math.log(');
+        else if (action === 'sqrt') setInternalExpression(prev => prev + 'Math.sqrt(');
+        else setInternalExpression(prev => prev + `Math.${action}(`); // For sin, cos, tan
+        break;
     }
   };
 
   const performAction = (action: string) => {
     switch (action) {
-      case 'clear': setMainDisplay(''); setCurrentExpression(''); setHistoryDisplay(''); break;
-      case 'toggleSign': if (mainDisplay) setMainDisplay((parseFloat(mainDisplay) * -1).toString()); break;
-      case 'percentage': if (mainDisplay) { const pv = (parseFloat(mainDisplay) / 100).toString(); setMainDisplay(pv); setCurrentExpression(pv); } break;
-      case 'toggleMode': setIsRadians(prev => !prev); setHistoryDisplay(isRadians ? 'Mode: DEG' : 'Mode: RAD'); setTimeout(() => setHistoryDisplay(prev => prev.replace(/Mode: (DEG|RAD)/, '')), 1000); break;
+      case 'clear': 
+        setVisualExpression(''); setInternalExpression(''); setPreviousCalculation(''); setJustEvaluated(false); 
+        break;
+      case 'toggleSign': 
+        // Only operates if current visualExpression is a plain number
+        if (visualExpression && !isNaN(parseFloat(visualExpression)) && /^[-\+]?\d*\.?\d+$/.test(visualExpression)) {
+            const negated = (parseFloat(visualExpression) * -1).toString();
+            setVisualExpression(negated); setInternalExpression(negated);
+        } // else: complex expression, do nothing or decide on behavior for last number
+        break;
+      case 'percentage': 
+        if (visualExpression && !isNaN(parseFloat(visualExpression)) && /^[-\+]?\d*\.?\d+$/.test(visualExpression)) {
+            const percentVal = (parseFloat(visualExpression) / 100).toString();
+            setVisualExpression(percentVal); setInternalExpression(percentVal);
+        } // else: complex expression, do nothing
+        break;
+      case 'toggleMode': 
+        setIsRadians(prev => !prev); 
+        setPreviousCalculation(isRadians ? 'Mode: DEG' : 'Mode: RAD'); 
+        setTimeout(() => setPreviousCalculation(prev => prev.replace(/Mode: (DEG|RAD)\s*/, '')), 1500); 
+        break;
     }
   };
-  
-  const performScientificAction = (func: string) => {
-    if (mainDisplay && !isNaN(parseFloat(mainDisplay))) {
-      let val = parseFloat(mainDisplay); let result: number | undefined;
-      switch (func) {
-        case 'sin': result = isRadians ? Math.sin(val) : Math.sin(val * Math.PI / 180); break;
-        case 'cos': result = isRadians ? Math.cos(val) : Math.cos(val * Math.PI / 180); break;
-        case 'tan': result = isRadians ? Math.tan(val) : Math.tan(val * Math.PI / 180); break;
-        case 'log10': result = Math.log10(val); break; case 'log': result = Math.log(val); break; 
-        case 'sqrt': result = Math.sqrt(val); break;
-        default: break;
-      }
-      if (result !== undefined) {
-        const resultStr = String(Number(result.toFixed(10))); setMainDisplay(resultStr); setCurrentExpression(resultStr); setHistoryDisplay(`${func}(${val}) =`);
-      } else { setMainDisplay('Error'); setCurrentExpression(''); }
-    } else if (['sqrt', 'sin', 'cos', 'tan', 'log10', 'log'].includes(func)) {
-        setCurrentExpression(prev => prev + `Math.${func}(`); setHistoryDisplay(prev => prev + `${func}(`); setMainDisplay('');
-    }
-  };
-  
+    
   const useHistoryItem = (item: { expression: string, result: string }) => {
-    playSound(); setMainDisplay(item.result); setCurrentExpression(item.result);
-    setHistoryDisplay(`${item.expression.replace(/\*/g, '×').replace(/\//g, '÷')} = ${item.result}`);
+    playSound(); 
+    setVisualExpression(item.result); 
+    setInternalExpression(item.result);
+    setPreviousCalculation(`${item.expression} = ${item.result}`);
+    setJustEvaluated(true);
   };
   const deleteHistoryItem = (index: number) => { playSound(); setCalculationHistory(prev => prev.filter((_, i) => i !== index)); };
   const clearAllHistory = () => { playSound(); setCalculationHistory([]); }
@@ -183,15 +228,18 @@ export default function CalculatorPage() {
                 <TabsTrigger value="calculator">Basic</TabsTrigger>
                 <TabsTrigger value="scientific">Scientific</TabsTrigger>
               </TabsList>
-              <CalculatorDisplay mainDisplay={mainDisplay} historyDisplay={historyDisplay + (isRadians ? ' RAD' : ' DEG')} />
+              <CalculatorDisplay 
+                mainDisplay={visualExpression} 
+                historyDisplay={previousCalculation + (visualExpression ? '' : (isRadians ? ' RAD' : ' DEG'))} 
+              />
               <TabsContent value="calculator" className="mt-3">
                 <div className="grid grid-cols-4 gap-2">
-                  {calculatorButtonsConfig.map(btn => <CalculatorButton key={btn.value} config={btn} onClick={handleButtonClick} />)}
+                  {calculatorButtonsConfig.map(btn => <CalculatorButton key={btn.label} config={btn} onClick={handleButtonClick} />)}
                 </div>
               </TabsContent>
               <TabsContent value="scientific" className="mt-3">
                 <div className="grid grid-cols-4 gap-2">
-                  {scientificButtonsConfig.map(btn => <CalculatorButton key={btn.value} config={btn} onClick={handleButtonClick} />)}
+                  {scientificButtonsConfig.map(btn => <CalculatorButton key={btn.label} config={btn} onClick={handleButtonClick} />)}
                 </div>
               </TabsContent>
             </Tabs>
@@ -208,7 +256,7 @@ export default function CalculatorPage() {
                   {calculationHistory.map((item, index) => (
                     <li key={index} className="flex justify-between items-center p-1.5 border rounded-md bg-muted/40 text-xs hover:bg-muted/60">
                       <button onClick={() => useHistoryItem(item)} className="truncate text-left hover:text-primary flex-1" title={`Use: ${item.expression} = ${item.result}`}>
-                        <span className="text-muted-foreground/80">{item.expression.replace(/\*/g, '×').replace(/\//g, '÷')} = </span> 
+                        <span className="text-muted-foreground/80">{item.expression} = </span> 
                         <span className="font-semibold">{item.result}</span>
                       </button>
                       <div className="flex gap-0.5">
@@ -229,3 +277,5 @@ export default function CalculatorPage() {
     </div>
   );
 }
+
+    

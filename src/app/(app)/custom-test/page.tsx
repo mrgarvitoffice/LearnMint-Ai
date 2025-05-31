@@ -318,13 +318,21 @@ export default function CustomTestPage() {
     } finally { setIsLoading(false); generatingMessageSpokenRef.current = false; }
   };
 
-  const handleAnswerSelect = (answer: string) => {
+  const handleAnswerSelect = (answer: string) => { // Used for MCQ
     playClickSound();
-    if (!testState || testState.showResults) return;
+    if (!testState || testState.showResults || testState.isAutoSubmitting) return;
     const newUserAnswers = [...testState.userAnswers];
     newUserAnswers[testState.currentQuestionIndex] = answer;
     setTestState({ ...testState, userAnswers: newUserAnswers });
   };
+
+  const handleShortAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!testState || testState.showResults || testState.isAutoSubmitting) return;
+    const newUserAnswers = [...testState.userAnswers];
+    newUserAnswers[testState.currentQuestionIndex] = e.target.value;
+    setTestState(prev => prev ? { ...prev, userAnswers: newUserAnswers } : null);
+  };
+
 
   const handlePrevQuestion = () => {
     playClickSound();
@@ -338,7 +346,7 @@ export default function CustomTestPage() {
   };
 
   const handleRetakeTest = () => {
-    playActionSound(); // Use action sound for major action
+    playActionSound(); 
     if (!testState) return;
     const originalSettings = testState.settings;
     setIsLoading(true); setTestState(null);
@@ -375,7 +383,7 @@ export default function CustomTestPage() {
   };
 
   const handleNewTest = () => {
-    playActionSound(); // Use action sound for major action
+    playActionSound(); 
     setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
     pageTitleSpokenRef.current = false; resultAnnouncementSpokenRef.current = false;
     generatingMessageSpokenRef.current = false;
@@ -560,6 +568,8 @@ export default function CustomTestPage() {
       </div>
     );
   }
+  
+  const currentAnswerForQuestion = testState?.userAnswers[testState.currentQuestionIndex];
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -579,9 +589,44 @@ export default function CustomTestPage() {
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
-              <RadioGroup onValueChange={(value) => { playClickSound(); handleAnswerSelect(value); }} value={testState.userAnswers[testState.currentQuestionIndex]} className="space-y-3">
-                {currentQuestionData.options?.map((option, i) => (<Label key={i} htmlFor={`option-${i}-${testState.currentQuestionIndex}`} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer transition-all"><RadioGroupItem value={option} id={`option-${i}-${testState.currentQuestionIndex}`} /><span className="text-base">{option}</span></Label>))}
-              </RadioGroup>
+              
+              {currentQuestionData.type === 'short-answer' ? (
+                <Input
+                  value={currentAnswerForQuestion || ''}
+                  onChange={handleShortAnswerChange}
+                  disabled={testState.showResults || testState.isAutoSubmitting}
+                  placeholder="Type your answer here"
+                  className="text-base"
+                  aria-label="Short answer input"
+                />
+              ) : currentQuestionData.options ? (
+                <RadioGroup 
+                  onValueChange={handleAnswerSelect} 
+                  value={currentAnswerForQuestion} 
+                  className="space-y-3"
+                >
+                  {currentQuestionData.options.map((option, i) => (
+                    <Label 
+                      key={i} 
+                      htmlFor={`option-${i}-${testState.currentQuestionIndex}`}
+                      className={cn(
+                        "flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted cursor-pointer transition-all",
+                        currentAnswerForQuestion === option && "bg-primary/20 border-primary",
+                        (testState.showResults || testState.isAutoSubmitting) && "cursor-not-allowed opacity-70"
+                      )}
+                    >
+                      <RadioGroupItem 
+                        value={option} 
+                        id={`option-${i}-${testState.currentQuestionIndex}`}
+                        disabled={testState.showResults || testState.isAutoSubmitting}
+                      />
+                      <span className="text-base">{option}</span>
+                    </Label>
+                  ))}
+                </RadioGroup>
+              ) : (
+                <p className="text-muted-foreground">Question options not available.</p>
+              )}
             </CardContent>
             <CardFooter className="flex justify-between p-6 border-t">
               <Button variant="outline" onClick={handlePrevQuestion} disabled={testState.currentQuestionIndex === 0 || testState.isAutoSubmitting}>Previous</Button>
@@ -620,3 +665,5 @@ export default function CustomTestPage() {
     </div>
   );
 }
+
+    
