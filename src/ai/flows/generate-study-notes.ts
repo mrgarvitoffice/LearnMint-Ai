@@ -42,7 +42,7 @@ Please generate study notes on this topic with the following characteristics:
     *   Start with a brief, **exciting introductory paragraph** that hooks the reader.
     *   Employ a clear hierarchy of headings:
         *   A **main, attention-grabbing title** for the overall topic (using '# Main Topic Title 🚀✨'). This should be the largest and most prominent.
-        *   **Prominent major section headings** (using '## Key Concept Unveiled! 🤔' or '## Another Big Section! 💡'). Make these visually distinct and larger than sub-headings.
+        *   **Prominent major section headings** (using '## Key Concept Unveiled! 🤔' or '## Another Big Section! 💡'). Make these visually distinct and larger than major section headings.
         *   **Clearly distinct sub-headings** for sub-topics (using '### Diving Deeper: ...' or '#### Specific Examples:'). These should be smaller than major section headings, creating a "big text, small text" visual flow.
     *   Provide detailed information in a **point-wise manner** using bullet points ('- ') or numbered lists ('1. ').
     *   Pay meticulous attention to **spacing and layout** throughout the document. Use blank lines effectively between paragraphs, headings, and list items to ensure the notes are scannable and easy on the eyes. Make the notes look good and visually appealing through excellent Markdown formatting.
@@ -115,7 +115,7 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
       visualPrompts.push({ fullMatch: match[0], promptText: match[1].trim() });
     }
     
-    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process.`);
+    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process:`, visualPrompts.map(vp => vp.promptText)); // Log extracted prompts
 
     if (visualPrompts.length > 0) {
         const imageGenerationResults = await Promise.all(
@@ -168,5 +168,3 @@ export async function generateStudyNotes(input: GenerateStudyNotesInput): Promis
     throw new Error(clientErrorMessage);
   }
 }
-
-    
