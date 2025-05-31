@@ -22,3 +22,7 @@ dist/
 # Other tools
 genkit/
 node_modules
+
+
+.next/
+next-env.d.ts
