@@ -89,4 +89,3 @@ const googleProvider = new GoogleAuthProvider();
 // --- Exports ---
 // Export the initialized app, auth instance, and Google provider for use throughout the application.
 export { app, auth, googleProvider };
-```
