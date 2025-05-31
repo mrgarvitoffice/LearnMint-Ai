@@ -138,6 +138,12 @@ export function Header() {
                             <Palette className="h-5 w-5" /> Toggle Theme
                         </Button>
                     </SheetClose>
+                    {/* InstallPWAButton will conditionally render itself */}
+                    {/* Wrapping in SheetClose asChild ensures the sheet closes after interaction if the button itself doesn't (e.g. if it only shows a toast) */}
+                    <SheetClose asChild>
+                        <InstallPWAButton />
+                    </SheetClose>
+
                     {user && !user.isAnonymous && (
                       <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignOut}>
@@ -152,9 +158,6 @@ export function Header() {
                         </Button>
                       </SheetClose>
                     )}
-                    <div className="w-full">
-                        <InstallPWAButton />
-                    </div>
                 </div>
           </SheetContent>
         </Sheet>
@@ -182,7 +185,6 @@ export function Header() {
 
       {/* Right-aligned Header Items */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        {/* InstallPWAButton now attempts to render on all screen sizes here */}
         <InstallPWAButton />
 
         {/* "More Options" Dropdown on desktop */}
