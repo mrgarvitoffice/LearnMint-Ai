@@ -10,7 +10,7 @@
 
 import {aiForNotes} from '@/ai/genkit'; 
 import {z} from 'zod';
-import { generateImageFromPrompt } from './generate-image-from-prompt'; // Import the new image generation flow
+import { generateImageFromPrompt } from './generate-image-from-prompt'; // Uses updated image prompt flow
 
 const GenerateStudyNotesInputSchema = z.object({ topic: z.string().describe('The academic topic for which to generate study notes.') });
 export type GenerateStudyNotesInput = z.infer<typeof GenerateStudyNotesInputSchema>;
@@ -104,10 +104,9 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
     let notesWithPlaceholders = textGenerationResult.output.notes;
     console.log(`[AI Flow - Notes Text] Successfully generated notes text for topic: ${input.topic}. Length: ${notesWithPlaceholders.length}`);
 
-    // Image generation step
+    // "Image" (Text/Link) generation step
     const visualPromptRegex = /\[VISUAL_PROMPT:\s*([^\]]+)\]/g;
     let match;
-    const imagePromises = [];
     const visualPrompts: { fullMatch: string, promptText: string }[] = [];
 
     // First, collect all visual prompts
@@ -115,32 +114,33 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
       visualPrompts.push({ fullMatch: match[0], promptText: match[1].trim() });
     }
     
-    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process:`, visualPrompts.map(vp => vp.promptText)); // Log extracted prompts
+    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process for text/link generation:`, visualPrompts.map(vp => vp.promptText));
 
     if (visualPrompts.length > 0) {
-        const imageGenerationResults = await Promise.all(
+        const imageInfoResults = await Promise.all(
             visualPrompts.map(vp => 
-                generateImageFromPrompt({ prompt: vp.promptText })
-                .then(imageResult => ({ ...vp, imageResult })) // Attach original prompt info to result
+                generateImageFromPrompt({ prompt: vp.promptText }) // Calls the updated flow
+                .then(imageInfoResult => ({ ...vp, imageInfoResult }))
                 .catch(error => {
-                    console.error(`[AI Flow Error - Image Sub-flow] Failed to generate image for prompt "${vp.promptText}":`, error);
-                    return { ...vp, imageResult: { imageDataUri: null, error: error.message || "Unknown image generation error" } };
+                    console.error(`[AI Flow Error - Image Text/Link Sub-flow] Failed for prompt "${vp.promptText}":`, error);
+                    return { ...vp, imageInfoResult: { error: error.message || "Unknown error getting image text/link" } };
                 })
             )
         );
 
         let finalNotes = notesWithPlaceholders;
-        for (const result of imageGenerationResults) {
-            if (result.imageResult.imageDataUri) {
-                console.log(`[AI Flow - Notes Images] Successfully generated image for: "${result.promptText.substring(0,30)}...". Replacing placeholder.`);
-                // Replace the specific placeholder with the Markdown image tag
-                // Ensure to escape special characters in promptText if it's used in a regex directly, or use string replacement
-                const markdownImage = `![Visual for: ${result.promptText.replace(/"/g, "'")}](${result.imageResult.imageDataUri})`;
+        for (const result of imageInfoResults) {
+            if (result.imageInfoResult.imageUrl) {
+                console.log(`[AI Flow - Notes Images] Got image URL for: "${result.promptText.substring(0,30)}...". Replacing placeholder with image link.`);
+                const markdownImage = `![Visual for: ${result.promptText.replace(/"/g, "'")}](${result.imageInfoResult.imageUrl})`;
                 finalNotes = finalNotes.replace(result.fullMatch, markdownImage);
+            } else if (result.imageInfoResult.textDescription) {
+                console.log(`[AI Flow - Notes Images] Got text description for: "${result.promptText.substring(0,30)}...". Replacing placeholder with description.`);
+                const markdownDescription = `> **AI Suggested Description for "${result.promptText.replace(/"/g, "'")}":**\n> ${result.imageInfoResult.textDescription.replace(/\n/g, '\n> ')}`;
+                finalNotes = finalNotes.replace(result.fullMatch, markdownDescription);
             } else {
-                console.warn(`[AI Flow - Notes Images] Failed to generate image for prompt: "${result.promptText}". Error: ${result.imageResult.error}. Placeholder will remain.`);
-                // Optionally, replace with a "generation failed" message or leave placeholder
-                // finalNotes = finalNotes.replace(result.fullMatch, `[IMAGE GENERATION FAILED for: ${result.promptText}]`);
+                console.warn(`[AI Flow - Notes Images] Failed to get URL or description for prompt: "${result.promptText}". Error: ${result.imageInfoResult.error}. Placeholder will remain.`);
+                // The [VISUAL_PROMPT: ...] will remain, and AiGeneratedImage.tsx will handle it.
             }
         }
         console.log(`[AI Flow - Notes Images] Finished processing all visual prompts. Final notes length: ${finalNotes.length}`);
@@ -155,7 +155,6 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
 export async function generateStudyNotes(input: GenerateStudyNotesInput): Promise<GenerateStudyNotesOutput> {
   console.log(`[AI Wrapper] generateStudyNotes called for topic: ${input.topic}. Using notes-specific AI configuration if GOOGLE_API_KEY_NOTES is set.`);
   try {
-    // The flow now handles both text and image generation internally
     return await generateStudyNotesFlow(input);
   } catch (error: any) {
     console.error("[AI Wrapper Error - generateStudyNotes] Error in flow execution:", error.message, error.stack);

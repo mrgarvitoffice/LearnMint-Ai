@@ -116,34 +116,33 @@ export const aiForChatbot = genkit({
   defaultModelConfig: { /* Can have its own specific config if needed */ },
 });
 
-// Genkit instance for Image Generation
-let imageInstanceKey = GOOGLE_API_KEY_IMAGES || GOOGLE_API_KEY_NOTES || GOOGLE_API_KEY; // Fallback to images key, then notes key, then main key
+// Genkit instance for "Image" (Text Description/Link) Generation
+// This will now use gemini-1.5-flash-latest and expect text output.
+let imageTextInstanceKey = GOOGLE_API_KEY_IMAGES || GOOGLE_API_KEY_NOTES || GOOGLE_API_KEY;
 if (GOOGLE_API_KEY_IMAGES && GOOGLE_API_KEY_IMAGES.trim() !== '') {
-  console.log(`INFO: Using dedicated GOOGLE_API_KEY_IMAGES for image generation.`);
+  console.log(`INFO: Using GOOGLE_API_KEY_IMAGES for image description/link generation.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_IMAGES, 'GOOGLE_API_KEY_IMAGES');
-  imageInstanceKey = GOOGLE_API_KEY_IMAGES;
+  imageTextInstanceKey = GOOGLE_API_KEY_IMAGES;
 } else if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '' && (!GOOGLE_API_KEY_IMAGES || GOOGLE_API_KEY_IMAGES.trim() === '')) {
-  console.log(`INFO: GOOGLE_API_KEY_IMAGES is not set. Image generation will use GOOGLE_API_KEY_NOTES.`);
-  isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES, 'GOOGLE_API_KEY_NOTES (as fallback for images)');
-  imageInstanceKey = GOOGLE_API_KEY_NOTES;
-} else if (!GOOGLE_API_KEY_IMAGES || GOOGLE_API_KEY_IMAGES.trim() === '') {
-   console.log(`INFO: GOOGLE_API_KEY_IMAGES and GOOGLE_API_KEY_NOTES are not set. Image generation will use main GOOGLE_API_KEY.`);
-   isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (as fallback for images)');
-   imageInstanceKey = GOOGLE_API_KEY;
+  console.log(`INFO: GOOGLE_API_KEY_IMAGES not set. Image description/link generation will use GOOGLE_API_KEY_NOTES.`);
+  isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES, 'GOOGLE_API_KEY_NOTES (as fallback for image description/link)');
+  imageTextInstanceKey = GOOGLE_API_KEY_NOTES;
+} else if ((!GOOGLE_API_KEY_IMAGES || GOOGLE_API_KEY_IMAGES.trim() === '') && (!GOOGLE_API_KEY_NOTES || GOOGLE_API_KEY_NOTES.trim() === '')) {
+   console.log(`INFO: GOOGLE_API_KEY_IMAGES and GOOGLE_API_KEY_NOTES are not set. Image description/link generation will use main GOOGLE_API_KEY.`);
+   isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (as fallback for image description/link)');
+   imageTextInstanceKey = GOOGLE_API_KEY;
 }
 
-export const aiForImages = genkit({
-  plugins: [googleAI({ apiKey: imageInstanceKey })],
-  model: 'googleai/gemini-2.0-flash-exp',
+export const aiForImages = genkit({ // Renamed for clarity, this is for descriptive text or links now
+  plugins: [googleAI({ apiKey: imageTextInstanceKey })],
+  model: 'googleai/gemini-1.5-flash-latest', // Changed to 1.5-flash for text output
   enableTracingAndMetrics: true,
-  defaultModelConfig: {
+  defaultModelConfig: { // Default config for text models, safety settings can be adjusted if needed
     safetySettings: [
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }, // Relaxed slightly
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
     ],
   }
 });
-
-    
