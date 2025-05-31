@@ -6,22 +6,22 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// Dialog imports are removed as it's no longer used for book preview here
 import { MATH_FACTS_FALLBACK } from '@/lib/constants';
 import { fetchMathFact } from '@/lib/math-fact-api';
 import type { MathFact, YoutubeVideoItem, GoogleBookItem, QueryError, YoutubeSearchInput, GoogleBooksSearchInput, YoutubeSearchOutput, GoogleBooksSearchOutput } from '@/lib/types';
 import { ResourceCard } from '@/components/features/library/ResourceCard';
 import { YoutubeVideoResultItem } from '@/components/features/library/YoutubeVideoResultItem';
 import { BookResultItem } from '@/components/features/library/BookResultItem';
-import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye, BookText, Maximize, Minimize } from 'lucide-react';
+import { BookMarked, Search, Youtube, Lightbulb, BookOpen, Brain, ExternalLink, Loader2, Quote, Video, X, CalendarDays, Eye, BookText, Maximize, Minimize, Mic } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { directYoutubeSearch, directGoogleBooksSearch } from '@/lib/actions'; 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'; // Keep for YouTube
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { useSound } from '@/hooks/useSound';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'; // Added
 
 const PAGE_TITLE = "LearnMint Knowledge Hub";
 
@@ -45,6 +45,8 @@ export default function LibraryPage() {
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
+  const { isListening, transcript, startListening, stopListening, error: voiceError, browserSupportsSpeechRecognition } = useVoiceRecognition(); // Added
+  const [voiceSearchTarget, setVoiceSearchTarget] = useState<'youtube' | 'books' | null>(null); // Added
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -63,6 +65,37 @@ export default function LibraryPage() {
       isMounted = false;
     };
   }, [selectedVoice, isSpeaking, isPaused, speak]);
+
+  // Update search terms based on voice transcript
+  useEffect(() => {
+    if (transcript && voiceSearchTarget) {
+      if (voiceSearchTarget === 'youtube') {
+        setYoutubeSearchTerm(transcript);
+      } else if (voiceSearchTarget === 'books') {
+        setGoogleBooksSearchTerm(transcript);
+      }
+    }
+  }, [transcript, voiceSearchTarget]);
+
+  useEffect(() => {
+    if (voiceError) {
+      toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
+    }
+  }, [voiceError, toast]);
+
+  const handleMicClick = (target: 'youtube' | 'books') => {
+    playClickSound();
+    if (isListening && voiceSearchTarget === target) {
+      stopListening();
+      setVoiceSearchTarget(null);
+    } else {
+      setVoiceSearchTarget(target);
+      if (target === 'youtube') setYoutubeSearchTerm(''); // Clear previous text
+      else if (target === 'books') setGoogleBooksSearchTerm(''); // Clear previous text
+      startListening();
+    }
+  };
+
 
   const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
     queryKey: ['mathFact'], queryFn: fetchMathFact, staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false,
@@ -125,6 +158,8 @@ export default function LibraryPage() {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
+      if (isListening && voiceSearchTarget === 'youtube') stopListening();
+      setVoiceSearchTarget(null);
     }
   };
 
@@ -135,6 +170,8 @@ export default function LibraryPage() {
       if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9, country: 'US' });
+      if (isListening && voiceSearchTarget === 'books') stopListening();
+      setVoiceSearchTarget(null);
     }
   };
   
@@ -256,10 +293,15 @@ export default function LibraryPage() {
 
           <section>
             <Card>
-              <CardHeader><CardTitle className="text-xl flex items-center gap-2"><Youtube className="w-7 h-7 text-red-500" />Search & Play YouTube Videos</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-xl flex items-center gap-2"><Youtube className="w-7 h-7 text-red-500" />Search &amp; Play YouTube Videos</CardTitle></CardHeader>
               <form onSubmit={handleYoutubeSearchSubmit}>
-                <CardContent className="flex gap-2">
+                <CardContent className="flex gap-2 items-center">
                   <Input type="search" placeholder="Search for educational videos..." value={youtubeSearchTerm} onChange={(e) => setYoutubeSearchTerm(e.target.value)} disabled={youtubeSearchMutation.isPending}/>
+                  {browserSupportsSpeechRecognition && (
+                    <Button type="button" variant="ghost" size="icon" onClick={() => handleMicClick('youtube')} disabled={youtubeSearchMutation.isPending}>
+                      <Mic className={`w-5 h-5 ${isListening && voiceSearchTarget === 'youtube' ? 'text-destructive animate-pulse' : ''}`} />
+                    </Button>
+                  )}
                   <Button type="submit" disabled={youtubeSearchMutation.isPending || !youtubeSearchTerm.trim()}>
                     {youtubeSearchMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Search
                   </Button>
@@ -328,10 +370,15 @@ export default function LibraryPage() {
 
           <section>
             <Card>
-              <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search & Read Google Books</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-xl flex items-center gap-2"><BookOpen className="w-7 h-7 text-blue-500" />Search &amp; Read Google Books</CardTitle></CardHeader>
               <form onSubmit={handleGoogleBooksSearchSubmit}>
-                <CardContent className="flex gap-2">
+                <CardContent className="flex gap-2 items-center">
                   <Input type="search" placeholder="Search for books and articles..." value={googleBooksSearchTerm} onChange={(e) => setGoogleBooksSearchTerm(e.target.value)} disabled={googleBooksSearchMutation.isPending}/>
+                  {browserSupportsSpeechRecognition && (
+                     <Button type="button" variant="ghost" size="icon" onClick={() => handleMicClick('books')} disabled={googleBooksSearchMutation.isPending}>
+                       <Mic className={`w-5 h-5 ${isListening && voiceSearchTarget === 'books' ? 'text-destructive animate-pulse' : ''}`} />
+                     </Button>
+                  )}
                   <Button type="submit" disabled={googleBooksSearchMutation.isPending || !googleBooksSearchTerm.trim()}>
                     {googleBooksSearchMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Search
                   </Button>
@@ -378,3 +425,5 @@ export default function LibraryPage() {
     </div>
   );
 }
+
+    

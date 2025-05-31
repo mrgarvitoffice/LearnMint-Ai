@@ -18,17 +18,19 @@ With LearnMint, you're not just studying; you're minting knowledge with cutting-
 
 *   **User Authentication**: Secure and easy sign-up (Email/Password, Google) and sign-in (Email/Password, Anonymous). Your learning journey, personalized and protected by Firebase.
 *   **🧠 AI Content Generation Suite**:
-    *   **Topper Notes with AI Images**: Generate comprehensive, engaging, and well-structured study notes on *any* topic. Think top-student quality, complete with Markdown formatting, emojis, and **AI-generated images** embedded directly from `[VISUAL_PROMPT: ...]` placeholders!
-    *   **AI Quiz Creator**: Instantly create multiple-choice and short-answer quizzes on demand, with varying difficulty levels and detailed explanations.
-    *   **AI Flashcard Factory**: Quickly produce sets of flashcards for rapid review and memorization.
-    *   **Contextual Content Generation**: After generating notes, easily create quizzes or flashcards *directly from that note content* with dedicated buttons.
+    *   **Unified Material Generation**: Enter any topic and LearnMint AI automatically generates:
+        *   **Comprehensive Notes**: Well-structured study notes with Markdown formatting, emojis, and AI-generated images embedded directly (from `[VISUAL_PROMPT: ...]` placeholders).
+        *   **30-Question Interactive Quiz**: Automatically created with multiple-choice and short-answer questions, varying difficulty, and detailed explanations.
+        *   **20 Engaging Flashcards**: For rapid review and memorization.
+    *   **Dedicated Quiz Creator**: Instantly create separate multiple-choice and short-answer quizzes on demand for any topic.
+    *   **Dedicated Flashcard Factory**: Quickly produce standalone sets of flashcards.
 *   **🔬 Custom Test Creation Lab**: Take control! Build tailored tests based on single or multiple topics (including recent studies), set difficulty, number of questions, custom notes, and even timers (overall and per-question).
 *   **🤖 Interactive AI Chatbot - "Kazuma"**: Your witty, sometimes reluctant, but always helpful AI companion. Ask Kazuma anything, engage in small talk, or even request a (text-based) song! Supports voice input and user image uploads for interactive fun.
 *   **📐 Precision Toolkit - Calculator & Converter**: A powerful scientific calculator for all your mathematical needs, plus a comprehensive unit converter (Length, Temperature, Weight/Mass, Volume, Area, Speed) with calculation history.
 *   **📰 Daily News Digest**: Stay informed with the latest news from around the globe. Filter by country, state/region, city, and general categories, powered by Newsdata.io.
 *   **📚 Resource Library**:
     *   Explore a curated catalog of OpenStax textbooks (links to external site).
-    *   Seamlessly search Google Books and YouTube for more in-depth resources.
+    *   Seamlessly search Google Books (with voice input) and YouTube (with voice input) for more in-depth resources.
     *   Enjoy a "Math Fact of the Day" to keep your brain sharp!
 *   **🎮 LearnMint Arcade**: Sharpen your mind while having fun!
     *   **Definition Challenge**: Test your vocabulary by guessing terms from their definitions, with hints and streak scoring.
@@ -60,7 +62,7 @@ Embark on your AI-enhanced learning adventure!
 *   Node.js (LTS version recommended)
 *   npm or yarn
 *   A Firebase Project (create one at [firebase.google.com](https://firebase.google.com/)).
-    *   Go to **Authentication** (under Build in the Firebase console) -> **Sign-in method** tab.
+    *   Go to **Authentication** (under Build in the Firebase console) -&gt; **Sign-in method** tab.
     *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers. For Google, ensure your project support email is configured.
 
 ### 2. CRITICAL: Set up Environment Variables using a `.env` file
@@ -69,9 +71,9 @@ Create a file named `.env` in the **root of your project**. Populate it with you
 
 **MrGarvit has provided the following Gemini API keys for enhanced functionality. Please distribute them as suggested or as per your preference across the available slots in your `.env` file:**
 *   Main/General Use: `AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo`
-*   Notes (Text) & Derived Content: `AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY`
-*   AI Chatbot (Kazuma): `AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs`
-*   **Image Generation (Crucial): `AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc`** (NEW - Ensure this key has access to Gemini 2.0 Flash or equivalent image models)
+*   Notes (Text) &amp; Derived Content: `AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY`
+*   AI Chatbot (Kazuma): (MrGarvit's key for Kazuma) `AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs`
+*   **CRITICAL Image Generation Key**: `AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc` (This key is crucial for image generation and must have access to image models like Gemini 2.0 Flash and billing enabled.)
 
 ```env
 # Firebase Project Configuration (Get these from your Firebase project settings)
@@ -145,7 +147,7 @@ yarn dev --port 9002
 ```
 
 ### 5. CRITICAL: Add Required Static Assets
-*   **PWA Icons**: Create `public/icons` and add `icon-192x192.png` & `icon-512x512.png`.
+*   **PWA Icons**: Create `public/icons` and add `icon-192x192.png` &amp; `icon-512x512.png`.
 *   **Sound Effects**: Create `public/sounds` and add `ting.mp3`, `custom-sound-2.mp3`, `correct-answer.mp3`, `incorrect-answer.mp3`.
 *   **Chatbot Avatar**: Create `public/images` and add `kazuma-dp.jpg`.
 
@@ -185,8 +187,8 @@ LearnMint is configured for Firebase Hosting using `frameworksBackend` for Next.
     Firebase App Hosting **does not automatically use your local `.env` for the deployed backend functions.** You MUST set them in the Google Cloud Console:
     *   Go to `https://console.cloud.google.com/run?project=YOUR_PROJECT_ID`.
     *   Find your App Hosting service.
-    *   Edit configuration -> "Variables & Secrets".
-    *   Add **ALL** required production environment variables (e.g., `NEXT_PUBLIC_FIREBASE_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_API_KEY_NOTES`, `GOOGLE_API_KEY_CHATBOT`, `GOOGLE_API_KEY_IMAGES`, `NEWSDATA_API_KEY`, etc.).
+    *   Edit configuration -&gt; "Variables &amp; Secrets".
+    *   Add **ALL** required production environment variables (e.g., `NEXT_PUBLIC_FIREBASE_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_API_KEY_NOTES`, `GOOGLE_API_KEY_CHATBOT`, `GOOGLE_API_KEY_IMAGES`, `NEWSDATA_API_KEY`, `YOUTUBE_API_KEY`, `GOOGLE_BOOKS_API_KEY`, etc.).
     *   Deploy the new revision with these variables. **This is crucial for deployed features to work.**
 
 ## 🎨 Customization
@@ -199,9 +201,9 @@ LearnMint is configured for Firebase Hosting using `frameworksBackend` for Next.
 
 LearnMint aims to continuously evolve and empower learners. Here's a glimpse of what **MrGarvit** envisions for the future:
 
-*   🌟 **Advanced Test Series & Analytics**: Introduce comprehensive test series with detailed performance analytics, personalized feedback, and adaptive difficulty to help students pinpoint strengths and weaknesses.
-*   🌍 **Making Quality Education Affordable & Accessible**: Strive to keep LearnMint's core tools widely accessible, exploring options for free tiers and affordable premium features, ensuring that high-quality AI learning support reaches as many students as possible.
-*   🤝 **Community & Collaboration Features**: Enable users to share study materials, create study groups, and engage in peer-to-peer learning within the platform.
+*   🌟 **Advanced Test Series &amp; Analytics**: Introduce comprehensive test series with detailed performance analytics, personalized feedback, and adaptive difficulty to help students pinpoint strengths and weaknesses.
+*   🌍 **Making Quality Education Affordable &amp; Accessible**: Strive to keep LearnMint's core tools widely accessible, exploring options for free tiers and affordable premium features, ensuring that high-quality AI learning support reaches as many students as possible.
+*   🤝 **Community &amp; Collaboration Features**: Enable users to share study materials, create study groups, and engage in peer-to-peer learning within the platform.
 *   🧩 **More Interactive Learning Modules**: Expand the "LearnMint Arcade" with more engaging educational games and interactive simulations covering a wider range of subjects.
 *   📚 **Deeper Content Integration**: Seamlessly integrate resources from platforms like YouTube and Google Books directly within the app, providing a richer, more contextual learning experience.
 *   📱 **Enhanced PWA Features**: Implement robust offline capabilities for notes, flashcards, and quizzes, allowing students to study anytime, anywhere, even without an internet connection.
@@ -211,3 +213,4 @@ LearnMint aims to continuously evolve and empower learners. Here's a glimpse of 
 ---
 Made with 🧠 and ✨ by **MrGarvit**
 
+    
