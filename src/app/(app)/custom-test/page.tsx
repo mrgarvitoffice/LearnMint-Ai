@@ -74,6 +74,7 @@ export default function CustomTestPage() {
   const [testState, setTestState] = useState<CustomTestState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
+  const [recentTopicsSelectionDone, setRecentTopicsSelectionDone] = useState(false);
   const { toast } = useToast();
   const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
   const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
@@ -101,6 +102,29 @@ export default function CustomTestPage() {
 
   const sourceType = watch('sourceType');
   const selectedRecentTopicsWatch = watch('selectedRecentTopics');
+
+  useEffect(() => {
+    if (sourceType !== 'recent' || (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length === 0)) {
+      setRecentTopicsSelectionDone(false);
+    }
+  }, [sourceType, selectedRecentTopicsWatch]);
+
+  const handleConfirmRecentTopics = () => {
+    playClickSound();
+    if (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length > 0) {
+      setRecentTopicsSelectionDone(true);
+      toast({
+        title: "Topics Confirmed",
+        description: "Recent topics selection confirmed. Please proceed with other test settings.",
+      });
+    } else {
+      toast({
+        title: "No Topics Selected",
+        description: "Please select at least one recent topic to confirm.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getPerformanceTag = useCallback((percentage: number): string => {
     if (percentage === 100) return "Conqueror";
@@ -318,7 +342,7 @@ export default function CustomTestPage() {
     } finally { setIsLoading(false); generatingMessageSpokenRef.current = false; }
   };
 
-  const handleAnswerSelect = (answer: string) => { // Used for MCQ
+  const handleAnswerSelect = (answer: string) => { 
     playClickSound();
     if (!testState || testState.showResults || testState.isAutoSubmitting) return;
     const newUserAnswers = [...testState.userAnswers];
@@ -389,6 +413,7 @@ export default function CustomTestPage() {
     generatingMessageSpokenRef.current = false;
     setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []);
     setValue('difficulty', 'medium'); setValue('numQuestions', 5); setValue('timer', 0); setValue('perQuestionTimer', 0);
+    setRecentTopicsSelectionDone(false);
   };
 
   const currentQuestionData = testState?.questions[testState.currentQuestionIndex];
@@ -476,7 +501,7 @@ export default function CustomTestPage() {
               <div>
                 <Label className="text-base font-semibold mb-2 block">Test Source</Label>
                 <Controller name="sourceType" control={control} render={({ field }) => (
-                  <RadioGroup onValueChange={(value) => { playClickSound(); field.onChange(value); }} value={field.value} className="flex flex-col sm:flex-row gap-4">
+                  <RadioGroup onValueChange={(value) => { playClickSound(); field.onChange(value); setRecentTopicsSelectionDone(false); }} value={field.value} className="flex flex-col sm:flex-row gap-4">
                     <Label htmlFor="source-topic" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="topic" id="source-topic" /> <span>Topic(s)</span></Label>
                     <Label htmlFor="source-notes" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="notes" id="source-notes" /> <span>My Notes</span></Label>
                     <Label htmlFor="source-recent" className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted has-[:checked]:bg-primary/20 has-[:checked]:border-primary cursor-pointer flex-1 transition-all"><RadioGroupItem value="recent" id="source-recent" /> <span>Recent Topics</span></Label>
@@ -515,6 +540,18 @@ export default function CustomTestPage() {
                     </div>
                   ) : <p className="text-sm text-muted-foreground p-2 border rounded-md">No recent topics found. Generate some notes first!</p>}
                   {errors.selectedRecentTopics && <p className="text-sm text-destructive">{errors.selectedRecentTopics.message}</p>}
+                  
+                  {recentTopics.length > 0 && selectedRecentTopicsWatch && selectedRecentTopicsWatch.length > 0 && !recentTopicsSelectionDone && (
+                    <Button type="button" onClick={handleConfirmRecentTopics} variant="secondary" className="mt-2">
+                      Confirm Recent Topics Selection
+                    </Button>
+                  )}
+                  {recentTopicsSelectionDone && (
+                    <div className="mt-2 flex items-center gap-2 text-green-600 p-2 border border-green-500 bg-green-500/10 rounded-md text-sm">
+                      <CheckCircle className="h-5 w-5" />
+                      <span>Recent topics selection confirmed!</span>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
