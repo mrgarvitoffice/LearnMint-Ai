@@ -6,15 +6,18 @@ import './genkit'; // Ensures genkit is configured via genkit() call
 
 // Import all your flows here so the Genkit dev UI can discover them
 import '@/ai/flows/generate-study-notes';
-import '@/ai/flows/generate-quiz-questions'; 
-import '@/ai/flows/generate-flashcards';   
+import '@/ai/flows/generate-quiz-questions';
+import '@/ai/flows/generate-flashcards';
 import '@/ai/flows/ai-chatbot'; // This now exports kazumaChatbot
+import '@/ai/flows/megumin-chatbot'; // Added Megumin's chatbot flow
 import '@/ai/flows/generate-quiz-from-notes';
 import '@/ai/flows/generate-flashcards-from-notes';
 import '@/ai/flows/search-youtube-videos';
 import '@/ai/flows/search-google-books';
-import '@/ai/flows/generate-image-from-prompt'; // Added new image generation flow
+import '@/ai/flows/generate-image-from-prompt';
 
 // The Genkit dev server will pick up flows defined with ai.defineFlow(...)
 // Just importing the files that contain ai.defineFlow is sufficient for the dev UI.
 // Ensure each flow file correctly defines its flows and any related prompts or tools.
+
+    

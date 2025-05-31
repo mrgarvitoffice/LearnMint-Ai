@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Avatar component
 // Lucide icons for UI elements
-import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn, DownloadCloud } from 'lucide-react'; // Added DownloadCloud
+import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn } from 'lucide-react'; // Removed DownloadCloud, InstallPWAButton handles its own icon
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useTheme } from 'next-themes'; // Hook for theme management
 import React from 'react';
@@ -34,7 +34,7 @@ import { useAuth } from '@/contexts/AuthContext'; // Authentication context hook
 import { signOut } from 'firebase/auth'; // Firebase sign-out function
 import { auth } from '@/lib/firebase/config'; // Firebase auth instance
 import { useToast } from '@/hooks/use-toast'; // Hook for displaying toast notifications
-import InstallPWAButton from '@/components/features/pwa/InstallPWAButton'; // Import the InstallPWAButton
+import InstallPWAButton from '@/components/features/pwa/InstallPWAButton';
 
 // Primary navigation links displayed directly in the header on larger screens
 const primaryLinksSpec: { title: string; href: string }[] = [
@@ -53,7 +53,7 @@ const dropdownLinksSpec: { title: string; href: string }[] = [
 
 /**
  * Header Component
- * 
+ *
  * Displays the application's header, including the logo, navigation links,
  * theme toggle, and user profile actions. It adapts for mobile and desktop views.
  */
@@ -122,7 +122,7 @@ export function Header() {
               <div className="flex items-center border-b border-sidebar-border p-4">
                 <SheetClose asChild>
                   <Link href="/" className="flex items-center gap-2 font-semibold text-lg text-sidebar-primary" onClick={() => playClickSound()}>
-                    <Logo size={28} /> {/* Adjusted size for mobile header logo */}
+                    <Logo size={28} />
                     <span>{APP_NAME}</span>
                   </Link>
                 </SheetClose>
@@ -131,33 +131,30 @@ export function Header() {
               <div className="flex-1 overflow-y-auto">
                  <SidebarNav items={NAV_ITEMS} />
               </div>
-              {/* Mobile Sidebar Footer Actions (Theme Toggle, Sign Out/In, Install App) */}
-               <div className="mt-auto border-t border-sidebar-border p-4 space-y-1">
+              {/* Mobile Sidebar Footer Actions */}
+               <div className="mt-auto border-t border-sidebar-border p-4 space-y-2">
                     <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleThemeToggle}>
                             <Palette className="h-5 w-5" /> Toggle Theme
                         </Button>
                     </SheetClose>
-                    {/* Conditional rendering based on user authentication state */}
-                    {user && !user.isAnonymous && ( // For fully logged-in users
+                    {user && !user.isAnonymous && (
                       <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignOut}>
                             <LogOut className="h-5 w-5" /> Sign Out
                         </Button>
                       </SheetClose>
                     )}
-                    {user && user.isAnonymous && ( // For guest users
+                    {user && user.isAnonymous && (
                        <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignInRedirect}>
                             <LogIn className="h-5 w-5" /> Sign In / Sign Up
                         </Button>
                       </SheetClose>
                     )}
-                    <div className="pt-2"> {/* Wrapper for InstallPWAButton to ensure it's also sheet-closed if needed */}
-                        <SheetClose asChild>
-                            {/* InstallPWAButton might manage its own SheetClose or not be part of it if it has complex logic */}
-                            <InstallPWAButton /> 
-                        </SheetClose>
+                    {/* InstallPWAButton will handle its own SheetClose if necessary or be independent */}
+                    <div className="w-full"> {/* Wrapper to allow InstallPWAButton to take full width if needed */}
+                        <InstallPWAButton />
                     </div>
                 </div>
           </SheetContent>
@@ -166,7 +163,7 @@ export function Header() {
 
       {/* Desktop Logo and App Name */}
       <Link href="/" className="mr-4 hidden items-center gap-2 md:flex" onClick={() => playClickSound()}>
-        <Logo size={32} /> {/* Standard size for desktop header logo */}
+        <Logo size={32} />
         <span className="font-bold text-xl text-primary">
           {APP_NAME}
         </span>
@@ -177,22 +174,20 @@ export function Header() {
         {primaryLinksSpec.map(link => (
            <Button variant="ghost" asChild key={link.href} className={cn(
             "h-9 px-3 py-2",
-            pathname === link.href ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-primary" // Active link styling
+            pathname === link.href ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-primary"
           )} onClick={() => playClickSound()}>
             <Link href={link.href}>{link.title}</Link>
           </Button>
         ))}
       </nav>
 
-      {/* Right-aligned Header Items (More Options Dropdown, User Profile, Install Button) */}
+      {/* Right-aligned Header Items */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-         {/* Install PWA Button (Desktop) */}
-        <div className="hidden sm:flex">
+        <div className="hidden sm:flex"> {/* Install button on desktop */}
           <InstallPWAButton />
         </div>
 
-        {/* "More Options" Dropdown (Desktop) */}
-        <div className="hidden md:flex">
+        <div className="hidden md:flex"> {/* "More Options" Dropdown on desktop */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => playClickSound()}>
@@ -202,7 +197,6 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {dropdownLinksSpec.map(link => {
-                // Find the corresponding NavItem to get its icon
                 const navItem = NAV_ITEMS.flatMap(item => item.children ? item.children : [item]).find(i => i.href === link.href);
                 const Icon = navItem?.icon;
                 return (
@@ -221,16 +215,13 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
-        {/* User Profile Dropdown */}
-        {user ? ( // If user is authenticated (either fully or anonymously)
+
+        {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="rounded-full w-9 h-9 p-0 border-2 border-transparent hover:border-primary focus-visible:border-primary" onClick={() => playClickSound()}>
                 <Avatar className="h-8 w-8">
-                  {/* Display user's photoURL if available (e.g., from Google Sign-In) */}
                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User avatar"} />
-                  {/* Fallback to a generic user icon */}
                   <AvatarFallback>
                     <UserCircle className="h-5 w-5 text-muted-foreground" />
                   </AvatarFallback>
@@ -249,7 +240,6 @@ export function Header() {
                   </Avatar>
                   <div className="flex flex-col space-y-0.5">
                     <p className="text-sm font-medium leading-none truncate max-w-[150px]">
-                      {/* Display different info based on whether user is anonymous */}
                       {user.isAnonymous ? "Guest User" : (user.displayName || user.email?.split('@')[0] || "User")}
                     </p>
                     {!user.isAnonymous && user.email && (
@@ -264,7 +254,6 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {/* Show "Sign In/Sign Up" for anonymous users, "Sign Out" for others */}
               {user.isAnonymous ? (
                 <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignInRedirect)} className="text-primary focus:bg-accent focus:text-accent-foreground">
                   <LogIn className="mr-2 h-4 w-4" />
@@ -278,7 +267,7 @@ export function Header() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : ( // If no user is authenticated at all (should ideally not happen due to AuthContext redirect)
+        ) : (
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" asChild onClick={() => playClickSound()}>
               <Link href="/sign-in">Sign In</Link>
@@ -292,3 +281,5 @@ export function Header() {
     </header>
   );
 }
+
+    

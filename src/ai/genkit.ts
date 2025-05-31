@@ -9,12 +9,12 @@ const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
 
 
 const knownDemoKeys = [
-  "YOUR_GOOGLE_AI_API_KEY_HERE", 
-  "YOUR_GOOGLE_API_KEY_HERE", 
-  "AIzaSy*********************************", 
-  "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M", 
-  "AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A", 
-  "AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg", 
+  "YOUR_GOOGLE_AI_API_KEY_HERE",
+  "YOUR_GOOGLE_API_KEY_HERE",
+  "AIzaSy*********************************",
+  "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M",
+  "AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A",
+  "AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg",
 ];
 
 const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
@@ -59,7 +59,7 @@ isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (Main)');
 // Main Genkit instance
 export const ai = genkit({
   plugins: [
-    googleAI({ apiKey: GOOGLE_API_KEY }), 
+    googleAI({ apiKey: GOOGLE_API_KEY }),
   ],
   model: 'googleai/gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
@@ -95,7 +95,7 @@ export const aiForNotes = genkit({
 
 
 // Genkit instance for AI Chatbot
-let chatbotInstanceKey = GOOGLE_API_KEY;
+let chatbotInstanceKey = GOOGLE_API_KEY_CHATBOT;
 if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT.trim() !== '' && GOOGLE_API_KEY_CHATBOT !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_CHATBOT for AI Chatbot.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_CHATBOT, 'GOOGLE_API_KEY_CHATBOT');
@@ -103,8 +103,10 @@ if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT.trim() !== '' && GOOGLE_API
 } else {
    if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT === GOOGLE_API_KEY) {
     console.log("INFO: GOOGLE_API_KEY_CHATBOT is set but is the same as GOOGLE_API_KEY. Chatbot will use the main AI configuration.");
+    chatbotInstanceKey = GOOGLE_API_KEY; // Ensure fallback to main key
   } else if (!GOOGLE_API_KEY_CHATBOT || GOOGLE_API_KEY_CHATBOT.trim() === '') {
     console.log("INFO: GOOGLE_API_KEY_CHATBOT is not set. Chatbot will use the main AI configuration.");
+    chatbotInstanceKey = GOOGLE_API_KEY; // Ensure fallback to main key
   }
 }
 export const aiForChatbot = genkit({
@@ -135,11 +137,13 @@ export const aiForImages = genkit({
   model: 'googleai/gemini-2.0-flash-exp',
   enableTracingAndMetrics: true,
   defaultModelConfig: {
-    safetySettings: [ 
+    safetySettings: [
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }, // Relaxed slightly
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }, // Relaxed from BLOCK_LOW_AND_ABOVE
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
     ],
   }
 });
+
+    
