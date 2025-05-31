@@ -1,28 +1,33 @@
 
-// Import the functions you need from the SDKs you need
+// Firebase Configuration File for LearnMint
+// This file initializes Firebase and sets up authentication.
+// It's crucial that the environment variables are correctly set in your .env file.
+
+// Import necessary functions from Firebase SDKs
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-// Add SDKs for Firebase products that you want to use
+// Add other Firebase SDKs here if needed (e.g., Firestore, Storage)
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-
+// --- Environment Variable Retrieval ---
+// Retrieve Firebase configuration values from environment variables.
+// These variables MUST start with NEXT_PUBLIC_ to be accessible on the client-side.
 const apiKeyFromEnv = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const authDomainFromEnv = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
 const projectIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const storageBucketFromEnv = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 const messagingSenderIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
 const appIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
-const measurementIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID; // Optional
+const measurementIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID; // Optional for Firebase Analytics
 
-// Log the API key and Auth Domain being used (or if they are undefined)
-// This log will appear in the terminal where your Next.js dev server is running
+// --- Configuration Logging & Validation (Server-Side) ---
+// These logs will appear in the terminal where your Next.js development server is running.
+// They help diagnose issues with .env file loading or incorrect variable names.
 console.log(`Firebase Config: Attempting to use API Key: ${apiKeyFromEnv}`);
 console.log(`Firebase Config: Attempting to use Auth Domain: ${authDomainFromEnv}`);
 console.log(`Firebase Config: Attempting to use Project ID: ${projectIdFromEnv}`);
 
-
+// Critical validation checks for essential Firebase configuration variables.
 if (!apiKeyFromEnv) {
   console.error("************************************************************************************");
   console.error("CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_API_KEY is UNDEFINED or not loaded.");
@@ -53,7 +58,8 @@ if (!projectIdFromEnv) {
   console.error("************************************************************************************");
 }
 
-
+// --- Firebase Configuration Object ---
+// Construct the FirebaseOptions object using the retrieved environment variables.
 const firebaseConfig: FirebaseOptions = {
   apiKey: apiKeyFromEnv,
   authDomain: authDomainFromEnv,
@@ -61,19 +67,26 @@ const firebaseConfig: FirebaseOptions = {
   storageBucket: storageBucketFromEnv,
   messagingSenderId: messagingSenderIdFromEnv,
   appId: appIdFromEnv,
-  measurementId: measurementIdFromEnv, // Can be undefined if not provided
+  measurementId: measurementIdFromEnv, // Can be undefined if not provided/used
 };
 
-// Initialize Firebase
+// --- Firebase Initialization ---
+// Initialize Firebase. If an app instance already exists, use it; otherwise, create a new one.
+// This pattern prevents re-initializing the app on hot reloads in development.
 let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
+if (!getApps().length) { // Check if any Firebase apps have been initialized
+  app = initializeApp(firebaseConfig); // Initialize a new app if none exist
 } else {
-  app = getApp();
+  app = getApp(); // Get the already initialized app
 }
 
+// --- Firebase Authentication Setup ---
+// Get the Firebase Auth instance associated with the initialized app.
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider(); // Exported for use
+// Create a new GoogleAuthProvider instance for Google Sign-In.
+const googleProvider = new GoogleAuthProvider();
 
+// --- Exports ---
+// Export the initialized app, auth instance, and Google provider for use throughout the application.
 export { app, auth, googleProvider };
-
+```

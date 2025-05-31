@@ -4,19 +4,21 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { APP_NAME } from "@/lib/constants";
-import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote, Smile } from "lucide-react";
+import { APP_NAME } from "@/lib/constants"; // App name constant
+import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
-import { useTTS } from '@/hooks/useTTS';
-import { useSound } from '@/hooks/useSound';
-import { useRouter } from 'next/navigation';
-import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
-import { useAuth } from '@/contexts/AuthContext'; 
+import { useTTS } from '@/hooks/useTTS'; // Text-to-speech hook
+import { useSound } from '@/hooks/useSound'; // Sound effects hook
+import { useRouter } from 'next/navigation'; // For navigation
+import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement'; // Fun interactive element
+import { useAuth } from '@/contexts/AuthContext'; // Authentication context
 
+// Constants for localStorage and display limits
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
-const PAGE_TITLE = `Welcome to ${APP_NAME}`; // Static page title
+const PAGE_TITLE = `Welcome to ${APP_NAME}`; // Static page title, always "Welcome to LearnMint"
 
+// List of core features to display on the dashboard
 const coreFeaturesListText = [
   "<strong>AI Content Generation:</strong> Quickly create notes, quizzes, & flashcards.",
   "<strong>Custom Test Creation:</strong> Design tests with specific topics, difficulty, and timers.",
@@ -27,6 +29,7 @@ const coreFeaturesListText = [
   "<strong>Educational Game:</strong> Play 'Word Game' (Definition Challenge). More games coming!",
 ];
 
+// Configuration for "Explore More Features" cards
 const exploreFeaturesCards = [
   { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
   { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests." },
@@ -39,6 +42,7 @@ const exploreFeaturesCards = [
   { title: "Resource Library", href: "/library", icon: BookMarked, description: "Explore learning resources." },
 ];
 
+// Array of motivational quotes to display randomly
 const motivationalQuotes = [
   { quote: "The only way to do great work is to love what you do. ✨", author: "Steve Jobs" },
   { quote: "Believe you can and you're halfway there. 🚀", author: "Theodore Roosevelt" },
@@ -51,18 +55,28 @@ const motivationalQuotes = [
 ];
 
 
+/**
+ * DashboardPage Component
+ *
+ * This is the main landing page after a user logs in (or accesses as a guest).
+ * It provides an overview of LearnMint's features, quick links, and recent activity.
+ */
 export default function DashboardPage() {
-  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice, voicePreference, cancelTTS } = useTTS();
+  // Hooks for text-to-speech, sound effects, navigation, and authentication
+  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
-  const { user } = useAuth(); 
+  const { user } = useAuth(); // Get current user from AuthContext
 
+  // State for storing recent topics and the daily motivational quote
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
-  
+
+  // Refs to track if initial page announcements have been made
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
+  // Effect to set a random motivational quote and load recent topics from localStorage
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
     setDailyQuote(motivationalQuotes[randomIndex]);
@@ -74,21 +88,23 @@ export default function DashboardPage() {
           setRecentTopics(JSON.parse(storedTopics).slice(0, MAX_RECENT_TOPICS_DISPLAY));
         } catch (e) {
           console.error("Failed to parse recent topics from localStorage", e);
-          localStorage.removeItem(RECENT_TOPICS_LS_KEY);
+          localStorage.removeItem(RECENT_TOPICS_LS_KEY); // Clear invalid data
         }
       }
     }
   }, []);
 
+  // Effect to set the preferred voice for TTS announcements once voices are loaded
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); 
+      setVoicePreference('luma'); // Default to 'luma' voice for dashboard announcements
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
+  // Effect to speak the page title once the selected voice is ready and conditions are met
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true; // Prevent state updates on unmounted component
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
@@ -99,6 +115,10 @@ export default function DashboardPage() {
   }, [selectedVoice, isSpeaking, isPaused, speak]);
 
 
+  /**
+   * Handles removing a specific topic from the recent topics list.
+   * @param topicToRemove - The topic string to remove.
+   */
   const handleRemoveTopic = (topicToRemove: string) => {
     playClickSound();
     const updatedTopics = recentTopics.filter(topic => topic !== topicToRemove);
@@ -108,6 +128,9 @@ export default function DashboardPage() {
     }
   };
 
+  /**
+   * Clears all topics from the recent topics list and localStorage.
+   */
   const handleClearAllTopics = () => {
     playClickSound();
     setRecentTopics([]);
@@ -116,13 +139,19 @@ export default function DashboardPage() {
     }
   };
 
+  /**
+   * Navigates to the study page for a given recent topic.
+   * @param topic - The topic to navigate to.
+   */
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
+    // Navigate to the /study page with the selected topic as a query parameter
     router.push(`/study?topic=${encodeURIComponent(topic)}`);
   }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
+      {/* Page Header */}
       <header className="text-center relative">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
           {PAGE_TITLE}
@@ -130,16 +159,18 @@ export default function DashboardPage() {
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
         </p>
+        {/* Interactive mascot element, hidden on small screens */}
         <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-75 hover:opacity-100 transition-opacity hidden sm:block">
           <InteractiveCharacterElement
             characterName="LearnMint Mascot"
-            Icon={Sparkles}
+            Icon={Sparkles} // Uses Sparkles icon
             containerClassName="p-2"
-            dataAiHint="mascot sparkle"
+            dataAiHint="mascot sparkle" // For potential AI image replacement tools
           />
         </div>
       </header>
 
+      {/* Core Features Overview Card */}
       <Card className="bg-card/80 border-primary/30 shadow-xl backdrop-blur-sm">
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -150,12 +181,14 @@ export default function DashboardPage() {
         <CardContent>
            <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
             {coreFeaturesListText.map((feature, index) => (
+              // Use dangerouslySetInnerHTML to render HTML strong tags within the feature text
               <li key={index} className="text-sm md:text-base" dangerouslySetInnerHTML={{ __html: feature }} />
             ))}
           </ul>
         </CardContent>
       </Card>
 
+      {/* Call to Action Button */}
       <div className="text-center">
          <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-8 py-6 shadow-lg group" asChild>
             <Link href="/notes">
@@ -164,14 +197,16 @@ export default function DashboardPage() {
         </Button>
       </div>
 
+      {/* Explore More Features Section */}
       <section>
          <h2 className="text-2xl font-semibold text-primary mb-6 text-center sm:text-left">Explore More Features</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Map through defined features and create interactive cards */}
           {exploreFeaturesCards.map((item) => {
-            const Icon = item.icon;
+            const Icon = item.icon; // Dynamically get the Lucide icon component
             return (
               <Link href={item.href} key={item.href} legacyBehavior>
-                <a className="block h-full">
+                <a className="block h-full"> {/* Anchor tag for navigation */}
                   <Card className="hover:bg-accent/10 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group">
                      <CardHeader className="pb-2 pt-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -190,6 +225,7 @@ export default function DashboardPage() {
               </Link>
             );
           })}
+          {/* Display the daily motivational quote */}
            {dailyQuote && (
             <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group">
               <CardHeader className="pb-2 pt-4">
@@ -208,7 +244,8 @@ export default function DashboardPage() {
           )}
         </div>
       </section>
-      
+
+      {/* Recent Topics Section */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center justify-between">
@@ -226,6 +263,7 @@ export default function DashboardPage() {
             <ul className="space-y-2">
               {recentTopics.map((topic, index) => (
                 <li key={index} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
+                  {/* Button to navigate to study page for the topic */}
                   <button
                     onClick={() => handleRecentTopicClick(topic)}
                     className="truncate text-left hover:text-primary flex-grow"
@@ -233,6 +271,7 @@ export default function DashboardPage() {
                   >
                     {topic}
                   </button>
+                  {/* Button to remove the topic from recent list */}
                   <Button variant="ghost" size="icon" onClick={() => handleRemoveTopic(topic)} className="h-7 w-7 ml-2">
                     <Trash2 className="h-3.5 w-3.5 text-destructive/70 hover:text-destructive" />
                   </Button>
@@ -244,7 +283,8 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-      
+
+      {/* Footer attribution */}
       <div className="text-center text-sm text-muted-foreground mt-12 py-4 border-t border-border/50">
         Made with <Sparkles className="inline-block h-4 w-4 text-accent" /> by MrGarvit
       </div>
