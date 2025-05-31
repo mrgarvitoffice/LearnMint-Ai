@@ -110,14 +110,31 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   const customRenderers = {
     p: (props: any) => {
       const childrenArray = React.Children.toArray(props.children);
-      const newChildren = childrenArray.map((child, index) => {
+      let visualPromptFoundInParagraph = false;
+      const processedChildren = childrenArray.map((child, index) => {
         if (typeof child === 'string' && child.startsWith('[VISUAL_PROMPT:')) {
           const promptText = child.substring('[VISUAL_PROMPT:'.length, child.length - 1).trim();
-          return <AiGeneratedImage key={`vis-${index}`} promptText={promptText} />;
+          visualPromptFoundInParagraph = true;
+          return <AiGeneratedImage key={`vis-prompt-${index}`} promptText={promptText} />;
         }
         return child;
       }).flat();
-      return <p {...props} className="my-2 leading-relaxed">{newChildren}</p>;
+
+      // If the only child after processing is an AiGeneratedImage, render it directly.
+      if (processedChildren.length === 1 && processedChildren[0] && 
+          typeof processedChildren[0] === 'object' && 'type' in processedChildren[0] && 
+          (processedChildren[0] as React.ReactElement).type === AiGeneratedImage) {
+        return <>{processedChildren}</>;
+      }
+
+      // If a visual prompt was processed (meaning an AiGeneratedImage was inserted)
+      // and there's other content, or multiple AiGeneratedImages, wrap with a div.
+      if (visualPromptFoundInParagraph) {
+        return <div className="my-2 leading-relaxed">{processedChildren}</div>;
+      }
+      
+      // Otherwise, render as a normal paragraph.
+      return <p {...props} className="my-2 leading-relaxed">{processedChildren}</p>;
     },
     h1: (props: any) => <h1 className="text-3xl font-bold mt-6 mb-3 pb-2 border-b border-primary/30 text-primary">{props.children}</h1>,
     h2: (props: any) => <h2 className="text-2xl font-semibold mt-5 mb-2.5 pb-1 border-b border-primary/20 text-primary/90">{props.children}</h2>,
@@ -194,3 +211,4 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
+
