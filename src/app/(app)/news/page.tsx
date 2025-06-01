@@ -187,9 +187,8 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (articles && articles.length > 0) {
-        const numHeadlinesToRead = 10; // Standard limit for all languages
         const headlinesText = articles
-            .slice(0, numHeadlinesToRead)
+            // .slice(0, 10) // Removed slice to process all headlines
             .map(article => article.title)
             .filter(title => !!title)
             .join('. ');
@@ -197,7 +196,7 @@ export default function NewsPage() {
     } else {
         ttsHeadlinesRef.current = "";
     }
-  }, [articles]); // Removed appliedFilters.language as it's no longer used for slicing
+  }, [articles]);
 
   const handlePlaybackControl = () => {
     playActionSound();
