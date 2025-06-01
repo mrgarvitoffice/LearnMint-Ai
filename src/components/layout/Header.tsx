@@ -41,10 +41,13 @@ const primaryLinksSpec: { title: string; href: string }[] = [
   { title: 'Dashboard', href: '/' },
   { title: 'Generate', href: '/notes' }, // Link to the main content generation page
   { title: 'Create Test', href: '/custom-test' },
+  { title: 'Daily News', href: '/news' },
 ];
 
 // Links that appear in the "More options" (LayoutGrid icon) dropdown
 const dropdownLinksSpec: { title: string; href: string }[] = [
+  { title: 'Quiz Creator', href: '/quiz' },
+  { title: 'Flashcards', href: '/flashcards' },
   { title: 'Library', href: '/library' },
   { title: 'Calculator', href: '/calculator' },
   { title: 'Chatbot', href: '/chatbot' },
