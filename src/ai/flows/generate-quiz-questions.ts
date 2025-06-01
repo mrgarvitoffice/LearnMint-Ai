@@ -14,7 +14,7 @@ import {z} from 'zod';
 const QuizQuestionSchema = z.object({
   question: z.string().describe('The quiz question text.'),
   options: z.array(z.string()).optional().describe('An array of 3-4 multiple-choice options. Required for "multiple-choice" type.'),
-  answer: z.string().describe('The correct answer to the question.'),
+  answer: z.string().describe('The correct answer to the question. For multiple-choice, this must be the full text of the correct option.'),
   type: z.enum(['multiple-choice', 'short-answer']).describe("The type of question: 'multiple-choice' or 'short-answer'."),
   explanation: z.string().optional().describe('A brief explanation for why the answer is correct or relevant context.'),
 });
@@ -41,12 +41,25 @@ const generateQuizQuestionsPrompt = ai.definePrompt({
   prompt: `You are an expert quiz designer for educational content.
   Generate {{numQuestions}} diverse quiz questions about the topic: {{{topic}}}{{#if difficulty}} (Difficulty: {{{difficulty}}}){{/if}}.
   The questions should cover key concepts and test understanding effectively.
+
   Include a mix of 'multiple-choice' and 'short-answer' question types.
-  If generating 30 questions, aim for approximately 26 multiple-choice and 4 short-answer questions. Adjust the mix proportionally if a different number of questions is requested.
-  For 'multiple-choice' questions, provide exactly 4 distinct options, with one being the correct answer. Ensure options are plausible.
-  For 'short-answer' questions, the answer should be concise (typically 1-5 words).
-  For ALL questions, provide the correct 'answer'.
-  For ALL questions, provide a brief 'explanation' for why the answer is correct or gives relevant context.
+  The proportion of 'short-answer' questions should generally be between 15% and 30% of the total number of questions ({{numQuestions}}).
+  For example:
+  - If {{numQuestions}} is 30, aim for approximately 5-8 'short-answer' questions.
+  - If {{numQuestions}} is 10, aim for approximately 2-3 'short-answer' questions.
+  - If {{numQuestions}} is 5, aim for approximately 1-2 'short-answer' questions.
+  The majority of questions should be 'multiple-choice'.
+
+  For 'multiple-choice' questions:
+    - Provide exactly 4 distinct and plausible options.
+    - The 'answer' field MUST contain the full text of the correct option (e.g., "Paris"), not just a letter (e.g., "C").
+
+  For 'short-answer' questions:
+    - The 'answer' should be concise (typically 1-5 words).
+
+  For ALL questions:
+    - Provide the correct 'answer' as specified above.
+    - Provide a brief 'explanation' for why the answer is correct or gives relevant context.
   
   Output the questions as a JSON object with a "questions" array, conforming to this schema:
   {{{outputSchema}}}
