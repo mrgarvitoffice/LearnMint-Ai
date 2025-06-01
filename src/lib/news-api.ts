@@ -12,7 +12,7 @@ interface FetchNewsParams {
   city?: string;
   category?: string;
   page?: string; // For pagination, newsdata.io uses a 'page' token
-  language?: string;
+  language?: string; // Added language parameter
 }
 
 export async function fetchNews(params: FetchNewsParams): Promise<NewsApiResponse> {
@@ -25,12 +25,12 @@ export async function fetchNews(params: FetchNewsParams): Promise<NewsApiRespons
       title: "API Key Missing",
       link: "#",
       description: "Newsdata.io API key is not configured. Please set it in your environment variables.",
-      pubDate: new Date().toISOString(), category: ["error"], country: [], language: "en", source_id: "learnflow-error", source_priority: 0, keywords: null, creator: null, video_url: null, image_url: null,
+      pubDate: new Date().toISOString(), category: ["error"], country: [], language: params.language || "en", source_id: "learnflow-error", source_priority: 0, keywords: null, creator: null, video_url: null, image_url: null,
     }], nextPage: undefined };
   }
 
   let combinedQuery = params.query || "";
-  if (params.country) { // Only add state/city if country is present
+  if (params.country) { 
     if (params.stateOrRegion) {
       combinedQuery = combinedQuery ? `${combinedQuery} AND ${params.stateOrRegion}` : params.stateOrRegion;
     }
@@ -41,27 +41,20 @@ export async function fetchNews(params: FetchNewsParams): Promise<NewsApiRespons
   
   const queryParams = new URLSearchParams({
     apikey: apiKey,
-    language: params.language || "en",
+    language: params.language || "en", // Use provided language or default to 'en'
   });
 
   if (combinedQuery.trim()) {
     queryParams.append("q", combinedQuery.trim());
   }
   
-  // If a specific category is provided (and it's not an empty string from a reset), use it.
-  // The newsdata.io API uses 'top' as a category for general top headlines.
   if (params.category) { 
     queryParams.append("category", params.category);
   }
   
-  // Default to 'top' category if no search query and no specific category is provided.
-  // This ensures that if the user just lands on the page or clears all filters, they get top headlines.
   if (!combinedQuery.trim() && !params.category) {
     queryParams.set("category", "top"); 
   }
-  // If there IS a combinedQuery but NO category (params.category is empty string),
-  // then no category parameter will be appended, and newsdata.io will search the query across all categories.
-  // This is the desired behavior for "search all categories".
 
   if (params.page) queryParams.append("page", params.page);
   
@@ -93,7 +86,7 @@ export async function fetchNews(params: FetchNewsParams): Promise<NewsApiRespons
             pubDate: new Date().toISOString(),
             category: ["error"],
             country: [],
-            language: "en",
+            language: params.language || "en",
             source_id: "learnflow-error",
             source_priority: 0,
             keywords: null,

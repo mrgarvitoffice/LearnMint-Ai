@@ -25,9 +25,10 @@ interface NewsPageFilters {
   stateOrRegion: string;
   city: string;
   category: string; 
+  language: string; // Added language
 }
 
-const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top' };
+const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top', language: 'en' };
 
 
 export default function NewsPage() {
@@ -77,7 +78,7 @@ export default function NewsPage() {
     queryFn: ({ pageParam }) => fetchNews({
         query: appliedFilters.query, country: appliedFilters.country, 
         stateOrRegion: appliedFilters.stateOrRegion, city: appliedFilters.city,
-        category: appliedFilters.category, page: pageParam
+        category: appliedFilters.category, page: pageParam, language: appliedFilters.language // Pass language
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -116,22 +117,19 @@ export default function NewsPage() {
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page.results) ?? [];
     const uniqueArticlesMap = new Map<string, NewsArticle>();
-    const seenNormalizedTitles = new Set<string>(); // For stricter title-based de-duplication
+    const seenNormalizedTitles = new Set<string>();
 
     const normalizeTitleForKey = (title: string | null | undefined): string => {
       if (!title) return "";
       let normalized = title.toLowerCase();
-      // Remove common prefixes that might cause minor variations
-      const prefixes = ['breaking:', 'update:', 'live:', 'alert:', 'exclusive:', 'video:', 'photos:', 'watch:'];
+      const prefixes = ['breaking:', 'update:', 'live:', 'alert:', 'exclusive:', 'video:', 'photos:', 'watch:', 'opinion:'];
       for (const prefix of prefixes) {
         if (normalized.startsWith(prefix)) {
           normalized = normalized.substring(prefix.length).trim();
           break; 
         }
       }
-      // Remove all non-alphanumeric characters (includes punctuation, symbols) but keep spaces
       normalized = normalized.replace(/[^a-z0-9\s]/g, '');
-      // Collapse multiple spaces and trim
       normalized = normalized.replace(/\s+/g, ' ').trim();
       return normalized;
     };
@@ -139,20 +137,14 @@ export default function NewsPage() {
     allArticlesFlat.forEach(article => {
       const currentNormalizedTitle = normalizeTitleForKey(article.title);
 
-      // Step 1: Primary de-duplication based on normalized title
       if (currentNormalizedTitle && seenNormalizedTitles.has(currentNormalizedTitle)) {
-        // console.log(`Skipping (duplicate title: "${currentNormalizedTitle}"): ${article.title?.substring(0,50)}...`);
-        return; // Skip if this normalized title has already been processed
+        return; 
       }
-      
-      // If title is new, add it to our set of seen titles
       if (currentNormalizedTitle) {
         seenNormalizedTitles.add(currentNormalizedTitle);
       }
 
-      // Step 2: Generate a unique key for the map (ID, then Link)
       let mapKey: string | null = null;
-
       if (article.article_id && article.article_id.trim() !== "") {
         mapKey = `id-${article.article_id.trim()}`;
       }
@@ -169,22 +161,12 @@ export default function NewsPage() {
         }
       }
       
-      // If after title check, we still couldn't get an ID or Link key, 
-      // we use the (now confirmed unique) normalized title as the mapKey.
-      // This ensures articles with unique titles but no ID/Link are still added.
       if (!mapKey && currentNormalizedTitle) {
          mapKey = `title-${currentNormalizedTitle}`;
       }
 
-      // Step 3: Add to map if the mapKey is valid and unique for the map itself
       if (mapKey && !uniqueArticlesMap.has(mapKey)) {
         uniqueArticlesMap.set(mapKey, article);
-      } else if (mapKey && uniqueArticlesMap.has(mapKey)) {
-        // This means same ID/Link but somehow different title (passed the title pre-check), which is rare.
-        // Or, two articles had different titles (passed title pre-check) but same ID/Link.
-        // console.log(`Article with mapKey ${mapKey} already exists in map. Current title: "${article.title}", Existing title: "${uniqueArticlesMap.get(mapKey)?.title}"`);
-      } else {
-        // console.warn(`Could not determine a mapKey for article (after title check), skipping: ${article.title?.substring(0,50)}...`);
       }
     });
     return Array.from(uniqueArticlesMap.values());
@@ -296,3 +278,4 @@ export default function NewsPage() {
     </div>
   );
 }
+

@@ -90,7 +90,7 @@ export const MATH_FACTS_FALLBACK = [
 // --- News API Categories (for News page filters) ---
 // Curated list: Top Headlines (default) + 7 other specific categories.
 export const NEWS_CATEGORIES = [
-  { value: "top", label: "Top Headlines" }, // This is the default for "All Categories" behavior
+  { value: "top", label: "Top Headlines" },
   { value: "business", label: "Business" },
   { value: "technology", label: "Technology" },
   { value: "sports", label: "Sports" },
@@ -121,6 +121,26 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
   { value: "ru", label: "Russia" },
   { value: "ae", label: "United Arab Emirates" },
 ];
+
+// --- News API Languages (for News page filters) ---
+// A selection of languages with their ISO 639-1 codes.
+export const NEWS_LANGUAGES: { value: string; label: string }[] = [
+  { value: "en", label: "English" },
+  { value: "hi", label: "Hindi (हिन्दी)" },
+  { value: "es", label: "Spanish (Español)" },
+  { value: "fr", label: "French (Français)" },
+  { value: "de", label: "German (Deutsch)" },
+  { value: "ja", label: "Japanese (日本語)" },
+  { value: "ru", label: "Russian (Русский)" },
+  { value: "pt", label: "Portuguese (Português)" },
+  { value: "it", label: "Italian (Italiano)" },
+  { value: "zh", label: "Chinese (中文)" },
+  { value: "ar", label: "Arabic (العربية)" },
+  { value: "ko", label: "Korean (한국어)" },
+  { value: "sa", label: "Sanskrit (संस्कृतम्)" },
+  // Add more languages as needed by Newsdata.io support
+];
+
 
 // --- US States (for News page, State/Region filter when US is selected) ---
 export const US_STATES: { value: string; label: string }[] = [

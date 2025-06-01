@@ -4,11 +4,10 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NEWS_CATEGORIES, NEWS_COUNTRIES, COUNTRY_SPECIFIC_REGIONS } from "@/lib/constants";
+import { NEWS_CATEGORIES, NEWS_COUNTRIES, COUNTRY_SPECIFIC_REGIONS, NEWS_LANGUAGES } from "@/lib/constants";
 import { Label } from "@/components/ui/label";
 import { RotateCcw } from "lucide-react";
 
-// const ALL_CATEGORIES_VALUE = "_all_categories_"; // No longer needed with new approach
 const ANY_COUNTRY_VALUE = "_any_country_";
 const ANY_REGION_VALUE = "_any_region_";
 
@@ -19,6 +18,7 @@ interface NewsFiltersProps {
     stateOrRegion: string;
     city: string;
     category: string;
+    language: string; // Added language
   };
   onFilterChange: (name: keyof NewsFiltersProps['filters'], value: string) => void;
   onApplyFilters: () => void;
@@ -34,7 +34,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
 
   return (
     <div className="space-y-6 p-4 border rounded-lg bg-card shadow-md">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 items-end">
         <div className="space-y-1.5">
           <Label htmlFor="query">Search Keywords</Label>
           <Input
@@ -46,6 +46,43 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
             className="bg-input/50"
           />
         </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="language-select">Language</Label>
+          <Select
+            value={filters.language || "en"} // Default to English
+            onValueChange={(value) => onFilterChange('language', value)}
+            disabled={isLoading}
+          >
+            <SelectTrigger id="language-select" className="bg-input/50">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              {NEWS_LANGUAGES.map(lang => (
+                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-1.5">
+          <Label htmlFor="category-select">Category</Label>
+          <Select
+            value={filters.category || "top"} 
+            onValueChange={(value) => onFilterChange('category', value)} 
+            disabled={isLoading}
+          >
+            <SelectTrigger id="category-select" className="bg-input/50">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {NEWS_CATEGORIES.map(cat => ( 
+                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
 
         <div className="space-y-1.5">
           <Label htmlFor="country-select">Country</Label>
@@ -109,24 +146,6 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
             className="bg-input/50 disabled:opacity-50"
           />
         </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="category-select">Category</Label>
-          <Select
-            value={filters.category || "top"} // Default to "top" if filters.category is empty
-            onValueChange={(value) => onFilterChange('category', value)} // Directly pass the selected value
-            disabled={isLoading}
-          >
-            <SelectTrigger id="category-select" className="bg-input/50">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {NEWS_CATEGORIES.map(cat => ( // NEWS_CATEGORIES now includes "Top Headlines"
-                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 pt-2">
         <Button onClick={onApplyFilters} disabled={isLoading} className="flex-grow sm:flex-grow-0">
@@ -139,7 +158,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
       <p className="text-xs text-muted-foreground/80 mt-2">
         <strong>Filter Behavior:</strong> "Top Headlines" is the default category.
         If a specific country is chosen, State/Region may become a dropdown.
-        State/Region and City terms refine search within the selected country if provided.
+        State/Region and City terms refine search within the selected country if provided. Language defaults to English.
       </p>
     </div>
   );
