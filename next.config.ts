@@ -78,6 +78,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      { // Added for newsdata.io itself, if it ever serves images directly
+        protocol: 'https',
+        hostname: 'newsdata.io',
+        port: '',
+        pathname: '/**',
+      },
+      { // Added for potential subdomains of newsdata.io
+        protocol: 'https',
+        hostname: '*.newsdata.io',
+        port: '',
+        pathname: '/**',
+      },
       // Add other news image hostnames here as they appear. For example:
       // {
       //   protocol: 'https',
@@ -90,4 +102,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
