@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 
-import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
+import { fetchStudyNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
 import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QueryError } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
@@ -25,6 +25,7 @@ import FlashcardsView from '@/components/study/FlashcardsView';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PAGE_TITLE_BASE = "Study Hub";
+const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-";
 
 const NotesLoadingSkeleton = () => (
   <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
@@ -73,11 +74,11 @@ function StudyPageContent() {
   const router = useRouter(); 
   const topicParam = searchParams.get("topic");
 
-  const [activeTopic, setActiveTopic] = useState<string>(topicParam ? decodeURIComponent(topicParam) : ""); 
+  const [activeTopic, setActiveTopic] = useState<string>(""); 
   const [activeTab, setActiveTab] = useState<string>("notes");
 
   const { toast } = useToast();
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4); // Changed from playClickSound
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
   const queryClient = useQueryClient();
@@ -85,31 +86,36 @@ function StudyPageContent() {
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   
-   useEffect(() => {
-    const decodedTopic = topicParam ? decodeURIComponent(topicParam) : "";
-    if (decodedTopic && decodedTopic !== activeTopic) { 
-        setActiveTopic(decodedTopic);
-        pageTitleSpokenRef.current = false; 
-        queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
-        queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
-        queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
-    } else if (!decodedTopic && !activeTopic) { 
-      toast({ title: "No Topic Specified", description: "Please generate materials from the main page or enter a topic.", variant: "destructive" });
-      // router.push('/notes'); // Or your designated generate page
+  // Effect to handle topic changes from URL
+  useEffect(() => {
+    const decodedTopic = topicParam ? decodeURIComponent(topicParam).trim() : "";
+    if (decodedTopic && decodedTopic !== activeTopic) {
+      setActiveTopic(decodedTopic);
+      pageTitleSpokenRef.current = false; // Reset for new topic announcement
+      // Invalidate queries to force refetch for the new topic
+      queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
+      queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
+      queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
+    } else if (!decodedTopic && activeTopic) { // Topic removed from URL
+      setActiveTopic("");
+      pageTitleSpokenRef.current = false;
+    } else if (!decodedTopic && !activeTopic) {
+      // Initial load without topic, or navigating back to /study without topic
+      // Handled by renderContent's check for activeTopic
     }
-  }, [topicParam, activeTopic, toast, queryClient, router]);
+  }, [topicParam, activeTopic, queryClient]);
 
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); // Default to Luma (female) for page announcements
+      setVoicePreference('luma');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic && activeTopic !== "No topic provided") {
+    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
     }
@@ -119,12 +125,24 @@ function StudyPageContent() {
   }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
 
 
-  const commonQueryOptions = {
-    enabled: !!activeTopic && activeTopic !== "No topic provided",
-    staleTime: 1000 * 60 * 1, 
-    gcTime: 1000 * 60 * 5,   
-    retry: 1, 
-  };
+  const getCacheKey = (type: string, topic: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topic.toLowerCase().replace(/\s+/g, '-')}`;
+
+  const commonQueryOptions = (type: string) => ({
+    enabled: !!activeTopic,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10,    // 10 minutes
+    retry: 1,
+    initialData: () => {
+      if (typeof window !== 'undefined' && activeTopic) {
+        const cached = localStorage.getItem(getCacheKey(type, activeTopic));
+        if (cached) {
+          try { return JSON.parse(cached); } 
+          catch (e) { console.error("Failed to parse cached data for", type, e); return undefined; }
+        }
+      }
+      return undefined;
+    },
+  });
 
   const {
     data: notesData,
@@ -133,13 +151,15 @@ function StudyPageContent() {
     error: notesErrorObj, 
     refetch: refetchNotes,
     isFetching: isFetchingNotes,
-  } = useQuery<GenerateStudyNotesOutput, QueryError>({ // Use QueryError type
+  } = useQuery<GenerateStudyNotesOutput, QueryError>({
     queryKey: ["studyNotes", activeTopic],
     queryFn: async () => {
-      if (!commonQueryOptions.enabled) throw new Error("A valid topic is required to generate notes.");
-      return generateNotesAction({ topic: activeTopic });
+      if (!activeTopic) throw new Error("A valid topic is required.");
+      const data = await fetchStudyNotesAction({ topic: activeTopic });
+      if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("notes", activeTopic), JSON.stringify(data));
+      return data;
     },
-    ...commonQueryOptions,
+    ...commonQueryOptions("notes"),
   });
 
   const {
@@ -149,14 +169,16 @@ function StudyPageContent() {
     error: quizErrorObj, 
     refetch: refetchQuiz,
     isFetching: isFetchingQuiz,
-  } = useQuery<GenerateQuizQuestionsOutput, QueryError>({ // Use QueryError type
+  } = useQuery<GenerateQuizQuestionsOutput, QueryError>({
     queryKey: ["quizQuestions", activeTopic],
     queryFn: async () => {
-      if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
-      return generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
+      if (!activeTopic) throw new Error("A topic is required.");
+      const data = await generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
+      if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("quiz", activeTopic), JSON.stringify(data));
+      return data;
     },
-    ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'quiz' || (!notesData && isLoadingNotes)), 
+    ...commonQueryOptions("quiz"),
+    enabled: commonQueryOptions("quiz").enabled && (activeTab === 'quiz' || isLoadingNotes), 
   });
 
   const {
@@ -166,32 +188,36 @@ function StudyPageContent() {
     error: flashcardsErrorObj, 
     refetch: refetchFlashcards,
     isFetching: isFetchingFlashcards,
-  } = useQuery<GenerateFlashcardsOutput, QueryError>({ // Use QueryError type
+  } = useQuery<GenerateFlashcardsOutput, QueryError>({
     queryKey: ["flashcards", activeTopic],
     queryFn: async () => {
-      if (!commonQueryOptions.enabled) throw new Error("A topic is required.");
-      return generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
+      if (!activeTopic) throw new Error("A topic is required.");
+      const data = await generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
+      if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("flashcards", activeTopic), JSON.stringify(data));
+      return data;
     },
-    ...commonQueryOptions,
-    enabled: commonQueryOptions.enabled && (activeTab === 'flashcards' || (!notesData && isLoadingNotes)), 
+    ...commonQueryOptions("flashcards"),
+    enabled: commonQueryOptions("flashcards").enabled && (activeTab === 'flashcards' || isLoadingNotes), 
   });
 
 
   const handleRefreshContent = useCallback(() => {
-    playActionSound(); // Changed sound
-    if (activeTopic && activeTopic !== "No topic provided") {
+    playActionSound();
+    if (activeTopic) {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
       pageTitleSpokenRef.current = false; 
+      // Invalidate queries to force refetch
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
+      // Explicitly call refetch for immediate effect, though invalidation might be enough
       refetchNotes();
-      if(activeTab === 'quiz') refetchQuiz();
-      if(activeTab === 'flashcards') refetchFlashcards();
+      refetchQuiz();
+      refetchFlashcards();
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, queryClient, toast, playActionSound, refetchNotes, refetchQuiz, refetchFlashcards, activeTab]);
+  }, [activeTopic, queryClient, toast, playActionSound, refetchNotes, refetchQuiz, refetchFlashcards]);
 
   const handleTabChange = (value: string) => {
     playClickSound();
@@ -199,13 +225,13 @@ function StudyPageContent() {
   };
 
   const renderContent = () => {
-    if (!activeTopic || activeTopic === "No topic provided") { 
+    if (!activeTopic) { 
       return (
         <Alert variant="default" className="mt-6 flex flex-col items-center justify-center text-center p-6">
           <Home className="h-10 w-10 text-muted-foreground mb-3" />
-          <AlertTitle className="text-xl">No Topic Loaded</AlertTitle>
+          <AlertTitle className="text-xl">No Topic Specified</AlertTitle>
           <AlertDescription className="mb-4">
-            Please generate study materials from the main page first or enter a topic in the URL.
+            Please generate study materials from the main "Generate" page first, or select a recent topic from the dashboard.
           </AlertDescription>
           <Button onClick={() => router.push('/notes')} variant="outline">
             Go to Generate Page
@@ -249,7 +275,7 @@ function StudyPageContent() {
 
   return (
     <div className="container mx-auto max-w-5xl px-2 py-6 sm:px-4 sm:py-8 flex flex-col flex-1 min-h-[calc(100vh-8rem)]">
-      {activeTopic && activeTopic !== "No topic provided" ? (
+      {activeTopic ? (
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-2">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center sm:text-left truncate max-w-xl">
             Study Hub for: <span className="text-primary">{activeTopic}</span>
@@ -276,3 +302,5 @@ export default function StudyPage() {
     </Suspense>
   );
 }
+
+    

@@ -143,11 +143,13 @@ export default function DashboardPage() {
 
   /**
    * Navigates to the study page for a given recent topic.
+   * This will now always trigger a fresh generation/fetch on the /study page.
    * @param topic - The topic to navigate to.
    */
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
-    // Navigate to the /study page with the selected topic as a query parameter
+    // Navigate to the /study page with the selected topic as a query parameter.
+    // The /study page will handle fetching/generating all materials.
     router.push(`/study?topic=${encodeURIComponent(topic)}`);
   }
 
@@ -197,7 +199,7 @@ export default function DashboardPage() {
       <div className="text-center">
          <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-8 py-6 shadow-lg group" asChild>
             <Link href="/notes">
-                <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Notes
+                <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Materials
             </Link>
         </Button>
       </div>
@@ -267,7 +269,7 @@ export default function DashboardPage() {
               </Button>
             )}
           </CardTitle>
-          <CardDescription>Quickly revisit topics you've generated study materials for.</CardDescription>
+          <CardDescription>Quickly revisit topics to generate or view study materials.</CardDescription>
         </CardHeader>
         <CardContent>
           {recentTopics.length > 0 ? (
@@ -278,7 +280,7 @@ export default function DashboardPage() {
                   <button
                     onClick={() => handleRecentTopicClick(topic)}
                     className="truncate text-left hover:text-primary flex-grow"
-                    title={`Revisit study materials for: ${topic}`}
+                    title={`Generate/view study materials for: ${topic}`}
                   >
                     {topic}
                   </button>
@@ -302,3 +304,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
