@@ -6,13 +6,16 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
-import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Newspaper, Loader2, AlertTriangle } from 'lucide-react';
+import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Speaker } from 'lucide-react'; // Added icons
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added Select
+import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
+import { useToast } from '@/hooks/use-toast';
+
 
 const PAGE_TITLE = "Global News Terminal";
 
@@ -31,10 +34,23 @@ export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
+  const {
+    speak,
+    pauseTTS,
+    resumeTTS,
+    cancelTTS,
+    isSpeaking,
+    isPaused,
+    supportedVoices,
+    selectedVoice,
+    setVoicePreference,
+    voicePreference
+  } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const ttsHeadlinesRef = useRef<string>("");
+  const { toast } = useToast(); 
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -46,7 +62,9 @@ export default function NewsPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE);
+      if (!ttsHeadlinesRef.current || ttsHeadlinesRef.current.trim() === "") {
+        speak(PAGE_TITLE);
+      }
       pageTitleSpokenRef.current = true;
     }
     return () => { 
@@ -69,7 +87,7 @@ export default function NewsPage() {
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      if (name === 'country') { // If country changes, reset state/region and city
+      if (name === 'country') { 
         newFilters.stateOrRegion = ''; 
         newFilters.city = ''; 
       }
@@ -102,29 +120,24 @@ export default function NewsPage() {
     allArticles.forEach(article => {
       let key: string | null = null;
 
-      // 1. Try article_id first
       if (article.article_id && article.article_id.trim() !== "") {
         key = article.article_id.trim();
       }
       
-      // 2. If no article_id, try normalized link (hostname + pathname)
       if (!key && article.link) {
         try {
           const url = new URL(article.link);
-          // Use only hostname and pathname for link normalization
           const normalizedLink = url.hostname + url.pathname;
           if (normalizedLink) {
             key = `link-${normalizedLink}`;
           }
         } catch (e) {
-          // console.warn(`Could not parse article link for de-duplication: ${article.link}.`);
+           console.warn(`Could not parse article link for de-duplication: ${article.link}.`);
         }
       }
       
-      // 3. If still no key, try aggressively normalized title
       if (!key && article.title) {
         let normalizedTitle = article.title.toLowerCase();
-        // Remove common prefixes
         const prefixes = ['breaking:', 'update:', 'live:', 'alert:', 'exclusive:', 'video:', 'photos:'];
         for (const prefix of prefixes) {
           if (normalizedTitle.startsWith(prefix)) {
@@ -132,12 +145,9 @@ export default function NewsPage() {
             break; 
           }
         }
-        // Remove all non-alphanumeric characters (except spaces, which are then collapsed)
         normalizedTitle = normalizedTitle.replace(/[^a-z0-9\s]/g, '');
-        // Collapse multiple spaces to single space and trim
         normalizedTitle = normalizedTitle.replace(/\s+/g, ' ').trim();
         
-        // Using the full normalized title now, no 70 character limit
         if (normalizedTitle) {
             key = `title-${normalizedTitle}`; 
         }
@@ -147,12 +157,50 @@ export default function NewsPage() {
         uniqueArticlesMap.set(key, article);
       } else if (key && uniqueArticlesMap.has(key)) {
         // console.log(`Duplicate article skipped (key: ${key}): ${article.title?.substring(0,50)}...`);
-      } else {
-        // console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
+      } else if (!key && article.title) { // Last resort, use raw title if no other key could be made
+        uniqueArticlesMap.set(`raw-title-${article.title}`, article);
+      }
+       else {
+         console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
       }
     });
     return Array.from(uniqueArticlesMap.values());
   }, [data]);
+
+  useEffect(() => {
+    if (articles && articles.length > 0) {
+        const headlinesText = articles.map(article => article.title).filter(title => !!title).join('. ');
+        ttsHeadlinesRef.current = headlinesText;
+    } else {
+        ttsHeadlinesRef.current = "";
+    }
+  }, [articles]);
+
+  const handlePlaybackControl = () => {
+    playActionSound();
+    const textToPlay = ttsHeadlinesRef.current;
+    if (!textToPlay.trim()) {
+        toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
+        return;
+    }
+
+    if (isSpeaking && !isPaused) pauseTTS();
+    else if (isPaused) resumeTTS();
+    else speak(textToPlay);
+  };
+
+  const handleStopTTS = () => {
+    playActionSound();
+    cancelTTS();
+  };
+
+  const getSelectedDropdownValue = () => {
+    if (voicePreference) return voicePreference;
+    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma'; 
+    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
+    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
+    return 'luma'; 
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -162,6 +210,25 @@ export default function NewsPage() {
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
+        <CardContent className="pt-0 pb-4"> 
+          <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
+              <Select value={getSelectedDropdownValue()} onValueChange={(value) => { playActionSound(); setVoicePreference(value as 'zia' | 'kai' | 'luma' | null); }}>
+                  <SelectTrigger className="w-full sm:w-auto text-xs h-9 min-w-[120px]">
+                      <Speaker className="h-3.5 w-3.5 mr-1.5 opacity-70"/>
+                      <SelectValue placeholder="Voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="luma">Luma (Female)</SelectItem>
+                      <SelectItem value="zia">Zia (Female)</SelectItem>
+                      <SelectItem value="kai">Kai (Male)</SelectItem>
+                  </SelectContent>
+              </Select>
+              <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={isSpeaking && !isPaused ? "Pause Headlines" : isPaused ? "Resume Headlines" : "Read Headlines"}>
+                  {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4 mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />} {isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Read Headlines"}
+              </Button>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused}> <StopCircle className="h-5 w-5" /> </Button>
+          </div>
+        </CardContent>
         <CardContent>
           <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
         </CardContent>
