@@ -86,21 +86,18 @@ function StudyPageContent() {
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   
-  // Effect to handle topic changes from URL
   useEffect(() => {
     const decodedTopic = topicParam ? decodeURIComponent(topicParam).trim() : "";
     if (decodedTopic && decodedTopic !== activeTopic) {
       setActiveTopic(decodedTopic);
-      pageTitleSpokenRef.current = false; // Reset for new topic announcement
-      // Invalidate queries to force refetch for the new topic
+      pageTitleSpokenRef.current = false; 
       queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
-    } else if (!decodedTopic && activeTopic) { // Topic removed from URL
+    } else if (!decodedTopic && activeTopic) { 
       setActiveTopic("");
       pageTitleSpokenRef.current = false;
     } else if (!decodedTopic && !activeTopic) {
-      // Initial load without topic, or navigating back to /study without topic
       // Handled by renderContent's check for activeTopic
     }
   }, [topicParam, activeTopic, queryClient]);
@@ -129,8 +126,8 @@ function StudyPageContent() {
 
   const commonQueryOptions = (type: string) => ({
     enabled: !!activeTopic,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10,    // 10 minutes
+    staleTime: 1000 * 60 * 5, 
+    gcTime: 1000 * 60 * 10,    
     retry: 1,
     initialData: () => {
       if (typeof window !== 'undefined' && activeTopic) {
@@ -177,8 +174,7 @@ function StudyPageContent() {
       if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("quiz", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("quiz"),
-    enabled: commonQueryOptions("quiz").enabled && (activeTab === 'quiz' || isLoadingNotes), 
+    ...commonQueryOptions("quiz"), // This spread includes enabled: !!activeTopic
   });
 
   const {
@@ -196,8 +192,7 @@ function StudyPageContent() {
       if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("flashcards", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("flashcards"),
-    enabled: commonQueryOptions("flashcards").enabled && (activeTab === 'flashcards' || isLoadingNotes), 
+    ...commonQueryOptions("flashcards"), // This spread includes enabled: !!activeTopic
   });
 
 
@@ -206,11 +201,9 @@ function StudyPageContent() {
     if (activeTopic) {
       toast({ title: "Refreshing All Content", description: `Re-fetching materials for ${activeTopic}.` });
       pageTitleSpokenRef.current = false; 
-      // Invalidate queries to force refetch
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      // Explicitly call refetch for immediate effect, though invalidation might be enough
       refetchNotes();
       refetchQuiz();
       refetchFlashcards();
