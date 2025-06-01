@@ -50,7 +50,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         <div className="space-y-1.5">
           <Label htmlFor="country-select">Country</Label>
           <Select
-            value={filters.country || ANY_COUNTRY_VALUE} // Ensure select shows "World / Any" if filter.country is ""
+            value={filters.country || ANY_COUNTRY_VALUE}
             onValueChange={(value) => onFilterChange('country', value === ANY_COUNTRY_VALUE ? "" : value)}
             disabled={isLoading}
           >
@@ -75,7 +75,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
               disabled={isLoading || !isSpecificCountrySelected}
             >
               <SelectTrigger id="stateOrRegion-select" className="bg-input/50" title={!isSpecificCountrySelected ? "Select a country to enable State/Region filter" : "Select state/region"}>
-                <SelectValue placeholder="Select state/region" />
+                <SelectValue placeholder={isSpecificCountrySelected ? "Any State/Region" : "Select Country First"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ANY_REGION_VALUE}>Any State/Region</SelectItem>
@@ -87,11 +87,11 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
           ) : (
             <Input
               id="stateOrRegion-input"
-              placeholder="e.g., California, Bavaria"
+              placeholder={isSpecificCountrySelected ? "e.g., California" : "Select Country First"}
               value={filters.stateOrRegion}
               onChange={(e) => onFilterChange('stateOrRegion', e.target.value)}
               disabled={isLoading || !isSpecificCountrySelected}
-              title={!isSpecificCountrySelected ? "Select a country to enable State/Region keyword search" : "Enter state/region to refine search within selected country"}
+              title={!isSpecificCountrySelected ? "Select a country to enable State/Region keyword search" : "Enter state/region to refine search"}
               className="bg-input/50 disabled:opacity-50"
             />
           )}
@@ -101,11 +101,11 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
           <Label htmlFor="city">City</Label>
           <Input
             id="city"
-            placeholder="e.g., London, Tokyo"
+            placeholder={isSpecificCountrySelected ? "e.g., London" : "Select Country First"}
             value={filters.city}
             onChange={(e) => onFilterChange('city', e.target.value)}
             disabled={isLoading || !isSpecificCountrySelected}
-            title={!isSpecificCountrySelected ? "Select a country to enable City keyword search" : "Enter city to refine search within selected country"}
+            title={!isSpecificCountrySelected ? "Select a country to enable City keyword search" : "Enter city to refine search"}
             className="bg-input/50 disabled:opacity-50"
           />
         </div>
@@ -113,7 +113,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         <div className="space-y-1.5">
           <Label htmlFor="category-select">Category</Label>
           <Select
-            value={filters.category || ALL_CATEGORIES_VALUE} // Ensure select shows "All Categories" if filter.category is ""
+            value={filters.category || ALL_CATEGORIES_VALUE}
             onValueChange={(value) => onFilterChange('category', value === ALL_CATEGORIES_VALUE ? "" : value)}
             disabled={isLoading}
           >
@@ -139,10 +139,9 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
       </div>
       <p className="text-xs text-muted-foreground/80 mt-2">
         <strong>Filter Behavior:</strong> Selecting "World / Any Country" fetches global news.
-        If a specific country is chosen, you can refine by State/Region. For the US, a dropdown of states is available. For other countries, State/Region is a text input.
-        City is always a text input. State/Region and City terms are used as keywords to refine your search within the selected country.
+        If a specific country is chosen (e.g., US), State/Region becomes a dropdown. Otherwise, it's a text input.
+        City is always a text input. State/Region and City terms refine search within the selected country.
       </p>
     </div>
   );
 }
-
