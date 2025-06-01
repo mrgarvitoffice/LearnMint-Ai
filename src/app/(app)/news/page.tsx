@@ -187,7 +187,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (articles && articles.length > 0) {
-        const numHeadlinesToRead = appliedFilters.language === 'hi' ? 5 : 10; // Read 5 for Hindi, 10 for others
+        const numHeadlinesToRead = appliedFilters.language === 'hi' ? 3 : 10; // Read 3 for Hindi, 10 for others
         const headlinesText = articles
             .slice(0, numHeadlinesToRead)
             .map(article => article.title)
@@ -201,6 +201,8 @@ export default function NewsPage() {
 
   const handlePlaybackControl = () => {
     playActionSound();
+    cancelTTS(); // Always cancel previous before starting new headline reading
+    
     const textToPlay = ttsHeadlinesRef.current;
     if (!textToPlay.trim()) {
         toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
@@ -211,9 +213,7 @@ export default function NewsPage() {
     const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
     const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
 
-    cancelTTS(); // Always cancel previous before starting new headline reading
-
-    if (isSpeaking && !isPaused) { // This condition might be less relevant if we always cancel first
+    if (isSpeaking && !isPaused) { 
         pauseTTS();
     } else if (isPaused) {
         resumeTTS();
@@ -312,3 +312,4 @@ export default function NewsPage() {
     </div>
   );
 }
+
