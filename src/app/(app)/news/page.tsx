@@ -102,28 +102,38 @@ export default function NewsPage() {
     allArticles.forEach(article => {
       let key: string | null = null;
 
+      // 1. Try article_id first
       if (article.article_id && article.article_id.trim() !== "") {
         key = article.article_id.trim();
-      } else if (article.link) {
+      }
+      
+      // 2. If no article_id, try normalized link
+      if (!key && article.link) {
         try {
           const url = new URL(article.link);
-          // Normalize URL by using hostname and pathname, removing protocol, query params, and hash
-          key = url.hostname + url.pathname; 
+          key = url.hostname + url.pathname; // Normalize by hostname and pathname
         } catch (e) {
-          // If URL parsing fails, use the raw link as a fallback.
-          key = article.link; 
-          console.warn(`Could not parse article link for de-duplication: ${article.link}. Using raw link as key.`);
+          console.warn(`Could not parse article link for de-duplication: ${article.link}.`);
+        }
+      }
+      
+      // 3. If still no key, try normalized title
+      if (!key && article.title) {
+        const normalizedTitle = article.title
+          .toLowerCase()
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"?]/g,"") // Remove common punctuation
+          .replace(/\s{2,}/g," ") // Replace multiple spaces with single
+          .trim();
+        if (normalizedTitle) {
+            key = `title-${normalizedTitle}`; // Prefix to avoid collision with IDs/links
         }
       }
 
       if (key && !uniqueArticlesMap.has(key)) {
         uniqueArticlesMap.set(key, article);
       } else if (key && uniqueArticlesMap.has(key)) {
-        // Optional: Log if you want to see which duplicates are being skipped by key
         // console.log(`Duplicate article skipped (key: ${key}): ${article.title?.substring(0,50)}...`);
       } else {
-        // This article couldn't establish a reliable key.
-        // To prevent potential UI errors or missing data, it's safer to log and skip.
         console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
       }
     });
@@ -169,7 +179,7 @@ export default function NewsPage() {
       )}
       {articles.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {articles.map((article) => <NewsCard key={article.article_id || article.link} article={article} />)}
+          {articles.map((article) => <NewsCard key={article.article_id || article.link || article.title} article={article} />)}
         </div>
       )}
       {hasNextPage && (
