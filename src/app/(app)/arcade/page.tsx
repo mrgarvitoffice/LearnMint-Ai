@@ -53,15 +53,15 @@ export default function ArcadePage() {
       </Card>
 
       <Tabs defaultValue="definition-challenge" className="w-full">
-        <TabsList className="flex flex-wrap justify-center gap-2 mb-6 sm:flex-nowrap sm:grid sm:grid-cols-3">
-          <TabsTrigger value="definition-challenge" className="text-sm sm:text-base py-2 px-3">
-            <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" /> Definition Challenge
+        <TabsList className="flex flex-wrap items-center justify-center rounded-md bg-muted p-1.5 text-muted-foreground gap-1.5 mb-6 h-auto sm:grid sm:grid-cols-3 sm:gap-2 sm:h-10 sm:p-1">
+          <TabsTrigger value="definition-challenge" className="text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-1.5 flex items-center justify-center">
+            <Puzzle className="w-3.5 h-3.5 mr-1 sm:w-4 sm:h-4 sm:mr-1.5" /> Definition Challenge
           </TabsTrigger>
-          <TabsTrigger value="dino-runner" className="text-sm sm:text-base py-2 px-3">
-            <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" /> Dino Runner
+          <TabsTrigger value="dino-runner" className="text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-1.5 flex items-center justify-center">
+            <ExternalLink className="w-3.5 h-3.5 mr-1 sm:w-4 sm:h-4 sm:mr-1.5" /> Dino Runner
           </TabsTrigger>
-          <TabsTrigger value="chess" className="text-sm sm:text-base py-2 px-3">
-            <Crown className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" /> Play Chess
+          <TabsTrigger value="chess" className="text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-1.5 flex items-center justify-center">
+            <Crown className="w-3.5 h-3.5 mr-1 sm:w-4 sm:h-4 sm:mr-1.5" /> Play Chess
           </TabsTrigger>
         </TabsList>
 
