@@ -215,31 +215,55 @@ Access Genkit UI at `http://localhost:4000`.
 
 ---
 
-## ☁️ Deployment to Firebase Hosting ☁️
+> ▲ **Deployment to Vercel Hosting**▲
 
-LearnMint by **MrGarvit** is configured for Firebase Hosting (App Hosting).
+LearnMint by MrGarvit is configured for Vercel Hosting.
 
-**Prerequisites:**
-*   `firebase-tools` installed: `npm install -g firebase-tools`.
-*   Logged into Firebase: `firebase login`.
-*   `.firebaserc` specifies your Firebase project ID.
+Prerequisites:
 
-**Deployment Steps:**
+Vercel account: https://vercel.com/signup
 
-1.  ✅ **CRITICAL: Local `.env` for Build:** Ensure local `.env` has valid **production** API keys.
-2.  🖼️ **CRITICAL: Add Static Assets:** As per step 5 in "Getting Started".
-3.  ⚙️ **Build for Production:** `npm run build`
-4.  🚀 **Deploy:** `firebase deploy`
-5.  🔑 **CRITICAL: Set Environment Variables in Google Cloud for Deployed App (App Hosting):**
-    Firebase App Hosting **does not use local `.env` for deployed functions.** Set them in Google Cloud Console:
-    *   Go to `https://console.cloud.google.com/run?project=YOUR_PROJECT_ID`.
-    *   Find your App Hosting service (e.g., `learnmint-app`).
-    *   Edit configuration -> "Variables & Secrets".
-    *   Add **ALL** required production environment variables.
-    *   Deploy the new revision. **This is crucial for deployed features.**
+Vercel CLI installed: npm install -g vercel
 
-> **Note by MrGarvit:** Set environment variables locally for build AND remotely for deployed functions!
+Logged into Vercel: vercel login
 
+
+Deployment Steps:
+
+1. ✅ CRITICAL: Local .env for Build: Ensure local .env has valid production API keys.
+
+
+2. 🖼️ CRITICAL: Add Static Assets: As per step 5 in "Getting Started".
+
+
+3. ⚙️ Build for Production (optional): npm run build
+(Vercel auto-builds from Git, but local build helps test errors early.)
+
+
+4. 🚀 Deploy:
+Via CLI: Run vercel --prod in your project folder
+OR
+Push to GitHub → Vercel auto-deploys main branch.
+
+
+5. 🔑 CRITICAL: Set Environment Variables in Vercel Dashboard:
+Local .env is not used in production unless set in dashboard:
+
+Go to https://vercel.com/dashboard
+
+Open your project (e.g., learnmint)
+
+Go to Settings > Environment Variables
+
+Add ALL required production environment variables
+
+Click Deploy to apply changes
+
+
+
+
+> **Note by MrGarvit:** Set environment variables locally for build AND in Vercel dashboard for production!
+>
 ---
 
 ## 🎨 Customization 🎨
