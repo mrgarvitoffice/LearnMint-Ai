@@ -88,7 +88,7 @@ export const MATH_FACTS_FALLBACK = [
 ];
 
 // --- News API Categories (for News page filters) ---
-// Curated list: Top Headlines (default) + 7 other specific categories.
+// Top Headlines + 7 other specific categories.
 export const NEWS_CATEGORIES = [
   { value: "top", label: "Top Headlines" },
   { value: "business", label: "Business" },
@@ -123,22 +123,21 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
 ];
 
 // --- News API Languages (for News page filters) ---
-// A selection of languages with their ISO 639-1 codes.
-export const NEWS_LANGUAGES: { value: string; label: string }[] = [
-  { value: "en", label: "English" },
-  { value: "hi", label: "Hindi (हिन्दी)" },
-  { value: "es", label: "Spanish (Español)" },
-  { value: "fr", label: "French (Français)" },
-  { value: "de", label: "German (Deutsch)" },
-  { value: "ja", label: "Japanese (日本語)" },
-  { value: "ru", label: "Russian (Русский)" },
-  { value: "pt", label: "Portuguese (Português)" },
-  { value: "it", label: "Italian (Italiano)" },
-  { value: "zh", label: "Chinese (中文)" },
-  { value: "ar", label: "Arabic (العربية)" },
-  { value: "ko", label: "Korean (한국어)" },
-  { value: "sa", label: "Sanskrit (संस्कृतम्)" },
-  // Add more languages as needed by Newsdata.io support
+// A selection of languages with their ISO 639-1 codes and BCP 47 tags for TTS.
+export const NEWS_LANGUAGES: { value: string; label: string; bcp47: string; }[] = [
+  { value: "en", label: "English", bcp47: "en-US" },
+  { value: "hi", label: "Hindi (हिन्दी)", bcp47: "hi-IN" },
+  { value: "es", label: "Spanish (Español)", bcp47: "es-ES" },
+  { value: "fr", label: "French (Français)", bcp47: "fr-FR" },
+  { value: "de", label: "German (Deutsch)", bcp47: "de-DE" },
+  { value: "ja", label: "Japanese (日本語)", bcp47: "ja-JP" },
+  { value: "ru", label: "Russian (Русский)", bcp47: "ru-RU" },
+  { value: "pt", label: "Portuguese (Português)", bcp47: "pt-PT" }, // Or pt-BR
+  { value: "it", label: "Italian (Italiano)", bcp47: "it-IT" },
+  { value: "zh", label: "Chinese (中文)", bcp47: "zh-CN" }, // Or zh-TW, zh-HK
+  { value: "ar", label: "Arabic (العربية)", bcp47: "ar-SA" }, // Or other Arabic locale
+  { value: "ko", label: "Korean (한국어)", bcp47: "ko-KR" },
+  { value: "sa", label: "Sanskrit (संस्कृतम्)", bcp47: "sa-IN" },
 ];
 
 

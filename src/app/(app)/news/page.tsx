@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
+import { NEWS_LANGUAGES } from '@/lib/constants';
 
 
 const PAGE_TITLE = "Global News Terminal";
@@ -25,7 +26,7 @@ interface NewsPageFilters {
   stateOrRegion: string;
   city: string;
   category: string; 
-  language: string; // Added language
+  language: string;
 }
 
 const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top', language: 'en' };
@@ -55,6 +56,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+      // Default voice preference for UI elements, not necessarily for news reading
       setVoicePreference('luma'); 
       voicePreferenceWasSetRef.current = true;
     }
@@ -64,21 +66,24 @@ export default function NewsPage() {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       if (!ttsHeadlinesRef.current || ttsHeadlinesRef.current.trim() === "") {
-        speak(PAGE_TITLE);
+        const currentLanguageFilter = appliedFilters.language || 'en';
+        const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
+        const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
+        speak(PAGE_TITLE, bcp47Lang);
       }
       pageTitleSpokenRef.current = true;
     }
     return () => { 
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [selectedVoice, isSpeaking, isPaused, speak, appliedFilters.language]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
     queryFn: ({ pageParam }) => fetchNews({
         query: appliedFilters.query, country: appliedFilters.country, 
         stateOrRegion: appliedFilters.stateOrRegion, city: appliedFilters.city,
-        category: appliedFilters.category, page: pageParam, language: appliedFilters.language // Pass language
+        category: appliedFilters.category, page: pageParam, language: appliedFilters.language
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -101,7 +106,10 @@ export default function NewsPage() {
     setAppliedFilters(filters); 
     pageTitleSpokenRef.current = true; 
     if (selectedVoice && !isSpeaking && !isPaused) {
-      speak("Fetching news with new filters.");
+      const currentLanguageFilter = filters.language || 'en';
+      const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
+      const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
+      speak("Fetching news with new filters.", bcp47Lang);
     }
   };
   const handleResetFilters = () => { 
@@ -110,7 +118,8 @@ export default function NewsPage() {
     setAppliedFilters(initialFilters); 
     pageTitleSpokenRef.current = true; 
     if (selectedVoice && !isSpeaking && !isPaused) {
-      speak("News filters reset.");
+      // Resetting filters implies default language (English) for this announcement
+      speak("News filters reset.", "en-US");
     }
   };
 
@@ -129,16 +138,15 @@ export default function NewsPage() {
           break; 
         }
       }
-      normalized = normalized.replace(/[^a-z0-9\s]/g, '');
-      normalized = normalized.replace(/\s+/g, ' ').trim();
+      normalized = normalized.replace(/[^a-z0-9\s]/g, ''); // Keep only letters, numbers, and spaces
+      normalized = normalized.replace(/\s+/g, ' ').trim(); // Collapse multiple spaces
       return normalized;
     };
 
     allArticlesFlat.forEach(article => {
       const currentNormalizedTitle = normalizeTitleForKey(article.title);
-
       if (currentNormalizedTitle && seenNormalizedTitles.has(currentNormalizedTitle)) {
-        return; 
+        return; // Skip if this exact normalized title has been seen
       }
       if (currentNormalizedTitle) {
         seenNormalizedTitles.add(currentNormalizedTitle);
@@ -152,7 +160,7 @@ export default function NewsPage() {
       if (!mapKey && article.link) {
         try {
           const url = new URL(article.link);
-          const normalizedLink = url.hostname + url.pathname;
+          const normalizedLink = url.hostname + url.pathname; // Use hostname + pathname
           if (normalizedLink) {
             mapKey = `link-${normalizedLink}`;
           }
@@ -161,12 +169,17 @@ export default function NewsPage() {
         }
       }
       
+      // Title-based key is now effectively handled by seenNormalizedTitles,
+      // but we still need a mapKey for the uniqueArticlesMap if ID/Link based failed.
       if (!mapKey && currentNormalizedTitle) {
-         mapKey = `title-${currentNormalizedTitle}`;
+         mapKey = `title-${currentNormalizedTitle}`; // Fallback mapKey
       }
+
 
       if (mapKey && !uniqueArticlesMap.has(mapKey)) {
         uniqueArticlesMap.set(mapKey, article);
+      } else if (!mapKey) {
+        // console.warn("Article skipped due to missing ID, Link, and valid Title for key generation:", article.title);
       }
     });
     return Array.from(uniqueArticlesMap.values());
@@ -174,7 +187,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (articles && articles.length > 0) {
-        const headlinesText = articles.map(article => article.title).filter(title => !!title).join('. ');
+        const headlinesText = articles.slice(0, 10).map(article => article.title).filter(title => !!title).join('. '); // Read first 10
         ttsHeadlinesRef.current = headlinesText;
     } else {
         ttsHeadlinesRef.current = "";
@@ -189,9 +202,13 @@ export default function NewsPage() {
         return;
     }
 
+    const currentLanguageFilter = appliedFilters.language || 'en';
+    const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
+    const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
+
     if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
-    else speak(textToPlay);
+    else speak(textToPlay, bcp47Lang);
   };
 
   const handleStopTTS = () => {
@@ -217,7 +234,13 @@ export default function NewsPage() {
         </CardHeader>
         <CardContent className="pt-0 pb-4"> 
           <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
-              <Select value={getSelectedDropdownValue()} onValueChange={(value) => { playActionSound(); setVoicePreference(value as 'zia' | 'kai' | 'luma' | null); }}>
+              <Select 
+                value={getSelectedDropdownValue()} 
+                onValueChange={(value) => { 
+                    playActionSound(); 
+                    setVoicePreference(value as 'zia' | 'kai' | 'luma' | null); 
+                }}
+              >
                   <SelectTrigger className="w-full sm:w-auto text-xs h-9 min-w-[120px]">
                       <Speaker className="h-3.5 w-3.5 mr-1.5 opacity-70"/>
                       <SelectValue placeholder="Voice" />

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Avatar component
 // Lucide icons for UI elements
-import { LayoutGrid, PanelLeft, Palette, LogOut, UserCircle, LogIn } from 'lucide-react';
+import { LayoutGrid, Palette, LogOut, UserCircle, LogIn } from 'lucide-react'; // PanelLeft removed
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useTheme } from 'next-themes'; // Hook for theme management
 import React from 'react';
@@ -124,12 +124,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-      {/* Mobile Menu Trigger (Hamburger Icon) */}
+      {/* Mobile Menu Trigger (LearnMint Logo) */}
       <div className="md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button size="icon" variant="outline" className="rounded-lg" onClick={() => playClickSound()}>
-              <PanelLeft className="h-5 w-5" />
+            <Button size="icon" variant="outline" className="rounded-lg p-0.5" onClick={() => playClickSound()}>
+              <Logo size={28} /> {/* Using Logo component here */}
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
