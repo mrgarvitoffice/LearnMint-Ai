@@ -155,7 +155,8 @@ export function Header() {
                         </Button>
                     </SheetClose>
                     <SheetClose asChild>
-                        <InstallPWAButton />
+                         {/* Ensure InstallPWAButton takes full width and dropdown item styling */}
+                        <InstallPWAButton asDropdownItem={true} />
                     </SheetClose>
 
                     {user && !user.isAnonymous && (
@@ -280,12 +281,16 @@ export function Header() {
                 </DropdownMenuItem>
               ) : (
                 <>
+                  <DropdownMenuItem asChild onClick={() => handleDropdownItemClick()}>
+                    <Link href="/profile" className="flex items-center gap-2">
+                        <UserCircle className="h-4 w-4" /> View Profile
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDropdownItemClick(handleThemeToggle)} className="flex items-center gap-2">
                     <Palette className="h-4 w-4" /> Toggle Theme
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild onClick={() => handleDropdownItemClick()}>
-                     {/* InstallPWAButton handles its own icon and styling for dropdown compatibility */}
-                     <InstallPWAButton />
+                     <InstallPWAButton asDropdownItem={true} />
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">

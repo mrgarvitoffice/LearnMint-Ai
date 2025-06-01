@@ -21,7 +21,8 @@ import {
   FlaskConical,    // Generic science icon
   Bot,             // Icon for AI Chatbot
   TestTubeDiagonal,// Icon for Custom Test
-  BookMarked       // Specific icon used for the Library navigation item
+  BookMarked,       // Specific icon used for the Library navigation item
+  UserCircle,      // Icon for Profile
 } from 'lucide-react';
 
 /**
@@ -51,7 +52,7 @@ export const NAV_ITEMS: NavItem[] = [
       { title: 'Note Generator', href: '/notes', icon: FileText, label: 'AI' },
       { title: 'Quiz Creator', href: '/quiz', icon: HelpCircle, label: 'AI' },
       { title: 'Flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
-      { title: 'AI Chatbot (Kazuma)', href: '/chatbot', icon: Bot, label: 'AI' },
+      { title: 'AI Chatbot', href: '/chatbot', icon: Bot, label: 'AI' },
     ],
   },
   { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal },
@@ -59,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: 'Daily News', href: '/news', icon: Newspaper },
   { title: 'Library', href: '/library', icon: BookMarked }, // Uses BookMarked for specificity
   { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
+  { title: 'Profile', href: '/profile', icon: UserCircle }, // Added Profile link
   // { title: 'Settings', href: '/settings', icon: Settings }, // Placeholder for future settings page
 ];
 
@@ -88,7 +90,7 @@ export const MATH_FACTS_FALLBACK = [
 ];
 
 // --- News API Categories (for News page filters) ---
-// Top Headlines + 7 other specific categories.
+// "Top Headlines" + 7 specific categories.
 export const NEWS_CATEGORIES = [
   { value: "top", label: "Top Headlines" },
   { value: "business", label: "Business" },
