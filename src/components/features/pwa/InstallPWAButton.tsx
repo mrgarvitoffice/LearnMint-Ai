@@ -24,9 +24,10 @@ interface InstallPWAButtonProps {
    * Omitting this or setting to false uses default Button styling.
    */
   asDropdownItem?: boolean;
+  className?: string; // Allow passing additional classNames
 }
 
-export default function InstallPWAButton({ asDropdownItem = false }: InstallPWAButtonProps) {
+export default function InstallPWAButton({ asDropdownItem = false, className }: InstallPWAButtonProps) {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
@@ -80,26 +81,40 @@ export default function InstallPWAButton({ asDropdownItem = false }: InstallPWAB
       });
     }
   };
-
-  const buttonBaseClasses = "w-full justify-start gap-2 rounded-md";
-  const dropdownItemClasses = "relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
   
+  const commonIconAndText = (
+    <>
+      <DownloadCloud className={cn("mr-1.5", asDropdownItem ? "h-4 w-4" : "h-4 w-4")} /> 
+      Install App
+    </>
+  );
+
+  if (asDropdownItem) {
+    return (
+      <Button
+        variant="ghost" // Mimics dropdown item look
+        onClick={handleInstallClick}
+        className={cn(
+          "relative flex w-full cursor-default select-none items-center justify-start gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          className
+        )}
+        title={`Install ${APP_NAME} App`}
+      >
+        {commonIconAndText}
+      </Button>
+    );
+  }
+
+  // Default button appearance (standalone)
   return (
     <Button
-      variant={asDropdownItem ? "ghost" : "outline"}
+      variant="outline"
+      size="sm" // Standard small button size
       onClick={handleInstallClick}
-      className={cn(
-        buttonBaseClasses,
-        asDropdownItem 
-          ? dropdownItemClasses // Mimic DropdownMenuItem styling
-          : "h-8 px-2 py-1 text-xs border-primary/50 text-primary hover:bg-primary/10 hover:text-primary" // Original styling
-      )}
+      className={cn("gap-2", className)} // Apply base gap and any passed className
       title={`Install ${APP_NAME} App`}
     >
-      <DownloadCloud className={cn("mr-1.5", asDropdownItem ? "h-4 w-4" : "h-3.5 w-3.5")} />
-      Install App
+      {commonIconAndText}
     </Button>
   );
 }
-
-    

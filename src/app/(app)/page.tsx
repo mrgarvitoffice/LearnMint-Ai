@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'; // For navigation
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement'; // Fun interactive element
 import { useAuth } from '@/contexts/AuthContext'; // Authentication context
 import { Logo } from '@/components/icons/Logo'; // Import the Logo component
+import { cn } from '@/lib/utils';
 
 // Constants for localStorage and display limits
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
@@ -210,8 +211,11 @@ export default function DashboardPage() {
             const Icon = item.icon; // Dynamically get the Lucide icon component
             return (
               <Link href={item.href} key={item.href} legacyBehavior>
-                <a className="block h-full"> {/* Anchor tag for navigation */}
-                  <Card className="hover:bg-accent/10 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group">
+                <a className="block h-full group"> {/* Anchor tag for navigation, added group class */}
+                  <Card className={cn(
+                      "hover:bg-accent/10 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between",
+                      "group-hover:ring-2 group-hover:ring-primary/30 dark:group-hover:ring-primary/50" // Added ring hover effect
+                    )}>
                      <CardHeader className="pb-2 pt-4">
                       <div className="flex items-center gap-3 mb-2">
                           <Icon className="h-6 w-6 text-muted-foreground group-hover:text-accent transition-colors" />
@@ -231,7 +235,10 @@ export default function DashboardPage() {
           })}
           {/* Display the daily motivational quote */}
            {dailyQuote && (
-            <Card className="bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group">
+            <Card className={cn(
+                "bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group",
+                "group-hover:ring-2 group-hover:ring-primary/30 dark:group-hover:ring-primary/50" // Added ring hover effect
+              )}>
               <CardHeader className="pb-2 pt-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
