@@ -12,6 +12,7 @@ import { useSound } from '@/hooks/useSound'; // Sound effects hook
 import { useRouter } from 'next/navigation'; // For navigation
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement'; // Fun interactive element
 import { useAuth } from '@/contexts/AuthContext'; // Authentication context
+import { Logo } from '@/components/icons/Logo'; // Import the Logo component
 
 // Constants for localStorage and display limits
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
@@ -153,6 +154,9 @@ export default function DashboardPage() {
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       {/* Page Header */}
       <header className="text-center relative">
+        <div className="mb-4 flex justify-center">
+          <Logo size={64} /> {/* Added Logo component here */}
+        </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
           {PAGE_TITLE}
         </h1>
