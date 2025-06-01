@@ -8,8 +8,8 @@ import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Speaker } from 'lucide-react'; // Added icons
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added Select
+import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Speaker } from 'lucide-react'; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
 import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTTS } from '@/hooks/useTTS';
@@ -114,54 +114,77 @@ export default function NewsPage() {
   };
 
   const articles = useMemo(() => {
-    const allArticles = data?.pages.flatMap(page => page.results) ?? [];
+    const allArticlesFlat = data?.pages.flatMap(page => page.results) ?? [];
     const uniqueArticlesMap = new Map<string, NewsArticle>();
+    const seenNormalizedTitles = new Set<string>(); // For stricter title-based de-duplication
 
-    allArticles.forEach(article => {
-      let key: string | null = null;
+    const normalizeTitleForKey = (title: string | null | undefined): string => {
+      if (!title) return "";
+      let normalized = title.toLowerCase();
+      // Remove common prefixes that might cause minor variations
+      const prefixes = ['breaking:', 'update:', 'live:', 'alert:', 'exclusive:', 'video:', 'photos:', 'watch:'];
+      for (const prefix of prefixes) {
+        if (normalized.startsWith(prefix)) {
+          normalized = normalized.substring(prefix.length).trim();
+          break; 
+        }
+      }
+      // Remove all non-alphanumeric characters (includes punctuation, symbols) but keep spaces
+      normalized = normalized.replace(/[^a-z0-9\s]/g, '');
+      // Collapse multiple spaces and trim
+      normalized = normalized.replace(/\s+/g, ' ').trim();
+      return normalized;
+    };
 
-      if (article.article_id && article.article_id.trim() !== "") {
-        key = article.article_id.trim();
+    allArticlesFlat.forEach(article => {
+      const currentNormalizedTitle = normalizeTitleForKey(article.title);
+
+      // Step 1: Primary de-duplication based on normalized title
+      if (currentNormalizedTitle && seenNormalizedTitles.has(currentNormalizedTitle)) {
+        // console.log(`Skipping (duplicate title: "${currentNormalizedTitle}"): ${article.title?.substring(0,50)}...`);
+        return; // Skip if this normalized title has already been processed
       }
       
-      if (!key && article.link) {
+      // If title is new, add it to our set of seen titles
+      if (currentNormalizedTitle) {
+        seenNormalizedTitles.add(currentNormalizedTitle);
+      }
+
+      // Step 2: Generate a unique key for the map (ID, then Link)
+      let mapKey: string | null = null;
+
+      if (article.article_id && article.article_id.trim() !== "") {
+        mapKey = `id-${article.article_id.trim()}`;
+      }
+      
+      if (!mapKey && article.link) {
         try {
           const url = new URL(article.link);
           const normalizedLink = url.hostname + url.pathname;
           if (normalizedLink) {
-            key = `link-${normalizedLink}`;
+            mapKey = `link-${normalizedLink}`;
           }
         } catch (e) {
-           console.warn(`Could not parse article link for de-duplication: ${article.link}.`);
+          // console.warn(`Could not parse article link for mapKey: ${article.link}`);
         }
       }
       
-      if (!key && article.title) {
-        let normalizedTitle = article.title.toLowerCase();
-        const prefixes = ['breaking:', 'update:', 'live:', 'alert:', 'exclusive:', 'video:', 'photos:'];
-        for (const prefix of prefixes) {
-          if (normalizedTitle.startsWith(prefix)) {
-            normalizedTitle = normalizedTitle.substring(prefix.length).trim();
-            break; 
-          }
-        }
-        normalizedTitle = normalizedTitle.replace(/[^a-z0-9\s]/g, '');
-        normalizedTitle = normalizedTitle.replace(/\s+/g, ' ').trim();
-        
-        if (normalizedTitle) {
-            key = `title-${normalizedTitle}`; 
-        }
+      // If after title check, we still couldn't get an ID or Link key, 
+      // we use the (now confirmed unique) normalized title as the mapKey.
+      // This ensures articles with unique titles but no ID/Link are still added.
+      if (!mapKey && currentNormalizedTitle) {
+         mapKey = `title-${currentNormalizedTitle}`;
       }
 
-      if (key && !uniqueArticlesMap.has(key)) {
-        uniqueArticlesMap.set(key, article);
-      } else if (key && uniqueArticlesMap.has(key)) {
-        // console.log(`Duplicate article skipped (key: ${key}): ${article.title?.substring(0,50)}...`);
-      } else if (!key && article.title) { // Last resort, use raw title if no other key could be made
-        uniqueArticlesMap.set(`raw-title-${article.title}`, article);
-      }
-       else {
-         console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
+      // Step 3: Add to map if the mapKey is valid and unique for the map itself
+      if (mapKey && !uniqueArticlesMap.has(mapKey)) {
+        uniqueArticlesMap.set(mapKey, article);
+      } else if (mapKey && uniqueArticlesMap.has(mapKey)) {
+        // This means same ID/Link but somehow different title (passed the title pre-check), which is rare.
+        // Or, two articles had different titles (passed title pre-check) but same ID/Link.
+        // console.log(`Article with mapKey ${mapKey} already exists in map. Current title: "${article.title}", Existing title: "${uniqueArticlesMap.get(mapKey)?.title}"`);
+      } else {
+        // console.warn(`Could not determine a mapKey for article (after title check), skipping: ${article.title?.substring(0,50)}...`);
       }
     });
     return Array.from(uniqueArticlesMap.values());
