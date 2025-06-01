@@ -187,12 +187,17 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (articles && articles.length > 0) {
-        const headlinesText = articles.slice(0, 10).map(article => article.title).filter(title => !!title).join('. '); // Read first 10
+        const numHeadlinesToRead = appliedFilters.language === 'hi' ? 5 : 10; // Read 5 for Hindi, 10 for others
+        const headlinesText = articles
+            .slice(0, numHeadlinesToRead)
+            .map(article => article.title)
+            .filter(title => !!title) 
+            .join('. '); 
         ttsHeadlinesRef.current = headlinesText;
     } else {
         ttsHeadlinesRef.current = "";
     }
-  }, [articles]);
+  }, [articles, appliedFilters.language]);
 
   const handlePlaybackControl = () => {
     playActionSound();
@@ -206,9 +211,15 @@ export default function NewsPage() {
     const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
     const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
 
-    if (isSpeaking && !isPaused) pauseTTS();
-    else if (isPaused) resumeTTS();
-    else speak(textToPlay, bcp47Lang);
+    cancelTTS(); // Always cancel previous before starting new headline reading
+
+    if (isSpeaking && !isPaused) { // This condition might be less relevant if we always cancel first
+        pauseTTS();
+    } else if (isPaused) {
+        resumeTTS();
+    } else {
+        speak(textToPlay, bcp47Lang);
+    }
   };
 
   const handleStopTTS = () => {
@@ -301,4 +312,3 @@ export default function NewsPage() {
     </div>
   );
 }
-
