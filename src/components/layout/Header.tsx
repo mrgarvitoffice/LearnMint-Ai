@@ -6,12 +6,12 @@ import { usePathname, useRouter } from 'next/navigation'; // Hooks for routing a
 import { APP_NAME, NAV_ITEMS } from '@/lib/constants'; // App constants and navigation items
 import { Logo } from '@/components/icons/Logo'; // App logo component
 import { Button } from '@/components/ui/button'; // Button component
-// Dropdown menu components from ShadCN UI
+// Dropdown menu components from ShadCN UI (still used for "More Options")
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
+  // DropdownMenuLabel, // No longer needed for avatar dropdown
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
@@ -232,75 +232,38 @@ export function Header() {
               <DropdownMenuItem onClick={() => handleDropdownItemClick(handleThemeToggle)} className="flex items-center gap-2">
                 <Palette className="h-4 w-4" /> Toggle Theme
               </DropdownMenuItem>
+              <DropdownMenuItem asChild onClick={() => handleDropdownItemClick()}>
+                <InstallPWAButton asDropdownItem={true} />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+               <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="rounded-full w-9 h-9 p-0 border-2 border-transparent hover:border-primary focus-visible:border-primary" onClick={() => playClickSound()}>
+          <Link href="/profile" passHref>
+            <Button
+              variant="ghost"
+              className="rounded-full w-9 h-9 p-0 border-2 border-transparent hover:border-primary focus-visible:border-primary"
+              onClick={() => playClickSound()}
+              aria-label="View Profile"
+              asChild 
+            >
+              <span className="flex items-center justify-center h-full w-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User avatar"} />
                   <AvatarFallback>
                     <UserCircle className="h-5 w-5 text-muted-foreground" />
                   </AvatarFallback>
                 </Avatar>
-                <span className="sr-only">User menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex items-center gap-3 p-1">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User avatar"} />
-                    <AvatarFallback>
-                        <UserCircle className="h-6 w-6 text-muted-foreground" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col space-y-0.5">
-                    <p className="text-sm font-medium leading-none truncate max-w-[150px]">
-                      {user.isAnonymous ? "Guest User" : (user.displayName || user.email?.split('@')[0] || "User")}
-                    </p>
-                    {!user.isAnonymous && user.email && (
-                      <p className="text-xs leading-none text-muted-foreground truncate max-w-[150px]">
-                        {user.email}
-                      </p>
-                    )}
-                     {user.isAnonymous && (
-                       <p className="text-xs leading-none text-muted-foreground">Anonymous Session</p>
-                    )}
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {user.isAnonymous ? (
-                <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignInRedirect)} className="text-primary focus:bg-accent focus:text-accent-foreground">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In / Sign Up
-                </DropdownMenuItem>
-              ) : (
-                <>
-                  <DropdownMenuItem asChild onClick={() => handleDropdownItemClick()}>
-                    <Link href="/profile" className="flex items-center gap-2">
-                        <UserCircle className="h-4 w-4" /> View Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDropdownItemClick(handleThemeToggle)} className="flex items-center gap-2">
-                    <Palette className="h-4 w-4" /> Toggle Theme
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild onClick={() => handleDropdownItemClick()}>
-                     <InstallPWAButton asDropdownItem={true} />
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <span className="sr-only">View Profile</span>
+              </span>
+            </Button>
+          </Link>
         ) : (
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" asChild onClick={() => playClickSound()}>
@@ -315,5 +278,3 @@ export function Header() {
     </header>
   );
 }
-
-    
