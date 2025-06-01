@@ -8,17 +8,17 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  * Defines the return type of the useTTS hook.
  */
 interface TTSHook {
-  speak: (text: string, lang?: string) => void;      // Function to initiate speech, accepts optional BCP 47 language tag.
-  pauseTTS: () => void;                               // Function to pause ongoing speech.
-  resumeTTS: () => void;                              // Function to resume paused speech.
-  cancelTTS: () => void;                              // Function to stop and clear speech.
-  isSpeaking: boolean;                                // True if speech is currently active (speaking or paused).
-  isPaused: boolean;                                  // True if speech is paused.
-  supportedVoices: SpeechSynthesisVoice[];            // Array of available voices in the browser.
-  selectedVoice: SpeechSynthesisVoice | null;         // The currently selected voice object for general UI or fallback.
-  setSelectedVoiceURI: (uri: string) => void;         // Function to select a voice by its URI.
-  setVoicePreference: (preference: 'zia' | 'kai' | 'luma' | null) => void; // Function to set a preferred voice type for general UI.
-  voicePreference: 'zia' | 'kai' | 'luma' | null;     // The current voice preference for general UI.
+  speak: (text: string, lang?: string, onEndCallback?: () => void) => void; // Added onEndCallback
+  pauseTTS: () => void;
+  resumeTTS: () => void;
+  cancelTTS: () => void;
+  isSpeaking: boolean;
+  isPaused: boolean;
+  supportedVoices: SpeechSynthesisVoice[];
+  selectedVoice: SpeechSynthesisVoice | null;
+  setSelectedVoiceURI: (uri: string) => void;
+  setVoicePreference: (preference: 'zia' | 'kai' | 'luma' | null) => void;
+  voicePreference: 'zia' | 'kai' | 'luma' | null;
 }
 
 /**
@@ -35,9 +35,9 @@ export function useTTS(): TTSHook {
   const [voicePreference, setVoicePreference] = useState<'zia' | 'kai' | 'luma' | null>(null);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const hasInteractedRef = useRef(false);
-  const speechQueueRef = useRef<{ text: string; lang?: string } | null>(null);
-  const initialSpeechQueuedRef = useRef(false);
+  
+  const activeOnEndCallbackRef = useRef<(() => void) | null>(null);
+
 
   const cancelTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -48,50 +48,35 @@ export function useTTS(): TTSHook {
         utteranceRef.current.onpause = null;
         utteranceRef.current.onresume = null;
       }
+      activeOnEndCallbackRef.current = null; // Clear any pending onEnd callback
       window.speechSynthesis.cancel();
       utteranceRef.current = null;
       setIsSpeaking(false);
       setIsPaused(false);
-      speechQueueRef.current = null; // Clear any queued speech on cancel
-      // console.log("TTS: Cancelled. Queue cleared. Speaking/Paused states reset.");
+      // console.log("TTS: Cancelled. Speaking/Paused states reset. Active onEnd callback cleared.");
     }
-  }, []);
+  }, []); // isSpeaking and isPaused were removed as they create cycles when cancelTTS is used in _performSpeak
 
-  const playQueuedSpeech = useCallback(() => {
-    if (speechQueueRef.current && hasInteractedRef.current) {
-      const { text, lang } = speechQueueRef.current;
-      speechQueueRef.current = null; // Clear queue
-      // console.log("TTS: Playing queued speech after interaction:", text.substring(0,30)+"...");
-      _performSpeak(text, lang);
-    }
-  }, []); // _performSpeak will be a dependency if extracted, or its own dependencies ensure stability
-
-  const _performSpeak = useCallback((text: string, lang?: string) => {
+  const _performSpeak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
     if (typeof window === 'undefined' || !window.speechSynthesis || !text || text.trim() === "") {
-      // console.log("TTS: Speak called with no text or speech synthesis not available.");
       return;
     }
 
-    // console.log("TTS: _performSpeak called for:", text.substring(0,50)+"...", "Lang:", lang, "Current Speaking:", isSpeaking, "Paused:", isPaused);
-
-    // Aggressive cleanup of previous utterance
-    if (utteranceRef.current) {
-      // console.log("TTS: Existing utterance found, nullifying its handlers.");
-      utteranceRef.current.onstart = null;
-      utteranceRef.current.onend = null;
-      utteranceRef.current.onerror = null;
-      utteranceRef.current.onpause = null;
-      utteranceRef.current.onresume = null;
+    // Aggressive cleanup of previous utterance and state, as per your request for "instant" speech
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending || window.speechSynthesis.paused) {
+        // console.log("TTS: Speech active/pending/paused. Cancelling existing before new speak.");
+        cancelTTS(); // This will reset isSpeaking, isPaused, and utteranceRef
+    } else {
+        // Explicitly reset states if cancelTTS wasn't invoked because nothing was speaking
+        setIsSpeaking(false);
+        setIsPaused(false);
+        utteranceRef.current = null;
     }
+    activeOnEndCallbackRef.current = onEndCallback || null; // Store the callback for this specific utterance
 
-    // console.log("TTS: Calling window.speechSynthesis.cancel() and resetting states.");
-    window.speechSynthesis.cancel(); // Cancel any current or pending speech
-    utteranceRef.current = null;     // Ensure ref is cleared before new one
-    setIsSpeaking(false);            // Reset speaking state immediately
-    setIsPaused(false);              // Reset paused state immediately
 
     const newUtterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = newUtterance; // Assign to ref immediately
+    utteranceRef.current = newUtterance;
 
     let voiceToUse: SpeechSynthesisVoice | null = null;
     let finalLangTag = lang || selectedVoice?.lang || 'en-US';
@@ -111,49 +96,43 @@ export function useTTS(): TTSHook {
       }
        if (voiceToUse) {
         newUtterance.voice = voiceToUse;
-        finalLangTag = voiceToUse.lang; // Use the actual lang tag of the selected voice
+        finalLangTag = voiceToUse.lang;
       } else {
-        // Fallback to UI selected voice if language-specific voice not found, but keep requested lang tag
         newUtterance.voice = selectedVoice;
-        finalLangTag = lang; // Keep the originally requested lang tag for the utterance
+        finalLangTag = lang; 
       }
     } else if (selectedVoice) {
       newUtterance.voice = selectedVoice;
       finalLangTag = selectedVoice.lang;
     } else {
-      // No specific lang request, no selectedVoice, browser default will be used.
-      // Set lang tag to a sensible default or keep what was passed.
       finalLangTag = lang || 'en-US';
     }
 
     newUtterance.lang = finalLangTag;
-    newUtterance.pitch = 1.0; // Explicitly set pitch
-    
-    if (finalLangTag && !finalLangTag.toLowerCase().startsWith('en-')) {
-      newUtterance.rate = 1.0; // Slower rate for non-English languages like Hindi
-    } else {
-      newUtterance.rate = 1.4; // Faster rate for English
-    }
+    newUtterance.pitch = 1.0; 
     newUtterance.volume = 1;
+
+    if (finalLangTag && (finalLangTag.toLowerCase().startsWith('hi') || finalLangTag.toLowerCase().startsWith('sa'))) {
+      newUtterance.rate = 1.0; 
+    } else {
+      newUtterance.rate = 1.4; 
+    }
     // console.log("TTS: Utterance configured. Voice:", newUtterance.voice?.name, "Lang:", newUtterance.lang, "Rate:", newUtterance.rate, "Pitch:", newUtterance.pitch);
 
     newUtterance.onstart = () => {
-      if (utteranceRef.current === newUtterance) {
-        // console.log("TTS: onstart event for current utterance.");
-        setIsSpeaking(true);
-        setIsPaused(false);
-      } else {
-        // console.log("TTS: onstart event for STALE utterance. Ignoring.");
-      }
+      if (utteranceRef.current === newUtterance) setIsSpeaking(true); setIsPaused(false);
     };
     newUtterance.onend = () => {
       if (utteranceRef.current === newUtterance) {
-        // console.log("TTS: onend event for current utterance.");
         setIsSpeaking(false);
         setIsPaused(false);
-        utteranceRef.current = null; // Clear ref on natural end
-      } else {
-        // console.log("TTS: onend event for STALE utterance. Ignoring.");
+        const callback = activeOnEndCallbackRef.current; // Get stored callback
+        activeOnEndCallbackRef.current = null; // Clear it after getting
+        utteranceRef.current = null;
+        if (callback) {
+          // console.log("TTS: onend, invoking callback for naturally ended speech.");
+          callback();
+        }
       }
     };
     newUtterance.onerror = (event: SpeechSynthesisErrorEvent) => {
@@ -161,73 +140,51 @@ export function useTTS(): TTSHook {
         console.error(`TTS: Speech synthesis error: "${event.error}"`, "Details:", event, `Text: "${text.substring(0,50)}..."`, `Voice: ${newUtterance.voice?.name || 'Browser Default'}`, `Lang: ${newUtterance.lang}`);
         setIsSpeaking(false);
         setIsPaused(false);
-        utteranceRef.current = null; // Clear ref on error
-      } else {
-        // console.error("TTS: onerror event for STALE utterance. Error was:", event.error, "Ignoring state update.");
+        activeOnEndCallbackRef.current = null; // Clear callback on error too
+        utteranceRef.current = null;
       }
     };
-    newUtterance.onpause = () => {
-      if (utteranceRef.current === newUtterance) {
-        // console.log("TTS: onpause event for current utterance.");
-        setIsPaused(true);
-      } else {
-        // console.log("TTS: onpause event for STALE utterance. Ignoring.");
-      }
-    };
-    newUtterance.onresume = () => {
-      if (utteranceRef.current === newUtterance) {
-        // console.log("TTS: onresume event for current utterance.");
-        setIsPaused(false);
-      } else {
-        // console.log("TTS: onresume event for STALE utterance. Ignoring.");
-      }
-    };
+    newUtterance.onpause = () => { if (utteranceRef.current === newUtterance) setIsPaused(true); };
+    newUtterance.onresume = () => { if (utteranceRef.current === newUtterance) setIsPaused(false); };
     
-    // console.log("TTS: Calling window.speechSynthesis.speak().");
     window.speechSynthesis.speak(newUtterance);
 
-  }, [selectedVoice, supportedVoices, cancelTTS]); // isSpeaking, isPaused removed from deps to break loops
+  }, [selectedVoice, supportedVoices, cancelTTS]);
 
 
-  const speak = useCallback((text: string, lang?: string) => {
-    // This is the new immediate speak without interaction queue
+  const speak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
     // console.log("TTS: Public speak called for:", text.substring(0,30)+"...", "Lang:", lang);
-    _performSpeak(text, lang);
+    _performSpeak(text, lang, onEndCallback);
   }, [_performSpeak]);
 
 
   const pauseTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking && !isPaused) {
-      // console.log("TTS: Pausing speech.");
       window.speechSynthesis.pause();
-      // Note: onpause handler updates isPaused state
     }
   }, [isPaused]);
 
   const resumeTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.paused) {
-      // console.log("TTS: Resuming speech.");
       window.speechSynthesis.resume();
-      // Note: onresume handler updates isPaused state
     }
   }, []);
 
   const updateSupportedVoicesList = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const voices = window.speechSynthesis.getVoices();
-      setSupportedVoices(prevVoices => {
-        if (voices.length !== prevVoices.length || !voices.every((v, i) => v.voiceURI === prevVoices[i]?.voiceURI)) {
-          // console.log("TTS: Voices list changed, updating.", voices.length, "voices found.");
-          return voices;
-        }
-        return prevVoices;
-      });
+        const voices = window.speechSynthesis.getVoices();
+        setSupportedVoices(prevVoices => {
+            // Only update if the list actually changed to avoid unnecessary re-renders
+            if (voices.length !== prevVoices.length || !voices.every((v, i) => v.voiceURI === prevVoices[i]?.voiceURI)) {
+                return voices;
+            }
+            return prevVoices;
+        });
     }
   }, []);
 
   const updateSelectedVoiceLogic = useCallback(() => {
     if (supportedVoices.length === 0) {
-      // console.log("TTS: No supported voices, setting selectedVoice to null.");
       setSelectedVoice(null);
       return;
     }
@@ -236,8 +193,9 @@ export function useTTS(): TTSHook {
     const currentLangPrefix = 'en';
     const enUSLangPrefix = 'en-US';
 
-    const maleKeywords = ['male', 'david', 'mark', 'kai', 'guy', 'man', 'boy', 'google us english', 'microsoft david', 'alex', 'arthur', 'daniel', 'google español de estados unidos', 'google male', 'microsoft guy', 'en-gb-male', 'microsoft mark', 'tom', 'george', 'satya'];
-    const femaleKeywords = ['female', 'zia', 'luma', 'zira', 'eva', 'girl', 'woman', 'lady', 'samantha', 'google uk english female', 'microsoft zira', 'serena', 'susan', 'heather', 'ayanda', 'google français', 'microsoft eva', 'google female', 'microsoft catherine', 'en-gb-female', 'microsoft hazel', 'linda', 'heera', 'mia', 'susan', 'veena'];
+    const maleKeywords = ['male', 'david', 'mark', 'kai', 'guy', 'man', 'boy', 'google us english', 'microsoft david', 'alex', 'arthur', 'daniel', 'google español de estados unidos', 'google male', 'microsoft guy', 'en-gb-male', 'microsoft mark', 'tom', 'george', 'satya', 'microsoft george'];
+    const femaleKeywords = ['female', 'zia', 'luma', 'zira', 'eva', 'girl', 'woman', 'lady', 'samantha', 'google uk english female', 'microsoft zira', 'serena', 'susan', 'heather', 'ayanda', 'google français', 'microsoft eva', 'google female', 'microsoft catherine', 'en-gb-female', 'microsoft hazel', 'linda', 'heera', 'mia', 'veena', 'microsoft linda'];
+
 
     if (voicePreference === 'kai') {
         preferredVoiceForUI = supportedVoices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(enUSLangPrefix)) ||
@@ -276,14 +234,11 @@ export function useTTS(): TTSHook {
     
     setSelectedVoice(currentVal => {
       if (preferredVoiceForUI && (!currentVal || currentVal.voiceURI !== preferredVoiceForUI.voiceURI)) {
-        // console.log("TTS: Setting selected UI voice to:", preferredVoiceForUI.name, preferredVoiceForUI.lang);
         return preferredVoiceForUI;
       }
       if (!preferredVoiceForUI && currentVal !== null) {
-        // console.log("TTS: No preferred UI voice found, setting selectedVoice to null.");
         return null;
       }
-      // console.log("TTS: Selected UI voice unchanged or no update needed. Current:", currentVal?.name);
       return currentVal;
     });
   }, [supportedVoices, voicePreference]);
@@ -292,43 +247,20 @@ export function useTTS(): TTSHook {
   useEffect(() => {
     updateSupportedVoicesList(); // Initial fetch
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = updateSupportedVoicesList; // Listener for subsequent changes
+      window.speechSynthesis.onvoiceschanged = updateSupportedVoicesList;
     }
     
-    // User interaction listener for autoplay policy
-    const interactionListener = () => {
-      if (!hasInteractedRef.current) {
-        // console.log("TTS: User interaction detected.");
-        hasInteractedRef.current = true;
-        playQueuedSpeech(); // Attempt to play any queued speech
-      }
-      // Remove listener after first interaction to avoid multiple triggers
-      document.removeEventListener('click', interactionListener);
-      document.removeEventListener('keydown', interactionListener);
-      document.removeEventListener('touchstart', interactionListener);
-    };
-
-    // Add listeners only once on mount
-    document.addEventListener('click', interactionListener);
-    document.addEventListener('keydown', interactionListener);
-    document.addEventListener('touchstart', interactionListener);
-
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = null; // Clean up listener
-        cancelTTS(); // Cancel any speech on unmount
+        window.speechSynthesis.onvoiceschanged = null;
+        cancelTTS();
       }
-      document.removeEventListener('click', interactionListener);
-      document.removeEventListener('keydown', interactionListener);
-      document.removeEventListener('touchstart', interactionListener);
-
       setIsSpeaking(false);
       setIsPaused(false);
       utteranceRef.current = null;
-      speechQueueRef.current = null;
-      initialSpeechQueuedRef.current = false;
+      activeOnEndCallbackRef.current = null;
     };
-  }, [updateSupportedVoicesList, cancelTTS, playQueuedSpeech]); // Added playQueuedSpeech
+  }, [updateSupportedVoicesList, cancelTTS]);
 
   useEffect(() => {
     updateSelectedVoiceLogic();
@@ -337,7 +269,6 @@ export function useTTS(): TTSHook {
   const handleSetVoicePreference = useCallback((preference: 'zia' | 'kai' | 'luma' | null) => {
     setVoicePreference(oldPreference => {
       if (oldPreference !== preference) {
-        // console.log("TTS: UI Voice preference changed to:", preference);
         return preference;
       }
       return oldPreference;
@@ -357,11 +288,9 @@ export function useTTS(): TTSHook {
         const voice = supportedVoices.find(v => v.voiceURI === uri);
         setSelectedVoice(currentSelected => {
           if (voice && (!currentSelected || currentSelected.voiceURI !== voice.voiceURI)) {
-            // console.log("TTS: Voice selected by URI:", voice.name);
             return voice;
           }
           if (!voice && currentSelected !== null) {
-            // console.log("TTS: Voice URI not found, clearing selected voice.");
             return null;
           }
           return currentSelected;

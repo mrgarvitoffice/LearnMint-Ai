@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
@@ -51,12 +51,17 @@ export default function NewsPage() {
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
-  const ttsHeadlinesRef = useRef<string>("");
   const { toast } = useToast();
+
+  const headlinesArrayForTTS = useRef<string[]>([]);
+  const currentSpokenHeadlineIndexRef = useRef(0);
+  const isSpeakingHindiSequenceRef = useRef(false);
+  // State to help button text reflect sequence state accurately
+  const [isDisplayingPauseForHindi, setIsDisplayingPauseForHindi] = useState(false);
+
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      // Default voice preference for UI elements, not necessarily for news reading
       setVoicePreference('luma');
       voicePreferenceWasSetRef.current = true;
     }
@@ -65,12 +70,10 @@ export default function NewsPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      if (!ttsHeadlinesRef.current || ttsHeadlinesRef.current.trim() === "") {
         const currentLanguageFilter = appliedFilters.language || 'en';
         const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
         const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
         speak(PAGE_TITLE, bcp47Lang);
-      }
       pageTitleSpokenRef.current = true;
     }
     return () => {
@@ -103,8 +106,12 @@ export default function NewsPage() {
 
   const handleApplyFilters = () => {
     playActionSound();
+    cancelTTS(); // Stop any ongoing speech
+    isSpeakingHindiSequenceRef.current = false; // Reset Hindi sequence state
+    currentSpokenHeadlineIndexRef.current = 0;
+    setIsDisplayingPauseForHindi(false);
     setAppliedFilters(filters);
-    pageTitleSpokenRef.current = true;
+    pageTitleSpokenRef.current = true; 
     if (selectedVoice && !isSpeaking && !isPaused) {
       const currentLanguageFilter = filters.language || 'en';
       const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
@@ -114,11 +121,14 @@ export default function NewsPage() {
   };
   const handleResetFilters = () => {
     playActionSound();
+    cancelTTS();
+    isSpeakingHindiSequenceRef.current = false;
+    currentSpokenHeadlineIndexRef.current = 0;
+    setIsDisplayingPauseForHindi(false);
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
     pageTitleSpokenRef.current = true;
     if (selectedVoice && !isSpeaking && !isPaused) {
-      // Resetting filters implies default language (English) for this announcement
       speak("News filters reset.", "en-US");
     }
   };
@@ -138,94 +148,119 @@ export default function NewsPage() {
           break;
         }
       }
-      normalized = normalized.replace(/[^a-z0-9\s]/g, ''); // Keep only letters, numbers, and spaces
-      normalized = normalized.replace(/\s+/g, ' ').trim(); // Collapse multiple spaces
+      normalized = normalized.replace(/[^a-z0-9\s]/g, '');
+      normalized = normalized.replace(/\s+/g, ' ').trim();
       return normalized;
     };
 
     allArticlesFlat.forEach(article => {
       const currentNormalizedTitle = normalizeTitleForKey(article.title);
-      if (currentNormalizedTitle && seenNormalizedTitles.has(currentNormalizedTitle)) {
-        return; // Skip if this exact normalized title has been seen
-      }
-      if (currentNormalizedTitle) {
-        seenNormalizedTitles.add(currentNormalizedTitle);
-      }
+      if (currentNormalizedTitle && seenNormalizedTitles.has(currentNormalizedTitle)) return;
+      if (currentNormalizedTitle) seenNormalizedTitles.add(currentNormalizedTitle);
 
       let mapKey: string | null = null;
-      if (article.article_id && article.article_id.trim() !== "") {
-        mapKey = `id-${article.article_id.trim()}`;
-      }
-
+      if (article.article_id && article.article_id.trim() !== "") mapKey = `id-${article.article_id.trim()}`;
       if (!mapKey && article.link) {
         try {
           const url = new URL(article.link);
-          const normalizedLink = url.hostname + url.pathname; // Use hostname + pathname
-          if (normalizedLink) {
-            mapKey = `link-${normalizedLink}`;
-          }
-        } catch (e) {
-          // console.warn(`Could not parse article link for mapKey: ${article.link}`);
-        }
+          const normalizedLink = url.hostname + url.pathname;
+          if (normalizedLink) mapKey = `link-${normalizedLink}`;
+        } catch (e) {/* ignore */}
       }
+      if (!mapKey && currentNormalizedTitle) mapKey = `title-${currentNormalizedTitle}`;
 
-      // Title-based key is now effectively handled by seenNormalizedTitles,
-      // but we still need a mapKey for the uniqueArticlesMap if ID/Link based failed.
-      if (!mapKey && currentNormalizedTitle) {
-         mapKey = `title-${currentNormalizedTitle}`; // Fallback mapKey
-      }
-
-
-      if (mapKey && !uniqueArticlesMap.has(mapKey)) {
-        uniqueArticlesMap.set(mapKey, article);
-      } else if (!mapKey) {
-        // console.warn("Article skipped due to missing ID, Link, and valid Title for key generation:", article.title);
-      }
+      if (mapKey && !uniqueArticlesMap.has(mapKey)) uniqueArticlesMap.set(mapKey, article);
     });
     return Array.from(uniqueArticlesMap.values());
   }, [data]);
 
   useEffect(() => {
-    if (articles && articles.length > 0) {
-        const headlinesText = articles
-            // .slice(0, 10) // Removed slice to process all headlines
-            .map(article => article.title)
-            .filter(title => !!title)
-            .join('. ');
-        ttsHeadlinesRef.current = headlinesText;
-    } else {
-        ttsHeadlinesRef.current = "";
+    const newHeadlinesArray = articles.map(article => article.title).filter(title => !!title);
+    // Only update ref if content actually changed to prevent issues with ongoing sequences
+    if (JSON.stringify(headlinesArrayForTTS.current) !== JSON.stringify(newHeadlinesArray)) {
+        headlinesArrayForTTS.current = newHeadlinesArray;
+        if (isSpeakingHindiSequenceRef.current) {
+            cancelTTS();
+            isSpeakingHindiSequenceRef.current = false;
+            currentSpokenHeadlineIndexRef.current = 0;
+            setIsDisplayingPauseForHindi(false);
+        }
     }
-  }, [articles]);
+  }, [articles, cancelTTS]);
+
+
+  const speakNextHindiHeadline = useCallback(() => {
+    if (!isSpeakingHindiSequenceRef.current || currentSpokenHeadlineIndexRef.current >= headlinesArrayForTTS.current.length) {
+      isSpeakingHindiSequenceRef.current = false;
+      setIsDisplayingPauseForHindi(false);
+      currentSpokenHeadlineIndexRef.current = 0; // Reset for next time
+      return;
+    }
+    const headlineToSpeak = headlinesArrayForTTS.current[currentSpokenHeadlineIndexRef.current];
+    speak(headlineToSpeak, 'hi-IN', () => { // Pass the onEndCallback
+      if (isSpeakingHindiSequenceRef.current) { // Check if still in sequence mode
+        currentSpokenHeadlineIndexRef.current += 1;
+        speakNextHindiHeadline(); // Call for the next one
+      }
+    });
+  }, [speak]); // Removed headlinesArrayForTTS from deps, using ref directly
 
   const handlePlaybackControl = () => {
     playActionSound();
-    cancelTTS(); // Always cancel previous before starting new headline reading
-
-    const textToPlay = ttsHeadlinesRef.current;
-    if (!textToPlay.trim()) {
-        toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
-        return;
-    }
-
     const currentLanguageFilter = appliedFilters.language || 'en';
-    const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
-    const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
 
-    if (isSpeaking && !isPaused) {
-        pauseTTS();
-    } else if (isPaused) {
-        resumeTTS();
-    } else {
-        speak(textToPlay, bcp47Lang);
+    if (currentLanguageFilter === 'hi') {
+      if (isSpeakingHindiSequenceRef.current) { // If sequence is active
+        if (isSpeaking && !isPaused) {
+          pauseTTS();
+          setIsDisplayingPauseForHindi(true); // Indicates we should show "Resume"
+        } else if (isPaused) {
+          resumeTTS();
+          setIsDisplayingPauseForHindi(false); // Indicates we should show "Pause"
+        } else { // Sequence was active but not speaking/paused (e.g., error, or just finished one and waiting)
+          // This case might need re-triggering if it was an error state.
+          // For simplicity, let's treat it as if we are starting the sequence from current index.
+           cancelTTS(); // Clear any odd state
+           setIsDisplayingPauseForHindi(false);
+           speakNextHindiHeadline(); // Try to speak the current or next headline
+        }
+      } else { // Start new Hindi sequence
+        if (headlinesArrayForTTS.current.length === 0) {
+          toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
+          return;
+        }
+        cancelTTS(); // Ensure any previous non-sequence speech is stopped
+        isSpeakingHindiSequenceRef.current = true;
+        currentSpokenHeadlineIndexRef.current = 0; // Start from the beginning
+        setIsDisplayingPauseForHindi(false); // Should show "Pause" once speech starts
+        speakNextHindiHeadline();
+      }
+    } else { // For non-Hindi languages
+      const nonHindiHeadlinesText = headlinesArrayForTTS.current.join('. ');
+      if (!nonHindiHeadlinesText.trim()) {
+          toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
+          return;
+      }
+      if (isSpeaking && !isPaused) {
+          pauseTTS();
+      } else if (isPaused) {
+          resumeTTS();
+      } else {
+          cancelTTS();
+          const bcp47Lang = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter)?.bcp47 || 'en-US';
+          speak(nonHindiHeadlinesText, bcp47Lang);
+      }
     }
   };
 
   const handleStopTTS = () => {
     playActionSound();
     cancelTTS();
+    isSpeakingHindiSequenceRef.current = false;
+    currentSpokenHeadlineIndexRef.current = 0;
+    setIsDisplayingPauseForHindi(false);
   };
-
+  
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
     if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
@@ -233,6 +268,23 @@ export default function NewsPage() {
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
     return 'luma';
   };
+
+  const getPlaybackButtonTextAndIcon = () => {
+    const currentLanguageFilter = appliedFilters.language || 'en';
+    if (currentLanguageFilter === 'hi') {
+      if (isSpeakingHindiSequenceRef.current) {
+        return isPaused || isDisplayingPauseForHindi ? { text: "Resume", icon: <PlayCircle className="h-4 w-4 mr-2" /> } : { text: "Pause", icon: <PauseCircle className="h-4 w-4 mr-2" /> };
+      }
+      return { text: "Read Headlines", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
+    }
+    // For non-Hindi
+    return isSpeaking && !isPaused ? { text: "Pause", icon: <PauseCircle className="h-4 w-4 mr-2" /> } : 
+           isPaused ? { text: "Resume", icon: <PlayCircle className="h-4 w-4 mr-2" /> } : 
+           { text: "Read Headlines", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
+  };
+
+  const { text: playbackButtonText, icon: playbackButtonIcon } = getPlaybackButtonTextAndIcon();
+
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -261,10 +313,10 @@ export default function NewsPage() {
                       <SelectItem value="kai">Kai (Male)</SelectItem>
                   </SelectContent>
               </Select>
-              <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={isSpeaking && !isPaused ? "Pause Headlines" : isPaused ? "Resume Headlines" : "Read Headlines"}>
-                  {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4 mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />} {isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Read Headlines"}
+              <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText}>
+                  {playbackButtonIcon} {playbackButtonText}
               </Button>
-              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused}> <StopCircle className="h-5 w-5" /> </Button>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused && !isSpeakingHindiSequenceRef.current}> <StopCircle className="h-5 w-5" /> </Button>
           </div>
         </CardContent>
         <CardContent>
