@@ -121,6 +121,7 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
   { value: "ng", label: "Nigeria" },
   { value: "mx", label: "Mexico" },
   { value: "ru", label: "Russia" },
+  { value: "ae", label: "United Arab Emirates" }, // Added UAE for Dubai
 ];
 
 // --- US States (for News page, State/Region filter when US is selected) ---
@@ -160,12 +161,21 @@ export const AU_STATES_TERRITORIES: { value: string; label: string }[] = [
   { value: "Australian Capital Territory", label: "Australian Capital Territory" }, { value: "Northern Territory", label: "Northern Territory" },
 ];
 
-// --- Indian States and Union Territories (Selection) ---
+// --- Indian States and Union Territories (Expanded) ---
 export const IN_STATES_UT: { value: string; label: string }[] = [
-  { value: "Maharashtra", label: "Maharashtra" }, { value: "Karnataka", label: "Karnataka" }, { value: "Tamil Nadu", label: "Tamil Nadu" },
-  { value: "Delhi", label: "Delhi" }, { value: "Uttar Pradesh", label: "Uttar Pradesh" }, { value: "Gujarat", label: "Gujarat" },
-  { value: "West Bengal", label: "West Bengal" }, { value: "Rajasthan", label: "Rajasthan" }, { value: "Kerala", label: "Kerala" },
-  { value: "Telangana", label: "Telangana" }, { value: "Andhra Pradesh", label: "Andhra Pradesh"}, { value: "Punjab", label: "Punjab"}
+  { value: "Andhra Pradesh", label: "Andhra Pradesh" }, { value: "Arunachal Pradesh", label: "Arunachal Pradesh" }, { value: "Assam", label: "Assam" },
+  { value: "Bihar", label: "Bihar" }, { value: "Chhattisgarh", label: "Chhattisgarh" }, { value: "Goa", label: "Goa" },
+  { value: "Gujarat", label: "Gujarat" }, { value: "Haryana", label: "Haryana" }, { value: "Himachal Pradesh", label: "Himachal Pradesh" },
+  { value: "Jharkhand", label: "Jharkhand" }, { value: "Karnataka", label: "Karnataka" }, { value: "Kerala", label: "Kerala" },
+  { value: "Madhya Pradesh", label: "Madhya Pradesh" }, { value: "Maharashtra", label: "Maharashtra" }, { value: "Manipur", label: "Manipur" },
+  { value: "Meghalaya", label: "Meghalaya" }, { value: "Mizoram", label: "Mizoram" }, { value: "Nagaland", label: "Nagaland" },
+  { value: "Odisha", label: "Odisha" }, { value: "Punjab", label: "Punjab" }, { value: "Rajasthan", label: "Rajasthan" },
+  { value: "Sikkim", label: "Sikkim" }, { value: "Tamil Nadu", label: "Tamil Nadu" }, { value: "Telangana", label: "Telangana" },
+  { value: "Tripura", label: "Tripura" }, { value: "Uttarakhand", label: "Uttarakhand" }, { value: "Uttar Pradesh", label: "Uttar Pradesh" },
+  { value: "West Bengal", label: "West Bengal" }, { value: "Andaman and Nicobar Islands", label: "Andaman & Nicobar" },
+  { value: "Chandigarh", label: "Chandigarh" }, { value: "Dadra and Nagar Haveli and Daman and Diu", label: "Dadra & Nagar Haveli, Daman & Diu" },
+  { value: "Delhi", label: "Delhi" }, { value: "Jammu and Kashmir", label: "Jammu & Kashmir" }, { value: "Ladakh", label: "Ladakh" },
+  { value: "Lakshadweep", label: "Lakshadweep" }, { value: "Puducherry", label: "Puducherry" },
 ];
 
 // --- German States (Bundesländer) ---
@@ -179,14 +189,15 @@ export const DE_STATES: { value: string; label: string }[] = [
   { value: "Schleswig-Holstein", label: "Schleswig-Holstein" }, { value: "Thuringia", label: "Thuringia (Thüringen)" },
 ];
 
-// --- French Regions (Selection of major regions) ---
+// --- French Regions (Expanded a bit) ---
 export const FR_REGIONS: { value: string; label: string }[] = [
-  { value: "Île-de-France", label: "Île-de-France (Paris)" }, { value: "Auvergne-Rhône-Alpes", label: "Auvergne-Rhône-Alpes (Lyon)" },
-  { value: "Provence-Alpes-Côte d'Azur", label: "Provence-Alpes-Côte d'Azur (Marseille)" },
-  { value: "Occitanie", label: "Occitanie (Toulouse)" }, { value: "Nouvelle-Aquitaine", label: "Nouvelle-Aquitaine (Bordeaux)" },
-  { value: "Hauts-de-France", label: "Hauts-de-France (Lille)" }, { value: "Grand Est", label: "Grand Est (Strasbourg)" },
-  { value: "Pays de la Loire", label: "Pays de la Loire (Nantes)" }, { value: "Brittany", label: "Brittany (Bretagne)" },
-  { value: "Normandy", label: "Normandy (Normandie)" },
+  { value: "Auvergne-Rhône-Alpes", label: "Auvergne-Rhône-Alpes" }, { value: "Bourgogne-Franche-Comté", label: "Bourgogne-Franche-Comté" },
+  { value: "Brittany", label: "Brittany (Bretagne)" }, { value: "Centre-Val de Loire", label: "Centre-Val de Loire" },
+  { value: "Corsica", label: "Corsica (Corse)" }, { value: "Grand Est", label: "Grand Est" },
+  { value: "Hauts-de-France", label: "Hauts-de-France" }, { value: "Île-de-France", label: "Île-de-France" },
+  { value: "Normandy", label: "Normandy (Normandie)" }, { value: "Nouvelle-Aquitaine", label: "Nouvelle-Aquitaine" },
+  { value: "Occitanie", label: "Occitanie" }, { value: "Pays de la Loire", label: "Pays de la Loire" },
+  { value: "Provence-Alpes-Côte d'Azur", label: "Provence-Alpes-Côte d'Azur" },
 ];
 
 // --- Japanese Prefectures ---
@@ -209,6 +220,20 @@ export const JP_PREFECTURES: { value: string; label: string }[] = [
   { value: "Kagoshima", label: "Kagoshima" }, { value: "Okinawa", label: "Okinawa" },
 ];
 
+// --- United Arab Emirates Emirates (for News page filters) ---
+// Note: Newsdata.io might expect "Dubai" as city and "ae" as country,
+// but providing Emirates for consistency if region filtering becomes more advanced.
+// For now, selecting "ae" (UAE) and typing "Dubai" in city is the primary way.
+export const AE_EMIRATES: { value: string; label: string }[] = [
+  { value: "Abu Dhabi", label: "Abu Dhabi" },
+  { value: "Ajman", label: "Ajman" },
+  { value: "Dubai", label: "Dubai" },
+  { value: "Fujairah", label: "Fujairah" },
+  { value: "Ras Al Khaimah", label: "Ras Al Khaimah" },
+  { value: "Sharjah", label: "Sharjah" },
+  { value: "Umm Al Quwain", label: "Umm Al Quwain" },
+];
+
 
 // --- Country-Specific Regions (for News page filters) ---
 // Provides a structured way to offer specific region dropdowns for certain countries.
@@ -220,6 +245,7 @@ export const COUNTRY_SPECIFIC_REGIONS: Record<string, { value: string; label: st
   'de': DE_STATES,
   'fr': FR_REGIONS,
   'jp': JP_PREFECTURES,
+  'ae': AE_EMIRATES, // Added UAE Emirates
 };
 
 
@@ -239,5 +265,3 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
   { term: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
 ];
-
-    

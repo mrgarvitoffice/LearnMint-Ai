@@ -10,10 +10,16 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article }: NewsCardProps) {
-  const placeholderImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(article.category?.[0] || 'News')}`;
+  // Improved placeholder logic: uses article title snippet, then category, then default 'News'
+  const placeholderTextContent = article.title?.substring(0, 25) || article.category?.[0] || 'News';
+  const placeholderImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(placeholderTextContent)}`;
+  const dataAiHintForPlaceholder = placeholderTextContent.toLowerCase().split(' ').slice(0, 2).join(' ');
+
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    (e.target as HTMLImageElement).src = placeholderImage;
+    const target = e.target as HTMLImageElement;
+    target.src = placeholderImage;
+    target.setAttribute('data-ai-hint', dataAiHintForPlaceholder); // Update hint for placeholder
   };
 
   const formattedDate = article.pubDate 
@@ -29,6 +35,7 @@ export function NewsCard({ article }: NewsCardProps) {
           className="w-full h-full object-cover"
           onError={handleImageError}
           loading="lazy"
+          data-ai-hint={article.image_url ? (article.title?.toLowerCase().split(' ').slice(0,2).join(' ') || 'news article') : dataAiHintForPlaceholder}
         />
       </div>
       <CardHeader className="pb-3">

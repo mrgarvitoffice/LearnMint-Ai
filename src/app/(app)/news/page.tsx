@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
@@ -86,8 +86,7 @@ export default function NewsPage() {
     }
   };
   const handleResetFilters = () => { 
-    // Consider if custom-sound-2 should play here or a general click sound
-    playActionSound(); // Or use a different sound for reset if desired
+    playActionSound(); 
     setFilters(initialFilters); 
     setAppliedFilters(initialFilters); 
     pageTitleSpokenRef.current = true; 
@@ -96,7 +95,19 @@ export default function NewsPage() {
     }
   };
 
-  const articles = data?.pages.flatMap(page => page.results) ?? [];
+  const articles = useMemo(() => {
+    const allArticles = data?.pages.flatMap(page => page.results) ?? [];
+    const uniqueArticlesMap = new Map<string, NewsArticle>();
+    allArticles.forEach(article => {
+      if (article.article_id && !uniqueArticlesMap.has(article.article_id)) {
+        uniqueArticlesMap.set(article.article_id, article);
+      } else if (!article.article_id && article.link && !uniqueArticlesMap.has(article.link)) {
+        // Fallback to link if article_id is missing, though less ideal
+        uniqueArticlesMap.set(article.link, article);
+      }
+    });
+    return Array.from(uniqueArticlesMap.values());
+  }, [data]);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
