@@ -118,31 +118,34 @@ export function useTTS(): TTSHook {
       const utterance = new SpeechSynthesisUtterance(text);
       utteranceRef.current = utterance;
 
-      let voiceToUse = selectedVoice; // Fallback to general preferred/default English voice
+      let voiceToUse: SpeechSynthesisVoice | null = null; 
 
       if (lang && supportedVoices.length > 0) {
-        const langSpecificVoice = 
-          supportedVoices.find(v => v.lang === lang) || // Exact match (e.g., "hi-IN")
-          supportedVoices.find(v => v.lang.startsWith(lang.split('-')[0])); // Broader match (e.g., "hi" for "hi-IN")
-        
-        if (langSpecificVoice) {
-          voiceToUse = langSpecificVoice;
-          console.log(`TTS: Using language-specific voice for "${lang}": ${voiceToUse.name}`);
+        const langBase = lang.split('-')[0]; // e.g., "hi" from "hi-IN"
+        voiceToUse = supportedVoices.find(v => v.lang === lang) || // Exact match
+                     supportedVoices.find(v => v.lang.startsWith(langBase)); // Broader match
+
+        if (voiceToUse) {
+          console.log(`TTS: Using language-specific voice for "${lang}": ${voiceToUse.name} (${voiceToUse.lang})`);
+          utterance.voice = voiceToUse;
+          utterance.lang = voiceToUse.lang; 
         } else {
-          console.warn(`TTS: No specific voice found for language "${lang}". Using default/preferred UI voice: ${voiceToUse?.name || 'Browser Default'}`);
+          console.error(`TTS: Aborting speech. No voice found for requested language "${lang}". Text: "${text.substring(0, 50)}..."`);
+          setIsSpeaking(false);
+          setIsPaused(false);
+          utteranceRef.current = null;
+          return; // Abort if no suitable voice for the specified language
         }
-      } else if (selectedVoice) {
-        // console.log(`TTS: Speaking with general preferred voice: ${selectedVoice.name}`);
+      } else if (selectedVoice) { // No specific lang requested, use general selectedVoice
+        voiceToUse = selectedVoice;
+        utterance.voice = voiceToUse;
+        utterance.lang = voiceToUse.lang;
+        // console.log(`TTS: Speaking with general preferred UI voice: ${selectedVoice.name} (${selectedVoice.lang})`);
       } else {
-        console.warn("TTS: Speaking with browser default voice as no specific voice is selected/matched.");
-      }
-      
-      utterance.voice = voiceToUse;
-      if (lang && voiceToUse?.lang !== lang && !voiceToUse?.lang.startsWith(lang.split('-')[0])) {
-        // If we ended up with a voice that doesn't match the requested language at all,
-        // it's better to set utterance.lang to let the browser try its best default for that lang.
-        utterance.lang = lang;
-        console.warn(`TTS: Voice "${voiceToUse?.name}" lang (${voiceToUse?.lang}) does not match requested lang (${lang}). Setting utterance.lang to ${lang}.`);
+        // No specific lang, no selected UI voice, let browser use its absolute default
+        console.warn("TTS: Speaking with browser default voice (no specific lang requested, no UI preference).");
+        // utterance.lang can be left undefined for browser default, or set to a very generic fallback like 'en-US' if desired.
+        // For now, let browser decide based on text.
       }
       
       utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
