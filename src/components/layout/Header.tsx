@@ -185,7 +185,8 @@ export function Header() {
 
       {/* Right-aligned Header Items */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <InstallPWAButton />
+        {/* InstallPWAButton was here, now removed for desktop header bar */}
+        {/* It remains in the SheetContent for mobile */}
 
         {/* "More Options" Dropdown on desktop */}
         <div className="hidden md:flex">
