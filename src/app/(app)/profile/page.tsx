@@ -8,34 +8,36 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// Removed ThemeToggle and InstallPWAButton imports as they are no longer directly on this page
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
-import { LogOut, UserCircle, LogIn, ShieldQuestion, CalendarCheck2, AtSign, Fingerprint, LayoutDashboard, Library as LibraryIcon, Newspaper, Calculator as CalculatorIcon, ChevronRight } from 'lucide-react'; // Added new icons
+import { 
+  LogOut, UserCircle, LogIn, ShieldQuestion, CalendarCheck2, AtSign, Fingerprint, 
+  LayoutDashboard, Library as LibraryIcon, Newspaper, Calculator as CalculatorIcon, 
+  ChevronRight, FileText, TestTubeDiagonal, Sparkles
+} from 'lucide-react';
 import { format } from 'date-fns'; 
 
-const PAGE_TITLE = "User Profile";
-
-interface ProfileLinkItemProps {
+interface FeatureLinkProps {
   href: string;
   icon: React.ElementType;
-  label: string;
+  title: string;
+  description: string;
   onClick?: () => void;
 }
 
-const ProfileLinkItem: React.FC<ProfileLinkItemProps> = ({ href, icon: Icon, label, onClick }) => (
+const FeatureLink: React.FC<FeatureLinkProps> = ({ href, icon: Icon, title, description, onClick }) => (
   <Link href={href} passHref legacyBehavior>
     <a
       onClick={onClick}
-      className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/50 transition-colors duration-150 group"
+      className="block p-4 border rounded-lg hover:bg-muted/50 hover:shadow-lg transition-all duration-200 group space-y-1.5 transform hover:scale-[1.02]"
     >
-      <div className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-primary/90 group-hover:text-primary" />
-        <span className="text-sm font-medium text-foreground group-hover:text-primary">{label}</span>
+      <div className="flex items-center gap-3 mb-1">
+        <Icon className="h-7 w-7 text-primary/90 group-hover:text-primary transition-colors" />
+        <h3 className="text-md font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+      <p className="text-xs text-muted-foreground pl-[calc(1.75rem_+_0.75rem)] group-hover:text-foreground/90 transition-colors">{description}</p>
     </a>
   </Link>
 );
@@ -63,6 +65,21 @@ export default function ProfilePage() {
     playClickSound();
     router.push('/sign-in');
   };
+
+  const getUserFirstName = () => {
+    if (!user) return "User";
+    if (user.isAnonymous) return "Guest";
+    if (user.displayName) {
+      const nameParts = user.displayName.split(' ');
+      return nameParts[0];
+    }
+    if (user.email) {
+      const emailName = user.email.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    }
+    return "User";
+  };
+  const firstName = getUserFirstName();
 
   const getAccountType = () => {
     if (!user) return "N/A";
@@ -100,55 +117,59 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8 space-y-8">
-      <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <UserCircle className="h-16 w-16 text-primary mx-auto mb-4" />
-          <CardTitle className="text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
-          <CardDescription>View your account details and manage preferences.</CardDescription>
+      <Card className="shadow-xl bg-card/90 backdrop-blur-sm text-center">
+        <CardHeader>
+          <Avatar className="h-20 w-20 md:h-24 md:w-24 border-4 border-primary/50 mx-auto mb-3 shadow-md">
+            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
+            <AvatarFallback className="text-3xl md:text-4xl bg-muted">
+              {user.isAnonymous ? <ShieldQuestion className="h-10 w-10 md:h-12 md:w-12" /> :
+                firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-10 w-10 md:h-12 md:w-12" />}
+            </AvatarFallback>
+          </Avatar>
+          <CardTitle className="text-3xl md:text-4xl font-bold text-primary">
+            Hi, {firstName}!
+          </CardTitle>
+          <CardDescription className="text-base text-muted-foreground mt-1">
+            Welcome to your LearnMint profile. Manage your journey here.
+          </CardDescription>
         </CardHeader>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Profile Information</CardTitle>
+          <CardTitle className="text-xl">Your Account Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 border-2 border-primary">
-              <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
-              <AvatarFallback className="text-2xl bg-muted">
-                {user.isAnonymous ? <ShieldQuestion className="h-10 w-10" /> : 
-                 user.displayName ? user.displayName.charAt(0).toUpperCase() : 
-                 user.email ? user.email.charAt(0).toUpperCase() : <UserCircle className="h-10 w-10" />}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-2xl font-semibold">{user.isAnonymous ? "Guest User" : (user.displayName || user.email?.split('@')[0] || "Valued User")}</h2>
-              {!user.isAnonymous && user.email && <p className="text-sm text-muted-foreground flex items-center gap-1.5"><AtSign className="h-3.5 w-3.5"/>{user.email}</p>}
+        <CardContent className="space-y-4">
+          {!user.isAnonymous && user.email && (
+            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
+              <AtSign className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
+              <div>
+                <span className="font-medium text-sm">Email Address:</span>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
             </div>
-          </div>
-
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
               <Fingerprint className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
               <div>
                 <span className="font-medium">Account Type:</span>
                 <p className="text-muted-foreground">{getAccountType()}</p>
               </div>
             </div>
-            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
               <CalendarCheck2 className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
               <div>
-                <span className="font-medium">Joined:</span>
+                <span className="font-medium">Joined LearnMint:</span>
                 <p className="text-muted-foreground">{creationTime}</p>
               </div>
             </div>
             {!user.isAnonymous && (
-              <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md sm:col-span-2">
-                <Fingerprint className="h-5 w-5 text-primary/80 opacity-50 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md sm:col-span-2">
+                <Fingerprint className="h-5 w-5 text-primary/80 opacity-60 mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-medium">User ID:</span>
-                  <p className="text-xs text-muted-foreground break-all">{user.uid}</p>
+                  <span className="font-medium">User ID (for reference):</span>
+                  <p className="text-xs text-muted-foreground/80 break-all">{user.uid}</p>
                 </div>
               </div>
             )}
@@ -158,23 +179,61 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Quick Links & Actions</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/>Explore LearnMint Features</CardTitle>
+          <CardDescription>Dive into your favorite tools and resources.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <ProfileLinkItem href="/" icon={LayoutDashboard} label="Go to Dashboard" onClick={playClickSound} />
-          <ProfileLinkItem href="/library" icon={LibraryIcon} label="My Library" onClick={playClickSound} />
-          <ProfileLinkItem href="/news" icon={Newspaper} label="Daily News" onClick={playClickSound} />
-          <ProfileLinkItem href="/calculator" icon={CalculatorIcon} label="Calculator" onClick={playClickSound} />
-          {/* Add more professional links here if needed */}
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FeatureLink
+            href="/notes"
+            icon={FileText}
+            title="Craft Your Study Notes"
+            description="AI-powered, detailed notes on any topic. Like having a top student by your side!"
+            onClick={playClickSound}
+          />
+          <FeatureLink
+            href="/custom-test"
+            icon={TestTubeDiagonal}
+            title="Design Your Ultimate Test"
+            description="Tailor exams with specific topics, difficulty, and timers for focused preparation."
+            onClick={playClickSound}
+          />
+          <FeatureLink
+            href="/news"
+            icon={Newspaper}
+            title="Stay Informed, Stay Ahead"
+            description="Your daily dose of global news, filterable to keep you updated on what matters."
+            onClick={playClickSound}
+          />
+          <FeatureLink
+            href="/library"
+            icon={LibraryIcon}
+            title="Expand Your Knowledge Base"
+            description="Explore curated textbooks, search YouTube &amp; Google Books, and discover daily math facts."
+            onClick={playClickSound}
+          />
+          <FeatureLink
+            href="/calculator"
+            icon={CalculatorIcon}
+            title="Precision at Your Fingertips"
+            description="Solve complex equations and convert various units with ease and accuracy."
+            onClick={playClickSound}
+          />
+           <FeatureLink
+            href="/"
+            icon={LayoutDashboard}
+            title="Return to Dashboard"
+            description="Navigate back to the main dashboard to see an overview of all features."
+            onClick={playClickSound}
+          />
         </CardContent>
-        <CardFooter>
+        <CardFooter className="mt-2">
           {user.isAnonymous ? (
-            <Button onClick={handleSignInRedirect} className="w-full" variant="default">
-              <LogIn className="mr-2 h-4 w-4" /> Sign In / Sign Up
+            <Button onClick={handleSignInRedirect} className="w-full" variant="default" size="lg">
+              <LogIn className="mr-2 h-5 w-5" /> Sign In / Sign Up to Save Progress
             </Button>
           ) : (
-            <Button onClick={handleSignOut} className="w-full" variant="destructive">
-              <LogOut className="mr-2 h-4 w-4" /> Sign Out
+            <Button onClick={handleSignOut} className="w-full" variant="destructive" size="lg">
+              <LogOut className="mr-2 h-5 w-5" /> Sign Out
             </Button>
           )}
         </CardFooter>
@@ -182,5 +241,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
