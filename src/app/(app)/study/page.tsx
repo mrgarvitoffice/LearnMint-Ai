@@ -153,7 +153,7 @@ function StudyPageContent() {
     queryFn: async () => {
       if (!activeTopic) throw new Error("A valid topic is required.");
       const data = await fetchStudyNotesAction({ topic: activeTopic });
-      if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("notes", activeTopic), JSON.stringify(data));
+      if (typeof window !== 'undefined' && data?.notes) localStorage.setItem(getCacheKey("notes", activeTopic), JSON.stringify(data));
       return data;
     },
     ...commonQueryOptions("notes"),
@@ -171,10 +171,10 @@ function StudyPageContent() {
     queryFn: async () => {
       if (!activeTopic) throw new Error("A topic is required.");
       const data = await generateQuizAction({ topic: activeTopic, numQuestions: 30, difficulty: 'medium' });
-      if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("quiz", activeTopic), JSON.stringify(data));
+      if (typeof window !== 'undefined' && data?.questions) localStorage.setItem(getCacheKey("quiz", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("quiz"), // This spread includes enabled: !!activeTopic
+    ...commonQueryOptions("quiz"),
   });
 
   const {
@@ -189,10 +189,10 @@ function StudyPageContent() {
     queryFn: async () => {
       if (!activeTopic) throw new Error("A topic is required.");
       const data = await generateFlashcardsAction({ topic: activeTopic, numFlashcards: 20 });
-      if (typeof window !== 'undefined' && data) localStorage.setItem(getCacheKey("flashcards", activeTopic), JSON.stringify(data));
+      if (typeof window !== 'undefined' && data?.flashcards) localStorage.setItem(getCacheKey("flashcards", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("flashcards"), // This spread includes enabled: !!activeTopic
+    ...commonQueryOptions("flashcards"),
   });
 
 
@@ -235,32 +235,36 @@ function StudyPageContent() {
 
     return (
       <Tabs defaultValue="notes" value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col min-h-0">
-        <TabsList className="grid w-full grid-cols-1 xs:grid-cols-3 mb-4 sm:mb-6 mx-auto md:max-w-md sticky top-[calc(theme(spacing.16)_+_1px)] sm:top-0 z-10 bg-background/80 backdrop-blur-sm py-1.5">
-          <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {(isLoadingNotes || isFetchingNotes) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-          <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz || isFetchingQuiz) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
-          <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards || isFetchingFlashcards) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 mx-auto md:max-w-md sticky top-[calc(theme(spacing.16)_+_1px)] sm:top-0 z-10 bg-background/80 backdrop-blur-sm py-1.5">
+          <TabsTrigger value="notes" className="py-2.5 text-sm sm:text-base"><BookOpenText className="mr-1.5 sm:mr-2 h-4 w-4"/>Notes {(isLoadingNotes || (isFetchingNotes && !isErrorNotes)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="quiz" className="py-2.5 text-sm sm:text-base"><Brain className="mr-1.5 sm:mr-2 h-4 w-4"/>Quiz {(isLoadingQuiz || (isFetchingQuiz && !isErrorQuiz)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
+          <TabsTrigger value="flashcards" className="py-2.5 text-sm sm:text-base"><Layers className="mr-1.5 sm:mr-2 h-4 w-4"/>Flashcards {(isLoadingFlashcards || (isFetchingFlashcards && !isErrorFlashcards)) && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="notes" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
-          {(isLoadingNotes || (isFetchingNotes && !notesData && !isErrorNotes)) ? <NotesLoadingSkeleton /> :
+          { (isLoadingNotes || (isFetchingNotes && !isErrorNotes)) ? <NotesLoadingSkeleton /> :
            isErrorNotes ? <ErrorDisplay error={notesErrorObj} onRetry={refetchNotes} contentType="notes" /> :
            (notesData?.notes && notesData.notes.trim() !== "") ? <NotesView notesContent={notesData.notes} topic={activeTopic} /> : 
            (notesData && (notesData.notes === null || notesData.notes.trim() === "")) ? <p className="text-muted-foreground p-4 text-center">Notes for this topic were generated successfully but appear to be empty.</p> :
            <p className="text-muted-foreground p-4 text-center">No notes available. Try refreshing or generating for a different topic.</p>}
         </TabsContent>
+        
         <TabsContent value="quiz" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
-           {(isLoadingQuiz || (isFetchingQuiz && !quizData && !isErrorQuiz)) ? <QuizLoadingSkeleton /> :
+          { (isLoadingQuiz || (isFetchingQuiz && !isErrorQuiz)) ? <QuizLoadingSkeleton /> :
             isErrorQuiz ? <ErrorDisplay error={quizErrorObj} onRetry={refetchQuiz} contentType="quiz questions" /> :
-            quizData?.questions && quizData.questions.length > 0 ? <QuizView questions={quizData.questions} topic={activeTopic} difficulty="medium" /> : 
-            (quizData && quizData.questions && quizData.questions.length === 0) ? <p className="text-muted-foreground p-4 text-center">Quiz generation was successful, but no questions were returned for this topic.</p> :
-            <p className="text-muted-foreground p-4 text-center">No quiz questions available. Try refreshing.</p>}
+            quizData?.questions && quizData.questions.length > 0 ? <QuizView questions={quizData.questions} topic={activeTopic} difficulty="medium" /> :
+            quizData && (!quizData.questions || quizData.questions.length === 0) ? <p className="text-muted-foreground p-4 text-center">Quiz was processed, but no questions were returned for this topic. Try refreshing or a different topic.</p> :
+            <p className="text-muted-foreground p-4 text-center">Quiz data could not be loaded. Please try refreshing.</p>
+          }
         </TabsContent>
+
         <TabsContent value="flashcards" className="flex-1 mt-0 p-0 outline-none ring-0 flex flex-col min-h-0">
-           {(isLoadingFlashcards || (isFetchingFlashcards && !flashcardsData && !isErrorFlashcards)) ? <FlashcardsLoadingSkeleton /> :
+          { (isLoadingFlashcards || (isFetchingFlashcards && !isErrorFlashcards)) ? <FlashcardsLoadingSkeleton /> :
             isErrorFlashcards ? <ErrorDisplay error={flashcardsErrorObj} onRetry={refetchFlashcards} contentType="flashcards" /> :
-            flashcardsData?.flashcards && flashcardsData.flashcards.length > 0 ? <FlashcardsView flashcards={flashcardsData.flashcards} topic={activeTopic} /> : 
-            (flashcardsData && flashcardsData.flashcards && flashcardsData.flashcards.length === 0) ? <p className="text-muted-foreground p-4 text-center">Flashcard generation was successful, but no cards were returned for this topic.</p> :
-            <p className="text-muted-foreground p-4 text-center">No flashcards available. Try refreshing.</p>}
+            flashcardsData?.flashcards && flashcardsData.flashcards.length > 0 ? <FlashcardsView flashcards={flashcardsData.flashcards} topic={activeTopic} /> :
+            flashcardsData && (!flashcardsData.flashcards || flashcardsData.flashcards.length === 0) ? <p className="text-muted-foreground p-4 text-center">Flashcards were processed, but no cards were returned for this topic. Try refreshing or a different topic.</p> :
+            <p className="text-muted-foreground p-4 text-center">Flashcard data could not be loaded. Please try refreshing.</p>
+          }
         </TabsContent>
       </Tabs>
     );
@@ -295,5 +299,4 @@ export default function StudyPage() {
     </Suspense>
   );
 }
-
     
