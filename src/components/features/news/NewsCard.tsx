@@ -22,22 +22,25 @@ export function NewsCard({ article }: NewsCardProps) {
   const [imageLoadError, setImageLoadError] = useState<boolean>(false);
 
   useEffect(() => {
-    // Reset state when the article prop changes
+    // Reset state when the article prop changes significantly (ID or link or image_url itself)
+    // This ensures that if a component instance is reused for a new article, its image state is fresh.
+    console.log(`NewsCard Effect: Article changed. Old ID: ${article.article_id || article.link}, New Image URL: ${article.image_url}`);
     setCurrentImageSrc(article.image_url || placeholderImageWithText);
     setImageLoadError(false);
-  }, [article.article_id, article.image_url, placeholderImageWithText]); // key by article_id to ensure reset
+  }, [article.article_id, article.link, article.image_url, placeholderImageWithText]); // Added article.link and article.image_url
 
   const handleError = () => {
     if (currentImageSrc === placeholderImageWithText) {
       // Placeholder itself failed or was the initial src and failed
-      console.error(`NewsCard: Placeholder image also failed for article: ${article.title?.substring(0,30)}... URL: ${placeholderImageWithText}`);
-      setImageLoadError(true);
+      console.error(`NewsCard: Placeholder image ALSO FAILED for article: ${article.title?.substring(0,30)}... Placeholder URL was: ${placeholderImageWithText}`);
+      setImageLoadError(true); // Mark that we cannot show any image.
     } else {
       // Original image failed, switch to placeholder
-      console.warn(`NewsCard: Original image failed for article: ${article.title?.substring(0,30)}... (URL: ${article.image_url}). Switching to placeholder.`);
+      console.warn(`NewsCard: Original image FAILED for article: ${article.title?.substring(0,30)}... (URL: ${article.image_url}). Switching to placeholder: ${placeholderImageWithText}`);
       setCurrentImageSrc(placeholderImageWithText);
-      // Note: If the placeholder now fails, this same handleError will be called again,
-      // and the above condition (currentImageSrc === placeholderImageWithText) will catch it.
+      // imageLoadError remains false for now, as we're *trying* the placeholder.
+      // If the placeholder itself triggers an error, this handleError will be called again,
+      // and the condition `currentImageSrc === placeholderImageWithText` will be true, setting imageLoadError.
     }
   };
 
@@ -46,9 +49,11 @@ export function NewsCard({ article }: NewsCardProps) {
     : 'Date not available';
 
   const getDynamicDataAiHint = () => {
-    if (imageLoadError || currentImageSrc === placeholderImageWithText) {
+    if (imageLoadError || (!article.image_url && currentImageSrc === placeholderImageWithText)) {
+      // If error or original image was null and we're on placeholder
       return dataAiHintForPlaceholder;
     }
+    // Otherwise, use title-based hint for the original image
     return article.title?.toLowerCase().split(' ').slice(0,2).join(' ') || 'news article';
   };
 

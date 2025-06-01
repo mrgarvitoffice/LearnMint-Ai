@@ -24,7 +24,7 @@ interface NewsPageFilters {
   category: string; 
 }
 
-const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: '' };
+const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top' };
 
 
 export default function NewsPage() {
@@ -107,7 +107,8 @@ export default function NewsPage() {
       } else if (article.link) {
         try {
           const url = new URL(article.link);
-          key = url.origin + url.pathname; // Normalize URL by removing query params and hash
+          // Normalize URL by using hostname and pathname, removing protocol, query params, and hash
+          key = url.hostname + url.pathname; 
         } catch (e) {
           // If URL parsing fails, use the raw link as a fallback.
           key = article.link; 
