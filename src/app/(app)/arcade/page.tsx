@@ -53,15 +53,15 @@ export default function ArcadePage() {
       </Card>
 
       <Tabs defaultValue="definition-challenge" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
-          <TabsTrigger value="definition-challenge" className="text-base py-3">
-            <Puzzle className="w-5 h-5 mr-2" /> Definition Challenge
+        <TabsList className="flex flex-wrap justify-center gap-2 mb-6 sm:flex-nowrap sm:grid sm:grid-cols-3">
+          <TabsTrigger value="definition-challenge" className="text-sm sm:text-base py-2 px-3">
+            <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" /> Definition Challenge
           </TabsTrigger>
-          <TabsTrigger value="dino-runner" className="text-base py-3">
-            <ExternalLink className="w-5 h-5 mr-2" /> Dino Runner
+          <TabsTrigger value="dino-runner" className="text-sm sm:text-base py-2 px-3">
+            <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" /> Dino Runner
           </TabsTrigger>
-          <TabsTrigger value="chess" className="text-base py-3">
-            <Crown className="w-5 h-5 mr-2" /> Play Chess
+          <TabsTrigger value="chess" className="text-sm sm:text-base py-2 px-3">
+            <Crown className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" /> Play Chess
           </TabsTrigger>
         </TabsList>
 
