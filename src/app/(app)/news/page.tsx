@@ -8,8 +8,8 @@ import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Speaker } from 'lucide-react'; 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
+import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Speaker } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTTS } from '@/hooks/useTTS';
@@ -22,10 +22,10 @@ const PAGE_TITLE = "Global News Terminal";
 
 interface NewsPageFilters {
   query: string;
-  country: string; 
+  country: string;
   stateOrRegion: string;
   city: string;
-  category: string; 
+  category: string;
   language: string;
 }
 
@@ -52,12 +52,12 @@ export default function NewsPage() {
   const voicePreferenceWasSetRef = useRef(false);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const ttsHeadlinesRef = useRef<string>("");
-  const { toast } = useToast(); 
+  const { toast } = useToast();
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
       // Default voice preference for UI elements, not necessarily for news reading
-      setVoicePreference('luma'); 
+      setVoicePreference('luma');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -73,7 +73,7 @@ export default function NewsPage() {
       }
       pageTitleSpokenRef.current = true;
     }
-    return () => { 
+    return () => {
       isMounted = false;
     };
   }, [selectedVoice, isSpeaking, isPaused, speak, appliedFilters.language]);
@@ -81,30 +81,30 @@ export default function NewsPage() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
     queryFn: ({ pageParam }) => fetchNews({
-        query: appliedFilters.query, country: appliedFilters.country, 
+        query: appliedFilters.query, country: appliedFilters.country,
         stateOrRegion: appliedFilters.stateOrRegion, city: appliedFilters.city,
         category: appliedFilters.category, page: pageParam, language: appliedFilters.language
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    refetchOnWindowFocus: false, 
+    refetchOnWindowFocus: false,
   });
 
   const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
     setFilters(prev => {
       const newFilters = { ...prev, [name]: value };
-      if (name === 'country') { 
-        newFilters.stateOrRegion = ''; 
-        newFilters.city = ''; 
+      if (name === 'country') {
+        newFilters.stateOrRegion = '';
+        newFilters.city = '';
       }
       return newFilters;
     });
   };
 
-  const handleApplyFilters = () => { 
+  const handleApplyFilters = () => {
     playActionSound();
-    setAppliedFilters(filters); 
-    pageTitleSpokenRef.current = true; 
+    setAppliedFilters(filters);
+    pageTitleSpokenRef.current = true;
     if (selectedVoice && !isSpeaking && !isPaused) {
       const currentLanguageFilter = filters.language || 'en';
       const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
@@ -112,11 +112,11 @@ export default function NewsPage() {
       speak("Fetching news with new filters.", bcp47Lang);
     }
   };
-  const handleResetFilters = () => { 
-    playActionSound(); 
-    setFilters(initialFilters); 
-    setAppliedFilters(initialFilters); 
-    pageTitleSpokenRef.current = true; 
+  const handleResetFilters = () => {
+    playActionSound();
+    setFilters(initialFilters);
+    setAppliedFilters(initialFilters);
+    pageTitleSpokenRef.current = true;
     if (selectedVoice && !isSpeaking && !isPaused) {
       // Resetting filters implies default language (English) for this announcement
       speak("News filters reset.", "en-US");
@@ -135,7 +135,7 @@ export default function NewsPage() {
       for (const prefix of prefixes) {
         if (normalized.startsWith(prefix)) {
           normalized = normalized.substring(prefix.length).trim();
-          break; 
+          break;
         }
       }
       normalized = normalized.replace(/[^a-z0-9\s]/g, ''); // Keep only letters, numbers, and spaces
@@ -156,7 +156,7 @@ export default function NewsPage() {
       if (article.article_id && article.article_id.trim() !== "") {
         mapKey = `id-${article.article_id.trim()}`;
       }
-      
+
       if (!mapKey && article.link) {
         try {
           const url = new URL(article.link);
@@ -168,7 +168,7 @@ export default function NewsPage() {
           // console.warn(`Could not parse article link for mapKey: ${article.link}`);
         }
       }
-      
+
       // Title-based key is now effectively handled by seenNormalizedTitles,
       // but we still need a mapKey for the uniqueArticlesMap if ID/Link based failed.
       if (!mapKey && currentNormalizedTitle) {
@@ -187,22 +187,22 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (articles && articles.length > 0) {
-        const numHeadlinesToRead = appliedFilters.language === 'hi' ? 3 : 10; // Read 3 for Hindi, 10 for others
+        const numHeadlinesToRead = 10; // Standard limit for all languages
         const headlinesText = articles
             .slice(0, numHeadlinesToRead)
             .map(article => article.title)
-            .filter(title => !!title) 
-            .join('. '); 
+            .filter(title => !!title)
+            .join('. ');
         ttsHeadlinesRef.current = headlinesText;
     } else {
         ttsHeadlinesRef.current = "";
     }
-  }, [articles, appliedFilters.language]);
+  }, [articles]); // Removed appliedFilters.language as it's no longer used for slicing
 
   const handlePlaybackControl = () => {
     playActionSound();
     cancelTTS(); // Always cancel previous before starting new headline reading
-    
+
     const textToPlay = ttsHeadlinesRef.current;
     if (!textToPlay.trim()) {
         toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
@@ -213,7 +213,7 @@ export default function NewsPage() {
     const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
     const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
 
-    if (isSpeaking && !isPaused) { 
+    if (isSpeaking && !isPaused) {
         pauseTTS();
     } else if (isPaused) {
         resumeTTS();
@@ -229,10 +229,10 @@ export default function NewsPage() {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma'; 
+    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
     if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'luma'; 
+    return 'luma';
   };
 
   return (
@@ -243,13 +243,13 @@ export default function NewsPage() {
           <CardTitle className="text-xl sm:text-2xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription>Stay updated with the latest news. Filter by keywords, country, category, and more.</CardDescription>
         </CardHeader>
-        <CardContent className="pt-0 pb-4"> 
+        <CardContent className="pt-0 pb-4">
           <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
-              <Select 
-                value={getSelectedDropdownValue()} 
-                onValueChange={(value) => { 
-                    playActionSound(); 
-                    setVoicePreference(value as 'zia' | 'kai' | 'luma' | null); 
+              <Select
+                value={getSelectedDropdownValue()}
+                onValueChange={(value) => {
+                    playActionSound();
+                    setVoicePreference(value as 'zia' | 'kai' | 'luma' | null);
                 }}
               >
                   <SelectTrigger className="w-full sm:w-auto text-xs h-9 min-w-[120px]">
