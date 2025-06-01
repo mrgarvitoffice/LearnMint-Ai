@@ -26,7 +26,6 @@ interface TTSHook {
  *
  * A custom React hook for Text-To-Speech (TTS) functionality using the browser's SpeechSynthesis API.
  * Manages speech state, voice selection, and provides controls for speech playback.
- * Includes handling for browser autoplay policies by queuing initial speech until user interaction.
  */
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -36,37 +35,9 @@ export function useTTS(): TTSHook {
   const [voicePreference, setVoicePreference] = useState<'zia' | 'kai' | 'luma' | null>(null);
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const [userHasInteracted, setUserHasInteracted] = useState(false);
-  const [queuedInitialSpeech, setQueuedInitialSpeech] = useState<{ text: string, lang?: string } | null>(null);
-  // Ensures only the *first* automatic speak call is queued if user hasn't interacted.
-  const initialSpeechAttemptedOrQueuedRef = useRef(false); 
-
-  // Effect to detect first user interaction
-  useEffect(() => {
-    const markInteraction = () => {
-      setUserHasInteracted(true);
-      window.removeEventListener('click', markInteraction, { capture: true, once: true });
-      window.removeEventListener('keydown', markInteraction, { capture: true, once: true });
-      window.removeEventListener('touchstart', markInteraction, { capture: true, once: true });
-    };
-
-    if (!userHasInteracted) {
-      window.addEventListener('click', markInteraction, { capture: true, once: true });
-      window.addEventListener('keydown', markInteraction, { capture: true, once: true });
-      window.addEventListener('touchstart', markInteraction, { capture: true, once: true });
-    }
-
-    return () => {
-      window.removeEventListener('click', markInteraction, { capture: true, once: true });
-      window.removeEventListener('keydown', markInteraction, { capture: true, once: true });
-      window.removeEventListener('touchstart', markInteraction, { capture: true, once: true });
-    };
-  }, [userHasInteracted]);
-
 
   const populateVoiceList = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
-      // console.warn("TTS: Speech synthesis not supported or window not available.");
       return;
     }
     const voices = window.speechSynthesis.getVoices();
@@ -79,22 +50,25 @@ export function useTTS(): TTSHook {
     setSupportedVoices(voices);
 
     let preferredVoiceForUI: SpeechSynthesisVoice | undefined;
-    const currentLangPrefix = 'en'; // Prioritize English voices for UI feedback
+    const currentLangPrefix = 'en'; 
     const enUSLangPrefix = 'en-US';
     const maleKeywords = ['male', 'david', 'mark', 'kai', 'guy', 'man', 'boy', 'google us english', 'microsoft david', 'alex', 'arthur', 'daniel', 'google español de estados unidos'];
-    const femaleKeywords = ['female', 'zia', 'luma', 'zira', 'eva', 'girl', 'woman', 'lady', 'samantha', 'google uk english female', 'microsoft zira', 'serena', 'susan', 'heather', 'ayanda', 'google français'];
+    const femaleKeywords = ['female', 'zia', 'luma', 'zira', 'eva', 'girl', 'woman', 'lady', 'samantha', 'google uk english female', 'microsoft zira', 'serena', 'susan', 'heather', 'ayanda', 'google français', 'microsoft eva'];
     
     if (voicePreference === 'kai') {
         preferredVoiceForUI = voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(enUSLangPrefix)) ||
                            voices.find(voice => voice.name.toLowerCase().includes('kai') && voice.lang.startsWith(currentLangPrefix)) ||
-                           voices.find(voice => voice.lang.startsWith(enUSLangPrefix) && maleKeywords.some(kw => voice.name.toLowerCase().includes(kw))) ||
-                           voices.find(voice => voice.lang.startsWith(currentLangPrefix) && maleKeywords.some(kw => voice.name.toLowerCase().includes(kw)));
+                           voices.find(voice => maleKeywords.some(kw => voice.name.toLowerCase().includes(kw) && voice.lang.startsWith(enUSLangPrefix))) ||
+                           voices.find(voice => maleKeywords.some(kw => voice.name.toLowerCase().includes(kw) && voice.lang.startsWith(currentLangPrefix)));
     } else if (voicePreference === 'luma' || voicePreference === 'zia') {
         const primaryNameMatch = voicePreference === 'luma' ? 'luma' : 'zia';
+        const secondaryNameMatch = voicePreference === 'luma' ? 'zia' : 'luma'; // Fallback to the other female preference
         preferredVoiceForUI = voices.find(voice => voice.name.toLowerCase().includes(primaryNameMatch) && voice.lang.startsWith(enUSLangPrefix)) ||
                            voices.find(voice => voice.name.toLowerCase().includes(primaryNameMatch) && voice.lang.startsWith(currentLangPrefix)) ||
-                           voices.find(voice => voice.lang.startsWith(enUSLangPrefix) && femaleKeywords.some(kw => voice.name.toLowerCase().includes(kw))) ||
-                           voices.find(voice => voice.lang.startsWith(currentLangPrefix) && femaleKeywords.some(kw => voice.name.toLowerCase().includes(kw)));
+                           voices.find(voice => femaleKeywords.some(kw => voice.name.toLowerCase().includes(kw) && voice.lang.startsWith(enUSLangPrefix))) ||
+                           voices.find(voice => femaleKeywords.some(kw => voice.name.toLowerCase().includes(kw) && voice.lang.startsWith(currentLangPrefix))) ||
+                           voices.find(voice => voice.name.toLowerCase().includes(secondaryNameMatch) && voice.lang.startsWith(enUSLangPrefix)) || // Fallback check
+                           voices.find(voice => voice.name.toLowerCase().includes(secondaryNameMatch) && voice.lang.startsWith(currentLangPrefix));  // Fallback check
     }
 
     if (!preferredVoiceForUI) {
@@ -106,23 +80,21 @@ export function useTTS(): TTSHook {
                            (voices.length > 0 ? voices[0] : undefined);
     }
     
-    // Only update if the voice actually changes to prevent unnecessary re-renders
     if (preferredVoiceForUI && (!selectedVoice || selectedVoice.voiceURI !== preferredVoiceForUI.voiceURI)) {
       setSelectedVoice(preferredVoiceForUI);
     } else if (!preferredVoiceForUI && selectedVoice !== null) {
       setSelectedVoice(null);
     }
-  }, [voicePreference, selectedVoice]); // Added selectedVoice to dependency array
+  }, [voicePreference, selectedVoice]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      populateVoiceList(); // Initial call
-      // onvoiceschanged might be null if no voices initially, or if already set by populateVoiceList's retry
+      populateVoiceList();
       if (window.speechSynthesis.onvoiceschanged === null) {
         window.speechSynthesis.onvoiceschanged = populateVoiceList;
       }
     }
-    return () => { // Cleanup
+    return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = null;
         if (utteranceRef.current) {
@@ -138,14 +110,13 @@ export function useTTS(): TTSHook {
         setIsPaused(false);
       }
     };
-  }, [populateVoiceList]); // populateVoiceList is stable due to useCallback
+  }, [populateVoiceList]);
 
   const _performSpeak = useCallback((text: string, lang?: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis || !text || text.trim() === "") {
       return;
     }
 
-    // Robustly cancel previous speech and clean up its event handlers
     if (utteranceRef.current) {
       utteranceRef.current.onstart = null;
       utteranceRef.current.onend = null;
@@ -153,48 +124,43 @@ export function useTTS(): TTSHook {
       utteranceRef.current.onpause = null;
       utteranceRef.current.onresume = null;
     }
+
     if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
         window.speechSynthesis.cancel();
     }
     
-    // Reset state for the new utterance
     utteranceRef.current = null; 
     setIsSpeaking(false); 
     setIsPaused(false);
 
     const newUtterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = newUtterance; // Assign new utterance to ref
+    utteranceRef.current = newUtterance; 
 
     let voiceToUse: SpeechSynthesisVoice | null = null;
-    let finalLangTag = lang || selectedVoice?.lang || 'en-US'; // Default to en-US if nothing else
+    let finalLangTag = lang || selectedVoice?.lang || 'en-US';
 
     if (lang && supportedVoices.length > 0) {
       const langBase = lang.split('-')[0].toLowerCase();
       const langFull = lang.toLowerCase();
-      // Prioritize full match, then base language match
       voiceToUse = supportedVoices.find(v => v.lang.toLowerCase() === langFull) ||
                    supportedVoices.find(v => v.lang.toLowerCase().startsWith(langBase + "-")) ||
                    supportedVoices.find(v => v.lang.toLowerCase() === langBase);
       
       if (voiceToUse) {
         newUtterance.voice = voiceToUse;
-        finalLangTag = voiceToUse.lang; // Use the matched voice's lang tag
-        // console.log(`TTS: Found language-specific voice for "${lang}": ${voiceToUse.name} (${voiceToUse.lang})`);
+        finalLangTag = voiceToUse.lang;
       } else {
-        // If no specific voice for 'lang', use the general 'selectedVoice' (Zia, Luma, Kai) BUT set the lang attribute to requested lang
         newUtterance.voice = selectedVoice; 
-        finalLangTag = lang; // IMPORTANT: Keep the originally requested language tag for the utterance
-        // console.warn(`TTS: No specific voice found for "${lang}". Using UI preferred voice "${selectedVoice?.name || 'Browser Default'}" BUT setting lang tag to "${finalLangTag}".`);
+        finalLangTag = lang;
       }
     } else if (selectedVoice) {
       newUtterance.voice = selectedVoice;
       finalLangTag = selectedVoice.lang;
     }
-    // If still no voice (selectedVoice is null and no lang match), browser picks its default for the finalLangTag
 
     newUtterance.lang = finalLangTag;
     newUtterance.pitch = 1;
-    newUtterance.rate = 1.5; // Speech rate
+    newUtterance.rate = 1.5; 
     newUtterance.volume = 1;
 
     newUtterance.onstart = () => {
@@ -211,7 +177,6 @@ export function useTTS(): TTSHook {
       }
     };
     newUtterance.onerror = (event: SpeechSynthesisErrorEvent) => {
-      // Only update state if the error is for the *current* utterance
       if (utteranceRef.current === newUtterance) {
         console.error(`TTS: Speech synthesis error: "${event.error}"`, "Details:", event, `Text: "${text.substring(0,50)}..."`, `Voice: ${newUtterance.voice?.name || 'Browser Default'}`, `Lang: ${newUtterance.lang}`);
         if (event.error === "interrupted") {
@@ -219,7 +184,7 @@ export function useTTS(): TTSHook {
         } else if (event.error === "audio-busy") {
           console.warn("TTS: Speech error 'audio-busy'. The audio output device is busy. Try again shortly.");
         } else if (event.error === "not-allowed") {
-            console.warn("TTS: Speech was 'not-allowed'. This usually means the browser blocked it due to lack of user interaction or permissions.");
+            console.warn("TTS: Speech was 'not-allowed'. This usually means the browser blocked it due to lack of user interaction or permissions (common for initial page load speech).");
         } else if (event.error === "language-unavailable" || event.error === "voice-unavailable") {
             console.warn(`TTS: Speech error '${event.error}'. The language or voice might not be supported by the browser's TTS engine.`);
         }
@@ -235,37 +200,14 @@ export function useTTS(): TTSHook {
       if (utteranceRef.current === newUtterance) setIsPaused(false);
     };
     
-    // console.log(`TTS: Attempting to speak: "${text.substring(0,30)}..." with voice: ${newUtterance.voice?.name || 'Browser Default'}, lang: ${newUtterance.lang}`);
     window.speechSynthesis.speak(newUtterance);
 
   }, [selectedVoice, supportedVoices]);
 
-
   const speak = useCallback((text: string, lang?: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis || !text || text.trim() === "") {
-      return;
-    }
-
-    // If user hasn't interacted and no initial speech has been queued/attempted yet
-    // This handles automatic announcements like page titles on load.
-    if (!userHasInteracted && !initialSpeechAttemptedOrQueuedRef.current) {
-      setQueuedInitialSpeech({ text, lang });
-      initialSpeechAttemptedOrQueuedRef.current = true; // Mark that we've queued an initial speech
-      // console.log("TTS: User has not interacted. Queuing initial speech.");
-      return;
-    }
-    // If user has interacted OR this is not the very first automatic speech attempt
+    // Direct call to _performSpeak, removing the user interaction queue
     _performSpeak(text, lang);
-  }, [userHasInteracted, _performSpeak]);
-
-  // Effect to play queued speech once user interacts
-  useEffect(() => {
-    if (userHasInteracted && queuedInitialSpeech) {
-      // console.log("TTS: User has interacted. Speaking queued initial speech.");
-      _performSpeak(queuedInitialSpeech.text, queuedInitialSpeech.lang);
-      setQueuedInitialSpeech(null); // Clear the queue
-    }
-  }, [userHasInteracted, queuedInitialSpeech, _performSpeak]);
+  }, [_performSpeak]);
 
   const pauseTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking && !isPaused) {
@@ -281,33 +223,29 @@ export function useTTS(): TTSHook {
 
   const cancelTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      if (utteranceRef.current) { // Clean up event handlers of current utterance
+      if (utteranceRef.current) { 
         utteranceRef.current.onstart = null;
         utteranceRef.current.onend = null;
         utteranceRef.current.onerror = null;
         utteranceRef.current.onpause = null;
         utteranceRef.current.onresume = null;
       }
-      window.speechSynthesis.cancel(); // Cancel all speech
-      utteranceRef.current = null; // Clear the reference
+      window.speechSynthesis.cancel(); 
+      utteranceRef.current = null; 
       setIsSpeaking(false);
       setIsPaused(false);
-      setQueuedInitialSpeech(null); // Also clear any queued speech on cancel
-      initialSpeechAttemptedOrQueuedRef.current = false; // Reset for next potential automatic speech
     }
   }, []);
 
   const handleSetVoicePreference = useCallback((preference: 'zia' | 'kai' | 'luma' | null) => {
     setVoicePreference(oldPreference => {
       if (oldPreference !== preference) {
-        // console.log(`TTS: Voice preference changed to: ${preference}`);
         return preference;
       }
       return oldPreference;
     });
   }, []);
   
-  // Re-populate voice list if preference changes AND voices are already loaded
   useEffect(() => {
     if(supportedVoices.length > 0){
         populateVoiceList();
@@ -335,4 +273,3 @@ export function useTTS(): TTSHook {
     voicePreference
   };
 }
-
