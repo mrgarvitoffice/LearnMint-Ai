@@ -89,14 +89,18 @@ export const MATH_FACTS_FALLBACK = [
 
 // --- News API Categories (for News page filters) ---
 export const NEWS_CATEGORIES = [
-  { value: "top", label: "Top Headlines" }, // 'top' is often a special category in news APIs
+  { value: "top", label: "Top Headlines" },
   { value: "business", label: "Business" },
   { value: "technology", label: "Technology" },
   { value: "sports", label: "Sports" },
   { value: "science", label: "Science" },
   { value: "health", label: "Health" },
-  // Note: Newsdata.io also supports 'politics', 'food', 'travel', 'entertainment', 'environment', 'world'
-  // These can be added if desired.
+  { value: "politics", label: "Politics" },
+  { value: "food", label: "Food" },
+  { value: "travel", label: "Travel" },
+  { value: "entertainment", label: "Entertainment" },
+  { value: "environment", label: "Environment" },
+  { value: "world", label: "World" },
 ];
 
 // --- News API Countries (for News page filters) ---
@@ -110,36 +114,112 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
   { value: "de", label: "Germany" },
   { value: "fr", label: "France" },
   { value: "jp", label: "Japan" },
-  // More countries can be added from Newsdata.io's supported list.
+  { value: "br", label: "Brazil" },
+  { value: "cn", label: "China" },
+  { value: "za", label: "South Africa" },
+  { value: "eg", label: "Egypt" },
+  { value: "ng", label: "Nigeria" },
+  { value: "mx", label: "Mexico" },
+  { value: "ru", label: "Russia" },
 ];
 
 // --- US States (for News page, State/Region filter when US is selected) ---
 export const US_STATES: { value: string; label: string }[] = [
-  { value: "AL", label: "Alabama" }, { value: "AK", label: "Alaska" }, { value: "AZ", label: "Arizona" },
-  { value: "AR", label: "Arkansas" }, { value: "CA", label: "California" }, { value: "CO", label: "Colorado" },
-  { value: "CT", label: "Connecticut" }, { value: "DE", label: "Delaware" }, { value: "FL", label: "Florida" },
-  { value: "GA", label: "Georgia" }, { value: "HI", label: "Hawaii" }, { value: "ID", label: "Idaho" },
-  { value: "IL", label: "Illinois" }, { value: "IN", label: "Indiana" }, { value: "IA", label: "Iowa" },
-  { value: "KS", label: "Kansas" }, { value: "KY", label: "Kentucky" }, { value: "LA", label: "Louisiana" },
-  { value: "ME", label: "Maine" }, { value: "MD", label: "Maryland" }, { value: "MA", label: "Massachusetts" },
-  { value: "MI", label: "Michigan" }, { value: "MN", label: "Minnesota" }, { value: "MS", label: "Mississippi" },
-  { value: "MO", label: "Missouri" }, { value: "MT", label: "Montana" }, { value: "NE", label: "Nebraska" },
-  { value: "NV", label: "Nevada" }, { value: "NH", label: "New Hampshire" }, { value: "NJ", label: "New Jersey" },
-  { value: "NM", label: "New Mexico" }, { value: "NY", label: "New York" }, { value: "NC", label: "North Carolina" },
-  { value: "ND", label: "North Dakota" }, { value: "OH", label: "Ohio" }, { value: "OK", label: "Oklahoma" },
-  { value: "OR", label: "Oregon" }, { value: "PA", label: "Pennsylvania" }, { value: "RI", label: "Rhode Island" },
-  { value: "SC", label: "South Carolina" }, { value: "SD", label: "South Dakota" }, { value: "TN", label: "Tennessee" },
-  { value: "TX", label: "Texas" }, { value: "UT", label: "Utah" }, { value: "VT", label: "Vermont" },
-  { value: "VA", label: "Virginia" }, { value: "WA", label: "Washington" }, { value: "WV", label: "West Virginia" },
-  { value: "WI", label: "Wisconsin" }, { value: "WY", label: "Wyoming" },
+  { value: "Alabama", label: "Alabama" }, { value: "Alaska", label: "Alaska" }, { value: "Arizona", label: "Arizona" },
+  { value: "Arkansas", label: "Arkansas" }, { value: "California", label: "California" }, { value: "Colorado", label: "Colorado" },
+  { value: "Connecticut", label: "Connecticut" }, { value: "Delaware", label: "Delaware" }, { value: "Florida", label: "Florida" },
+  { value: "Georgia", label: "Georgia" }, { value: "Hawaii", label: "Hawaii" }, { value: "Idaho", label: "Idaho" },
+  { value: "Illinois", label: "Illinois" }, { value: "Indiana", label: "Indiana" }, { value: "Iowa", label: "Iowa" },
+  { value: "Kansas", label: "Kansas" }, { value: "Kentucky", label: "Kentucky" }, { value: "Louisiana", label: "Louisiana" },
+  { value: "Maine", label: "Maine" }, { value: "Maryland", label: "Maryland" }, { value: "Massachusetts", label: "Massachusetts" },
+  { value: "Michigan", label: "Michigan" }, { value: "Minnesota", label: "Minnesota" }, { value: "Mississippi", label: "Mississippi" },
+  { value: "Missouri", label: "Missouri" }, { value: "Montana", label: "Montana" }, { value: "Nebraska", label: "Nebraska" },
+  { value: "Nevada", label: "Nevada" }, { value: "New Hampshire", label: "New Hampshire" }, { value: "New Jersey", label: "New Jersey" },
+  { value: "New Mexico", label: "New Mexico" }, { value: "New York", label: "New York" }, { value: "North Carolina", label: "North Carolina" },
+  { value: "North Dakota", label: "North Dakota" }, { value: "Ohio", label: "Ohio" }, { value: "Oklahoma", label: "Oklahoma" },
+  { value: "Oregon", label: "Oregon" }, { value: "Pennsylvania", label: "Pennsylvania" }, { value: "Rhode Island", label: "Rhode Island" },
+  { value: "South Carolina", label: "South Carolina" }, { value: "South Dakota", label: "South Dakota" }, { value: "Tennessee", label: "Tennessee" },
+  { value: "Texas", label: "Texas" }, { value: "Utah", label: "Utah" }, { value: "Vermont", label: "Vermont" },
+  { value: "Virginia", label: "Virginia" }, { value: "Washington", label: "Washington" }, { value: "West Virginia", label: "West Virginia" },
+  { value: "Wisconsin", label: "Wisconsin" }, { value: "Wyoming", label: "Wyoming" },
 ];
+
+// --- Canadian Provinces and Territories ---
+export const CA_PROVINCES_TERRITORIES: { value: string; label: string }[] = [
+  { value: "Alberta", label: "Alberta" }, { value: "British Columbia", label: "British Columbia" }, { value: "Manitoba", label: "Manitoba" },
+  { value: "New Brunswick", label: "New Brunswick" }, { value: "Newfoundland and Labrador", label: "Newfoundland and Labrador" },
+  { value: "Nova Scotia", label: "Nova Scotia" }, { value: "Ontario", label: "Ontario" }, { value: "Prince Edward Island", label: "Prince Edward Island" },
+  { value: "Quebec", label: "Quebec" }, { value: "Saskatchewan", label: "Saskatchewan" },
+  { value: "Northwest Territories", label: "Northwest Territories" }, { value: "Nunavut", label: "Nunavut" }, { value: "Yukon", label: "Yukon" },
+];
+
+// --- Australian States and Territories ---
+export const AU_STATES_TERRITORIES: { value: string; label: string }[] = [
+  { value: "New South Wales", label: "New South Wales" }, { value: "Victoria", label: "Victoria" }, { value: "Queensland", label: "Queensland" },
+  { value: "Western Australia", label: "Western Australia" }, { value: "South Australia", label: "South Australia" }, { value: "Tasmania", label: "Tasmania" },
+  { value: "Australian Capital Territory", label: "Australian Capital Territory" }, { value: "Northern Territory", label: "Northern Territory" },
+];
+
+// --- Indian States and Union Territories (Selection) ---
+export const IN_STATES_UT: { value: string; label: string }[] = [
+  { value: "Maharashtra", label: "Maharashtra" }, { value: "Karnataka", label: "Karnataka" }, { value: "Tamil Nadu", label: "Tamil Nadu" },
+  { value: "Delhi", label: "Delhi" }, { value: "Uttar Pradesh", label: "Uttar Pradesh" }, { value: "Gujarat", label: "Gujarat" },
+  { value: "West Bengal", label: "West Bengal" }, { value: "Rajasthan", label: "Rajasthan" }, { value: "Kerala", label: "Kerala" },
+  { value: "Telangana", label: "Telangana" }, { value: "Andhra Pradesh", label: "Andhra Pradesh"}, { value: "Punjab", label: "Punjab"}
+];
+
+// --- German States (Bundesländer) ---
+export const DE_STATES: { value: string; label: string }[] = [
+  { value: "Baden-Württemberg", label: "Baden-Württemberg" }, { value: "Bavaria", label: "Bavaria (Bayern)" }, { value: "Berlin", label: "Berlin" },
+  { value: "Brandenburg", label: "Brandenburg" }, { value: "Bremen", label: "Bremen" }, { value: "Hamburg", label: "Hamburg" },
+  { value: "Hesse", label: "Hesse (Hessen)" }, { value: "Lower Saxony", label: "Lower Saxony (Niedersachsen)" },
+  { value: "Mecklenburg-Vorpommern", label: "Mecklenburg-Vorpommern" }, { value: "North Rhine-Westphalia", label: "North Rhine-Westphalia (Nordrhein-Westfalen)" },
+  { value: "Rhineland-Palatinate", label: "Rhineland-Palatinate (Rheinland-Pfalz)" }, { value: "Saarland", label: "Saarland" },
+  { value: "Saxony", label: "Saxony (Sachsen)" }, { value: "Saxony-Anhalt", label: "Saxony-Anhalt (Sachsen-Anhalt)" },
+  { value: "Schleswig-Holstein", label: "Schleswig-Holstein" }, { value: "Thuringia", label: "Thuringia (Thüringen)" },
+];
+
+// --- French Regions (Selection of major regions) ---
+export const FR_REGIONS: { value: string; label: string }[] = [
+  { value: "Île-de-France", label: "Île-de-France (Paris)" }, { value: "Auvergne-Rhône-Alpes", label: "Auvergne-Rhône-Alpes (Lyon)" },
+  { value: "Provence-Alpes-Côte d'Azur", label: "Provence-Alpes-Côte d'Azur (Marseille)" },
+  { value: "Occitanie", label: "Occitanie (Toulouse)" }, { value: "Nouvelle-Aquitaine", label: "Nouvelle-Aquitaine (Bordeaux)" },
+  { value: "Hauts-de-France", label: "Hauts-de-France (Lille)" }, { value: "Grand Est", label: "Grand Est (Strasbourg)" },
+  { value: "Pays de la Loire", label: "Pays de la Loire (Nantes)" }, { value: "Brittany", label: "Brittany (Bretagne)" },
+  { value: "Normandy", label: "Normandy (Normandie)" },
+];
+
+// --- Japanese Prefectures ---
+export const JP_PREFECTURES: { value: string; label: string }[] = [
+  { value: "Hokkaido", label: "Hokkaido" }, { value: "Aomori", label: "Aomori" }, { value: "Iwate", label: "Iwate" },
+  { value: "Miyagi", label: "Miyagi" }, { value: "Akita", label: "Akita" }, { value: "Yamagata", label: "Yamagata" },
+  { value: "Fukushima", label: "Fukushima" }, { value: "Ibaraki", label: "Ibaraki" }, { value: "Tochigi", label: "Tochigi" },
+  { value: "Gunma", label: "Gunma" }, { value: "Saitama", label: "Saitama" }, { value: "Chiba", label: "Chiba" },
+  { value: "Tokyo", label: "Tokyo" }, { value: "Kanagawa", label: "Kanagawa" }, { value: "Niigata", label: "Niigata" },
+  { value: "Toyama", label: "Toyama" }, { value: "Ishikawa", label: "Ishikawa" }, { value: "Fukui", label: "Fukui" },
+  { value: "Yamanashi", label: "Yamanashi" }, { value: "Nagano", label: "Nagano" }, { value: "Gifu", label: "Gifu" },
+  { value: "Shizuoka", label: "Shizuoka" }, { value: "Aichi", label: "Aichi" }, { value: "Mie", label: "Mie" },
+  { value: "Shiga", label: "Shiga" }, { value: "Kyoto", label: "Kyoto" }, { value: "Osaka", label: "Osaka" },
+  { value: "Hyogo", label: "Hyogo" }, { value: "Nara", label: "Nara" }, { value: "Wakayama", label: "Wakayama" },
+  { value: "Tottori", label: "Tottori" }, { value: "Shimane", label: "Shimane" }, { value: "Okayama", label: "Okayama" },
+  { value: "Hiroshima", label: "Hiroshima" }, { value: "Yamaguchi", label: "Yamaguchi" }, { value: "Tokushima", label: "Tokushima" },
+  { value: "Kagawa", label: "Kagawa" }, { value: "Ehime", label: "Ehime" }, { value: "Kochi", label: "Kochi" },
+  { value: "Fukuoka", label: "Fukuoka" }, { value: "Saga", label: "Saga" }, { value: "Nagasaki", label: "Nagasaki" },
+  { value: "Kumamoto", label: "Kumamoto" }, { value: "Oita", label: "Oita" }, { value: "Miyazaki", label: "Miyazaki" },
+  { value: "Kagoshima", label: "Kagoshima" }, { value: "Okinawa", label: "Okinawa" },
+];
+
 
 // --- Country-Specific Regions (for News page filters) ---
 // Provides a structured way to offer specific region dropdowns for certain countries.
-// Currently, only US states are defined. More can be added (e.g., Canadian provinces).
 export const COUNTRY_SPECIFIC_REGIONS: Record<string, { value: string; label: string }[]> = {
-  'us': US_STATES, // When 'us' (United States) is selected, the US_STATES list will be used for the region dropdown.
-  // 'ca': [ {value: 'ON', label: 'Ontario'}, {value: 'QC', label: 'Quebec'}, ... ], // Example for Canada
+  'us': US_STATES,
+  'ca': CA_PROVINCES_TERRITORIES,
+  'au': AU_STATES_TERRITORIES,
+  'in': IN_STATES_UT,
+  'de': DE_STATES,
+  'fr': FR_REGIONS,
+  'jp': JP_PREFECTURES,
 };
 
 
@@ -159,3 +239,5 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
   { term: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
 ];
+
+    
