@@ -61,32 +61,19 @@ export function useTTS(): TTSHook {
       return;
     }
 
-    if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
-        window.speechSynthesis.cancel();
-    }
-    if (utteranceRef.current) { 
-        utteranceRef.current.onstart = null;
-        utteranceRef.current.onend = null;
-        utteranceRef.current.onerror = null;
-        utteranceRef.current.onpause = null;
-        utteranceRef.current.onresume = null;
-    }
-    setIsSpeaking(false); 
-    setIsPaused(false);
-    activeOnEndCallbackRef.current = null; 
-    utteranceRef.current = null;
+    cancelTTS(); // Cancel any ongoing speech before starting new
 
     activeOnEndCallbackRef.current = onEndCallback || null;
     const newUtterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = newUtterance;
 
     let voiceForUtterance: SpeechSynthesisVoice | null = null;
-    let langForUtterance: string | undefined = lang; 
+    let langForUtterance: string | undefined = lang;
 
     if (lang && supportedVoices.length > 0) {
       const langBase = lang.split('-')[0].toLowerCase();
       const langFull = lang.toLowerCase();
-
+      
       const findVoiceForLang = (targetLang: string, baseLang: string) =>
         supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.localService && v.default) ||
         supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.localService) ||
@@ -95,28 +82,26 @@ export function useTTS(): TTSHook {
         supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.localService && v.default) ||
         supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.localService) ||
         supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.default) ||
-        supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-")) ||
-        supportedVoices.find(v => v.lang.toLowerCase() === baseLang && v.localService && v.default) ||
-        supportedVoices.find(v => v.lang.toLowerCase() === baseLang && v.localService) ||
-        supportedVoices.find(v => v.lang.toLowerCase() === baseLang && v.default) ||
-        supportedVoices.find(v => v.lang.toLowerCase() === baseLang);
+        supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-"));
 
       voiceForUtterance = findVoiceForLang(langFull, langBase);
 
       if (voiceForUtterance) {
         langForUtterance = voiceForUtterance.lang;
       } else if (selectedVoice && selectedVoice.lang.toLowerCase().startsWith(langBase)) {
+        // If a specific lang voice isn't found, but UI selected voice matches base lang (e.g. en-GB for en-US content)
         voiceForUtterance = selectedVoice;
         langForUtterance = selectedVoice.lang;
       } else {
-        // langForUtterance is already set to 'lang' from the parameter.
-        // Let browser pick its default for the specified lang.
+        // No specific voice for this lang, and selectedVoice is for a different language.
+        // Let browser pick best default for 'langForUtterance'.
+        // console.log(`TTS: No specific voice for lang "${lang}", and UI selected voice "${selectedVoice?.name}" is not for base lang "${langBase}". Browser will pick default for "${langForUtterance}".`);
       }
-    } else if (selectedVoice) { 
+    } else if (selectedVoice) { // No specific lang for content, use UI selected voice
       voiceForUtterance = selectedVoice;
       langForUtterance = selectedVoice.lang;
-    } else { 
-      langForUtterance = langForUtterance || 'en-US'; 
+    } else { // No specific lang for content, and no UI selected voice, try to find a general English default
+      langForUtterance = langForUtterance || 'en-US';
       voiceForUtterance =
         supportedVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.localService && v.default) ||
         supportedVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.localService && v.default) ||
@@ -140,7 +125,6 @@ export function useTTS(): TTSHook {
     newUtterance.pitch = 1.0;
     newUtterance.volume = 1.0;
     newUtterance.rate = (newUtterance.lang && (newUtterance.lang.toLowerCase().startsWith('en'))) ? 1.4 : 1.0;
-
 
     newUtterance.onstart = () => { if (utteranceRef.current === newUtterance) { setIsSpeaking(true); setIsPaused(false); }};
     newUtterance.onend = () => {
@@ -210,114 +194,92 @@ export function useTTS(): TTSHook {
     };
   }, [setSupportedVoicesSafe, cancelTTS]);
 
-
   const updateSelectedVoiceLogic = useCallback(() => {
     if (supportedVoices.length === 0) {
       setSelectedVoice(null); return;
     }
 
-    let preferredVoice: SpeechSynthesisVoice | undefined;
+    let chosenVoice: SpeechSynthesisVoice | undefined;
     const enVoices = supportedVoices.filter(v => v.lang.toLowerCase().startsWith('en'));
-    const anyLocalServiceVoices = supportedVoices.filter(v => v.localService);
-    const anyDefaultVoices = supportedVoices.filter(v => v.default);
 
+    if (enVoices.length === 0) {
+      // If no English voices, pick any default or first available voice from all languages
+      setSelectedVoice(supportedVoices.find(v => v.default) || supportedVoices[0] || null);
+      return;
+    }
+
+    // Keywords for preferences (already optimized for quality female voices for Zia/Luma)
     const ziaKeywords = ["zia", "female", "samantha", "google us english", "microsoft zira", "ava", "allison", "susan", "joanna", "stephanie", "eva"];
     const lumaKeywords = ["luma", "female", "google uk english female", "microsoft hazel", "kate", "serena", "moira", "fiona", "emily", "microsoft catherine", "microsoft linda"];
     const kaiKeywords = ["kai", "male", "david", "google us english male", "microsoft david", "mark", "tom", "alex", "daniel", "oliver"];
 
+    // Helper to search voices based on keywords and criteria
+    const findVoice = (
+      voicesToSearch: SpeechSynthesisVoice[],
+      primaryKeywords: string[],
+      isStrictlyGendered: boolean, // If true, avoid opposite gender even in broad match
+      preferredGenderKeyword?: "female" | "male" // e.g., "female" for Zia/Luma, "male" for Kai
+    ): SpeechSynthesisVoice | undefined => {
+      let voice: SpeechSynthesisVoice | undefined;
+      const criteriaOrder = [
+        (v: SpeechSynthesisVoice) => v.localService && v.default,
+        (v: SpeechSynthesisVoice) => v.localService,
+        (v: SpeechSynthesisVoice) => v.default,
+        (_v: SpeechSynthesisVoice) => true, // Any voice
+      ];
 
-    const findVoiceByKeywordsAndCriteria = (
-        voices: SpeechSynthesisVoice[],
-        namePreference: string | null, 
-        targetKeywords: string[]
-      ) => {
-      let foundVoice: SpeechSynthesisVoice | undefined;
-
-      // 1. Exact name match (case-insensitive) + en-US + local service (strongest match)
-      if (namePreference) {
-        foundVoice = voices.find(v => v.name.toLowerCase().includes(namePreference) && v.lang.toLowerCase().startsWith('en-us') && v.localService);
-        if (foundVoice) return foundVoice;
+      for (const criterion of criteriaOrder) {
+        voice = voicesToSearch.find(v => 
+          primaryKeywords.some(kw => v.name.toLowerCase().includes(kw.toLowerCase())) && 
+          criterion(v) &&
+          (!isStrictlyGendered || !preferredGenderKeyword || (preferredGenderKeyword === "female" && !kaiKeywords.some(maleKw => v.name.toLowerCase().includes(maleKw.toLowerCase()))) || (preferredGenderKeyword === "male" && !ziaKeywords.some(femaleKw => v.name.toLowerCase().includes(femaleKw.toLowerCase())) && !lumaKeywords.some(femaleKw => v.name.toLowerCase().includes(femaleKw.toLowerCase())) ))
+        );
+        if (voice) return voice;
       }
-      
-      // 2. Keyword match + en-US + local service + default (very strong general match)
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.lang.toLowerCase().startsWith('en-us') && v.localService && v.default);
-      if (foundVoice) return foundVoice;
-
-      // 3. Exact name match + local service
-      if (namePreference) {
-        foundVoice = voices.find(v => v.name.toLowerCase().includes(namePreference) && v.localService);
-        if (foundVoice) return foundVoice;
-      }
-
-      // 4. Keyword match + en-US + local service
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.lang.toLowerCase().startsWith('en-us') && v.localService);
-      if (foundVoice) return foundVoice;
-      
-      // 5. Keyword match + any local service + default
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.localService && v.default);
-      if (foundVoice) return foundVoice;
-
-      // 6. Exact name match + en-US
-      if (namePreference) {
-        foundVoice = voices.find(v => v.name.toLowerCase().includes(namePreference) && v.lang.toLowerCase().startsWith('en-us'));
-        if (foundVoice) return foundVoice;
-      }
-      
-      // 7. Keyword match + any local service
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.localService);
-      if (foundVoice) return foundVoice;
-
-      // 8. Exact name match (any english variant)
-      if (namePreference) {
-        foundVoice = voices.find(v => v.name.toLowerCase().includes(namePreference));
-        if (foundVoice) return foundVoice;
-      }
-
-      // 9. Keyword match + en-US + default
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.lang.toLowerCase().startsWith('en-us') && v.default);
-      if (foundVoice) return foundVoice;
-
-      // 10. Keyword match + en-US
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.lang.toLowerCase().startsWith('en-us'));
-      if (foundVoice) return foundVoice;
-
-      // 11. Keyword match + default
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)) && v.default);
-      if (foundVoice) return foundVoice;
-      
-      // 12. Keyword match (broadest match)
-      foundVoice = voices.find(v => targetKeywords.some(kw => v.name.toLowerCase().includes(kw)));
-      return foundVoice;
+      return undefined;
     };
+    
+    // console.log("LearnMint TTS: Available English Voices:", enVoices.map(v => ({name: v.name, lang: v.lang, default: v.default, local: v.localService})));
+    // console.log("LearnMint TTS: Current Voice Preference:", voicePreference);
 
     if (voicePreference === 'zia') {
-      preferredVoice = findVoiceByKeywordsAndCriteria(enVoices, 'zia', ziaKeywords);
+      chosenVoice = findVoice(enVoices, ziaKeywords, true, "female");
+      if (!chosenVoice) { // Fallback for Zia: any other voice primarily marked female
+        chosenVoice = findVoice(enVoices, ["female"], true, "female");
+      }
     } else if (voicePreference === 'luma') {
-      preferredVoice = findVoiceByKeywordsAndCriteria(enVoices, 'luma', lumaKeywords);
+      chosenVoice = findVoice(enVoices, lumaKeywords, true, "female");
+      if (!chosenVoice) { // Fallback for Luma: any other voice primarily marked female
+         chosenVoice = findVoice(enVoices, ["female"], true, "female");
+      }
     } else if (voicePreference === 'kai') {
-      preferredVoice = findVoiceByKeywordsAndCriteria(enVoices, 'kai', kaiKeywords);
+      chosenVoice = findVoice(enVoices, kaiKeywords, true, "male");
+       if (!chosenVoice) { // Fallback for Kai: any other voice primarily marked male
+         chosenVoice = findVoice(enVoices, ["male"], true, "male");
+      }
     }
 
-    if (!preferredVoice) {
-      preferredVoice =
-        anyLocalServiceVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.default) ||
-        anyDefaultVoices.find(v => v.lang.toLowerCase().startsWith('en-us')) ||
-        anyLocalServiceVoices.find(v => v.lang.toLowerCase().startsWith('en-us')) ||
+    // If still no voice (either no preference, or preference + gendered fallback failed):
+    if (!chosenVoice) {
+      // General English voice fallback (prioritizing US, local, default)
+      chosenVoice =
+        enVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.localService && v.default) ||
+        enVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.localService && v.default) ||
+        enVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.localService) ||
+        enVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.localService) ||
+        enVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.default) ||
+        enVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.default) ||
         enVoices.find(v => v.lang.toLowerCase().startsWith('en-us')) ||
-        anyLocalServiceVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.default) ||
-        anyDefaultVoices.find(v => v.lang.toLowerCase().startsWith('en')) ||
-        anyLocalServiceVoices.find(v => v.lang.toLowerCase().startsWith('en')) ||
-        enVoices[0] || 
-        anyDefaultVoices[0] ||
-        anyLocalServiceVoices[0] ||
-        supportedVoices[0];
+        enVoices[0]; // Absolute fallback to the first available English voice
     }
     
+    // console.log("LearnMint TTS: Chosen Voice:", chosenVoice ? {name: chosenVoice.name, lang: chosenVoice.lang} : "None");
+
     setSelectedVoice(currentSelected => {
-      if (preferredVoice && (!currentSelected || currentSelected.voiceURI !== preferredVoice.voiceURI)) {
-        return preferredVoice;
+      if (chosenVoice && (!currentSelected || currentSelected.voiceURI !== chosenVoice.voiceURI)) {
+        return chosenVoice;
       }
-      if (!preferredVoice && currentSelected !== null) {
+      if (!chosenVoice && currentSelected !== null) {
         return null;
       }
       return currentSelected;
