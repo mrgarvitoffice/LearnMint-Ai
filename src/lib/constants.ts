@@ -88,20 +88,18 @@ export const MATH_FACTS_FALLBACK = [
 ];
 
 // --- News API Categories (for News page filters) ---
+// Curated list: Top Headlines (default) + 7 other specific categories.
 export const NEWS_CATEGORIES = [
-  { value: "top", label: "Top Headlines" },
+  { value: "top", label: "Top Headlines" }, // This is the default for "All Categories" behavior
   { value: "business", label: "Business" },
   { value: "technology", label: "Technology" },
   { value: "sports", label: "Sports" },
   { value: "science", label: "Science" },
   { value: "health", label: "Health" },
-  { value: "politics", label: "Politics" },
-  { value: "food", label: "Food" },
-  { value: "travel", label: "Travel" },
   { value: "entertainment", label: "Entertainment" },
-  { value: "environment", label: "Environment" },
   { value: "world", label: "World" },
 ];
+
 
 // --- News API Countries (for News page filters) ---
 // A selection of countries with their ISO 2-letter codes.
@@ -121,7 +119,7 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
   { value: "ng", label: "Nigeria" },
   { value: "mx", label: "Mexico" },
   { value: "ru", label: "Russia" },
-  { value: "ae", label: "United Arab Emirates" }, // Added UAE for Dubai
+  { value: "ae", label: "United Arab Emirates" },
 ];
 
 // --- US States (for News page, State/Region filter when US is selected) ---
@@ -221,9 +219,6 @@ export const JP_PREFECTURES: { value: string; label: string }[] = [
 ];
 
 // --- United Arab Emirates Emirates (for News page filters) ---
-// Note: Newsdata.io might expect "Dubai" as city and "ae" as country,
-// but providing Emirates for consistency if region filtering becomes more advanced.
-// For now, selecting "ae" (UAE) and typing "Dubai" in city is the primary way.
 export const AE_EMIRATES: { value: string; label: string }[] = [
   { value: "Abu Dhabi", label: "Abu Dhabi" },
   { value: "Ajman", label: "Ajman" },
@@ -245,7 +240,7 @@ export const COUNTRY_SPECIFIC_REGIONS: Record<string, { value: string; label: st
   'de': DE_STATES,
   'fr': FR_REGIONS,
   'jp': JP_PREFECTURES,
-  'ae': AE_EMIRATES, // Added UAE Emirates
+  'ae': AE_EMIRATES,
 };
 
 
@@ -265,3 +260,5 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
   { term: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
 ];
+
+    

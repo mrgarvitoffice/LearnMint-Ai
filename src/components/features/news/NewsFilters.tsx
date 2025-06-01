@@ -8,7 +8,7 @@ import { NEWS_CATEGORIES, NEWS_COUNTRIES, COUNTRY_SPECIFIC_REGIONS } from "@/lib
 import { Label } from "@/components/ui/label";
 import { RotateCcw } from "lucide-react";
 
-const ALL_CATEGORIES_VALUE = "_all_categories_";
+// const ALL_CATEGORIES_VALUE = "_all_categories_"; // No longer needed with new approach
 const ANY_COUNTRY_VALUE = "_any_country_";
 const ANY_REGION_VALUE = "_any_region_";
 
@@ -113,16 +113,15 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         <div className="space-y-1.5">
           <Label htmlFor="category-select">Category</Label>
           <Select
-            value={filters.category || ALL_CATEGORIES_VALUE}
-            onValueChange={(value) => onFilterChange('category', value === ALL_CATEGORIES_VALUE ? "" : value)}
+            value={filters.category || "top"} // Default to "top" if filters.category is empty
+            onValueChange={(value) => onFilterChange('category', value)} // Directly pass the selected value
             disabled={isLoading}
           >
             <SelectTrigger id="category-select" className="bg-input/50">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
-              {NEWS_CATEGORIES.map(cat => (
+              {NEWS_CATEGORIES.map(cat => ( // NEWS_CATEGORIES now includes "Top Headlines"
                 <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
               ))}
             </SelectContent>
@@ -138,10 +137,12 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
         </Button>
       </div>
       <p className="text-xs text-muted-foreground/80 mt-2">
-        <strong>Filter Behavior:</strong> Selecting "World / Any Country" fetches global news.
-        If a specific country is chosen (e.g., US), State/Region becomes a dropdown. Otherwise, it's a text input.
-        City is always a text input. State/Region and City terms refine search within the selected country.
+        <strong>Filter Behavior:</strong> "Top Headlines" is the default category.
+        If a specific country is chosen, State/Region may become a dropdown.
+        State/Region and City terms refine search within the selected country if provided.
       </p>
     </div>
   );
 }
+
+    

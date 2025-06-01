@@ -47,18 +47,24 @@ export async function fetchNews(params: FetchNewsParams): Promise<NewsApiRespons
   if (combinedQuery.trim()) {
     queryParams.append("q", combinedQuery.trim());
   }
-  if (params.country) queryParams.append("country", params.country);
-  if (params.category && params.category !== "_all_categories_") { // Ensure _all_categories_ isn't sent
+  
+  // If a specific category is provided (and it's not an empty string from a reset), use it.
+  // The newsdata.io API uses 'top' as a category for general top headlines.
+  if (params.category) { 
     queryParams.append("category", params.category);
   }
+  
+  // Default to 'top' category if no search query and no specific category is provided.
+  // This ensures that if the user just lands on the page or clears all filters, they get top headlines.
+  if (!combinedQuery.trim() && !params.category) {
+    queryParams.set("category", "top"); 
+  }
+  // If there IS a combinedQuery but NO category (params.category is empty string),
+  // then no category parameter will be appended, and newsdata.io will search the query across all categories.
+  // This is the desired behavior for "search all categories".
+
   if (params.page) queryParams.append("page", params.page);
   
-  // Default to 'top' category if no query and no specific category is provided by user
-  if (!combinedQuery.trim() && (!params.category || params.category === "_all_categories_")) {
-    queryParams.set("category", "top"); // API expects 'top' for general top headlines
-  }
-
-
   try {
     const response = await fetch(`${NEWS_API_URL}?${queryParams.toString()}`);
     if (!response.ok) {
@@ -99,3 +105,5 @@ export async function fetchNews(params: FetchNewsParams): Promise<NewsApiRespons
     };
   }
 }
+
+    
