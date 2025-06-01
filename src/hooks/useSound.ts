@@ -36,7 +36,7 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
 
   const playSound = useCallback(() => {
     if (!isSoundEnabled) {
-      console.log(`Sound disabled, not playing: ${soundPathOrType}`);
+      // console.log(`Sound disabled, not playing: ${soundPathOrType}`); // Keep this if you want to know when sounds are skipped due to being disabled
       return;
     }
 
@@ -67,7 +67,6 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
       }
     } else if (audioElement && soundPathOrType.startsWith('/')) {
       // Play file-based sound
-      console.log(`Attempting to play file sound: ${soundPathOrType}`);
       audioElement.currentTime = 0;
       audioElement.play().catch(error => console.error(`Error playing file sound ${soundPathOrType}:`, error));
     } else if (!audioElement && soundPathOrType.startsWith('/')) {

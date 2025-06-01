@@ -24,10 +24,9 @@ export function NewsCard({ article }: NewsCardProps) {
   useEffect(() => {
     // Reset state when the article prop changes significantly (ID or link or image_url itself)
     // This ensures that if a component instance is reused for a new article, its image state is fresh.
-    console.log(`NewsCard Effect: Article changed. Old ID: ${article.article_id || article.link}, New Image URL: ${article.image_url}`);
     setCurrentImageSrc(article.image_url || placeholderImageWithText);
     setImageLoadError(false);
-  }, [article.article_id, article.link, article.image_url, placeholderImageWithText]); // Added article.link and article.image_url
+  }, [article.article_id, article.link, article.image_url, placeholderImageWithText]);
 
   const handleError = () => {
     if (currentImageSrc === placeholderImageWithText) {
