@@ -107,25 +107,34 @@ export default function NewsPage() {
         key = article.article_id.trim();
       }
       
-      // 2. If no article_id, try normalized link
+      // 2. If no article_id, try normalized link (hostname + pathname)
       if (!key && article.link) {
         try {
           const url = new URL(article.link);
-          key = url.hostname + url.pathname; // Normalize by hostname and pathname
+          const normalizedLink = url.hostname + url.pathname;
+          if (normalizedLink) {
+            key = `link-${normalizedLink}`;
+          }
         } catch (e) {
-          console.warn(`Could not parse article link for de-duplication: ${article.link}.`);
+          // console.warn(`Could not parse article link for de-duplication: ${article.link}.`);
         }
       }
       
-      // 3. If still no key, try normalized title
+      // 3. If still no key, try aggressively normalized title
       if (!key && article.title) {
-        const normalizedTitle = article.title
+        let normalizedTitle = article.title
           .toLowerCase()
-          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"?]/g,"") // Remove common punctuation
-          .replace(/\s{2,}/g," ") // Replace multiple spaces with single
+          .replace(/[^a-z0-9\s]/g, '') // Remove all non-alphanumeric characters (keep spaces)
+          .replace(/\s+/g, ' ')       // Collapse multiple spaces to single space
           .trim();
+        
+        // Take only the first 70 characters to avoid minor variations at the end
+        if (normalizedTitle.length > 70) {
+            normalizedTitle = normalizedTitle.substring(0, 70);
+        }
+
         if (normalizedTitle) {
-            key = `title-${normalizedTitle}`; // Prefix to avoid collision with IDs/links
+            key = `title-${normalizedTitle}`; 
         }
       }
 
@@ -134,7 +143,7 @@ export default function NewsPage() {
       } else if (key && uniqueArticlesMap.has(key)) {
         // console.log(`Duplicate article skipped (key: ${key}): ${article.title?.substring(0,50)}...`);
       } else {
-        console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
+        // console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
       }
     });
     return Array.from(uniqueArticlesMap.values());
