@@ -106,6 +106,19 @@ export function Header() {
     action?.(); // Execute the action if provided
   };
 
+  const getUserFirstName = () => {
+    if (!user) return null;
+    if (user.isAnonymous) return "Guest";
+    if (user.displayName) return user.displayName.split(' ')[0];
+    if (user.email) {
+      const emailName = user.email.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    }
+    return "User";
+  };
+
+  const userFirstName = getUserFirstName();
+
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       {/* Mobile Menu Trigger (Hamburger Icon) */}
@@ -138,8 +151,6 @@ export function Header() {
                             <Palette className="h-5 w-5" /> Toggle Theme
                         </Button>
                     </SheetClose>
-                    {/* InstallPWAButton will conditionally render itself */}
-                    {/* Wrapping in SheetClose asChild ensures the sheet closes after interaction if the button itself doesn't (e.g. if it only shows a toast) */}
                     <SheetClose asChild>
                         <InstallPWAButton />
                     </SheetClose>
@@ -185,8 +196,11 @@ export function Header() {
 
       {/* Right-aligned Header Items */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        {/* InstallPWAButton was here, now removed for desktop header bar */}
-        {/* It remains in the SheetContent for mobile */}
+        {userFirstName && (
+          <span className="hidden md:flex items-center text-sm text-muted-foreground font-medium">
+            Hi, {userFirstName}!
+          </span>
+        )}
 
         {/* "More Options" Dropdown on desktop */}
         <div className="hidden md:flex">
