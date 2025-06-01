@@ -98,12 +98,32 @@ export default function NewsPage() {
   const articles = useMemo(() => {
     const allArticles = data?.pages.flatMap(page => page.results) ?? [];
     const uniqueArticlesMap = new Map<string, NewsArticle>();
+
     allArticles.forEach(article => {
-      if (article.article_id && !uniqueArticlesMap.has(article.article_id)) {
-        uniqueArticlesMap.set(article.article_id, article);
-      } else if (!article.article_id && article.link && !uniqueArticlesMap.has(article.link)) {
-        // Fallback to link if article_id is missing, though less ideal
-        uniqueArticlesMap.set(article.link, article);
+      let key: string | null = null;
+
+      if (article.article_id && article.article_id.trim() !== "") {
+        key = article.article_id.trim();
+      } else if (article.link) {
+        try {
+          const url = new URL(article.link);
+          key = url.origin + url.pathname; // Normalize URL by removing query params and hash
+        } catch (e) {
+          // If URL parsing fails, use the raw link as a fallback.
+          key = article.link; 
+          console.warn(`Could not parse article link for de-duplication: ${article.link}. Using raw link as key.`);
+        }
+      }
+
+      if (key && !uniqueArticlesMap.has(key)) {
+        uniqueArticlesMap.set(key, article);
+      } else if (key && uniqueArticlesMap.has(key)) {
+        // Optional: Log if you want to see which duplicates are being skipped by key
+        // console.log(`Duplicate article skipped (key: ${key}): ${article.title?.substring(0,50)}...`);
+      } else {
+        // This article couldn't establish a reliable key.
+        // To prevent potential UI errors or missing data, it's safer to log and skip.
+        console.warn(`Could not determine a unique key for article, skipping: ${article.title?.substring(0,50)}...`);
       }
     });
     return Array.from(uniqueArticlesMap.values());
