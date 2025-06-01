@@ -8,16 +8,38 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/layout/ThemeToggle'; // Corrected path
-import InstallPWAButton from '@/components/features/pwa/InstallPWAButton';
+// Removed ThemeToggle and InstallPWAButton imports as they are no longer directly on this page
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
-import { LogOut, UserCircle, Palette, DownloadCloud, LogIn, ShieldQuestion, CalendarCheck2, AtSign, Fingerprint } from 'lucide-react';
-import { format } from 'date-fns'; // For date formatting
+import { LogOut, UserCircle, LogIn, ShieldQuestion, CalendarCheck2, AtSign, Fingerprint, LayoutDashboard, Library as LibraryIcon, Newspaper, Calculator as CalculatorIcon, ChevronRight } from 'lucide-react'; // Added new icons
+import { format } from 'date-fns'; 
 
 const PAGE_TITLE = "User Profile";
+
+interface ProfileLinkItemProps {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  onClick?: () => void;
+}
+
+const ProfileLinkItem: React.FC<ProfileLinkItemProps> = ({ href, icon: Icon, label, onClick }) => (
+  <Link href={href} passHref legacyBehavior>
+    <a
+      onClick={onClick}
+      className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/50 transition-colors duration-150 group"
+    >
+      <div className="flex items-center gap-3">
+        <Icon className="h-5 w-5 text-primary/90 group-hover:text-primary" />
+        <span className="text-sm font-medium text-foreground group-hover:text-primary">{label}</span>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+    </a>
+  </Link>
+);
+
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -49,7 +71,7 @@ export default function ProfilePage() {
       const provider = user.providerData[0].providerId;
       if (provider === 'password') return "Email Account";
       if (provider === 'google.com') return "Google Account";
-      return provider; // For other potential providers
+      return provider; 
     }
     return "Standard Account";
   };
@@ -59,8 +81,6 @@ export default function ProfilePage() {
     : "N/A";
 
   if (!user) {
-    // This case should ideally be handled by the AppLayout's auth guard
-    // But as a fallback:
     return (
       <div className="container mx-auto max-w-xl py-8 text-center">
         <Card>
@@ -109,23 +129,23 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
-              <Fingerprint className="h-5 w-5 text-primary/80" />
+            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+              <Fingerprint className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
               <div>
                 <span className="font-medium">Account Type:</span>
                 <p className="text-muted-foreground">{getAccountType()}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
-              <CalendarCheck2 className="h-5 w-5 text-primary/80" />
+            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+              <CalendarCheck2 className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
               <div>
                 <span className="font-medium">Joined:</span>
                 <p className="text-muted-foreground">{creationTime}</p>
               </div>
             </div>
             {!user.isAnonymous && (
-              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md sm:col-span-2">
-                <Fingerprint className="h-5 w-5 text-primary/80 opacity-50" /> {/* Using Fingerprint as a generic ID icon */}
+              <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md sm:col-span-2">
+                <Fingerprint className="h-5 w-5 text-primary/80 opacity-50 mt-0.5 shrink-0" />
                 <div>
                   <span className="font-medium">User ID:</span>
                   <p className="text-xs text-muted-foreground break-all">{user.uid}</p>
@@ -138,21 +158,14 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Preferences & Actions</CardTitle>
+          <CardTitle className="text-xl">Quick Links & Actions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between p-3 border rounded-md hover:bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Palette className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm">Appearance</span>
-            </div>
-            <ThemeToggle />
-          </div>
-          
-          <div className="p-3 border rounded-md hover:bg-muted/30">
-            <InstallPWAButton asDropdownItem={false} /> 
-          </div>
-
+          <ProfileLinkItem href="/" icon={LayoutDashboard} label="Go to Dashboard" onClick={playClickSound} />
+          <ProfileLinkItem href="/library" icon={LibraryIcon} label="My Library" onClick={playClickSound} />
+          <ProfileLinkItem href="/news" icon={Newspaper} label="Daily News" onClick={playClickSound} />
+          <ProfileLinkItem href="/calculator" icon={CalculatorIcon} label="Calculator" onClick={playClickSound} />
+          {/* Add more professional links here if needed */}
         </CardContent>
         <CardFooter>
           {user.isAnonymous ? (
@@ -169,3 +182,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
