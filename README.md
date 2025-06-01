@@ -269,7 +269,7 @@ LearnMint by **MrGarvit** is configured for Firebase Hosting (App Hosting).
 
 **LearnMint**, by **MrGarvit**, demonstrates cutting-edge AI in education and modern web development.
 
-Enjoy the LearnMint Ai!
+Enjoy the LearnMint-Ai!
 
 ---
 Made with 🧠, ✨, and a lot of ☕ by **MrGarvit**!
