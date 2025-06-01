@@ -111,6 +111,7 @@ export default function NewsPage() {
       if (!key && article.link) {
         try {
           const url = new URL(article.link);
+          // Use only hostname and pathname for link normalization
           const normalizedLink = url.hostname + url.pathname;
           if (normalizedLink) {
             key = `link-${normalizedLink}`;
@@ -122,17 +123,21 @@ export default function NewsPage() {
       
       // 3. If still no key, try aggressively normalized title
       if (!key && article.title) {
-        let normalizedTitle = article.title
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, '') // Remove all non-alphanumeric characters (keep spaces)
-          .replace(/\s+/g, ' ')       // Collapse multiple spaces to single space
-          .trim();
-        
-        // Take only the first 70 characters to avoid minor variations at the end
-        if (normalizedTitle.length > 70) {
-            normalizedTitle = normalizedTitle.substring(0, 70);
+        let normalizedTitle = article.title.toLowerCase();
+        // Remove common prefixes
+        const prefixes = ['breaking:', 'update:', 'live:', 'alert:', 'exclusive:', 'video:', 'photos:'];
+        for (const prefix of prefixes) {
+          if (normalizedTitle.startsWith(prefix)) {
+            normalizedTitle = normalizedTitle.substring(prefix.length).trim();
+            break; 
+          }
         }
-
+        // Remove all non-alphanumeric characters (except spaces, which are then collapsed)
+        normalizedTitle = normalizedTitle.replace(/[^a-z0-9\s]/g, '');
+        // Collapse multiple spaces to single space and trim
+        normalizedTitle = normalizedTitle.replace(/\s+/g, ' ').trim();
+        
+        // Using the full normalized title now, no 70 character limit
         if (normalizedTitle) {
             key = `title-${normalizedTitle}`; 
         }
