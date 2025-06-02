@@ -207,7 +207,7 @@ export default function DashboardPage() {
       {/* Explore More Features Section */}
       <section>
          <h2 className="text-2xl font-semibold text-primary mb-6 text-center sm:text-left">Explore More Features</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Map through defined features and create interactive cards */}
           {exploreFeaturesCards.map((item) => {
             const Icon = item.icon; // Dynamically get the Lucide icon component

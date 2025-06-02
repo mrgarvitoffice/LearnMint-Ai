@@ -2,6 +2,7 @@
 "use client"; // This hook is client-side only due to browser's SpeechSynthesis API.
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
 
 /**
  * @interface TTSHook
@@ -21,9 +22,14 @@ interface TTSHook {
   voicePreference: 'zia' | 'luma' | 'kai' | null;
 }
 
-// Keywords to help identify voice gender. These are indicative.
-const FEMALE_INDICATOR_KEYWORDS = ["female", "samantha", "zira", "ava", "allison", "susan", "joanna", "stephanie", "eva", "hazel", "kate", "serena", "moira", "fiona", "emily", "catherine", "linda"];
-const MALE_INDICATOR_KEYWORDS = ["male", "david", "mark", "tom", "alex", "daniel", "oliver"];
+// Keywords to help identify voice gender and quality.
+const FEMALE_INDICATOR_KEYWORDS = ["female", "samantha", "zira", "ava", "allison", "susan", "joanna", "stephanie", "eva", "google us english", "microsoft zira", "google uk english female", "microsoft hazel", "kate", "serena", "moira", "fiona", "emily", "microsoft catherine", "microsoft linda"];
+const MALE_INDICATOR_KEYWORDS = ["male", "david", "mark", "tom", "alex", "daniel", "oliver", "google us english male", "microsoft david"];
+
+// Preferences mapped to specific keyword lists (used for UI selections like "Zia", "Luma", "Kai")
+const ziaKeywords = ["zia", ...FEMALE_INDICATOR_KEYWORDS];
+const lumaKeywords = ["luma", ...FEMALE_INDICATOR_KEYWORDS];
+const kaiKeywords = ["kai", ...MALE_INDICATOR_KEYWORDS];
 
 
 /**
@@ -38,6 +44,7 @@ export function useTTS(): TTSHook {
   const [supportedVoices, setSupportedVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [voicePreference, setVoicePreference] = useState<'zia' | 'luma' | 'kai' | null>(null);
+  const isMobile = useIsMobile(); // Detect mobile environment
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const activeOnEndCallbackRef = useRef<(() => void) | null>(null);
@@ -79,48 +86,56 @@ export function useTTS(): TTSHook {
         const langBase = langForUtterance.split('-')[0].toLowerCase();
         const langFull = langForUtterance.toLowerCase();
 
-        // Find a voice that explicitly matches the requested language
-        const specificLangVoice = 
-            supportedVoices.find(v => v.lang.toLowerCase() === langFull && v.localService && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase() === langFull && v.localService) ||
-            supportedVoices.find(v => v.lang.toLowerCase() === langFull && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase() === langFull) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(langBase + "-") && v.localService && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(langBase + "-") && v.localService) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(langBase + "-") && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(langBase + "-"));
+        const findBestMatchForLang = (targetLang: string, baseLang: string) => {
+          return (
+            supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.localService && v.default) ||
+            supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.localService) ||
+            supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.default) ||
+            supportedVoices.find(v => v.lang.toLowerCase() === targetLang) ||
+            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.localService && v.default) ||
+            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.localService) ||
+            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.default) ||
+            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-"))
+          );
+        };
+        
+        const specificLangVoice = findBestMatchForLang(langFull, langBase);
         
         if (specificLangVoice) {
             voiceForUtterance = specificLangVoice;
-            langForUtterance = specificLangVoice.lang; // Use the voice's actual language tag
+            langForUtterance = specificLangVoice.lang; 
         } else if (selectedVoice && selectedVoice.lang.toLowerCase().startsWith(langBase)) {
-            // If no specific voice for the content's lang, but the UI-selected voice is for the same base lang
             voiceForUtterance = selectedVoice;
             langForUtterance = selectedVoice.lang;
         } else {
-            // Content lang is specified, but no matching voice found, AND UI selected voice is for a different base lang.
-            // Do NOT use selectedVoice here. Let browser pick best default for langForUtterance.
-            // voiceForUtterance remains null, utterance.lang will be set to langForUtterance.
+            // Content lang specified, but no matching voice AND UI selected voice is for a different base lang.
+            // Let browser pick default for langForUtterance.
         }
+
     } else if (selectedVoice) { // No specific lang for content, use UI preference
         voiceForUtterance = selectedVoice;
         langForUtterance = selectedVoice.lang;
-    } else { // No content lang, no UI preference, try general fallback
-        langForUtterance = langForUtterance || 'en-US';
+    } else { // No content lang, no UI preference, try general fallback for English
+        langForUtterance = langForUtterance || 'en-US'; // Default to en-US if no lang at all
         voiceForUtterance =
             supportedVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.localService && v.default) ||
             supportedVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.localService && v.default) ||
             supportedVoices.find(v => v.default && v.lang.toLowerCase().startsWith('en'));
     }
 
-
     if (voiceForUtterance) newUtterance.voice = voiceForUtterance;
     if (langForUtterance) newUtterance.lang = langForUtterance;
     
     newUtterance.pitch = 1.0;
     newUtterance.volume = 1.0;
-    newUtterance.rate = (newUtterance.lang && (newUtterance.lang.toLowerCase().startsWith('en'))) ? 1.4 : 1.0;
-
+    
+    // Adjust rate based on mobile/desktop and language
+    const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
+    if (isMobile) {
+      newUtterance.rate = isCurrentUtteranceEnglish ? 1.1 : 0.9; // Slower rates for mobile
+    } else {
+      newUtterance.rate = isCurrentUtteranceEnglish ? 1.4 : 1.0; // Original rates for desktop
+    }
 
     newUtterance.onstart = () => { if (utteranceRef.current === newUtterance) { setIsSpeaking(true); setIsPaused(false); }};
     newUtterance.onend = () => {
@@ -144,7 +159,7 @@ export function useTTS(): TTSHook {
     newUtterance.onresume = () => { if (utteranceRef.current === newUtterance) setIsPaused(false); };
 
     window.speechSynthesis.speak(newUtterance);
-  }, [selectedVoice, supportedVoices, cancelTTS]);
+  }, [selectedVoice, supportedVoices, cancelTTS, isMobile]); // Added isMobile dependency
 
 
   const speak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
@@ -212,10 +227,10 @@ export function useTTS(): TTSHook {
       const candidateVoices = voicesToSearch.filter(v => {
         const vNameLower = v.name.toLowerCase();
         const matchesPrimary = primarySearchKws.some(kw => vNameLower.includes(kw.toLowerCase()));
-        if (!matchesPrimary) return false; // Must match desired gender indicative keywords
+        if (!matchesPrimary) return false; 
 
         const containsExclusion = exclusionKws.some(exKw => vNameLower.includes(exKw.toLowerCase()));
-        return !containsExclusion; // Must NOT match opposite gender indicative keywords
+        return !containsExclusion; 
       });
 
       if (candidateVoices.length === 0) return undefined;
@@ -229,21 +244,24 @@ export function useTTS(): TTSHook {
         (v: SpeechSynthesisVoice) => v.default && v.lang.toLowerCase().startsWith('en-us'),
         (v: SpeechSynthesisVoice) => v.default,
         (v: SpeechSynthesisVoice) => v.lang.toLowerCase().startsWith('en-us'),
-        (_v: SpeechSynthesisVoice) => true,
+        (_v: SpeechSynthesisVoice) => true, // Fallback to first in filtered list
       ];
 
       for (const criterion of criteriaOrder) {
         const voice = candidateVoices.find(criterion);
         if (voice) return voice;
       }
-      return candidateVoices[0] || undefined; // Fallback to the first candidate if criteria don't yield a specific one
+      return candidateVoices[0] || undefined; 
     };
 
-    if (voicePreference === 'zia' || voicePreference === 'luma') {
-      chosenVoice = findVoice(enVoices, FEMALE_INDICATOR_KEYWORDS, MALE_INDICATOR_KEYWORDS);
+    if (voicePreference === 'zia') {
+        chosenVoice = findVoice(enVoices, FEMALE_INDICATOR_KEYWORDS, MALE_INDICATOR_KEYWORDS);
+    } else if (voicePreference === 'luma') {
+        chosenVoice = findVoice(enVoices, FEMALE_INDICATOR_KEYWORDS, MALE_INDICATOR_KEYWORDS);
     } else if (voicePreference === 'kai') {
-      chosenVoice = findVoice(enVoices, MALE_INDICATOR_KEYWORDS, FEMALE_INDICATOR_KEYWORDS);
+        chosenVoice = findVoice(enVoices, MALE_INDICATOR_KEYWORDS, FEMALE_INDICATOR_KEYWORDS);
     }
+
 
     // General fallback if no preference or preference-based search failed
     if (!chosenVoice) {
@@ -304,4 +322,5 @@ export function useTTS(): TTSHook {
     voicePreference
   };
 }
+
 
