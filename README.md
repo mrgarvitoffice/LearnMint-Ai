@@ -291,9 +291,9 @@ Click Deploy to apply changes
 
 ## 💖 Creator's Note 💖
 
-**LearnMint**, by **MrGarvit**, demonstrates cutting-edge AI in education and modern web development. !!
+**LearnMint**, by **MrGarvit**, demonstrates cutting-edge AI in education and modern web development.
 
-Enjoy the LearnMint-Ai !!
+Enjoy the LearnMint-Ai !
 
 ---
 Made with 🧠, ✨, and a lot of ☕ by **MrGarvit**!
