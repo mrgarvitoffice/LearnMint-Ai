@@ -285,7 +285,7 @@ Click Deploy to apply changes
 *   **Deeper Content Integration**: Seamlessly integrate YouTube, Google Books for richer context.
 *   **Enhanced PWA Features**: Robust offline capabilities for notes, flashcards, quizzes.
 *   **Personalized Learning Paths**: AI-suggested study plans based on individual styles and goals.
-*   **Enhanced AI Image Integration**: Refine AI image generation in notes for relevance and quality.
+*   **Enhanced AI Image Integration**: Refine AI image generation in notes for relevance and quality.!
 
 ---
 
