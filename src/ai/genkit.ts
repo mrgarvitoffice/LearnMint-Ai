@@ -6,16 +6,19 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
 const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
-const GOOGLE_API_KEY_QUIZZES = process.env.GOOGLE_API_KEY_QUIZZES; // Using a dedicated, clearly named variable
+const GOOGLE_API_KEY_QUIZZES = process.env.GOOGLE_API_KEY_QUIZZES;
 
 
 const knownDemoKeys = [
   "YOUR_GOOGLE_AI_API_KEY_HERE",
   "YOUR_GOOGLE_API_KEY_HERE",
   "AIzaSy*********************************",
+  "AIzaSyC9acF8uyEJssqF9ZaMOMvJNLag8EffJlo",
+  "AIzaSyDEbQvjLG_Lb_OtDK-ka3CdcrU19dl72OY",
+  "AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs",
+  "AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc",
   "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M",
-  "AIzaSyBo2s_bm0B68CypK1pOhtO0Kz2dCAqIi9A",
-  "AIzaSyDAH1-lAsVrUg9omTzsT3HXWMjzteTMVKg",
+  "AIzaSyBr8XVh63sOjfPYA_FQf-44fkkAzpwX0EA",
 ];
 
 const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
@@ -63,7 +66,6 @@ export const ai = genkit({
   plugins: [
     googleAI({ apiKey: GOOGLE_API_KEY }),
   ],
-  model: 'googleai/gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
   defaultModelConfig: {
     safetySettings: [
@@ -86,7 +88,7 @@ if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '' && GOOGLE_API_KEY
 }
 export const aiForNotes = genkit({
   plugins: [googleAI({ apiKey: notesInstanceKey })],
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
   defaultModelConfig: { /* Can have its own specific config if needed */ },
 });
@@ -103,7 +105,7 @@ if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT.trim() !== '' && GOOGLE_API
 }
 export const aiForChatbot = genkit({
   plugins: [googleAI({ apiKey: chatbotInstanceKey })],
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
   defaultModelConfig: { /* Can have its own specific config if needed */ },
 });
@@ -124,7 +126,7 @@ if (GOOGLE_API_KEY_IMAGES && GOOGLE_API_KEY_IMAGES.trim() !== '') {
 
 export const aiForImages = genkit({ 
   plugins: [googleAI({ apiKey: imageTextInstanceKey })],
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
   defaultModelConfig: { 
     safetySettings: [
@@ -147,7 +149,7 @@ if (GOOGLE_API_KEY_QUIZZES && GOOGLE_API_KEY_QUIZZES.trim() !== '' && GOOGLE_API
 }
 export const aiForQuizzes = genkit({
     plugins: [googleAI({ apiKey: quizInstanceKey })],
-    model: 'googleai/gemini-1.5-flash-latest',
+    model: 'gemini-1.5-flash-latest',
     enableTracingAndMetrics: true,
     defaultModelConfig: {
       safetySettings: [
