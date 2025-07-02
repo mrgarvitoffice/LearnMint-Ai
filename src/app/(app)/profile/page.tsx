@@ -7,16 +7,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
-import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
-import { LogOut, UserCircle, LogIn, ShieldQuestion, Fingerprint, Sparkles, ChevronRight, Settings } from 'lucide-react';
+import { LogIn, UserCircle, ShieldQuestion, ChevronRight } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import InstallPWAButton from '@/components/features/pwa/InstallPWAButton';
 
 const FeatureLink: React.FC<{ item: NavItem; onClick?: () => void }> = ({ item, onClick }) => (
   <Link href={item.href} passHref legacyBehavior>
@@ -40,20 +35,7 @@ const FeatureLink: React.FC<{ item: NavItem; onClick?: () => void }> = ({ item, 
 export default function ProfilePage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-
-  const handleSignOut = async () => {
-    playClickSound();
-    try {
-      await signOut(auth);
-      toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
-      router.push('/sign-in');
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
-    }
-  };
 
   const handleSignInRedirect = () => {
     playClickSound();
@@ -140,32 +122,15 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader><CardTitle className="text-xl">Settings</CardTitle></CardHeader>
-        <CardContent className="p-0">
-            <div className="p-4 border-t flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground">App Theme</h3>
-                  <p className="text-xs text-muted-foreground">Switch between light and dark mode.</p>
-                </div>
-                <ThemeToggle />
-            </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardFooter className="p-4">
-          {user.isAnonymous ? (
-            <Button onClick={handleSignInRedirect} className="w-full" variant="default" size="lg">
-              <LogIn className="mr-2 h-5 w-5" /> Sign In / Sign Up to Save Progress
-            </Button>
-          ) : (
-            <Button onClick={handleSignOut} className="w-full" variant="destructive" size="lg">
-              <LogOut className="mr-2 h-5 w-5" /> Sign Out
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+      {user.isAnonymous && (
+        <Card>
+            <CardFooter className="p-4">
+                <Button onClick={handleSignInRedirect} className="w-full" variant="default" size="lg">
+                  <LogIn className="mr-2 h-5 w-5" /> Sign In / Sign Up to Save Progress
+                </Button>
+            </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }
