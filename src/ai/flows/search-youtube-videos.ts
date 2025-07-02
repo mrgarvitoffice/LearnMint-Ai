@@ -80,7 +80,7 @@ const searchYoutubeVideosFlow = ai.defineFlow(
     name: 'searchYoutubeVideosFlow',
     inputSchema: YoutubeSearchInputSchema,
     outputSchema: YoutubeSearchOutputSchema,
-    model: 'googleai/gemini-2.0-flash-exp', // Reverted model
+    model: 'googleai/gemini-1.5-flash-latest',
   },
   async (input) => {
     const llmResponse = await ai.generate({
