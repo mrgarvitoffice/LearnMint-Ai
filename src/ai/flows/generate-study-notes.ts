@@ -22,7 +22,7 @@ export type GenerateStudyNotesOutput = z.infer<typeof GenerateStudyNotesOutputSc
 
 const generateStudyNotesPrompt = aiForNotes.definePrompt({
   name: 'generateStudyNotesPrompt',
-  model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: GenerateStudyNotesInputSchema },
   output: { schema: GenerateStudyNotesOutputSchema },
   prompt: `You are an expert educator tasked with creating exceptionally engaging and visually appealing study notes, in the style of a top student's "topper notes." The notes must be well-formatted using Markdown to be both informative and a pleasure to study from. Your goal is to make learning fun and effective!
@@ -120,28 +120,28 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
     console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process for image generation:`, visualPrompts.map(vp => vp.promptText));
 
     if (visualPrompts.length > 0) {
-        const imageGenerationResults = await Promise.all(
-            visualPrompts.map(vp => 
-                generateImageFromPrompt({ prompt: vp.promptText })
-                .then(imageResult => ({ ...vp, imageResult }))
-                .catch(error => {
-                    console.error(`[AI Flow Error - Image Gen Sub-flow] Failed for prompt "${vp.promptText}":`, error);
-                    return { ...vp, imageResult: { error: error.message || "Unknown error generating image" } };
-                })
-            )
+        // Use Promise.allSettled to handle individual image generation failures without crashing the entire flow.
+        const imageGenerationPromises = visualPrompts.map(vp => 
+            generateImageFromPrompt({ prompt: vp.promptText })
         );
+        const settledResults = await Promise.allSettled(imageGenerationPromises);
 
         let finalNotes = notesWithPlaceholders;
-        for (const result of imageGenerationResults) {
-            if (result.imageResult.imageUrl) {
-                console.log(`[AI Flow - Notes Images] Got image URL for: "${result.promptText.substring(0,30)}...". Replacing placeholder with image link.`);
-                const markdownImage = `![${result.promptText.replace(/"/g, "'")}](${result.imageResult.imageUrl})`;
-                finalNotes = finalNotes.replace(result.fullMatch, markdownImage);
+        settledResults.forEach((result, index) => {
+            const originalPrompt = visualPrompts[index];
+            if (result.status === 'fulfilled' && result.value.imageUrl) {
+                console.log(`[AI Flow - Notes Images] Got image URL for: "${originalPrompt.promptText.substring(0,30)}...". Replacing placeholder with image link.`);
+                const markdownImage = `![${originalPrompt.promptText.replace(/"/g, "'")}](${result.value.imageUrl})`;
+                finalNotes = finalNotes.replace(originalPrompt.fullMatch, markdownImage);
+            } else if (result.status === 'rejected') {
+                // If a promise was rejected, log the reason and leave the placeholder.
+                console.warn(`[AI Flow - Notes Images] Failed to generate image for prompt: "${originalPrompt.promptText}". Reason: ${result.reason}. Placeholder will remain.`);
             } else {
-                console.warn(`[AI Flow - Notes Images] Failed to generate image for prompt: "${result.promptText}". Error: ${result.imageResult.error}. Placeholder will remain.`);
-                // The [VISUAL_PROMPT: ...] will remain, and AiGeneratedImage.tsx will handle rendering it as a placeholder.
+                // This covers cases where the promise fulfilled but didn't return a valid imageUrl.
+                console.warn(`[AI Flow - Notes Images] Image generation fulfilled but returned no valid URL for prompt: "${originalPrompt.promptText}". Placeholder will remain.`);
             }
-        }
+        });
+        
         console.log(`[AI Flow - Notes Images] Finished processing all visual prompts. Final notes length: ${finalNotes.length}`);
         return { notes: finalNotes };
     } else {
