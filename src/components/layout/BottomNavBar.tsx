@@ -7,7 +7,6 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
-  SheetClose,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -52,19 +51,18 @@ export function BottomNavBar() {
           }
 
           return (
-            <SheetClose asChild key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary",
-                  isActive && "text-primary"
-                )}
-                onClick={playSound}
-              >
-                <Icon className="h-6 w-6" />
-                <span className="text-xs font-medium">{item.title}</span>
-              </Link>
-            </SheetClose>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary",
+                isActive && "text-primary"
+              )}
+              onClick={playSound}
+            >
+              <Icon className="h-6 w-6" />
+              <span className="text-xs font-medium">{item.title}</span>
+            </Link>
           );
         })}
       </div>
