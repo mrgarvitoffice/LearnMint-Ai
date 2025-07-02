@@ -36,7 +36,7 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
     console.log(`[AI Flow - Image Gen] Attempting to generate image for prompt: "${input.prompt.substring(0, 50)}..."`);
     try {
       const { media, finishReason, "usage": _ } = await aiForImages.generate({
-        model: 'googleai/gemini-2.0-flash-exp-image-generation', // Explicitly setting model for robustness
+        model: 'googleai/gemini-2.0-flash-preview-image-generation', // Using the official preview model for robustness
         prompt: input.prompt,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
