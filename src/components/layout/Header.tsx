@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { APP_NAME } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, Sun, Moon, Newspaper, Bot, Calculator, Gamepad2 } from 'lucide-react';
+import { Settings, LogOut, Sun, Moon, Newspaper, Bot, Calculator, Gamepad2, Volume2, VolumeX } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ import { auth } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from "next-themes";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useSettings } from '@/contexts/SettingsContext';
 
 
 export function Header() {
@@ -30,6 +31,7 @@ export function Header() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { setTheme } = useTheme();
+  const { isMuted, toggleMute } = useSettings();
 
 
   const handleSignOut = async () => {
@@ -43,6 +45,12 @@ export function Header() {
       toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
     }
   };
+
+  const handleToggleMute = () => {
+    playClickSound();
+    toggleMute();
+  };
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
@@ -118,6 +126,11 @@ export function Header() {
                 <DropdownMenuItem onClick={() => setTheme("dark")}>
                     <Moon className="mr-2 h-4 w-4" />
                     <span>Dark</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleToggleMute}>
+                  {isMuted ? <VolumeX className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
+                  <span>{isMuted ? "Unmute App Sounds" : "Mute App Sounds"}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">

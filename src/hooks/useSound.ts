@@ -2,12 +2,14 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from 'react';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false); 
+  const { isMuted } = useSettings();
 
   useEffect(() => {
     let currentAudio: HTMLAudioElement | null = null;
@@ -53,7 +55,7 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
   }, [soundPathOrType, defaultVolume]);
 
   const playSound = useCallback(() => {
-    if (!isSoundEnabled) return;
+    if (isMuted || !isSoundEnabled) return;
 
     if (soundPathOrType.startsWith('/')) { 
       if (hasLoadError || !audioElement) {
@@ -103,7 +105,7 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
         // console.warn(`Cannot play web audio: AudioContext for ${soundPathOrType} not ready yet.`);
       }
     }
-  }, [audioElement, isSoundEnabled, soundPathOrType, defaultVolume, hasLoadError]);
+  }, [audioElement, isSoundEnabled, soundPathOrType, defaultVolume, hasLoadError, isMuted]);
 
   const toggleSound = useCallback(() => {
     setIsSoundEnabled(prev => !prev);

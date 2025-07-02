@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { useSettings } from '@/contexts/SettingsContext';
 
 /**
  * @interface TTSHook
@@ -45,6 +46,7 @@ export function useTTS(): TTSHook {
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [voicePreference, setVoicePreference] = useState<'zia' | 'luma' | 'kai' | null>(null);
   const isMobile = useIsMobile(); // Detect mobile environment
+  const { isMuted } = useSettings();
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const activeOnEndCallbackRef = useRef<(() => void) | null>(null);
@@ -68,6 +70,11 @@ export function useTTS(): TTSHook {
 
 
   const _performSpeak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
+    if (isMuted) {
+      if (onEndCallback) onEndCallback();
+      return;
+    }
+
     if (typeof window === 'undefined' || !window.speechSynthesis || !text || text.trim() === "") {
       if (onEndCallback) onEndCallback();
       return;
@@ -159,7 +166,7 @@ export function useTTS(): TTSHook {
     newUtterance.onresume = () => { if (utteranceRef.current === newUtterance) setIsPaused(false); };
 
     window.speechSynthesis.speak(newUtterance);
-  }, [selectedVoice, supportedVoices, cancelTTS, isMobile]); // Added isMobile dependency
+  }, [selectedVoice, supportedVoices, cancelTTS, isMobile, isMuted]); // Added isMobile and isMuted dependency
 
 
   const speak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
@@ -322,5 +329,3 @@ export function useTTS(): TTSHook {
     voicePreference
   };
 }
-
-

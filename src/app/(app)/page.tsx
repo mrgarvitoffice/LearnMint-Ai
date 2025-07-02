@@ -231,7 +231,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="text-center text-sm text-muted-foreground mt-12 py-4 border-t border-border/50">
-        Made with <Sparkles className="inline-block h-4 w-4 text-accent" /> by MrGarvit
+        Crafted with <Sparkles className="inline-block h-4 w-4 text-accent" /> by <span className="font-bold text-primary">MrGarvit</span>
       </div>
     </div>
   );
