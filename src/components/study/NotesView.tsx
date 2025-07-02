@@ -120,20 +120,16 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
         return child;
       }).flat();
 
-      // If the only child after processing is an AiGeneratedImage, render it directly.
       if (processedChildren.length === 1 && processedChildren[0] && 
           typeof processedChildren[0] === 'object' && 'type' in processedChildren[0] && 
           (processedChildren[0] as React.ReactElement).type === AiGeneratedImage) {
         return <>{processedChildren}</>;
       }
 
-      // If a visual prompt was processed (meaning an AiGeneratedImage was inserted)
-      // and there's other content, or multiple AiGeneratedImages, wrap with a div.
       if (visualPromptFoundInParagraph) {
         return <div className="my-2 leading-relaxed">{processedChildren}</div>;
       }
       
-      // Otherwise, render as a normal paragraph.
       return <p {...props} className="my-2 leading-relaxed">{processedChildren}</p>;
     },
     h1: (props: any) => <h1 className="text-3xl font-bold mt-6 mb-3 pb-2 border-b border-primary/30 text-primary">{props.children}</h1>,
@@ -156,6 +152,12 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     table: (props: any) => <div className="overflow-x-auto my-3"><table className="table-auto w-full border-collapse border border-border">{props.children}</table></div>,
     th: (props: any) => <th className="border border-border px-3 py-1.5 bg-muted/40 font-medium text-left">{props.children}</th>,
     td: (props: any) => <td className="border border-border px-3 py-1.5 text-left">{props.children}</td>,
+    img: ({ node, ...props }) => {
+      // AI-generated images are data URIs. Render them with a standard <img> tag for reliability.
+      // This is safer than using next/image for data URIs without specific configuration.
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img {...props} className="max-w-full h-auto rounded-lg shadow-md my-4 mx-auto" alt={props.alt || 'AI generated image'} />;
+    },
   };
 
   const getSelectedDropdownValue = () => {
@@ -211,4 +213,3 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 };
 
 export default NotesView;
-

@@ -35,11 +35,9 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
   async (input) => {
     console.log(`[AI Flow - Image Gen] Attempting to generate image for prompt: "${input.prompt.substring(0, 50)}..."`);
     try {
-      // The model is defined in the aiForImages client, no need to specify it again here.
       const { media, finishReason, "usage": _ } = await aiForImages.generate({
         prompt: input.prompt,
         config: {
-          // Both TEXT and IMAGE are required for this model to work correctly.
           responseModalities: ['TEXT', 'IMAGE'],
         },
       });
@@ -50,11 +48,12 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
         return { error: errorDetail };
       }
       
-      if (media?.url) {
+      // Stricter validation: Ensure we have a valid data URI for an image.
+      if (media?.url && media.url.startsWith('data:image/')) {
         console.log(`[AI Flow - Image Gen] Successfully generated image for prompt: "${input.prompt.substring(0, 50)}..."`);
         return { imageUrl: media.url };
       } else {
-        const errorDetail = 'Image generation did not produce any media output.';
+        const errorDetail = `Image generation did not produce a valid image data URI. Output was: ${media?.url?.substring(0,50) || 'empty'}`;
         console.error(`[AI Flow - Image Gen] ${errorDetail}`);
         return { error: errorDetail };
       }
