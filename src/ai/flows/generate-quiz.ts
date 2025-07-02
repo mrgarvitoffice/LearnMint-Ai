@@ -32,6 +32,7 @@ export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 
 const prompt = aiForQuizzes.definePrompt({
   name: 'generateQuizPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: GenerateQuizInputSchema},
   output: {schema: GenerateQuizOutputSchema},
   prompt: `You are a quiz generator. Generate a quiz with {{numQuestions}} questions about {{topic}}. Each question should have multiple choice options, one correct answer, and a brief explanation for why the answer is correct.

@@ -35,6 +35,7 @@ export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOu
 
 const generateQuizQuestionsPrompt = aiForQuizzes.definePrompt({
   name: 'generateQuizQuestionsPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
   prompt: `You are an expert quiz designer for educational content.
