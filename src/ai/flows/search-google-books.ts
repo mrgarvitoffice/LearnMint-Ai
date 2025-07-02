@@ -81,7 +81,6 @@ const searchGoogleBooksFlow = ai.defineFlow(
     name: 'searchGoogleBooksFlow',
     inputSchema: GoogleBooksSearchInputSchema,
     outputSchema: GoogleBooksSearchOutputSchema,
-    model: 'googleai/gemini-1.5-flash-latest',
   },
   async (input) => {
     const llmResponse = await ai.generate({

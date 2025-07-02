@@ -37,7 +37,6 @@ const generateQuizQuestionsPrompt = aiForQuizzes.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
-  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are an expert quiz designer for educational content.
   Generate {{numQuestions}} diverse quiz questions about the topic: {{{topic}}}{{#if difficulty}} (Difficulty: {{{difficulty}}}){{/if}}.
   The questions should cover key concepts and test understanding effectively.

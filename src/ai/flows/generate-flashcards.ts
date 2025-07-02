@@ -33,7 +33,6 @@ const generateFlashcardsPrompt = aiForQuizzes.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: {schema: GenerateFlashcardsInputSchema},
   output: {schema: GenerateFlashcardsOutputSchema},
-  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are an expert educator specializing in creating effective flashcards for students.
   Given the topic: {{{topic}}}, generate a list of {{numFlashcards}} flashcards.
   Each flashcard must have a key 'term' (for the front) and its corresponding 'definition' (for the back).

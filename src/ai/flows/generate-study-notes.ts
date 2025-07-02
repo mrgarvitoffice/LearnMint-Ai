@@ -24,7 +24,6 @@ const generateStudyNotesPrompt = aiForNotes.definePrompt({
   name: 'generateStudyNotesPrompt',
   input: { schema: GenerateStudyNotesInputSchema },
   output: { schema: GenerateStudyNotesOutputSchema },
-  model: 'googleai/gemini-1.5-flash-latest', 
   prompt: `You are an expert educator tasked with creating exceptionally engaging and visually appealing study notes, in the style of a top student's "topper notes." The notes must be well-formatted using Markdown to be both informative and a pleasure to study from. Your goal is to make learning fun and effective!
 
 Topic: {{{topic}}}
