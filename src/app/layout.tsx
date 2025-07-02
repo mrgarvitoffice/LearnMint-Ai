@@ -4,7 +4,7 @@
 // It sets up global styles, fonts, theme provider, query provider, authentication provider, and toaster.
 
 import type { Metadata, Viewport } from 'next'; // Type for page metadata
-import { Geist, Geist_Mono } from 'next/font/google'; // Specific fonts used in the application
+import { Space_Grotesk } from 'next/font/google'; // Switched to Space Grotesk font
 import './globals.css'; // Global stylesheet
 import { AppProviders } from '@/components/providers/AppProviders'; // Context providers (Theme, Query)
 import { Toaster } from "@/components/ui/toaster"; // Component for displaying toast notifications
@@ -12,17 +12,13 @@ import { TopProgressBar } from '@/components/layout/TopProgressBar'; // Visual l
 import { Suspense } from 'react'; // React Suspense for handling loading states
 import { AuthProvider } from '@/contexts/AuthContext'; // Authentication context provider
 
-// Initialize Geist Sans font with variable for Tailwind CSS
-const geistSans = Geist({
-  variable: '--font-geist-sans', // CSS variable name for Geist Sans
-  subsets: ['latin'],             // Character subsets to include
+// Initialize Space Grotesk font with variable for Tailwind CSS
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
 });
 
-// Initialize Geist Mono font with variable for Tailwind CSS
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',   // CSS variable name for Geist Mono
-  subsets: ['latin'],               // Character subsets to include
-});
 
 // --- Application Metadata ---
 // Defines metadata for SEO and PWA (Progressive Web App) features.
@@ -45,7 +41,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [ // Handles theme color for light and dark modes
     { media: '(prefers-color-scheme: light)', color: 'hsl(0 0% 100%)' }, // Light theme (white)
-    { media: '(prefers-color-scheme: dark)', color: 'hsl(220 30% 10%)' }  // Dark theme (dark blue/charcoal)
+    { media: '(prefers-color-scheme: dark)', color: 'hsl(222 47% 11%)' }  // Dark theme (deep midnight blue)
   ],
 };
 
@@ -68,7 +64,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       {/* No explicit <head> tag here; Next.js manages it via the metadata object. */}
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${spaceGrotesk.variable} font-sans antialiased`}>
         {/* AppProviders wraps children with ThemeProvider and QueryClientProvider */}
         <AppProviders>
           {/* AuthProvider manages user authentication state */}

@@ -470,7 +470,7 @@ export default function CustomTestPage() {
   if (!testState) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
+        <Card className="w-full">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-12 w-12 text-primary" /></div>
             <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
@@ -586,7 +586,7 @@ export default function CustomTestPage() {
               <p className="text-xs text-muted-foreground/80 text-center">Marking: +4 correct, -1 incorrect (for answered questions).</p>
             </CardContent>
             <CardFooter className="justify-center p-6">
-              <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px] transition-all duration-300 ease-in-out group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-primary/50 active:scale-95">
+              <Button type="submit" size="lg" disabled={isLoading} className="min-w-[200px] group">
                 {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Sparkles className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" />}
                 Generate Test
               </Button>
@@ -610,7 +610,7 @@ export default function CustomTestPage() {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
-      <Card className="shadow-lg w-full">
+      <Card>
         {!testState.showResults && currentQuestionData ? (
           <>
             <CardHeader className="border-b pb-4">
@@ -671,7 +671,7 @@ export default function CustomTestPage() {
             </CardFooter>
           </>
         ) : testState.showResults ? (
-          <Card className="w-full">
+          <Card>
             <CardHeader className="text-center border-b pb-4">
               <CardTitle className="text-3xl font-bold text-primary">Test Results</CardTitle>
               <CardDescription className="text-lg">You scored {testState.score} out of {testState.questions.length * 4} ({((testState.score / (testState.questions.length * 4 || 1)) * 100).toFixed(1)}%)</CardDescription>
@@ -696,7 +696,7 @@ export default function CustomTestPage() {
             </CardFooter>
           </Card>
         ) : (
-          <Card className="w-full shadow-xl"><CardHeader className="text-center"><AlertTriangle className="w-12 h-12 mx-auto text-destructive mb-4" /><AlertTitle className="text-xl font-semibold">Test Error</AlertTitle></CardHeader><CardContent className="text-center"><AlertDescription className="text-muted-foreground">Something went wrong, or no questions were generated. Please try configuring a new test.</AlertDescription><Button variant="outline" onClick={handleNewTest} className="mt-6">Create New Test</Button></CardContent></Card>
+          <Card><CardHeader className="text-center"><AlertTriangle className="w-12 h-12 mx-auto text-destructive mb-4" /><AlertTitle className="text-xl font-semibold">Test Error</AlertTitle></CardHeader><CardContent className="text-center"><AlertDescription className="text-muted-foreground">Something went wrong, or no questions were generated. Please try configuring a new test.</AlertDescription><Button variant="outline" onClick={handleNewTest} className="mt-6">Create New Test</Button></CardContent></Card>
         )}
       </Card>
     </div>

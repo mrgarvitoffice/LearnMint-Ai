@@ -3,71 +3,67 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-}
-
 @layer base {
   :root {
-    /* New Futuristic "Cyber-Teal" Dark Theme */
-    --background: 220 20% 12%;       /* Dark Slate */
-    --foreground: 210 40% 96%;       /* Light Cool Gray */
-    
-    --card: 220 20% 16%;             /* Slightly Lighter Slate for Cards */
-    --card-foreground: 210 40% 96%;  /* Text on Cards */
-    
-    --popover: 220 20% 10%;          /* Popovers - slightly darker */
-    --popover-foreground: 210 40% 96%;
+    /* New Futuristic "Elite" Dark Theme */
+    --background: 222 47% 11%;      /* Deep Midnight Blue */
+    --foreground: 210 40% 98%;       /* Light Cyan/White */
 
-    --primary: 170 80% 45%;          /* Vibrant Teal (Neon Blue/Cyan) */
-    --primary-foreground: 170 90% 5%; /* Very Dark for contrast on primary */
-    
-    --secondary: 220 20% 25%;        /* Muted Slate */
-    --secondary-foreground: 210 40% 90%; 
-    
-    --muted: 220 20% 20%;            /* Muted Dark Slate for less emphasis areas */
-    --muted-foreground: 210 25% 75%; /* Softer Cool Gray for muted text */
-    
-    --accent: 280 70% 60%;           /* Vibrant Magenta/Purple for Accents */
-    --accent-foreground: 280 70% 98%;/* Light text for accent */
-    
-    --destructive: 0 62% 50%;        /* Sharp Red for destructive actions */
-    --destructive-foreground: 0 0% 100%; /* White text on destructive */
-    
-    --border: 220 20% 25%;           /* Borders - visible against card/bg */
-    --input: 220 20% 22%;            /* Input border/bg */
-    --ring: 170 80% 50%;             /* Ring color (brighter primary) */
-    
-    --chart-1: 170 80% 45%; /* Teal */
-    --chart-2: 280 70% 60%; /* Magenta */
-    --chart-3: 40 90% 55%;  /* Gold */
-    --chart-4: 210 70% 65%; /* Blue */
-    --chart-5: 340 70% 55%; /* Pink */
-    
-    --radius: 0.5rem;
+    --card: 222 47% 11%;             /* Base card color, glassmorphism applied in component */
+    --card-foreground: 210 40% 98%;  /* Text on Cards */
+
+    --popover: 222 47% 8%;           /* Darker popovers */
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 170 100% 50%;         /* Vibrant Neon Teal */
+    --primary-foreground: 222 47% 5%; /* Very Dark Blue for contrast */
+
+    --secondary: 217 33% 17%;        /* Muted Dark Blue */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;            /* Muted for less emphasis */
+    --muted-foreground: 215 20% 65%; /* Softer Gray/Cyan for muted text */
+
+    --accent: 280 85% 65%;           /* Vibrant Magenta/Purple for Accents */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;        /* Darker, sharp Red */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 27%;           /* Borders - visible against card/bg */
+    --input: 217 33% 22%;            /* Input border/bg */
+    --ring: 170 90% 45%;             /* Ring color (brighter primary) */
+
+    --chart-1: 170 80% 45%;
+    --chart-2: 280 70% 60%;
+    --chart-3: 40 90% 55%;
+    --chart-4: 210 70% 65%;
+    --chart-5: 340 70% 55%;
+
+    --radius: 0.75rem; /* Slightly larger radius for a modern feel */
   }
 
   .dark {
     /* The values are the same as :root for a dark-by-default theme */
-    --background: 220 20% 12%;
-    --foreground: 210 40% 96%;
-    --card: 220 20% 16%;
-    --card-foreground: 210 40% 96%;
-    --popover: 220 20% 10%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 170 80% 45%;
-    --primary-foreground: 170 90% 5%;
-    --secondary: 220 20% 25%;
-    --secondary-foreground: 210 40% 90%;
-    --muted: 220 20% 20%;
-    --muted-foreground: 210 25% 75%;
-    --accent: 280 70% 60%;
-    --accent-foreground: 280 70% 98%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 25%;
-    --input: 220 20% 22%;
-    --ring: 170 80% 50%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 170 100% 50%;
+    --primary-foreground: 222 47% 5%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 280 85% 65%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 27%;
+    --input: 217 33% 22%;
+    --ring: 170 90% 45%;
     --chart-1: 170 80% 45%;
     --chart-2: 280 70% 60%;
     --chart-3: 40 90% 55%;
@@ -77,32 +73,32 @@ body {
 
   .light {
     --background: 0 0% 100%;
-    --foreground: 220 20% 10%;
+    --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 222 47% 11%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 170 75% 40%;
-    --primary-foreground: 170 90% 98%;
+    --primary: 170 80% 40%;
+    --primary-foreground: 210 40% 98%;
     
-    --secondary: 220 25% 94%;
-    --secondary-foreground: 220 25% 10%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
     
-    --muted: 220 30% 96%;
-    --muted-foreground: 220 20% 45%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 28% 44%;
     
-    --accent: 280 70% 55%;
+    --accent: 280 75% 55%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 170 75% 45%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 170 80% 45%;
     
     --chart-1: 170 75% 45%;
     --chart-2: 280 70% 55%;
@@ -119,14 +115,28 @@ body {
   body {
     @apply text-foreground;
     @apply min-h-screen flex flex-col;
+    font-family: var(--font-space-grotesk), sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.3px;
 
-    background-color: hsl(var(--background));
-    background-image: radial-gradient(ellipse 80% 80% at 50% -20%, hsl(var(--primary) / 0.1), transparent);
-    background-repeat: no-repeat;
+    background: linear-gradient(160deg, #00030a, #071a2d);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'%3e%3cpath fill='%2300ffc8' fill-opacity='0.04' d='M40 0L80 40 40 80 0 40z'/%3e%3c/svg%3e");
+    background-attachment: fixed;
   }
   
   .light body {
-    background-image: radial-gradient(ellipse 80% 80% at 50% -20%, hsl(var(--primary) / 0.05), transparent);
+     background: hsl(var(--background));
+     background-image: none;
+  }
+
+  /* Custom pulse animation for status dot */
+  @keyframes pulse-status {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+  }
+
+  .animate-pulse-status {
+    animation: pulse-status 2s infinite ease-in-out;
   }
 
   /* Custom styles for prose content (e.g., generated notes) */
@@ -161,7 +171,7 @@ body {
     color: hsl(var(--foreground));
   }
   .light .prose blockquote {
-    color: hsl(var(--primary-foreground));
+    color: hsl(var(--card-foreground));
   }
    .prose blockquote p { 
     @apply text-base mb-0; 

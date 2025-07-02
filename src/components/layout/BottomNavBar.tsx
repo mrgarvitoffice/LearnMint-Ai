@@ -13,7 +13,7 @@ export function BottomNavBar() {
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/30 backdrop-blur-lg md:hidden">
       <div className="grid h-16 grid-cols-5 items-center justify-around px-2">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -24,8 +24,8 @@ export function BottomNavBar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary",
-                isActive && "text-primary"
+                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary",
+                isActive && "text-primary [text-shadow:0_0_8px_hsl(var(--primary))]"
               )}
               onClick={playSound}
             >

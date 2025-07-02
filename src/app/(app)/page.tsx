@@ -128,15 +128,15 @@ export default function DashboardPage() {
             <Logo size={64} />
         </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-          {PAGE_TITLE}
+          Welcome to LearnMint!
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
         </p>
-        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-green-500 dark:text-green-400">
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-primary">
           <div className="relative flex h-3 w-3">
-            <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></div>
-            <div className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></div>
+            <div className="animate-pulse-status absolute inline-flex h-full w-full rounded-full bg-primary/75"></div>
+            <div className="relative inline-flex rounded-full h-3 w-3 bg-primary"></div>
           </div>
           <span className="font-semibold">{liveUserCount}</span>
           <span>Learners Online</span>
@@ -144,7 +144,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="text-center">
-         <Button size="lg" className="text-lg py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+         <Button size="lg" className="text-lg py-6 group" asChild>
             <Link href="/notes">
                 <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Materials
             </Link>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
             return (
               <Link href={item.href} key={item.href} legacyBehavior>
                 <a className="block h-full group">
-                  <Card className="hover:bg-muted/50 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between hover:ring-2 hover:ring-primary/50">
+                  <Card className="hover:border-primary/50 hover:shadow-primary/20 transition-all duration-300 h-full flex flex-col justify-between">
                      <CardHeader className="pb-2 pt-4">
                       <div className="flex items-center gap-3 mb-2">
                           <div className="p-2 bg-primary/10 rounded-lg">
@@ -199,7 +199,7 @@ export default function DashboardPage() {
             {recentTopics.length > 0 ? (
               <ul className="space-y-2">
                 {recentTopics.map((topic, index) => (
-                  <li key={index} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
+                  <li key={index} className="flex justify-between items-center p-2 border border-border rounded-lg hover:bg-muted/50">
                     <button
                       onClick={() => handleRecentTopicClick(topic)}
                       className="truncate text-left hover:text-primary flex-grow"
@@ -220,12 +220,12 @@ export default function DashboardPage() {
         </Card>
 
         {dailyQuote && (
-          <Card className="bg-secondary/30 border-secondary/50 flex flex-col justify-center items-center text-center p-6">
-            <Quote className="h-8 w-8 text-secondary-foreground/60 mb-3" />
-            <blockquote className="text-lg font-semibold text-secondary-foreground">
+          <Card className="bg-secondary/50 border-secondary/80 flex flex-col justify-center items-center text-center p-6">
+            <Quote className="h-8 w-8 text-muted-foreground mb-3" />
+            <blockquote className="text-lg font-semibold text-foreground">
               "{dailyQuote.quote}"
             </blockquote>
-            <p className="text-sm text-muted-foreground/80 mt-2">- {dailyQuote.author}</p>
+            <p className="text-sm text-muted-foreground mt-2">- {dailyQuote.author}</p>
           </Card>
         )}
       </div>
