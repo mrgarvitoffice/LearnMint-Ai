@@ -54,9 +54,12 @@ Please generate study notes on this topic with the following characteristics:
     *   Use \`blockquotes\` for highlighting critical pieces of information, direct definitions, important summaries, or memorable facts.
     *   If comparing concepts (e.g., Prokaryotic vs. Eukaryotic cells), format this information in a **clear Markdown table**.
 
-4.  **Visuals (Placeholders ONLY - for initial text generation):**
-    *   Where a diagram, chart, or image would significantly enhance understanding, insert a placeholder in the exact format: \`[VISUAL_PROMPT: descriptive query for the image]\`. For example: \`[VISUAL_PROMPT: diagram of a plant cell's organelles]\` or \`[VISUAL_PROMPT: timeline of World War 2 major European events]\`.
-    *   **Do NOT generate actual images or image URLs yourself.** Only use the textual placeholder format described above. This text generation step should *only* produce the placeholders. A subsequent step will handle image generation. Limit to a maximum of 3-4 such visual prompts per notes document.
+4.  **MANDATORY: Visual Placeholders:**
+    *   You **MUST** insert visual aid placeholders where a diagram or image would enhance understanding. This is a critical requirement.
+    *   Use the exact format: \`[VISUAL_PROMPT: A descriptive prompt for an educational image]\`.
+    *   **Examples:** \`[VISUAL_PROMPT: A colorful diagram of the Krebs cycle]\` or \`[VISUAL_PROMPT: A simple chart showing the process of photosynthesis]\`.
+    *   Aim for 2-3 visual prompts per document.
+    *   **DO NOT** generate image URLs yourself. Only use the specified placeholder format. Failure to include these placeholders will result in an incomplete output.
 
 5.  **Conclusion:**
     *   End with a **concluding summary or a section to remember key facts**, perhaps with a fun, thematic title (e.g., "Remember These CELL-ebrated Facts! 🥳").
@@ -132,8 +135,7 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
         for (const result of imageGenerationResults) {
             if (result.imageResult.imageUrl) {
                 console.log(`[AI Flow - Notes Images] Got image URL for: "${result.promptText.substring(0,30)}...". Replacing placeholder with image link.`);
-                // The data-ai-hint helps with semantic understanding of the image if needed elsewhere
-                const markdownImage = `![${result.promptText.replace(/"/g, "'")}](${result.imageResult.imageUrl} "data-ai-hint=${result.promptText.toLowerCase().split(' ').slice(0,2).join(' ')}")`;
+                const markdownImage = `![${result.promptText.replace(/"/g, "'")}](${result.imageResult.imageUrl})`;
                 finalNotes = finalNotes.replace(result.fullMatch, markdownImage);
             } else {
                 console.warn(`[AI Flow - Notes Images] Failed to generate image for prompt: "${result.promptText}". Error: ${result.imageResult.error}. Placeholder will remain.`);
