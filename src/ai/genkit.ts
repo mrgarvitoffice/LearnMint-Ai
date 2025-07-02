@@ -40,7 +40,7 @@ if (isApiKeyMissingOrPlaceholder(GOOGLE_API_KEY)) {
   );
 }
 export const ai = genkit({
-  plugins: [googleAI({apiKey: GOOGLE_API_KEY, model: 'googleai/gemini-1.5-flash-latest'})],
+  plugins: [googleAI({apiKey: GOOGLE_API_KEY, model: 'googleai/gemini-2.5-flash-lite-preview-06-17'})],
   enableTracingAndMetrics: true,
 });
 
@@ -53,7 +53,7 @@ const notesApiKey = !isApiKeyMissingOrPlaceholder(
   ? GOOGLE_API_KEY_NOTES
   : GOOGLE_API_KEY;
 export const aiForNotes = genkit({
-  plugins: [googleAI({apiKey: notesApiKey, model: 'googleai/gemini-1.5-flash-latest'})],
+  plugins: [googleAI({apiKey: notesApiKey, model: 'googleai/gemini-2.5-flash-lite-preview-06-17'})],
   enableTracingAndMetrics: true,
 });
 
@@ -66,7 +66,7 @@ const chatbotApiKey = !isApiKeyMissingOrPlaceholder(
   ? GOOGLE_API_KEY_CHATBOT
   : GOOGLE_API_KEY;
 export const aiForChatbot = genkit({
-  plugins: [googleAI({apiKey: chatbotApiKey, model: 'googleai/gemini-1.5-flash-latest'})],
+  plugins: [googleAI({apiKey: chatbotApiKey, model: 'googleai/gemini-2.5-flash-lite-preview-06-17'})],
   enableTracingAndMetrics: true,
 });
 
@@ -98,6 +98,6 @@ const quizzesApiKey = !isApiKeyMissingOrPlaceholder(
   ? GOOGLE_API_KEY_QUIZZES
   : GOOGLE_API_KEY;
 export const aiForQuizzes = genkit({
-  plugins: [googleAI({apiKey: quizzesApiKey, model: 'googleai/gemini-1.5-flash-latest'})],
+  plugins: [googleAI({apiKey: quizzesApiKey, model: 'googleai/gemini-2.5-flash-lite-preview-06-17'})],
   enableTracingAndMetrics: true,
 });

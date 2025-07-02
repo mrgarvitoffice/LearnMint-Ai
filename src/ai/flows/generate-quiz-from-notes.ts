@@ -36,7 +36,7 @@ export async function generateQuizFromNotes(input: GenerateQuizFromNotesInput): 
 
 const prompt = aiForQuizzes.definePrompt({
   name: 'generateQuizFromNotesPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
   input: {schema: GenerateQuizFromNotesInputSchema},
   output: {schema: GenerateQuizOutputSchema}, // Use the locally defined output schema
   prompt: `You are an expert quiz generator. Your task is to create a quiz with {{numQuestions}} multiple-choice questions based *solely* on the provided study notes. Each question must have several options, one correct answer, and a brief explanation for why the answer is correct.

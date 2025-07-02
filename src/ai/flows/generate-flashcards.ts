@@ -31,7 +31,7 @@ export type GenerateFlashcardsOutput = z.infer<typeof GenerateFlashcardsOutputSc
 
 const generateFlashcardsPrompt = aiForQuizzes.definePrompt({
   name: 'generateFlashcardsPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
   input: {schema: GenerateFlashcardsInputSchema},
   output: {schema: GenerateFlashcardsOutputSchema},
   prompt: `You are an expert educator specializing in creating effective flashcards for students.
