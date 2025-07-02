@@ -6,7 +6,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
 const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
-const GOOGLE_API_KEY_QUIZZES = process.env.GEMINI_API_KEY; // Assign GEMINI_API_KEY for quizzes
+const GOOGLE_API_KEY_QUIZZES = process.env.GOOGLE_API_KEY_QUIZZES; // Using a dedicated, clearly named variable
 
 
 const knownDemoKeys = [
@@ -139,11 +139,11 @@ export const aiForImages = genkit({
 // NEW: Genkit instance for Quizzes, Flashcards, and Custom Tests
 let quizInstanceKey = GOOGLE_API_KEY; 
 if (GOOGLE_API_KEY_QUIZZES && GOOGLE_API_KEY_QUIZZES.trim() !== '' && GOOGLE_API_KEY_QUIZZES !== GOOGLE_API_KEY) {
-    console.log(`INFO: Using separate GEMINI_API_KEY (as GOOGLE_API_KEY_QUIZZES) for Quizzes/Flashcards/Tests.`);
-    isApiKeyPlaceholder(GOOGLE_API_KEY_QUIZZES, 'GEMINI_API_KEY (for Quizzes)');
+    console.log(`INFO: Using separate GOOGLE_API_KEY_QUIZZES for Quizzes/Flashcards/Tests.`);
+    isApiKeyPlaceholder(GOOGLE_API_KEY_QUIZZES, 'GOOGLE_API_KEY_QUIZZES');
     quizInstanceKey = GOOGLE_API_KEY_QUIZZES;
 } else {
-    console.log("INFO: GEMINI_API_KEY is not set or is same as main key. Quizzes/Tests will use the main AI configuration.");
+    console.log("INFO: GOOGLE_API_KEY_QUIZZES is not set or is same as main key. Quizzes/Tests will use the main AI configuration.");
 }
 export const aiForQuizzes = genkit({
     plugins: [googleAI({ apiKey: quizInstanceKey })],
