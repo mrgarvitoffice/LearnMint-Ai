@@ -108,7 +108,11 @@ export async function generateQuizQuestions(input: GenerateQuizQuestionsInput): 
   } catch (error: any) {
     console.error("[AI Wrapper Error - generateQuizQuestions] Error in flow execution:", error.message, error.stack);
     let clientErrorMessage = "Failed to generate quiz questions. Please try again.";
-    if (error.message && (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY") || error.message.includes("API_KEY_INVALID"))) {
+    const lowerCaseError = error.message?.toLowerCase() || "";
+
+    if (lowerCaseError.includes("model not found") || lowerCaseError.includes("permission denied") || lowerCaseError.includes("api key not valid")) {
+       clientErrorMessage = "Quiz Generation: Failed due to an API key or project configuration issue. Please check that GOOGLE_API_KEY_QUIZZES (or its fallback) is correct and that the 'Generative Language API' is enabled with billing in its Google Cloud project.";
+    } else if (lowerCaseError.includes("api key") || lowerCaseError.includes("google_api_key")) {
       clientErrorMessage = "Quiz Generation: Failed due to an API key issue. Please check server configuration and ensure billing is enabled for the Google Cloud project.";
     } else if (error.message) {
       clientErrorMessage = `Quiz Generation: Failed. Error: ${error.message.substring(0, 150)}. Check server logs for details.`;
