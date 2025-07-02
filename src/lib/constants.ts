@@ -7,7 +7,6 @@ import type { LucideIcon } from 'lucide-react'; // Type for Lucide icons
 import {
   LayoutDashboard, // Icon for Dashboard
   FileText,        // Icon for Note Generator
-  HelpCircle,      // Icon for Quiz Creator (now unused but kept for reference)
   ListChecks,      // Icon for Flashcards
   Sparkles,        // Icon for AI Tools category and general AI features
   Calculator,      // Icon for Calculator

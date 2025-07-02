@@ -150,13 +150,6 @@ export default function ProfilePage() {
                 </div>
                 <ThemeToggle />
             </div>
-             <div className="p-4 border-t flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground">Install App</h3>
-                  <p className="text-xs text-muted-foreground">Add LearnMint to your home screen.</p>
-                </div>
-                <InstallPWAButton />
-            </div>
         </CardContent>
       </Card>
 

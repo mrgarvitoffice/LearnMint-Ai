@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
-import { ArrowRight, Brain, TestTubeDiagonal, FileText, HelpCircle, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
+import { ArrowRight, Brain, TestTubeDiagonal, FileText, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -21,7 +21,6 @@ const PAGE_TITLE = `Welcome to ${APP_NAME}`;
 const exploreFeaturesCards = [
   { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
   { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests." },
-  { title: "AI Quiz Creator", href: "/quiz", icon: HelpCircle, description: "Generate interactive quizzes." },
   { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards." },
   { title: "AI Chatbot", href: "/chatbot", icon: Bot, description: "Chat with our witty AI companions." },
   { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations & convert units." },
