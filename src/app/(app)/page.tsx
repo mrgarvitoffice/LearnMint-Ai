@@ -141,7 +141,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="text-center">
-         <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-lg px-8 py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300" asChild>
+         <Button size="lg" className="text-lg py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300" asChild>
             <Link href="/notes">
                 <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Materials
             </Link>

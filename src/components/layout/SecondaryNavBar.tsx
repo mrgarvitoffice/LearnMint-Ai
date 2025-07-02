@@ -24,7 +24,7 @@ export function SecondaryNavBar() {
         const Icon = item.icon;
         if (item.isCenter) {
           return (
-            <Button key={item.href} asChild size="sm" className="h-9 gap-1.5 px-3" onClick={playSound}>
+            <Button key={item.href} asChild variant="secondary" size="sm" className="h-9 gap-1.5 px-3" onClick={playSound}>
               <Link href={item.href}>
                 <Icon className="h-4 w-4" />
                 <span>{item.label}</span>
