@@ -11,7 +11,7 @@ import {
   ListChecks,      // Icon for Flashcards
   Sparkles,        // Icon for AI Tools category and general AI features
   Calculator,      // Icon for Calculator
-  MessageCircle,   // Generic message icon (not used directly in NAV_ITEMS but available)
+  Menu,            // Icon for Menu
   Newspaper,       // Icon for Daily News
   Library,         // Generic library icon (BookMarked is used for Library NAV_ITEM)
   Gamepad2,        // Icon for Arcade
@@ -61,8 +61,18 @@ export const NAV_ITEMS: NavItem[] = [
   { title: 'Library', href: '/library', icon: BookMarked }, // Uses BookMarked for specificity
   { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
   { title: 'Profile', href: '/profile', icon: UserCircle }, // Added Profile link
-  // { title: 'Settings', href: '/settings', icon: Settings }, // Placeholder for future settings page
 ];
+
+// --- Mobile Bottom Navigation Items ---
+// A curated list for the mobile bottom nav bar. The 'Menu' item is special and handled in the component.
+export const BOTTOM_NAV_ITEMS: NavItem[] = [
+  { title: 'Home', href: '/', icon: LayoutDashboard },
+  { title: 'Generate', href: '/notes', icon: FileText },
+  { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
+  { title: 'Chat', href: '/chatbot', icon: Bot },
+  { title: 'Menu', href: '#', icon: Menu }, // Special item to trigger the full menu
+];
+
 
 // --- Application Name ---
 export const APP_NAME = "LearnMint";

@@ -1,3 +1,4 @@
+
 import type { ImgHTMLAttributes } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,7 @@ export function Logo({ size = 24, className, ...props }: LogoProps) {
       alt="LearnMint Logo"
       width={size}
       height={size}
-      className={cn("rounded-sm", className)} // Added rounded-sm for a slightly softer look
+      className={cn(className)} // Removed rounded-sm for a sharper look
       priority // Ensures logo loads quickly, good for LCP
       {...props}
     />

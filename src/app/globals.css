@@ -9,106 +9,106 @@ body {
 
 @layer base {
   :root {
-    /* New Professional Dark Theme */
-    --background: 220 30% 10%;        /* Dark Blue/Charcoal */
-    --foreground: 190 80% 85%;        /* Light Cyan/Blue Text */
+    /* New Professional Dark Theme: Slate, Teal, Magenta */
+    --background: 220 20% 12%;       /* Dark Slate */
+    --foreground: 210 40% 96%;       /* Light Cool Gray */
     
-    --card: 220 30% 15%;              /* Slightly Lighter Dark Blue for Cards */
-    --card-foreground: 190 80% 85%;   /* Text on Cards */
+    --card: 220 20% 16%;             /* Slightly Lighter Slate for Cards */
+    --card-foreground: 210 40% 96%;  /* Text on Cards */
     
-    --popover: 220 30% 12%;           /* Popovers - slightly darker than cards */
-    --popover-foreground: 190 80% 85%;
+    --popover: 220 20% 10%;          /* Popovers - slightly darker */
+    --popover-foreground: 210 40% 96%;
 
-    --primary: 50 90% 50%;            /* Vibrant Yellow */
-    --primary-foreground: 50 90% 5%;  /* Very Dark for contrast on primary */
+    --primary: 170 80% 45%;          /* Vibrant Teal */
+    --primary-foreground: 170 90% 5%; /* Very Dark for contrast on primary */
     
-    --secondary: 210 30% 30%;         /* Muted Blue */
-    --secondary-foreground: 190 80% 90%; /* Lighter Cyan for text on secondary */
+    --secondary: 220 20% 25%;        /* Muted Slate */
+    --secondary-foreground: 210 40% 90%; 
     
-    --muted: 220 30% 25%;             /* Muted Dark Blue for less emphasis areas */
-    --muted-foreground: 190 50% 70%;  /* Softer Cyan for muted text */
+    --muted: 220 20% 20%;            /* Muted Dark Slate for less emphasis areas */
+    --muted-foreground: 210 25% 75%; /* Softer Cool Gray for muted text */
     
-    --accent: 20 80% 55%;             /* Bright Orange for Accents */
-    --accent-foreground: 20 80% 5%;   /* Dark text for orange accent */
+    --accent: 280 70% 60%;           /* Vibrant Magenta/Purple for Accents */
+    --accent-foreground: 280 70% 98%;/* Light text for accent */
     
-    --destructive: 0 70% 55%;          /* Sharp Red for destructive actions */
+    --destructive: 0 62% 50%;        /* Sharp Red for destructive actions */
     --destructive-foreground: 0 0% 100%; /* White text on destructive */
     
-    --border: 220 30% 25%;            /* Borders - slightly visible against card/bg */
-    --input: 220 30% 20%;             /* Input border */
-    --ring: 50 90% 55%;               /* Ring color (brighter primary) */
+    --border: 220 20% 25%;           /* Borders - visible against card/bg */
+    --input: 220 20% 22%;            /* Input border/bg */
+    --ring: 170 80% 50%;             /* Ring color (brighter primary) */
     
-    --chart-1: 50 90% 50%; /* Yellow */
-    --chart-2: 20 80% 55%; /* Orange */
-    --chart-3: 180 80% 60%; /* Cyan */
-    --chart-4: 270 70% 65%; /* Purple */
-    --chart-5: 150 70% 55%; /* Green */
+    --chart-1: 170 80% 45%; /* Teal */
+    --chart-2: 280 70% 60%; /* Magenta */
+    --chart-3: 40 90% 55%;  /* Gold */
+    --chart-4: 210 70% 65%; /* Blue */
+    --chart-5: 340 70% 55%; /* Pink */
     
     --radius: 0.5rem;
   }
 
   .dark {
     /* The values are the same as :root for a dark-by-default theme */
-    --background: 220 30% 10%;
-    --foreground: 190 80% 85%;
-    --card: 220 30% 15%;
-    --card-foreground: 190 80% 85%;
-    --popover: 220 30% 12%;
-    --popover-foreground: 190 80% 85%;
-    --primary: 50 90% 50%;
-    --primary-foreground: 50 90% 5%;
-    --secondary: 210 30% 30%;
-    --secondary-foreground: 190 80% 90%;
-    --muted: 220 30% 25%;
-    --muted-foreground: 190 50% 70%;
-    --accent: 20 80% 55%;
-    --accent-foreground: 20 80% 5%;
-    --destructive: 0 70% 55%;
+    --background: 220 20% 12%;
+    --foreground: 210 40% 96%;
+    --card: 220 20% 16%;
+    --card-foreground: 210 40% 96%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 170 80% 45%;
+    --primary-foreground: 170 90% 5%;
+    --secondary: 220 20% 25%;
+    --secondary-foreground: 210 40% 90%;
+    --muted: 220 20% 20%;
+    --muted-foreground: 210 25% 75%;
+    --accent: 280 70% 60%;
+    --accent-foreground: 280 70% 98%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 30% 25%;
-    --input: 220 30% 20%;
-    --ring: 50 90% 55%;
-    --chart-1: 50 90% 50%;
-    --chart-2: 20 80% 55%;
-    --chart-3: 180 80% 60%;
-    --chart-4: 270 70% 65%;
-    --chart-5: 150 70% 55%;
+    --border: 220 20% 25%;
+    --input: 220 20% 22%;
+    --ring: 170 80% 50%;
+    --chart-1: 170 80% 45%;
+    --chart-2: 280 70% 60%;
+    --chart-3: 40 90% 55%;
+    --chart-4: 210 70% 65%;
+    --chart-5: 340 70% 55%;
   }
 
   .light {
-    --background: 50 20% 95%;        /* Very light yellow */
-    --foreground: 220 30% 10%;       /* Darker text for high contrast */
+    --background: 0 0% 100%;
+    --foreground: 220 20% 10%;
     
-    --card: 0 0% 100%;                /* White cards */
-    --card-foreground: 220 30% 10%;   /* Dark text on cards */
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
     
-    --popover: 0 0% 100%;             /* White popovers */
-    --popover-foreground: 220 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
 
-    --primary: 50 85% 45%;            /* Slightly darker/more saturated Yellow */
-    --primary-foreground: 50 90% 5%; 
+    --primary: 170 75% 40%;
+    --primary-foreground: 170 90% 98%;
     
-    --secondary: 220 25% 92%;         /* Lighter cool gray */
-    --secondary-foreground: 220 25% 20%; /* Darker text on secondary */
+    --secondary: 220 25% 94%;
+    --secondary-foreground: 220 25% 10%;
     
-    --muted: 220 30% 95%;             /* Light gray for general muted backgrounds */
-    --muted-foreground: 220 20% 45%;  /* Darker muted text for better contrast */
+    --muted: 220 30% 96%;
+    --muted-foreground: 220 20% 45%;
     
-    --accent: 20 80% 50%;             /* Slightly darker Orange */
-    --accent-foreground: 0 0% 100%; 
+    --accent: 280 70% 55%;
+    --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 70% 50%; 
-    --destructive-foreground: 0 0% 100%; 
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 0 0% 88%;            /* Solid medium-light gray for card/general borders */
-    --input: 0 0% 88%;             /* Solid medium-light gray for input borders */
-    --ring: 50 85% 50%;              /* Ring color (primary, slightly adjusted) */
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 170 75% 45%;
     
-    --chart-1: 50 85% 50%;
-    --chart-2: 20 80% 55%;
-    --chart-3: 180 75% 45%;
-    --chart-4: 270 65% 55%;
-    --chart-5: 150 65% 45%;
+    --chart-1: 170 75% 45%;
+    --chart-2: 280 70% 55%;
+    --chart-3: 40 85% 50%;
+    --chart-4: 210 75% 55%;
+    --chart-5: 340 75% 50%;
   }
 }
 
@@ -128,35 +128,33 @@ body {
   }
   
   .prose h2, .dark .prose h2, .light .prose h2 {
-    color: hsl(var(--primary));
-    @apply text-2xl sm:text-3xl font-bold mt-8 mb-4;
+    color: hsl(var(--foreground));
+    @apply text-2xl sm:text-3xl font-bold mt-8 mb-4 border-b pb-2;
   }
   
   .prose h3, .dark .prose h3, .light .prose h3 {
-    color: hsl(var(--primary));
+    color: hsl(var(--foreground));
     @apply text-xl sm:text-2xl font-semibold mt-6 mb-3;
   }
   
   .prose h4, .dark .prose h4, .light .prose h4 {
-    color: hsl(var(--primary));
+    color: hsl(var(--foreground));
     @apply text-lg sm:text-xl font-semibold mt-4 mb-2;
   }
 
-  /* Styling for blockquotes to make them stand out */
   .prose blockquote {
-    @apply border-l-4 px-4 py-2 my-4 rounded-r-md shadow;
+    @apply border-l-4 px-4 py-2 my-4 rounded-r-md;
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary-foreground) / 0.95);
   }
+  
   .dark .prose blockquote {
-     color: hsl(var(--accent-foreground) / 0.95); 
-     border-color: hsl(var(--accent));
-     background-color: hsl(var(--accent) / 0.1);
+    color: hsl(var(--foreground));
   }
   .light .prose blockquote {
-    color: hsl(var(--foreground)); 
-    border-color: hsl(var(--accent));
-    background-color: hsl(var(--accent) / 0.1);
+    color: hsl(var(--primary-foreground));
   }
-
    .prose blockquote p { 
     @apply text-base mb-0; 
   }

@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
-import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/icons/Logo';
 import { cn } from '@/lib/utils';
@@ -18,16 +17,6 @@ import { cn } from '@/lib/utils';
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = `Welcome to ${APP_NAME}`;
-
-const coreFeaturesListText = [
-  "<strong>AI Content Generation:</strong> Instantly create detailed notes, quizzes, and flashcards on any topic.",
-  "<strong>Custom Test Creation:</strong> Design tailored exams with specific topics, difficulty levels, and timers.",
-  "<strong>Interactive AI Chatbot:</strong> Get help from two distinct AI personalities, Kazuma and Megumin. Voice input supported.",
-  "<strong>Scientific Calculator & Unit Converter:</strong> A powerful toolkit for all your mathematical needs.",
-  "<strong>Daily News Digest:</strong> Stay informed with global news, filterable by country and category.",
-  "<strong>Resource Library:</strong> Search millions of books and videos, and get a daily 'Math Fact'.",
-  "<strong>LearnMint Arcade:</strong> Sharpen your mind with fun educational games.",
-];
 
 const exploreFeaturesCards = [
   { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
@@ -136,16 +125,12 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <header className="text-center relative">
-        <div className="mb-4 flex justify-center">
-          <Logo size={64} />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
           {PAGE_TITLE}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
         </p>
-
         <div className="mt-6 flex items-center justify-center gap-2 text-sm text-green-500 dark:text-green-400">
           <div className="relative flex h-3 w-3">
             <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></div>
@@ -154,32 +139,7 @@ export default function DashboardPage() {
           <span className="font-semibold">{liveUserCount}</span>
           <span>Learners Online</span>
         </div>
-        
-        <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-75 hover:opacity-100 transition-opacity hidden sm:block">
-          <InteractiveCharacterElement
-            characterName="LearnMint Mascot"
-            Icon={Sparkles}
-            containerClassName="p-2"
-            dataAiHint="mascot sparkle"
-          />
-        </div>
       </header>
-
-      <Card className="bg-card/80 border-primary/30 shadow-xl backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Brain className="h-7 w-7 text-primary" />
-            <CardTitle className="text-2xl text-primary">Core Features Overview</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-           <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
-            {coreFeaturesListText.map((feature, index) => (
-              <li key={index} className="text-sm md:text-base" dangerouslySetInnerHTML={{ __html: feature }} />
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
 
       <div className="text-center">
          <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-lg px-8 py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300" asChild>
@@ -190,26 +150,25 @@ export default function DashboardPage() {
       </div>
 
       <section>
-         <h2 className="text-2xl font-semibold text-primary mb-6 text-center sm:text-left">Explore More Features</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+         <h2 className="text-2xl font-semibold text-foreground mb-6 text-center sm:text-left">Explore Features</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {exploreFeaturesCards.map((item) => {
             const Icon = item.icon;
             return (
               <Link href={item.href} key={item.href} legacyBehavior>
                 <a className="block h-full group">
-                  <Card className={cn(
-                      "hover:bg-accent/10 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between",
-                      "group-hover:ring-2 group-hover:ring-primary/30 dark:group-hover:ring-primary/50"
-                    )}>
+                  <Card className="hover:bg-muted/50 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between hover:ring-2 hover:ring-primary/50">
                      <CardHeader className="pb-2 pt-4">
                       <div className="flex items-center gap-3 mb-2">
-                          <Icon className="h-6 w-6 text-muted-foreground group-hover:text-accent transition-colors" />
-                          <CardTitle className="text-base font-medium text-foreground group-hover:text-accent transition-colors">{item.title}</CardTitle>
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <CardTitle className="text-base font-semibold text-foreground">{item.title}</CardTitle>
                       </div>
                       <CardDescription className="text-xs text-muted-foreground/80 pt-1">{item.description}</CardDescription>
                     </CardHeader>
                     <CardFooter className="pt-2 pb-4">
-                       <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent/80">
+                       <Button variant="link" className="p-0 h-auto text-xs text-primary hover:text-primary/80">
                         Open {item.title.split(' ')[0]} <ArrowRight className="ml-1 h-3 w-3" />
                       </Button>
                     </CardFooter>
@@ -218,63 +177,56 @@ export default function DashboardPage() {
               </Link>
             );
           })}
-           {dailyQuote && (
-            <Card className={cn(
-                "bg-secondary/30 border-secondary/50 hover:shadow-xl transition-shadow duration-300 h-full flex flex-col justify-between group",
-                "group-hover:ring-2 group-hover:ring-primary/30 dark:group-hover:ring-primary/50"
-              )}>
-              <CardHeader className="pb-2 pt-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <Quote className="h-6 w-6 text-secondary-foreground/80 group-hover:text-accent transition-colors" />
-                  <CardTitle className="text-base font-medium text-secondary-foreground group-hover:text-accent transition-colors">Daily Motivation</CardTitle>
-                </div>
-                <CardDescription className="text-base text-accent font-semibold pt-1 italic">
-                  "{dailyQuote.quote}"
-                </CardDescription>
-              </CardHeader>
-              <CardFooter className="pt-2 pb-4">
-                <p className="text-xs text-muted-foreground/70">- {dailyQuote.author}</p>
-              </CardFooter>
-            </Card>
-          )}
         </div>
       </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center justify-between">
-            <span>Recent Topics</span>
-            {recentTopics.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleClearAllTopics} className="text-xs text-destructive hover:text-destructive/80">
-                <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear All
-              </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center justify-between">
+              <span>Recent Topics</span>
+              {recentTopics.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={handleClearAllTopics} className="text-xs text-destructive hover:text-destructive/80">
+                  <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear All
+                </Button>
+              )}
+            </CardTitle>
+            <CardDescription>Quickly revisit topics to generate or view study materials.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentTopics.length > 0 ? (
+              <ul className="space-y-2">
+                {recentTopics.map((topic, index) => (
+                  <li key={index} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
+                    <button
+                      onClick={() => handleRecentTopicClick(topic)}
+                      className="truncate text-left hover:text-primary flex-grow"
+                      title={`Generate/view study materials for: ${topic}`}
+                    >
+                      {topic}
+                    </button>
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveTopic(topic)} className="h-7 w-7 ml-2">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive/70 hover:text-destructive" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent topics found. Generate some study materials to see them here!</p>
             )}
-          </CardTitle>
-          <CardDescription>Quickly revisit topics to generate or view study materials.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentTopics.length > 0 ? (
-            <ul className="space-y-2">
-              {recentTopics.map((topic, index) => (
-                <li key={index} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
-                  <button
-                    onClick={() => handleRecentTopicClick(topic)}
-                    className="truncate text-left hover:text-primary flex-grow"
-                    title={`Generate/view study materials for: ${topic}`}
-                  >
-                    {topic}
-                  </button>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveTopic(topic)} className="h-7 w-7 ml-2">
-                    <Trash2 className="h-3.5 w-3.5 text-destructive/70 hover:text-destructive" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">No recent topics found. Generate some study materials to see them here!</p>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {dailyQuote && (
+          <Card className="bg-secondary/30 border-secondary/50 flex flex-col justify-center items-center text-center p-6">
+            <Quote className="h-8 w-8 text-secondary-foreground/60 mb-3" />
+            <blockquote className="text-lg font-semibold text-secondary-foreground">
+              "{dailyQuote.quote}"
+            </blockquote>
+            <p className="text-sm text-muted-foreground/80 mt-2">- {dailyQuote.author}</p>
+          </Card>
+        )}
+      </div>
 
       <div className="text-center text-sm text-muted-foreground mt-12 py-4 border-t border-border/50">
         Made with <Sparkles className="inline-block h-4 w-4 text-accent" /> by MrGarvit
