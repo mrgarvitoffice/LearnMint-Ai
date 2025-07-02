@@ -3,7 +3,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 
 // Retrieve all the dedicated API keys from environment variables
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Main fallback key
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY; // Main fallback key
 const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
 const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
@@ -18,8 +18,6 @@ const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
     "AIzaSyBL51Y-qaVLKSl9gwgbgsPSN1MMxh6gv5M", "AIzaSyBr8XVh63sOjfPYA_FQf-44fkkAzpwX0EA",
   ];
   if (!keyToCheck || keyToCheck.trim() === "") {
-    // This warning is silent if the key is just not set, allowing fallback.
-    // It becomes critical only for the main GOOGLE_API_KEY.
     if (keyName === 'GOOGLE_API_KEY (Main Fallback)') {
         console.error(`CRITICAL WARNING: ${keyName} is MISSING. All AI features will fail.`);
     }
@@ -41,7 +39,7 @@ isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (Main Fallback)');
 export const ai = genkit({
   plugins: [googleAI({ apiKey: GOOGLE_API_KEY })],
   enableTracingAndMetrics: true,
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-2.5-flash-lite',
 });
 
 // 2. Genkit instance for Study Notes
@@ -52,7 +50,7 @@ if (notesInstanceKey === GOOGLE_API_KEY_NOTES) console.log(`INFO: Using dedicate
 else console.log("INFO: Notes generation will use the main GOOGLE_API_KEY as a fallback.");
 export const aiForNotes = genkit({
   plugins: [googleAI({ apiKey: notesInstanceKey })],
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-2.5-flash-lite',
   enableTracingAndMetrics: true,
 });
 
@@ -64,7 +62,7 @@ if (chatbotInstanceKey === GOOGLE_API_KEY_CHATBOT) console.log(`INFO: Using dedi
 else console.log("INFO: Chatbot will use the main GOOGLE_API_KEY as a fallback.");
 export const aiForChatbot = genkit({
   plugins: [googleAI({ apiKey: chatbotInstanceKey })],
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-2.5-flash-lite',
   enableTracingAndMetrics: true,
 });
 
@@ -76,7 +74,7 @@ if (imageTextInstanceKey === GOOGLE_API_KEY_IMAGES) console.log(`INFO: Using ded
 else console.log("INFO: Image description generation will use the main GOOGLE_API_KEY as a fallback.");
 export const aiForImages = genkit({
   plugins: [googleAI({ apiKey: imageTextInstanceKey })],
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-2.5-flash-lite',
   enableTracingAndMetrics: true,
 });
 
@@ -88,6 +86,6 @@ if (quizInstanceKey === GOOGLE_API_KEY_QUIZZES) console.log(`INFO: Using dedicat
 else console.log("INFO: Quizzes/Tests will use the main GOOGLE_API_KEY as a fallback.");
 export const aiForQuizzes = genkit({
   plugins: [googleAI({ apiKey: quizInstanceKey })],
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-2.5-flash-lite',
   enableTracingAndMetrics: true,
 });
