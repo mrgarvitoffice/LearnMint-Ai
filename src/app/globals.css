@@ -119,10 +119,12 @@
     font-weight: 400;
     letter-spacing: 0.3px;
 
-    background-color: #00030a; /* Fallback color */
-    background-image: url('/hacker-background.png');
-    background-size: cover;
-    background-position: center center;
+    /* CSS-only background to create the hacker aesthetic without an external image */
+    background-color: #00030a; /* A deep black-blue fallback */
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(180, 100%, 50%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 98% 98%, hsla(170, 100%, 50%, 0.1) 0px, transparent 50%),
+      linear-gradient(160deg, #00030a, #071a2d);
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
