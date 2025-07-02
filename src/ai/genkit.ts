@@ -2,35 +2,102 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 
-// Retrieve the primary API key from environment variables
+// Retrieve all potential API keys from environment variables
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
+const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
+const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
+const GOOGLE_API_KEY_QUIZZES = process.env.GOOGLE_API_KEY_QUIZZES;
 
 // A robust helper to check if a key is a known placeholder or simply missing.
-const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
-  if (!keyToCheck || keyToCheck.trim() === "") {
-    if (keyName === 'GOOGLE_API_KEY (Main)') {
-        console.error(`CRITICAL WARNING: ${keyName} is MISSING. All AI features will fail.`);
+const isApiKeyMissingOrPlaceholder = (keyToCheck?: string, keyName?: string) => {
+  if (!keyToCheck || keyToCheck.trim() === '') {
+    if (keyName) {
+      // Log a warning if a specific key is missing, but not if it's the main key (which gets a critical error)
+      console.warn(
+        `LearnMint AI Config: ${keyName} is not set. The feature will use the main GOOGLE_API_KEY as a fallback.`
+      );
     }
     return true;
   }
   return false;
 };
 
-// --- UNIFIED AI CLIENT ---
-// All features will now use this single Genkit instance.
-// This simplifies configuration and debugging. To get the app working,
-// you only need to ensure this one GOOGLE_API_KEY is associated with a
-// Google Cloud project that has the "Generative Language API" and billing enabled.
-
-isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (Main)');
+// --- Main AI Client (General Purpose & Fallback) ---
+if (isApiKeyMissingOrPlaceholder(GOOGLE_API_KEY)) {
+  console.error(
+    '************************************************************************************'
+  );
+  console.error(
+    'CRITICAL AI CONFIG ERROR: The main GOOGLE_API_KEY is MISSING in your .env file.'
+  );
+  console.error(
+    'At least one primary key is required for AI features to function.'
+  );
+  console.error('Please ensure GOOGLE_API_KEY is set correctly.');
+  console.error(
+    '************************************************************************************'
+  );
+}
 export const ai = genkit({
-  plugins: [googleAI({ apiKey: GOOGLE_API_KEY })],
+  plugins: [googleAI({apiKey: GOOGLE_API_KEY})],
   enableTracingAndMetrics: true,
 });
 
-// For simplicity and clarity, the specific AI clients have been consolidated.
-// If you successfully configure multiple keys in the future, we can re-introduce them.
-export const aiForNotes = ai;
-export const aiForChatbot = ai;
-export const aiForImages = ai;
-export const aiForQuizzes = ai;
+// --- Notes-Specific AI Client ---
+// Uses GOOGLE_API_KEY_NOTES if available, otherwise falls back to the main key.
+const notesApiKey = !isApiKeyMissingOrPlaceholder(
+  GOOGLE_API_KEY_NOTES,
+  'GOOGLE_API_KEY_NOTES'
+)
+  ? GOOGLE_API_KEY_NOTES
+  : GOOGLE_API_KEY;
+export const aiForNotes = genkit({
+  plugins: [googleAI({apiKey: notesApiKey})],
+  enableTracingAndMetrics: true,
+});
+
+// --- Chatbot-Specific AI Client ---
+// Uses GOOGLE_API_KEY_CHATBOT if available, otherwise falls back to the main key.
+const chatbotApiKey = !isApiKeyMissingOrPlaceholder(
+  GOOGLE_API_KEY_CHATBOT,
+  'GOOGLE_API_KEY_CHATBOT'
+)
+  ? GOOGLE_API_KEY_CHATBOT
+  : GOOGLE_API_KEY;
+export const aiForChatbot = genkit({
+  plugins: [googleAI({apiKey: chatbotApiKey})],
+  enableTracingAndMetrics: true,
+});
+
+// --- Image Generation-Specific AI Client ---
+// Uses GOOGLE_API_KEY_IMAGES if available, falls back to GOOGLE_API_KEY_NOTES, then to the main key.
+let imageApiKey = GOOGLE_API_KEY_IMAGES;
+if (isApiKeyMissingOrPlaceholder(imageApiKey, 'GOOGLE_API_KEY_IMAGES')) {
+  imageApiKey = GOOGLE_API_KEY_NOTES;
+  if (
+    isApiKeyMissingOrPlaceholder(
+      imageApiKey,
+      'GOOGLE_API_KEY_NOTES (as fallback for images)'
+    )
+  ) {
+    imageApiKey = GOOGLE_API_KEY;
+  }
+}
+export const aiForImages = genkit({
+  plugins: [googleAI({apiKey: imageApiKey})],
+  enableTracingAndMetrics: true,
+});
+
+// --- Quizzes & Flashcards-Specific AI Client ---
+// Uses GOOGLE_API_KEY_QUIZZES if available, otherwise falls back to the main key.
+const quizzesApiKey = !isApiKeyMissingOrPlaceholder(
+  GOOGLE_API_KEY_QUIZZES,
+  'GOOGLE_API_KEY_QUIZZES'
+)
+  ? GOOGLE_API_KEY_QUIZZES
+  : GOOGLE_API_KEY;
+export const aiForQuizzes = genkit({
+  plugins: [googleAI({apiKey: quizzesApiKey})],
+  enableTracingAndMetrics: true,
+});
