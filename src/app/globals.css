@@ -9,7 +9,7 @@ body {
 
 @layer base {
   :root {
-    /* New Professional Dark Theme: Slate, Teal, Magenta */
+    /* New Futuristic "Cyber-Teal" Dark Theme */
     --background: 220 20% 12%;       /* Dark Slate */
     --foreground: 210 40% 96%;       /* Light Cool Gray */
     
@@ -19,7 +19,7 @@ body {
     --popover: 220 20% 10%;          /* Popovers - slightly darker */
     --popover-foreground: 210 40% 96%;
 
-    --primary: 170 80% 45%;          /* Vibrant Teal */
+    --primary: 170 80% 45%;          /* Vibrant Teal (Neon Blue/Cyan) */
     --primary-foreground: 170 90% 5%; /* Very Dark for contrast on primary */
     
     --secondary: 220 20% 25%;        /* Muted Slate */
