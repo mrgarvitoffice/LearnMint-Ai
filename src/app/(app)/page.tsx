@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
-const PAGE_TITLE = `Welcome to ${APP_NAME}`;
+const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 
 const exploreFeaturesCards = [
   { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
@@ -144,7 +144,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="text-center">
-         <Button size="lg" className="text-lg py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground" asChild>
+         <Button size="lg" className="text-lg py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
             <Link href="/notes">
                 <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Materials
             </Link>
