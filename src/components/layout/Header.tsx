@@ -1,4 +1,3 @@
-
 "use client"; // This component uses client-side hooks (pathname, router, theme, auth)
 
 import Link from 'next/link';
@@ -154,11 +153,6 @@ export function Header() {
                             <Palette className="h-5 w-5" /> Toggle Theme
                         </Button>
                     </SheetClose>
-                    <SheetClose asChild>
-                         {/* Ensure InstallPWAButton takes full width and dropdown item styling */}
-                        <InstallPWAButton asDropdownItem={true} />
-                    </SheetClose>
-
                     {user && !user.isAnonymous && (
                       <SheetClose asChild>
                         <Button variant="ghost" className="w-full justify-start gap-2 px-3 py-2.5 rounded-md text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground" onClick={handleSignOut}>
