@@ -73,6 +73,7 @@ export default function DashboardPage() {
   // State for storing recent topics and the daily motivational quote
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
+  const [liveUserCount, setLiveUserCount] = useState(137);
 
   // Refs to track if initial page announcements have been made
   const pageTitleSpokenRef = useRef(false);
@@ -95,6 +96,22 @@ export default function DashboardPage() {
       }
     }
   }, []);
+
+  // Effect for the simulated live user counter.
+  useEffect(() => {
+    // This effect runs only on the client after hydration
+    // to avoid server-client mismatch errors with Math.random().
+    const interval = setInterval(() => {
+      setLiveUserCount(prevCount => {
+        const fluctuation = Math.floor(Math.random() * 5) - 2; // Fluctuate by -2, -1, 0, 1, 2
+        const newCount = prevCount + fluctuation;
+        // Ensure the count stays above a reasonable base number
+        return newCount > 100 ? newCount : 100;
+      });
+    }, 2500); // Update every 2.5 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []); // Empty dependency array ensures this runs once on mount
 
   // Effect to set the preferred voice for TTS announcements once voices are loaded
   useEffect(() => {
@@ -166,6 +183,17 @@ export default function DashboardPage() {
         <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Your AI-powered learning assistant for notes, quizzes, tests, and more.
         </p>
+
+        {/* Live User Counter */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-green-400 dark:text-green-300">
+          <div className="relative flex h-3 w-3">
+            <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></div>
+            <div className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></div>
+          </div>
+          <span className="font-semibold">{liveUserCount}</span>
+          <span>Learners Online</span>
+        </div>
+        
         {/* Interactive mascot element, hidden on small screens */}
         <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-75 hover:opacity-100 transition-opacity hidden sm:block">
           <InteractiveCharacterElement
@@ -304,5 +332,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
