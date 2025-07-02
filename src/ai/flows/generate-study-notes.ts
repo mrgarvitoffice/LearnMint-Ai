@@ -10,7 +10,7 @@
 
 import {aiForNotes} from '@/ai/genkit'; 
 import {z} from 'zod';
-import { generateImageFromPrompt } from './generate-image-from-prompt'; // Uses updated image prompt flow
+import { generateImageFromPrompt } from './generate-image-from-prompt';
 
 const GenerateStudyNotesInputSchema = z.object({ topic: z.string().describe('The academic topic for which to generate study notes.') });
 export type GenerateStudyNotesInput = z.infer<typeof GenerateStudyNotesInputSchema>;

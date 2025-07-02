@@ -35,9 +35,8 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
   async (input) => {
     console.log(`[AI Flow - Image Gen] Attempting to generate image for prompt: "${input.prompt.substring(0, 50)}..."`);
     try {
+      // The model is defined in the aiForImages client, no need to specify it again here.
       const { media, finishReason, "usage": _ } = await aiForImages.generate({
-        // Using the specific model for image generation.
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt: input.prompt,
         config: {
           // Both TEXT and IMAGE are required for this model to work correctly.
