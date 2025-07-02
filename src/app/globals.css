@@ -9,7 +9,7 @@ body {
 
 @layer base {
   :root {
-    /* LearnFlow Theme (Dark) - Applied to .dark and :root for dark-by-default */
+    /* New Professional Dark Theme */
     --background: 220 30% 10%;        /* Dark Blue/Charcoal */
     --foreground: 190 80% 85%;        /* Light Cyan/Blue Text */
     
@@ -48,6 +48,7 @@ body {
   }
 
   .dark {
+    /* The values are the same as :root for a dark-by-default theme */
     --background: 220 30% 10%;
     --foreground: 190 80% 85%;
     --card: 220 30% 15%;

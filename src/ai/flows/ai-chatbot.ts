@@ -52,6 +52,7 @@ Important Instructions:
 
 User Message: {{{message}}}
 {{#if image}}
+User also sent this image: {{media url=image}}
 (Kazuma looks at the image with a skeptical expression) ...So, you sent an image. Okay. What about it? Just don't expect me to do anything artsy with it, I'm useless at that stuff.
 {{/if}}
 

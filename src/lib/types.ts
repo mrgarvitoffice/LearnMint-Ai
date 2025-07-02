@@ -187,4 +187,4 @@ export interface GoogleBooksSearchOutput {
 }
 
 // Generic type for TanStack Query useQuery error (can be more specific if needed)
-export type QueryError = Error & { cause?: any; errors?: {message: string}[] }; // Allow for errors array for API responses
+export type QueryError = Error & { cause?: any; errors?: {message: string}[] };

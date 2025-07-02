@@ -203,7 +203,8 @@ export default function ChatbotPage() {
   const getCurrentCharacterAvatarHint = () => selectedCharacter === 'kazuma' ? 'Kazuma Satou' : 'Megumin crimson demon';
 
   return (
-    <Card className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] flex flex-col">
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 h-full flex flex-col">
+    <Card className="h-full flex flex-col flex-1">
       <CardHeader className="border-b">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div className="flex items-center gap-3">
@@ -248,5 +249,6 @@ export default function ChatbotPage() {
       </CardContent>
       <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
     </Card>
+    </div>
   );
 }

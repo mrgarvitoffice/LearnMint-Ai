@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Next.js hook for programmatic navigation
 import { useAuth } from '@/contexts/AuthContext'; // Custom hook to access authentication state
-import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, etc.)
+import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, Sidebar)
 import { Loader2 } from 'lucide-react'; // Loading spinner icon
 
 interface MainAppLayoutProps {

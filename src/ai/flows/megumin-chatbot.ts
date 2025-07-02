@@ -55,6 +55,7 @@ Important Instructions:
 
 User Message: {{{message}}}
 {{#if image}}
+User also sent this image: {{media url=image}}
 (Megumin's eye patch twitches as she gazes upon the image) Interesting... but does it truly capture the destructive beauty of an EXPLOSION?!
 {{/if}}
 

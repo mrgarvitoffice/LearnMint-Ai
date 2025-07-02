@@ -96,8 +96,9 @@ export function Header() {
   const userFirstName = getUserFirstName();
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-      <div className="md:hidden">
+    <>
+      {/* Mobile Header Trigger */}
+      <div className="flex-1 md:hidden">
         <Sheet>
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="rounded-lg p-0.5" onClick={() => playClickSound()}>
@@ -145,23 +146,13 @@ export function Header() {
         </Sheet>
       </div>
 
-      <Link href="/" className="mr-4 hidden items-center gap-2 md:flex" onClick={() => playClickSound()}>
+      {/* Desktop Header Content */}
+      <Link href="/" className="items-center gap-2 flex" onClick={() => playClickSound()}>
         <Logo size={32} />
         <span className="font-bold text-xl text-primary">
           {APP_NAME}
         </span>
       </Link>
-
-      <nav className="hidden flex-1 items-center gap-1 md:flex">
-        {primaryLinksSpec.map(link => (
-           <Button variant="ghost" asChild key={link.href} className={cn(
-            "h-9 px-3 py-2",
-            pathname === link.href ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-primary"
-          )} onClick={() => playClickSound()}>
-            <Link href={link.href}>{link.title}</Link>
-          </Button>
-        ))}
-      </nav>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         {userFirstName && (
@@ -233,6 +224,6 @@ export function Header() {
           </div>
         )}
       </div>
-    </header>
+    </>
   );
 }
