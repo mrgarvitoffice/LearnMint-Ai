@@ -3,7 +3,7 @@
 // This is the main layout component that wraps all pages.
 // It sets up global styles, fonts, theme provider, query provider, authentication provider, and toaster.
 
-import type { Metadata } from 'next'; // Type for page metadata
+import type { Metadata, Viewport } from 'next'; // Type for page metadata
 import { Geist, Geist_Mono } from 'next/font/google'; // Specific fonts used in the application
 import './globals.css'; // Global stylesheet
 import { AppProviders } from '@/components/providers/AppProviders'; // Context providers (Theme, Query)
@@ -38,11 +38,17 @@ export const metadata: Metadata = {
     apple: '/icons/icon-192x192.png', // Apple touch icon
     shortcut: '/icons/icon-192x192.png', // General shortcut icon
   },
+};
+
+// --- Viewport Configuration ---
+// Defines viewport settings, including the theme color for the browser UI.
+export const viewport: Viewport = {
   themeColor: [ // Handles theme color for light and dark modes
     { media: '(prefers-color-scheme: light)', color: 'hsl(0 0% 100%)' }, // Light theme (white)
     { media: '(prefers-color-scheme: dark)', color: 'hsl(220 30% 10%)' }  // Dark theme (dark blue/charcoal)
   ],
 };
+
 
 /**
  * RootLayout Component
