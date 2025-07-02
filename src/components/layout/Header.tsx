@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { APP_NAME } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
-import { Bot, Calculator, Gamepad2 } from 'lucide-react';
+import { Bot, Calculator, Gamepad2, Newspaper } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -22,8 +22,20 @@ export function Header() {
         </span>
       </Link>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-2">
         <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" asChild className="h-9 gap-1.5 px-3">
+                <Link href="/news">
+                  <Newspaper className="h-4 w-4" />
+                  <span>Newsly</span>
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>Daily News</p></TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" asChild>
@@ -32,6 +44,7 @@ export function Header() {
             </TooltipTrigger>
             <TooltipContent><p>AI Chatbot</p></TooltipContent>
           </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" asChild>
@@ -40,6 +53,7 @@ export function Header() {
             </TooltipTrigger>
             <TooltipContent><p>Calculator</p></TooltipContent>
           </Tooltip>
+          
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" asChild>
