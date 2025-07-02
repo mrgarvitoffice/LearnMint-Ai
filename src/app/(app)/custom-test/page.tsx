@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions';
 import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Palette } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Palette, ImageIcon, Image as ImageIconLucide } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -25,6 +25,7 @@ import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -35,6 +36,7 @@ const formSchema = z.object({
   sourceType: z.enum(['topic', 'notes', 'recent']).default('topic'),
   topics: z.string().optional(),
   notes: z.string().optional(),
+  notesImage: z.string().optional(), // For the data URI of the image with notes
   selectedRecentTopics: z.array(z.string()).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   numQuestions: z.coerce.number().min(1, 'Min 1 question').max(50, 'Max 50 questions').default(5),
@@ -75,12 +77,14 @@ export default function CustomTestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [recentTopicsSelectionDone, setRecentTopicsSelectionDone] = useState(false);
+  const [notesImagePreview, setNotesImagePreview] = useState<string | null>(null);
+  const notesImageInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
   const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
   const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
-
 
   const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
@@ -96,7 +100,7 @@ export default function CustomTestPage() {
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      sourceType: 'topic', difficulty: 'medium', numQuestions: 5, timer: 0, perQuestionTimer: 0, selectedRecentTopics: [],
+      sourceType: 'topic', difficulty: 'medium', numQuestions: 5, timer: 0, perQuestionTimer: 0, selectedRecentTopics: [], notesImage: undefined
     }
   });
 
@@ -187,7 +191,6 @@ export default function CustomTestPage() {
     });
   }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, selectedVoice, isSpeaking, isPaused, speak, toast]);
 
-
   const handleNextQuestion = useCallback(() => {
     playClickSound();
     clearCurrentQuestionTimer();
@@ -198,7 +201,6 @@ export default function CustomTestPage() {
     });
   }, [playClickSound, clearCurrentQuestionTimer]);
 
-
   useEffect(() => {
     let isMounted = true;
     if (isMounted && supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -208,16 +210,13 @@ export default function CustomTestPage() {
     return () => { isMounted = false; };
   }, [supportedVoices, setVoicePreference]);
 
-
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { 
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [selectedVoice, isSpeaking, isPaused, speak, testState, isLoading]);
 
   useEffect(() => {
@@ -261,9 +260,7 @@ export default function CustomTestPage() {
         });
       }, 1000);
     }
-    return () => {
-      if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
-    };
+    return () => { if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current); };
   }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, handleSubmitTest, toast]);
 
   useEffect(() => {
@@ -319,7 +316,12 @@ export default function CustomTestPage() {
 
     try {
       const quizInputTopic = data.sourceType === 'notes' ? `questions based on the following notes: ${data.notes}` : topicForAI;
-      const result: GenerateQuizQuestionsOutput = await generateQuizAction({ topic: `${quizInputTopic}`, numQuestions: settings.numQuestions, difficulty: settings.difficulty });
+      const result: GenerateQuizQuestionsOutput = await generateQuizAction({
+        topic: `${quizInputTopic}`,
+        numQuestions: settings.numQuestions,
+        difficulty: settings.difficulty,
+        image: data.sourceType === 'notes' ? data.notesImage : undefined
+      });
 
       if (result.questions && result.questions.length > 0) {
         setTestState({
@@ -356,7 +358,6 @@ export default function CustomTestPage() {
     newUserAnswers[testState.currentQuestionIndex] = e.target.value;
     setTestState(prev => prev ? { ...prev, userAnswers: newUserAnswers } : null);
   };
-
 
   const handlePrevQuestion = () => {
     playClickSound();
@@ -452,11 +453,8 @@ export default function CustomTestPage() {
       if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
       else if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
       else if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
-    } else if (isSpeaking && !isPaused) {
-      pauseTTS();
-    } else if (isPaused) {
-      resumeTTS();
-    }
+    } else if (isSpeaking && !isPaused) pauseTTS();
+    else if (isPaused) resumeTTS();
   };
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
 
@@ -465,6 +463,32 @@ export default function CustomTestPage() {
     if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
     return 'zia';
+  };
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    playClickSound();
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNotesImagePreview(reader.result as string);
+        setValue('notesImage', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    playClickSound();
+    setNotesImagePreview(null);
+    setValue('notesImage', undefined);
+    if (notesImageInputRef.current) {
+      notesImageInputRef.current.value = "";
+    }
   };
 
   if (!testState) {
@@ -476,22 +500,14 @@ export default function CustomTestPage() {
             <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
               <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
               <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
-                <Select
-                  value={getSelectedDropdownValue()}
-                  onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'zia' | 'kai' | null); }}
-                >
+                <Select value={getSelectedDropdownValue()} onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'zia' | 'kai' | null); }}>
                   <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="zia">Zia</SelectItem>
-                    <SelectItem value="kai">Kai</SelectItem>
-                  </SelectContent>
+                  <SelectContent><SelectItem value="zia">Zia</SelectItem><SelectItem value="kai">Kai</SelectItem></SelectContent>
                 </Select>
                 <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
                   {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
                 </Button>
-                <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}>
-                  <StopCircle className="h-4 w-4" />
-                </Button>
+                <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}><StopCircle className="h-4 w-4" /></Button>
               </div>
             </div>
             <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">Configure your test parameters. Generate questions from topics, notes, or recent studies.</CardDescription>
@@ -520,10 +536,30 @@ export default function CustomTestPage() {
                 </div>
               )}
               {sourceType === 'notes' && (
-                <div className="space-y-2 animate-in fade-in-50">
-                  <Label htmlFor="notes" className="text-base">Your Notes</Label>
-                  <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base" />
-                  {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
+                <div className="space-y-4 animate-in fade-in-50">
+                  <div>
+                    <Label htmlFor="notes" className="text-base">Your Notes</Label>
+                    <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base mt-2" />
+                    {errors.notes && <p className="text-sm text-destructive mt-1">{errors.notes.message}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="notes-image-upload" className="text-base">Upload Image (Optional)</Label>
+                    <div className="mt-2 flex items-center gap-4">
+                      <Button type="button" variant="outline" onClick={() => notesImageInputRef.current?.click()}>
+                        <ImageIconLucide className="w-4 h-4 mr-2" /> Choose Image
+                      </Button>
+                      <input type="file" ref={notesImageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                      {notesImagePreview && (
+                        <div className="relative w-20 h-20">
+                          <Image src={notesImagePreview} alt="Notes preview" layout="fill" objectFit="cover" className="rounded-md" />
+                          <Button type="button" variant="ghost" size="icon" onClick={handleRemoveImage} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground">
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                     <p className="text-xs text-muted-foreground mt-2">Upload an image to give the AI more context for generating questions.</p>
+                  </div>
                 </div>
               )}
               {sourceType === 'recent' && (
@@ -542,9 +578,7 @@ export default function CustomTestPage() {
                   {errors.selectedRecentTopics && <p className="text-sm text-destructive">{errors.selectedRecentTopics.message}</p>}
                   
                   {recentTopics.length > 0 && selectedRecentTopicsWatch && selectedRecentTopicsWatch.length > 0 && !recentTopicsSelectionDone && (
-                    <Button type="button" onClick={handleConfirmRecentTopics} variant="secondary" className="mt-2">
-                      Confirm Recent Topics Selection
-                    </Button>
+                    <Button type="button" onClick={handleConfirmRecentTopics} variant="secondary" className="mt-2">Confirm Recent Topics Selection</Button>
                   )}
                   {recentTopicsSelectionDone && (
                     <div className="mt-2 flex items-center gap-2 text-green-600 p-2 border border-green-500 bg-green-500/10 rounded-md text-sm">
@@ -628,42 +662,17 @@ export default function CustomTestPage() {
               <ReactMarkdown className="text-lg font-semibold prose dark:prose-invert max-w-none">{currentQuestionData.question}</ReactMarkdown>
               
               {currentQuestionData.type === 'short-answer' ? (
-                <Input
-                  value={currentAnswerForQuestion || ''}
-                  onChange={handleShortAnswerChange}
-                  disabled={testState.showResults || testState.isAutoSubmitting}
-                  placeholder="Type your answer here"
-                  className="text-base"
-                  aria-label="Short answer input"
-                />
+                <Input value={currentAnswerForQuestion || ''} onChange={handleShortAnswerChange} disabled={testState.showResults || testState.isAutoSubmitting} placeholder="Type your answer here" className="text-base" aria-label="Short answer input"/>
               ) : currentQuestionData.options ? (
-                <RadioGroup 
-                  onValueChange={handleAnswerSelect} 
-                  value={currentAnswerForQuestion} 
-                  className="space-y-3"
-                >
+                <RadioGroup onValueChange={handleAnswerSelect} value={currentAnswerForQuestion} className="space-y-3">
                   {currentQuestionData.options.map((option, i) => (
-                    <Label 
-                      key={i} 
-                      htmlFor={`option-${i}-${testState.currentQuestionIndex}`}
-                      className={cn(
-                        "flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted cursor-pointer transition-all",
-                        currentAnswerForQuestion === option && "bg-primary/20 border-primary",
-                        (testState.showResults || testState.isAutoSubmitting) && "cursor-not-allowed opacity-70"
-                      )}
-                    >
-                      <RadioGroupItem 
-                        value={option} 
-                        id={`option-${i}-${testState.currentQuestionIndex}`}
-                        disabled={testState.showResults || testState.isAutoSubmitting}
-                      />
+                    <Label key={i} htmlFor={`option-${i}-${testState.currentQuestionIndex}`} className={cn("flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted cursor-pointer transition-all", currentAnswerForQuestion === option && "bg-primary/20 border-primary", (testState.showResults || testState.isAutoSubmitting) && "cursor-not-allowed opacity-70")}>
+                      <RadioGroupItem value={option} id={`option-${i}-${testState.currentQuestionIndex}`} disabled={testState.showResults || testState.isAutoSubmitting}/>
                       <span className="text-base">{option}</span>
                     </Label>
                   ))}
                 </RadioGroup>
-              ) : (
-                <p className="text-muted-foreground">Question options not available.</p>
-              )}
+              ) : (<p className="text-muted-foreground">Question options not available.</p>)}
             </CardContent>
             <CardFooter className="flex justify-between p-6 border-t">
               <Button variant="outline" onClick={handlePrevQuestion} disabled={testState.currentQuestionIndex === 0 || testState.isAutoSubmitting}>Previous</Button>

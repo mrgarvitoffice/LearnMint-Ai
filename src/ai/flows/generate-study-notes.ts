@@ -12,7 +12,12 @@ import {aiForNotes} from '@/ai/genkit';
 import {z} from 'zod';
 import { generateImageFromPrompt } from './generate-image-from-prompt';
 
-const GenerateStudyNotesInputSchema = z.object({ topic: z.string().describe('The academic topic for which to generate study notes.') });
+const GenerateStudyNotesInputSchema = z.object({
+  topic: z.string().describe('The academic topic for which to generate study notes.'),
+  image: z.string().optional().describe(
+    "An optional image provided by the user as a data URI for context. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
+});
 export type GenerateStudyNotesInput = z.infer<typeof GenerateStudyNotesInputSchema>;
 
 const GenerateStudyNotesOutputSchema = z.object({
@@ -28,6 +33,11 @@ const generateStudyNotesPrompt = aiForNotes.definePrompt({
   prompt: `You are an expert educator tasked with creating exceptionally engaging and visually appealing study notes, in the style of a top student's "topper notes." The notes must be well-formatted using Markdown to be both informative and a pleasure to study from. Your goal is to make learning fun and effective!
 
 Topic: {{{topic}}}
+
+{{#if image}}
+The user has also provided an image for additional context. Use it to enhance the notes where relevant, especially if it helps clarify a concept mentioned in the topic.
+User's Image: {{media url=image}}
+{{/if}}
 
 Please generate study notes on this topic with the following characteristics:
 

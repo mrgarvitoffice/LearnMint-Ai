@@ -1,16 +1,16 @@
 
 "use client"; // This page uses client-side hooks for state, effects, and user interactions.
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation'; // For navigation
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast"; // For displaying notifications
 // Icons from lucide-react
-import { GraduationCap, Mic, FileSignature, Loader2, BookOpenText, Brain, Layers, AlertTriangle } from "lucide-react"; 
+import { GraduationCap, Mic, FileSignature, Loader2, AlertTriangle, ImageIcon, XCircle } from "lucide-react"; 
+import Image from 'next/image';
 
 // Hooks for enhanced user experience
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'; // For voice input
@@ -19,36 +19,22 @@ import { useSound } from '@/hooks/useSound'; // For sound effects
 
 // Server actions and types
 import { generateNotesAction } from "@/lib/actions"; // Combined server action for all materials
-import type { CombinedStudyMaterialsOutput, GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput } from '@/lib/types'; 
-
-// Child components for displaying generated content
-import NotesView from '@/components/study/NotesView';
-import QuizView from '@/components/study/QuizView';
-import FlashcardsView from '@/components/study/FlashcardsView';
+import type { CombinedStudyMaterialsOutput } from '@/lib/types'; 
 
 const PAGE_TITLE = "Generate Study Materials"; // Title for TTS and UI
 const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics"; // Key for storing recent topics in localStorage
 const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-"; // For caching study materials
 
-
-/**
- * GenerateNotesPage Component
- * 
- * This page allows users to input a topic and generate a comprehensive set of study materials:
- * 1. Detailed study notes (with AI-generated images embedded).
- * 2. A 30-question interactive quiz.
- * 3. A set of 20 flashcards.
- * All materials are generated for the same topic in a single action.
- * After generation, data is cached and user is navigated to /study page.
- */
 export default function GenerateNotesPage() {
   const router = useRouter(); 
   const { toast } = useToast(); 
 
   const [topic, setTopic] = useState<string>("");
   const [isLoadingAll, setIsLoadingAll] = useState<boolean>(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // These states are now primarily for displaying errors if generation fails before navigation
   const [notesError, setNotesError] = useState<string | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
@@ -75,9 +61,7 @@ export default function GenerateNotesPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { 
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [selectedVoice, isSpeaking, isPaused, speak, isLoadingAll]);
 
   useEffect(() => {
@@ -97,6 +81,32 @@ export default function GenerateNotesPage() {
   }, [isListening, startListening, stopListening, playClickSound]);
 
   const getCacheKey = (type: string, topicKey: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topicKey.toLowerCase().replace(/\s+/g, '-')}`;
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    playClickSound();
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        setImageData(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    playClickSound();
+    setImagePreview(null);
+    setImageData(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleGenerateAllMaterials = async () => {
     playActionSound(); 
@@ -127,14 +137,14 @@ export default function GenerateNotesPage() {
     } catch (e) { console.error("Failed to save recent topic to localStorage", e); }
 
     try {
-      const combinedResult: CombinedStudyMaterialsOutput = await generateNotesAction({ topic: trimmedTopic });
+      const combinedResult: CombinedStudyMaterialsOutput = await generateNotesAction({ topic: trimmedTopic, image: imageData || undefined });
       let navigationSuccess = false;
 
       // Cache notes
       if (combinedResult.notesOutput?.notes) {
         localStorage.setItem(getCacheKey("notes", trimmedTopic), JSON.stringify(combinedResult.notesOutput));
         toast({ title: 'Notes Generated & Cached!', description: `Study notes for "${trimmedTopic}" are ready.` });
-        navigationSuccess = true; // Consider navigation successful if notes are generated
+        navigationSuccess = true;
       } else {
         setNotesError("Failed to generate notes or notes were empty.");
         toast({ title: 'Notes Generation Failed', description: "Primary notes generation failed.", variant: 'destructive' });
@@ -146,7 +156,7 @@ export default function GenerateNotesPage() {
         toast({ title: 'Quiz Generated & Cached!', description: `Quiz for "${trimmedTopic}" is ready.` });
       } else {
         const qError = combinedResult.quizError || "AI returned no quiz questions.";
-        setQuizError(qError); // Set error for local display if needed, though we navigate away
+        setQuizError(qError);
         toast({ title: 'Quiz Generation Info', description: qError, variant: 'default' });
       }
 
@@ -156,7 +166,7 @@ export default function GenerateNotesPage() {
         toast({ title: 'Flashcards Generated & Cached!', description: `Flashcards for "${trimmedTopic}" are ready.` });
       } else {
         const fError = combinedResult.flashcardsError || "AI returned no flashcards.";
-        setFlashcardsError(fError); // Set error for local display if needed
+        setFlashcardsError(fError);
         toast({ title: 'Flashcards Generation Info', description: fError, variant: 'default' });
       }
       
@@ -167,7 +177,7 @@ export default function GenerateNotesPage() {
       }
 
     } catch (err: any) { 
-      setNotesError(err.message); // Primary error is likely notes
+      setNotesError(err.message);
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
       toast({ title: 'Study Material Generation Failed', description: err.message, variant: 'destructive' });
@@ -175,6 +185,9 @@ export default function GenerateNotesPage() {
     } finally {
       setIsLoadingAll(false);
       generatingMessageSpokenRef.current = false;
+      setTopic('');
+      setImageData(null);
+      setImagePreview(null);
     }
   };
   
@@ -182,29 +195,39 @@ export default function GenerateNotesPage() {
     <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <GraduationCap className="h-12 w-12 text-primary" />
-          </div>
+          <div className="flex items-center justify-center mb-4"><GraduationCap className="h-12 w-12 text-primary" /></div>
           <CardTitle className="text-center text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
           <CardDescription className="text-center text-sm sm:text-base text-muted-foreground px-2">
             Enter any academic topic. LearnMint AI will generate notes, a 30-question quiz, and 20 flashcards, then take you to the Study Hub.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
-          <div className="relative">
+          <div className="space-y-2">
             <Input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g., Quantum Physics, Cell Biology, World War II"
-              className="text-base sm:text-lg py-3 px-4 pr-12 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
+              className="text-base sm:text-lg py-3 px-4 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
               aria-label="Study Topic"
               onKeyDown={(e) => e.key === 'Enter' && !isLoadingAll && topic.trim().length >=3 && handleGenerateAllMaterials()}
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoadingAll}
+              className="flex-1"
+            >
+              <ImageIcon className="mr-2 h-4 w-4" /> Upload Image (Optional)
+            </Button>
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+
             {browserSupportsSpeechRecognition && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
                 onClick={handleVoiceCommand}
                 disabled={isLoadingAll || isListening}
                 aria-label="Use Voice Input"
@@ -216,11 +239,27 @@ export default function GenerateNotesPage() {
           </div>
           {voiceError && <p className="text-sm text-destructive text-center">{voiceError}</p>}
           
+          {imagePreview && (
+            <div className="relative w-28 h-28 mx-auto">
+              <Image src={imagePreview} alt="Selected preview" layout="fill" objectFit="cover" className="rounded-md border-2 border-primary/50" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                onClick={handleRemoveImage}
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+          
           <Button
             onClick={handleGenerateAllMaterials}
             disabled={isLoadingAll || topic.trim().length < 3}
-            className="w-full text-base sm:text-lg py-3 transition-all duration-300 ease-in-out group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-primary/50 active:scale-95"
+            className="w-full text-base sm:text-lg py-3 transition-all duration-300 ease-in-out group active:scale-95"
             size="lg"
+            variant="default"
           >
             {isLoadingAll ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -232,7 +271,6 @@ export default function GenerateNotesPage() {
         </CardContent>
       </Card>
 
-      {/* Display errors locally if generation fails before navigation */}
       {isLoadingAll && (
         <div className="text-center py-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
@@ -249,5 +287,3 @@ export default function GenerateNotesPage() {
     </div>
   );
 }
-
-    

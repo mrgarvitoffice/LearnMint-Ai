@@ -21,7 +21,13 @@ const QuizQuestionSchema = z.object({
 
 // NOT EXPORTED as an object
 const GenerateQuizQuestionsInputSchema = z.object({
-  topic: z.string().describe('The academic topic for which to generate quiz questions.'),
+  topic: z.string().describe('The academic topic or notes for which to generate quiz questions.'),
+  image: z
+    .string()
+    .optional()
+    .describe(
+      "An optional image provided by the user as a data URI for context. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
   numQuestions: z.number().min(1).max(50).describe('The number of quiz questions to generate.'),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional().describe('The difficulty level of the quiz questions.'),
 });
@@ -40,6 +46,11 @@ const generateQuizQuestionsPrompt = aiForQuizzes.definePrompt({
   output: {schema: GenerateQuizQuestionsOutputSchema},
   prompt: `You are an expert quiz designer for educational content.
   Generate {{numQuestions}} diverse quiz questions about the topic: {{{topic}}}{{#if difficulty}} (Difficulty: {{{difficulty}}}){{/if}}.
+  {{#if image}}
+  The user has also provided an image for additional context. Use it to inform the questions where relevant.
+  User's Image: {{media url=image}}
+  {{/if}}
+
   The questions should cover key concepts and test understanding effectively.
 
   Include a mix of 'multiple-choice' and 'short-answer' question types.

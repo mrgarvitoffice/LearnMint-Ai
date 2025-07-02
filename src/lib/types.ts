@@ -16,13 +16,17 @@ export interface Flashcard {
 }
 
 // Input/Output types for AI flows (matching Zod schemas in flows)
-export type GenerateStudyNotesInput = { topic: string };
+export type GenerateStudyNotesInput = { 
+  topic: string;
+  image?: string; 
+};
 export type GenerateStudyNotesOutput = { notes: string };
 
 export type GenerateQuizQuestionsInput = { 
   topic: string, 
   numQuestions: number, 
-  difficulty?: 'easy' | 'medium' | 'hard' 
+  difficulty?: 'easy' | 'medium' | 'hard',
+  image?: string;
 };
 export type GenerateQuizQuestionsOutput = { questions: QuizQuestion[] };
 

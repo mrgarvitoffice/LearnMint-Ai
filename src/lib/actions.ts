@@ -46,7 +46,7 @@ export async function generateNotesAction(input: GenerateStudyNotesInput): Promi
   let notesResult: GenerateStudyNotesOutput;
   try {
     // Primary step: Generate study notes. This includes AI image generation.
-    notesResult = await generateStudyNotes({ topic: trimmedTopic });
+    notesResult = await generateStudyNotes({ topic: trimmedTopic, image: input.image });
     if (!notesResult || !notesResult.notes) {
       throw new Error("AI returned empty or invalid notes data.");
     }
@@ -216,7 +216,7 @@ export async function fetchStudyNotesAction(input: GenerateStudyNotesInput): Pro
   const trimmedTopic = input.topic.trim();
 
   try {
-    const notesResult = await generateStudyNotes({ topic: trimmedTopic });
+    const notesResult = await generateStudyNotes({ topic: trimmedTopic, image: input.image });
     if (!notesResult || !notesResult.notes) {
       throw new Error("AI returned empty or invalid notes data for fetchStudyNotesAction.");
     }
@@ -382,5 +382,3 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
     throw new Error(error.message || "Failed to fetch Google Books directly.");
   }
 }
-
-    
