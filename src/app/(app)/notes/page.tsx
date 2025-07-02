@@ -202,29 +202,28 @@ export default function GenerateNotesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
-          <div className="space-y-2">
+          <div className="flex items-center gap-2">
             <Input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Quantum Physics, Cell Biology, World War II"
-              className="text-base sm:text-lg py-3 px-4 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
+              placeholder="e.g., Quantum Physics, Cell Biology"
+              className="flex-1 text-base sm:text-lg py-3 px-4 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
               aria-label="Study Topic"
               onKeyDown={(e) => e.key === 'Enter' && !isLoadingAll && topic.trim().length >=3 && handleGenerateAllMaterials()}
             />
-          </div>
-
-          <div className="flex items-center gap-2">
             <Button
+              type="button"
               variant="outline"
+              size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoadingAll}
-              className="flex-1"
+              aria-label="Upload Image"
+              title="Upload Image (Optional)"
             >
-              <ImageIcon className="mr-2 h-4 w-4" /> Upload Image (Optional)
+              <ImageIcon className="h-5 w-5 text-muted-foreground hover:text-primary" />
             </Button>
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-
-            {browserSupportsSpeechRecognition && (
+             {browserSupportsSpeechRecognition && (
               <Button
                 variant="outline"
                 size="icon"

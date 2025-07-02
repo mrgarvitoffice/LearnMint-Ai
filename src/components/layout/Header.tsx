@@ -53,7 +53,7 @@ export function Header() {
 
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       <Link href="/" className="flex items-center gap-2.5" onClick={() => playClickSound()}>
         <Logo size={32} className="text-primary"/>
         <span className="font-bold text-xl text-foreground">

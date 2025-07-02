@@ -229,6 +229,7 @@ export default function CustomTestPage() {
 
   useEffect(() => {
     if (transcript && sourceType === 'topic') setValue('topics', transcript);
+    if (transcript && sourceType === 'notes') setValue('notes', transcript);
   }, [transcript, setValue, sourceType]);
 
   useEffect(() => {
@@ -417,7 +418,6 @@ export default function CustomTestPage() {
     setRecentTopicsSelectionDone(false);
   };
 
-  const currentQuestionData = testState?.questions[testState.currentQuestionIndex];
   const overallTimeLeft = testState?.timeLeft;
   const perQuestionTimeLeft = testState?.currentQuestionTimeLeft;
 
@@ -536,30 +536,32 @@ export default function CustomTestPage() {
                 </div>
               )}
               {sourceType === 'notes' && (
-                <div className="space-y-4 animate-in fade-in-50">
-                  <div>
-                    <Label htmlFor="notes" className="text-base">Your Notes</Label>
-                    <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base mt-2" />
-                    {errors.notes && <p className="text-sm text-destructive mt-1">{errors.notes.message}</p>}
-                  </div>
-                  <div>
-                    <Label htmlFor="notes-image-upload" className="text-base">Upload Image (Optional)</Label>
-                    <div className="mt-2 flex items-center gap-4">
-                      <Button type="button" variant="outline" onClick={() => notesImageInputRef.current?.click()}>
-                        <ImageIconLucide className="w-4 h-4 mr-2" /> Choose Image
+                <div className="space-y-2 animate-in fade-in-50">
+                  <Label htmlFor="notes" className="text-base">Your Notes</Label>
+                  <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base" />
+                  {errors.notes && <p className="text-sm text-destructive mt-1">{errors.notes.message}</p>}
+                  
+                  {notesImagePreview && (
+                    <div className="relative w-20 h-20">
+                      <Image src={notesImagePreview} alt="Notes preview" layout="fill" objectFit="cover" className="rounded-md" />
+                      <Button type="button" variant="ghost" size="icon" onClick={handleRemoveImage} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground">
+                        <XCircle className="w-4 h-4" />
                       </Button>
-                      <input type="file" ref={notesImageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                      {notesImagePreview && (
-                        <div className="relative w-20 h-20">
-                          <Image src={notesImagePreview} alt="Notes preview" layout="fill" objectFit="cover" className="rounded-md" />
-                          <Button type="button" variant="ghost" size="icon" onClick={handleRemoveImage} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground">
-                            <XCircle className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
-                     <p className="text-xs text-muted-foreground mt-2">Upload an image to give the AI more context for generating questions.</p>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" onClick={() => notesImageInputRef.current?.click()} className="text-xs" size="sm">
+                      <ImageIconLucide className="w-4 h-4 mr-2" /> {notesImagePreview ? "Change" : "Upload"} Image (Optional)
+                    </Button>
+                    {browserSupportsSpeechRecognition && (
+                      <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading || isListening}>
+                        <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
+                      </Button>
+                    )}
                   </div>
+                  <input type="file" ref={notesImageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                  {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
                 </div>
               )}
               {sourceType === 'recent' && (
