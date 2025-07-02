@@ -9,7 +9,7 @@ body {
 
 @layer base {
   :root {
-    /* Base Hacker Theme (Dark) - Applied to .dark and :root for dark-by-default */
+    /* LearnFlow Theme (Dark) - Applied to .dark and :root for dark-by-default */
     --background: 220 30% 10%;        /* Dark Blue/Charcoal */
     --foreground: 190 80% 85%;        /* Light Cyan/Blue Text */
     
@@ -19,8 +19,8 @@ body {
     --popover: 220 30% 12%;           /* Popovers - slightly darker than cards */
     --popover-foreground: 190 80% 85%;
 
-    --primary: 180 100% 50%;          /* Vibrant Cyan/Teal */
-    --primary-foreground: 220 30% 5%; /* Very Dark Blue for contrast on primary */
+    --primary: 50 90% 50%;            /* Vibrant Yellow */
+    --primary-foreground: 50 90% 5%;  /* Very Dark for contrast on primary */
     
     --secondary: 210 30% 30%;         /* Muted Blue */
     --secondary-foreground: 190 80% 90%; /* Lighter Cyan for text on secondary */
@@ -28,33 +28,23 @@ body {
     --muted: 220 30% 25%;             /* Muted Dark Blue for less emphasis areas */
     --muted-foreground: 190 50% 70%;  /* Softer Cyan for muted text */
     
-    --accent: 150 70% 55%;            /* Cool Green for Accents */
-    --accent-foreground: 220 30% 5%;  /* Dark text for green accent */
+    --accent: 20 80% 55%;             /* Bright Orange for Accents */
+    --accent-foreground: 20 80% 5%;   /* Dark text for orange accent */
     
     --destructive: 0 70% 55%;          /* Sharp Red for destructive actions */
     --destructive-foreground: 0 0% 100%; /* White text on destructive */
     
     --border: 220 30% 25%;            /* Borders - slightly visible against card/bg */
     --input: 220 30% 20%;             /* Input border */
-    --ring: 180 100% 60%;             /* Ring color (brighter primary) */
+    --ring: 50 90% 55%;               /* Ring color (brighter primary) */
     
-    --chart-1: 180 100% 50%; /* Cyan */
-    --chart-2: 150 70% 55%; /* Green */
-    --chart-3: 200 80% 60%; /* Light Blue */
-    --chart-4: 270 70% 65%; /* Purple/Magenta */
-    --chart-5: 30 100% 60%; /* Orange - for contrast if needed */
+    --chart-1: 50 90% 50%; /* Yellow */
+    --chart-2: 20 80% 55%; /* Orange */
+    --chart-3: 180 80% 60%; /* Cyan */
+    --chart-4: 270 70% 65%; /* Purple */
+    --chart-5: 150 70% 55%; /* Green */
     
     --radius: 0.5rem;
-
-    /* Sidebar specific colors for dark hacker theme */
-    --sidebar-background: 220 30% 8%; /* Even darker for sidebar */
-    --sidebar-foreground: 190 70% 80%; /* Sidebar text */
-    --sidebar-primary: 180 100% 50%;        /* Primary color for active/important sidebar items */
-    --sidebar-primary-foreground: 220 30% 5%;/* Text on sidebar primary */
-    --sidebar-accent: 220 30% 18%;          /* Hover/active background for sidebar items */
-    --sidebar-accent-foreground: 190 80% 95%;/* Text on sidebar hover/active */
-    --sidebar-border: 220 30% 20%;          /* Sidebar border */
-    --sidebar-ring: 180 100% 50%;           /* Ring for focus on sidebar items */
   }
 
   .dark {
@@ -64,48 +54,38 @@ body {
     --card-foreground: 190 80% 85%;
     --popover: 220 30% 12%;
     --popover-foreground: 190 80% 85%;
-    --primary: 180 100% 50%;
-    --primary-foreground: 220 30% 5%;
+    --primary: 50 90% 50%;
+    --primary-foreground: 50 90% 5%;
     --secondary: 210 30% 30%;
     --secondary-foreground: 190 80% 90%;
     --muted: 220 30% 25%;
     --muted-foreground: 190 50% 70%;
-    --accent: 150 70% 55%;
-    --accent-foreground: 220 30% 5%;
+    --accent: 20 80% 55%;
+    --accent-foreground: 20 80% 5%;
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 30% 25%;
-    --input: 220 30% 20%; /* Input border */
-    --ring: 180 100% 60%;
-    --chart-1: 180 100% 50%;
-    --chart-2: 150 70% 55%;
-    --chart-3: 200 80% 60%;
+    --input: 220 30% 20%;
+    --ring: 50 90% 55%;
+    --chart-1: 50 90% 50%;
+    --chart-2: 20 80% 55%;
+    --chart-3: 180 80% 60%;
     --chart-4: 270 70% 65%;
-    --chart-5: 30 100% 60%;
-    
-    /* Sidebar specific colors for dark theme */
-    --sidebar-background: 220 30% 8%;
-    --sidebar-foreground: 190 70% 80%;
-    --sidebar-primary: 180 100% 50%;
-    --sidebar-primary-foreground: 220 30% 5%;
-    --sidebar-accent: 220 30% 18%;
-    --sidebar-accent-foreground: 190 80% 95%;
-    --sidebar-border: 220 30% 20%;
-    --sidebar-ring: 180 100% 50%;
+    --chart-5: 150 70% 55%;
   }
 
   .light {
-    --background: 0 0% 100%;         /* Pure white */
+    --background: 50 20% 95%;        /* Very light yellow */
     --foreground: 220 30% 10%;       /* Darker text for high contrast */
     
-    --card: 0 0% 96%;                 /* Very light gray for card backgrounds */
+    --card: 0 0% 100%;                /* White cards */
     --card-foreground: 220 30% 10%;   /* Dark text on cards */
     
     --popover: 0 0% 100%;             /* White popovers */
     --popover-foreground: 220 30% 10%;
 
-    --primary: 180 90% 35%;           /* Slightly darker/more saturated Teal */
-    --primary-foreground: 0 0% 100%; 
+    --primary: 50 85% 45%;            /* Slightly darker/more saturated Yellow */
+    --primary-foreground: 50 90% 5%; 
     
     --secondary: 220 25% 92%;         /* Lighter cool gray */
     --secondary-foreground: 220 25% 20%; /* Darker text on secondary */
@@ -113,31 +93,21 @@ body {
     --muted: 220 30% 95%;             /* Light gray for general muted backgrounds */
     --muted-foreground: 220 20% 45%;  /* Darker muted text for better contrast */
     
-    --accent: 150 60% 40%;            /* Darker/more saturated Green */
+    --accent: 20 80% 50%;             /* Slightly darker Orange */
     --accent-foreground: 0 0% 100%; 
     
     --destructive: 0 70% 50%; 
     --destructive-foreground: 0 0% 100%; 
     
-    --border: 0 0% 80%;            /* Solid medium-light gray for card/general borders */
-    --input: 0 0% 80%;             /* Solid medium-light gray for input borders */
-    --ring: 180 90% 40%;              /* Ring color (primary, slightly adjusted) */
+    --border: 0 0% 88%;            /* Solid medium-light gray for card/general borders */
+    --input: 0 0% 88%;             /* Solid medium-light gray for input borders */
+    --ring: 50 85% 50%;              /* Ring color (primary, slightly adjusted) */
     
-    --chart-1: 180 90% 40%;
-    --chart-2: 150 65% 45%;
-    --chart-3: 200 75% 50%;
+    --chart-1: 50 85% 50%;
+    --chart-2: 20 80% 55%;
+    --chart-3: 180 75% 45%;
     --chart-4: 270 65% 55%;
-    --chart-5: 30 90% 50%;
-    
-    /* Sidebar specific colors for light theme */
-    --sidebar-background: 0 0% 95%;    /* Slightly off-white for sidebar, distinct from page & cards */
-    --sidebar-foreground: 220 30% 15%;  /* Dark text for sidebar */
-    --sidebar-primary: 180 90% 35%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 92%;     /* Hover/active background */
-    --sidebar-accent-foreground: 220 30% 10%; /* Dark text on sidebar hover/active */
-    --sidebar-border: 0 0% 78%;     /* Slightly darker gray border for sidebar elements */
-    --sidebar-ring: 180 90% 40%;
+    --chart-5: 150 65% 45%;
   }
 }
 
@@ -151,34 +121,25 @@ body {
   }
 
   /* Custom styles for prose content (e.g., generated notes) */
-  .prose h1,
-  .dark .prose h1,
-  .light .prose h1 {
+  .prose h1, .dark .prose h1, .light .prose h1 {
     color: hsl(var(--primary));
     @apply text-3xl sm:text-4xl font-extrabold mt-0 mb-6 first:mt-0;
   }
   
-  .prose h2,
-  .dark .prose h2,
-  .light .prose h2 {
+  .prose h2, .dark .prose h2, .light .prose h2 {
     color: hsl(var(--primary));
     @apply text-2xl sm:text-3xl font-bold mt-8 mb-4;
   }
   
-  .prose h3,
-  .dark .prose h3,
-  .light .prose h3 {
+  .prose h3, .dark .prose h3, .light .prose h3 {
     color: hsl(var(--primary));
     @apply text-xl sm:text-2xl font-semibold mt-6 mb-3;
   }
   
-  .prose h4,
-  .dark .prose h4,
-  .light .prose h4 {
+  .prose h4, .dark .prose h4, .light .prose h4 {
     color: hsl(var(--primary));
     @apply text-lg sm:text-xl font-semibold mt-4 mb-2;
   }
-
 
   /* Styling for blockquotes to make them stand out */
   .prose blockquote {
@@ -190,7 +151,7 @@ body {
      background-color: hsl(var(--accent) / 0.1);
   }
   .light .prose blockquote {
-    color: hsl(var(--accent-foreground)); 
+    color: hsl(var(--foreground)); 
     border-color: hsl(var(--accent));
     background-color: hsl(var(--accent) / 0.1);
   }
@@ -212,13 +173,13 @@ body {
   pointer-events: none;
 }
 #nprogress .bar {
-  background: hsl(var(--primary)); /* Use primary theme color */
+  background: hsl(var(--primary));
   position: fixed;
-  z-index: 10310; /* Ensure it's above most elements */
+  z-index: 10310;
   top: 0;
   left: 0;
   width: 100%;
-  height: 3px; /* Thicker bar */
+  height: 3px;
 }
 #nprogress .peg {
   display: block;
@@ -233,30 +194,5 @@ body {
           transform: rotate(3deg) translate(0px, -4px);
 }
 #nprogress .spinner {
-  display: none; /* Spinner disabled by default in TopProgressBar component */
+  display: none;
 }
-/* If you want the spinner, you can re-enable it and style it:
-#nprogress .spinner-icon {
-  width: 18px;
-  height: 18px;
-  box-sizing: border-box;
-  border: solid 2px transparent;
-  border-top-color: hsl(var(--primary));
-  border-left-color: hsl(var(--primary));
-  border-radius: 50%;
-  -webkit-animation: nprogress-spinner 400ms linear infinite;
-          animation: nprogress-spinner 400ms linear infinite;
-}
-.nprogress-custom-parent #nprogress .spinner,
-.nprogress-custom-parent #nprogress .bar {
-  position: absolute;
-}
-@-webkit-keyframes nprogress-spinner {
-  0%   { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
-}
-@keyframes nprogress-spinner {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-*/

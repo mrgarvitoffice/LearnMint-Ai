@@ -98,20 +98,16 @@ export default function ChatbotPage() {
     if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
-      console.log(`Chatbot: Attempting to speak greeting for ${selectedCharacter} with voice ${selectedVoice.name}`);
       currentSpokenMessageRef.current = currentCharacterGreeting;
       
       setTimeout(() => {
         if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'kazuma' : 'megumin') && !isSpeaking && !isPaused) {
             speak(currentCharacterGreeting);
-        } else {
-            console.log("Chatbot: Speak call for greeting deferred, but conditions changed or speech already active. Skipping.");
         }
       }, 150); 
       initialGreetingSpokenRef.current = true;
     }
   }, [currentCharacterGreeting, selectedVoice, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
-
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -223,7 +219,7 @@ export default function ChatbotPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
-              <Select value={selectedCharacter} onValueChange={handleCharacterChange}>
+              <Select value={selectedCharacter} onValueChange={(val: ChatbotCharacter) => handleCharacterChange(val)}>
                 <SelectTrigger className="w-auto text-xs h-8 min-w-[100px]">
                   <Users className="h-3.5 w-3.5 mr-1.5 opacity-70"/>
                   <SelectValue placeholder="Character" />
@@ -254,6 +250,3 @@ export default function ChatbotPage() {
     </Card>
   );
 }
-
-
-    

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DefinitionChallenge } from '@/components/features/arcade/DefinitionChallenge';
 import { Gamepad2, Puzzle, Crown, ExternalLink } from 'lucide-react';
@@ -9,12 +9,11 @@ import { useTTS } from '@/hooks/useTTS';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image';
 
-const PAGE_TITLE = "LearnMint Arcade Arena";
+const PAGE_TITLE = "LearnMint Arcade";
 
 export default function ArcadePage() {
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
@@ -79,9 +78,9 @@ export default function ArcadePage() {
               <div className="flex flex-col items-center gap-4 p-8 bg-muted rounded-lg">
                 <p className="text-muted-foreground">Get ready to jump over obstacles!</p>
                 <Button asChild size="lg">
-                  <Link href="https://chromedino.com/" target="_blank" rel="noopener noreferrer">
+                  <a href="https://chromedino.com/" target="_blank" rel="noopener noreferrer">
                     Play Dino Runner <ExternalLink className="w-4 h-4 ml-2"/>
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </CardContent>
@@ -98,9 +97,9 @@ export default function ArcadePage() {
                <div className="flex flex-col items-center gap-4 p-8 bg-muted rounded-lg">
                 <p className="text-muted-foreground">Test your strategy on the 64 squares!</p>
                  <Button asChild size="lg">
-                  <Link href="https://www.chess.com/play/computer" target="_blank" rel="noopener noreferrer">
+                  <a href="https://www.chess.com/play/computer" target="_blank" rel="noopener noreferrer">
                     Play Chess Online <ExternalLink className="w-4 h-4 ml-2"/>
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </CardContent>

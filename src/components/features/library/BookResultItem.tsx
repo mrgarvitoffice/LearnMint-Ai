@@ -5,7 +5,7 @@ import type { GoogleBookItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { BookOpen, ExternalLink, BookText } from 'lucide-react';
+import { ExternalLink, BookText } from 'lucide-react';
 
 interface BookResultItemProps {
   book: GoogleBookItem;
@@ -28,7 +28,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             src={book.thumbnailUrl || placeholderImage}
             alt={`Cover of ${book.title}`}
             fill={true}
-            sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 30vw" // Adjusted sizes
+            sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 30vw"
             style={{ objectFit: book.thumbnailUrl ? 'cover' : 'contain' }}
             data-ai-hint={dataAiHintKeywords}
             onError={(e) => {
@@ -39,7 +39,7 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
             }}
             quality={85} 
           />
-           {(book.embeddable || !book.thumbnailUrl) && ( // Show icon if embeddable or if it's a placeholder
+           {(book.embeddable || !book.thumbnailUrl) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <BookText className="w-10 h-10 text-white/80" />
             </div>
@@ -76,4 +76,3 @@ export function BookResultItem({ book, onPreviewRequest }: BookResultItemProps) 
     </Card>
   );
 }
-

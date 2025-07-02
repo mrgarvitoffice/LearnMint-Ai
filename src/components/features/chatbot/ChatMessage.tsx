@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  character?: 'kazuma' | 'megumin'; // Optional character prop
+  character?: 'kazuma' | 'megumin';
 }
 
 export function ChatMessage({ message, character = 'kazuma' }: ChatMessageProps) {
@@ -18,7 +18,7 @@ export function ChatMessage({ message, character = 'kazuma' }: ChatMessageProps)
 
   const getAvatarSrc = () => {
     if (isUser) return undefined;
-    return character === 'kazuma' ? "/images/kazuma-dp.jpg" : "/images/kazuma-dp.jpg"; // Use kazuma-dp as placeholder for megumin
+    return character === 'kazuma' ? "/images/kazuma-dp.jpg" : "/images/megumin-dp.jpg";
   };
 
   const getAvatarFallback = () => {
@@ -33,9 +33,8 @@ export function ChatMessage({ message, character = 'kazuma' }: ChatMessageProps)
 
   const getAvatarDataAiHint = () => {
     if (isUser) return "user";
-    return character === 'kazuma' ? "Kazuma Satou" : "Megumin crimson demon"; // Specific hint for Megumin placeholder
+    return character === 'kazuma' ? "Kazuma Satou" : "Megumin crimson demon";
   }
-
 
   if (message.type === 'typing_indicator') {
     return (
@@ -74,14 +73,16 @@ export function ChatMessage({ message, character = 'kazuma' }: ChatMessageProps)
               />
             </div>
           )}
-          <ReactMarkdown
-            className="prose prose-sm dark:prose-invert max-w-none"
-            components={{
-              p: ({node, ...props}) => <p className="mb-0 last:mb-0" {...props} />
-            }}
-          >
-            {message.content}
-          </ReactMarkdown>
+          {message.content && (
+            <ReactMarkdown
+              className="prose prose-sm dark:prose-invert max-w-none [&_p]:m-0"
+              components={{
+                p: ({node, ...props}) => <p className="mb-0 last:mb-0" {...props} />
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
         </div>
       </div>
       <p className={cn('text-xs text-muted-foreground/70', isUser ? 'text-right' : 'text-left', 'px-12')}>
@@ -90,5 +91,3 @@ export function ChatMessage({ message, character = 'kazuma' }: ChatMessageProps)
     </div>
   );
 }
-
-    

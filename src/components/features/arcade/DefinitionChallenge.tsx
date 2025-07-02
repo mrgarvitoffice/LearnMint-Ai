@@ -92,7 +92,6 @@ export function DefinitionChallenge() {
     }
   }, [currentWordIndex, words.length, streak, highScore, selectedVoice, isSpeaking, isPaused, speak]);
 
-
   const handleGuessSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     playClickSound();
@@ -130,7 +129,6 @@ export function DefinitionChallenge() {
       }
     }
   }, [playClickSound, currentWord, gameOver, isCorrect, guess, streak, highScore, mistakesMadeThisWord, nextWord, playCorrectSound, playIncorrectSound, speak, selectedVoice, isSpeaking, isPaused]);
-
 
   const handleUseHint = () => {
     playClickSound();

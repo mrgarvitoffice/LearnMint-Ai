@@ -4,7 +4,7 @@
 import { useState, useRef, type ChangeEvent, type FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Paperclip, Send, Mic, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { Send, Mic, ImageIcon, Loader2, X } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
@@ -98,7 +98,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     <form onSubmit={handleSubmit} className="sticky bottom-0 bg-background/80 backdrop-blur-md p-4 border-t">
       {imagePreview && (
         <div className="mb-2 relative w-24 h-24">
-          <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md" />
+          <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="image preview" />
           <Button 
             type="button" 
             variant="ghost" 
@@ -126,7 +126,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
         <Input
           type="text"
-          placeholder="Type your message or ask Kazuma to sing..."
+          placeholder="Type your message or ask a question..."
           value={inputValue}
           onChange={handleInputChange}
           disabled={isLoading}

@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +14,7 @@ import { useSound } from '@/hooks/useSound';
 import { 
   LogOut, UserCircle, LogIn, ShieldQuestion, CalendarCheck2, AtSign, Fingerprint, 
   LayoutDashboard, Library as LibraryIcon, Newspaper, Calculator as CalculatorIcon, 
-  ChevronRight, FileText, TestTubeDiagonal, Sparkles
+  FileText, TestTubeDiagonal, Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns'; 
 
@@ -41,7 +40,6 @@ const FeatureLink: React.FC<FeatureLinkProps> = ({ href, icon: Icon, title, desc
     </a>
   </Link>
 );
-
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -120,7 +118,7 @@ export default function ProfilePage() {
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm text-center">
         <CardHeader>
           <Avatar className="h-20 w-20 md:h-24 md:w-24 border-4 border-primary/50 mx-auto mb-3 shadow-md">
-            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
+            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
             <AvatarFallback className="text-3xl md:text-4xl bg-muted">
               {user.isAnonymous ? <ShieldQuestion className="h-10 w-10 md:h-12 md:w-12" /> :
                 firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-10 w-10 md:h-12 md:w-12" />}
@@ -208,7 +206,7 @@ export default function ProfilePage() {
             href="/library"
             icon={LibraryIcon}
             title="Expand Your Knowledge Base"
-            description="Explore curated textbooks, search YouTube &amp; Google Books, and discover daily math facts."
+            description="Explore curated textbooks, search YouTube & Google Books, and discover daily math facts."
             onClick={playClickSound}
           />
           <FeatureLink

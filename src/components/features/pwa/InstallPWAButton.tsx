@@ -6,7 +6,7 @@ import { DownloadCloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from '@/hooks/useSound';
-import { APP_NAME } from "@/lib/constants"; // Ensure APP_NAME is imported
+import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -19,12 +19,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 interface InstallPWAButtonProps {
-  /**
-   * If true, styles the button to look like a DropdownMenuItem.
-   * Omitting this or setting to false uses default Button styling.
-   */
   asDropdownItem?: boolean;
-  className?: string; // Allow passing additional classNames
+  className?: string;
 }
 
 export default function InstallPWAButton({ asDropdownItem = false, className }: InstallPWAButtonProps) {
@@ -92,7 +88,7 @@ export default function InstallPWAButton({ asDropdownItem = false, className }: 
   if (asDropdownItem) {
     return (
       <Button
-        variant="ghost" // Mimics dropdown item look
+        variant="ghost"
         onClick={handleInstallClick}
         className={cn(
           "relative flex w-full cursor-default select-none items-center justify-start gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
@@ -105,13 +101,12 @@ export default function InstallPWAButton({ asDropdownItem = false, className }: 
     );
   }
 
-  // Default button appearance (standalone)
   return (
     <Button
       variant="outline"
-      size="sm" // Standard small button size
+      size="sm"
       onClick={handleInstallClick}
-      className={cn("gap-2", className)} // Apply base gap and any passed className
+      className={cn("gap-2", className)}
       title={`Install ${APP_NAME} App`}
     >
       {commonIconAndText}
