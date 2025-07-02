@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Avatar component
 // Lucide icons for UI elements
-import { LayoutGrid, Palette, LogOut, UserCircle, LogIn, DownloadCloud } from 'lucide-react';
+import { LayoutGrid, Palette, LogOut, UserCircle, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useTheme } from 'next-themes'; // Hook for theme management
 import React from 'react';
@@ -225,9 +225,6 @@ export function Header() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleDropdownItemClick(handleThemeToggle)} className="flex items-center gap-2">
                 <Palette className="h-4 w-4" /> Toggle Theme
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild onClick={() => handleDropdownItemClick()}>
-                <InstallPWAButton asDropdownItem={true} />
               </DropdownMenuItem>
               <DropdownMenuSeparator />
                <DropdownMenuItem onClick={() => handleDropdownItemClick(handleSignOut)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
