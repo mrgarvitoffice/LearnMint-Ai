@@ -8,7 +8,7 @@
  * - GenerateFlashcardsOutput - The return type (shared with generate-flashcards.ts).
  */
 
-import {ai} from '@/ai/genkit';
+import {aiForQuizzes} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { GenerateFlashcardsOutput } from './generate-flashcards'; // Reuse existing output type
 
@@ -34,7 +34,7 @@ export async function generateFlashcardsFromNotes(input: GenerateFlashcardsFromN
   return generateFlashcardsFromNotesFlow(input);
 }
 
-const prompt = ai.definePrompt({
+const prompt = aiForQuizzes.definePrompt({
   name: 'generateFlashcardsFromNotesPrompt',
   input: {schema: GenerateFlashcardsFromNotesInputSchema},
   output: {schema: GenerateFlashcardsOutputSchema}, // Use the locally defined output schema
@@ -54,7 +54,7 @@ Example schema for output:
 `,
 });
 
-const generateFlashcardsFromNotesFlow = ai.defineFlow(
+const generateFlashcardsFromNotesFlow = aiForQuizzes.defineFlow(
   {
     name: 'generateFlashcardsFromNotesFlow',
     inputSchema: GenerateFlashcardsFromNotesInputSchema,

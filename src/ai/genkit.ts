@@ -6,6 +6,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
 const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
+const GOOGLE_API_KEY_QUIZZES = process.env.GEMINI_API_KEY; // Assign GEMINI_API_KEY for quizzes
 
 
 const knownDemoKeys = [
@@ -54,10 +55,10 @@ const isApiKeyPlaceholder = (keyToCheck?: string, keyName?: string) => {
 };
 
 // Validate the main key first. If this one is bad, all fallbacks will be bad.
-isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (Main)');
+isApiKeyPlaceholder(GOOGLE_API_KEY, 'GOOGLE_API_KEY (Main Fallback)');
 
 
-// Main Genkit instance (used for Quiz, Flashcards, Custom Test, etc.)
+// Main Genkit instance (used for non-specific AI tasks like search tools)
 export const ai = genkit({
   plugins: [
     googleAI({ apiKey: GOOGLE_API_KEY }),
@@ -75,11 +76,11 @@ export const ai = genkit({
 });
 
 // Genkit instance for Study Notes (text part)
-let notesInstanceKey = GOOGLE_API_KEY; // Start with the main key as a fallback
+let notesInstanceKey = GOOGLE_API_KEY; 
 if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '' && GOOGLE_API_KEY_NOTES !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_NOTES for study notes text generation.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES, 'GOOGLE_API_KEY_NOTES');
-  notesInstanceKey = GOOGLE_API_KEY_NOTES; // Override with the specific key
+  notesInstanceKey = GOOGLE_API_KEY_NOTES; 
 } else {
   console.log("INFO: GOOGLE_API_KEY_NOTES is not set or is same as main key. Notes text will use the main AI configuration.");
 }
@@ -92,11 +93,11 @@ export const aiForNotes = genkit({
 
 
 // Genkit instance for AI Chatbot
-let chatbotInstanceKey = GOOGLE_API_KEY; // Start with the main key as a fallback
+let chatbotInstanceKey = GOOGLE_API_KEY; 
 if (GOOGLE_API_KEY_CHATBOT && GOOGLE_API_KEY_CHATBOT.trim() !== '' && GOOGLE_API_KEY_CHATBOT !== GOOGLE_API_KEY) {
   console.log(`INFO: Using separate GOOGLE_API_KEY_CHATBOT for AI Chatbot.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_CHATBOT, 'GOOGLE_API_KEY_CHATBOT');
-  chatbotInstanceKey = GOOGLE_API_KEY_CHATBOT; // Override with the specific key
+  chatbotInstanceKey = GOOGLE_API_KEY_CHATBOT; 
 } else {
   console.log("INFO: GOOGLE_API_KEY_CHATBOT is not set or is same as main key. Chatbot will use the main AI configuration.");
 }
@@ -108,25 +109,24 @@ export const aiForChatbot = genkit({
 });
 
 // Genkit instance for "Image" (Text Description/Link) Generation
-// This has a fallback chain: IMAGES -> NOTES -> MAIN
-let imageTextInstanceKey = GOOGLE_API_KEY; // Start with main key
+let imageTextInstanceKey = GOOGLE_API_KEY; 
 if (GOOGLE_API_KEY_IMAGES && GOOGLE_API_KEY_IMAGES.trim() !== '') {
   console.log(`INFO: Using GOOGLE_API_KEY_IMAGES for image description/link generation.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_IMAGES, 'GOOGLE_API_KEY_IMAGES');
-  imageTextInstanceKey = GOOGLE_API_KEY_IMAGES; // Use dedicated images key if present
+  imageTextInstanceKey = GOOGLE_API_KEY_IMAGES; 
 } else if (GOOGLE_API_KEY_NOTES && GOOGLE_API_KEY_NOTES.trim() !== '') {
   console.log(`INFO: GOOGLE_API_KEY_IMAGES not set. Image description/link generation will fallback to GOOGLE_API_KEY_NOTES.`);
   isApiKeyPlaceholder(GOOGLE_API_KEY_NOTES, 'GOOGLE_API_KEY_NOTES (as fallback for image description/link)');
-  imageTextInstanceKey = GOOGLE_API_KEY_NOTES; // Fallback to notes key
+  imageTextInstanceKey = GOOGLE_API_KEY_NOTES; 
 } else {
   console.log(`INFO: GOOGLE_API_KEY_IMAGES and GOOGLE_API_KEY_NOTES not set. Image description/link generation will use main GOOGLE_API_KEY.`);
 }
 
-export const aiForImages = genkit({ // Renamed for clarity, this is for descriptive text or links now
+export const aiForImages = genkit({ 
   plugins: [googleAI({ apiKey: imageTextInstanceKey })],
-  model: 'googleai/gemini-1.5-flash-latest', // Changed to 1.5-flash for text output
+  model: 'googleai/gemini-1.5-flash-latest',
   enableTracingAndMetrics: true,
-  defaultModelConfig: { // Default config for text models, safety settings can be adjusted if needed
+  defaultModelConfig: { 
     safetySettings: [
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
@@ -134,4 +134,27 @@ export const aiForImages = genkit({ // Renamed for clarity, this is for descript
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
     ],
   }
+});
+
+// NEW: Genkit instance for Quizzes, Flashcards, and Custom Tests
+let quizInstanceKey = GOOGLE_API_KEY; 
+if (GOOGLE_API_KEY_QUIZZES && GOOGLE_API_KEY_QUIZZES.trim() !== '' && GOOGLE_API_KEY_QUIZZES !== GOOGLE_API_KEY) {
+    console.log(`INFO: Using separate GEMINI_API_KEY (as GOOGLE_API_KEY_QUIZZES) for Quizzes/Flashcards/Tests.`);
+    isApiKeyPlaceholder(GOOGLE_API_KEY_QUIZZES, 'GEMINI_API_KEY (for Quizzes)');
+    quizInstanceKey = GOOGLE_API_KEY_QUIZZES;
+} else {
+    console.log("INFO: GEMINI_API_KEY is not set or is same as main key. Quizzes/Tests will use the main AI configuration.");
+}
+export const aiForQuizzes = genkit({
+    plugins: [googleAI({ apiKey: quizInstanceKey })],
+    model: 'googleai/gemini-1.5-flash-latest',
+    enableTracingAndMetrics: true,
+    defaultModelConfig: {
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      ],
+    },
 });

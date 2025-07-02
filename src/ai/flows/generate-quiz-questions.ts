@@ -8,7 +8,7 @@
  * - GenerateQuizQuestionsOutput - The return type for this function.
  */
 
-import {ai} from '@/ai/genkit';
+import {aiForQuizzes} from '@/ai/genkit';
 import {z} from 'zod';
 
 const QuizQuestionSchema = z.object({
@@ -33,7 +33,7 @@ const GenerateQuizQuestionsOutputSchema = z.object({
 });
 export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
 
-const generateQuizQuestionsPrompt = ai.definePrompt({
+const generateQuizQuestionsPrompt = aiForQuizzes.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
@@ -76,7 +76,7 @@ const generateQuizQuestionsPrompt = ai.definePrompt({
   }
 });
 
-const generateQuizQuestionsFlow = ai.defineFlow(
+const generateQuizQuestionsFlow = aiForQuizzes.defineFlow(
   {
     name: 'generateQuizQuestionsFlow',
     inputSchema: GenerateQuizQuestionsInputSchema,

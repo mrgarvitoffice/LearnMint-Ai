@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A quiz generation AI agent.
@@ -7,7 +8,7 @@
  * - GenerateQuizOutput - The return type for the generateQuiz function.
  */
 
-import {ai} from '@/ai/genkit';
+import {aiForQuizzes} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateQuizInputSchema = z.object({
@@ -29,7 +30,7 @@ const GenerateQuizOutputSchema = z.object({
 });
 export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 
-const prompt = ai.definePrompt({
+const prompt = aiForQuizzes.definePrompt({
   name: 'generateQuizPrompt',
   input: {schema: GenerateQuizInputSchema},
   output: {schema: GenerateQuizOutputSchema},
@@ -40,7 +41,7 @@ Output the questions in JSON format. Here is the schema:
 `,
 });
 
-const generateQuizFlow = ai.defineFlow(
+const generateQuizFlow = aiForQuizzes.defineFlow(
   {
     name: 'generateQuizFlow',
     inputSchema: GenerateQuizInputSchema,

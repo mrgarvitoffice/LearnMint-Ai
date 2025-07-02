@@ -8,7 +8,7 @@
  * - GenerateQuizOutput - The return type (shared with generate-quiz.ts).
  */
 
-import {ai} from '@/ai/genkit';
+import {aiForQuizzes} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { GenerateQuizOutput } from './generate-quiz'; // Reuse existing output type
 
@@ -34,7 +34,7 @@ export async function generateQuizFromNotes(input: GenerateQuizFromNotesInput): 
   return generateQuizFromNotesFlow(input);
 }
 
-const prompt = ai.definePrompt({
+const prompt = aiForQuizzes.definePrompt({
   name: 'generateQuizFromNotesPrompt',
   input: {schema: GenerateQuizFromNotesInputSchema},
   output: {schema: GenerateQuizOutputSchema}, // Use the locally defined output schema
@@ -52,7 +52,7 @@ Output the questions in JSON format. Here is the schema:
 `,
 });
 
-const generateQuizFromNotesFlow = ai.defineFlow(
+const generateQuizFromNotesFlow = aiForQuizzes.defineFlow(
   {
     name: 'generateQuizFromNotesFlow',
     inputSchema: GenerateQuizFromNotesInputSchema,

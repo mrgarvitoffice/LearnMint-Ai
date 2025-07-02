@@ -8,7 +8,7 @@
  * - GenerateFlashcardsOutput - The return type for the generateFlashcards function.
  */
 
-import {ai} from '@/ai/genkit';
+import {aiForQuizzes} from '@/ai/genkit';
 import {z} from 'zod';
 
 const FlashcardSchema = z.object({
@@ -29,7 +29,7 @@ const GenerateFlashcardsOutputSchema = z.object({
 });
 export type GenerateFlashcardsOutput = z.infer<typeof GenerateFlashcardsOutputSchema>;
 
-const generateFlashcardsPrompt = ai.definePrompt({
+const generateFlashcardsPrompt = aiForQuizzes.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: {schema: GenerateFlashcardsInputSchema},
   output: {schema: GenerateFlashcardsOutputSchema},
@@ -54,7 +54,7 @@ const generateFlashcardsPrompt = ai.definePrompt({
   }
 });
 
-const generateFlashcardsFlow = ai.defineFlow(
+const generateFlashcardsFlow = aiForQuizzes.defineFlow(
   {
     name: 'generateFlashcardsFlow',
     inputSchema: GenerateFlashcardsInputSchema,
