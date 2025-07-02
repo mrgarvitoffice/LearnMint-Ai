@@ -124,6 +124,9 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
       <header className="text-center relative">
+        <div className="flex justify-center mb-4">
+            <Logo size={64} />
+        </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
           {PAGE_TITLE}
         </h1>
@@ -141,7 +144,7 @@ export default function DashboardPage() {
       </header>
 
       <div className="text-center">
-         <Button size="lg" className="text-lg py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300" asChild>
+         <Button size="lg" className="text-lg py-6 shadow-lg hover:shadow-primary/50 group active:scale-95 transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground" asChild>
             <Link href="/notes">
                 <Sparkles className="mr-3 h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg] group-hover:scale-125" /> Start Generating Materials
             </Link>
@@ -150,7 +153,7 @@ export default function DashboardPage() {
 
       <section>
          <h2 className="text-2xl font-semibold text-foreground mb-6 text-center sm:text-left">Explore Features</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {exploreFeaturesCards.map((item) => {
             const Icon = item.icon;
             return (
