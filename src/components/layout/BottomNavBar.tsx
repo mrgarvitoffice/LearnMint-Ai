@@ -3,15 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { SidebarNav } from './SidebarNav';
-import { NAV_ITEMS, BOTTOM_NAV_ITEMS } from '@/lib/constants';
+import { BOTTOM_NAV_ITEMS } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/lib/constants';
@@ -26,29 +18,6 @@ export function BottomNavBar() {
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
-
-          if (item.title === 'Menu') {
-            return (
-              <Sheet key={item.title}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex h-auto flex-col items-center justify-center gap-1 p-2 text-muted-foreground"
-                    onClick={playSound}
-                  >
-                    <Icon className="h-6 w-6" />
-                    <span className="text-xs font-medium">{item.title}</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
-                  <ScrollArea className="flex-1 py-4">
-                    <SidebarNav items={NAV_ITEMS} />
-                  </ScrollArea>
-                </SheetContent>
-              </Sheet>
-            );
-          }
 
           return (
             <Link

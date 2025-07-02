@@ -11,35 +11,31 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
-import { 
-  LogOut, UserCircle, LogIn, ShieldQuestion, CalendarCheck2, AtSign, Fingerprint, 
-  LayoutDashboard, Library as LibraryIcon, Newspaper, Calculator as CalculatorIcon, 
-  FileText, TestTubeDiagonal, Sparkles
-} from 'lucide-react';
-import { format } from 'date-fns'; 
+import { LogOut, UserCircle, LogIn, ShieldQuestion, Fingerprint, Sparkles, ChevronRight, Settings } from 'lucide-react';
+import { NAV_ITEMS } from '@/lib/constants';
+import type { NavItem } from '@/lib/constants';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import InstallPWAButton from '@/components/features/pwa/InstallPWAButton';
 
-interface FeatureLinkProps {
-  href: string;
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  onClick?: () => void;
-}
-
-const FeatureLink: React.FC<FeatureLinkProps> = ({ href, icon: Icon, title, description, onClick }) => (
-  <Link href={href} passHref legacyBehavior>
+const FeatureLink: React.FC<{ item: NavItem; onClick?: () => void }> = ({ item, onClick }) => (
+  <Link href={item.href} passHref legacyBehavior>
     <a
       onClick={onClick}
-      className="block p-4 border rounded-lg hover:bg-muted/50 hover:shadow-lg transition-all duration-200 group space-y-1.5 transform hover:scale-[1.02]"
+      className="flex items-center justify-between p-4 border-b transition-colors hover:bg-muted/50"
     >
-      <div className="flex items-center gap-3 mb-1">
-        <Icon className="h-7 w-7 text-primary/90 group-hover:text-primary transition-colors" />
-        <h3 className="text-md font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
+      <div className="flex items-center gap-4">
+        <item.icon className="h-6 w-6 text-primary/80" />
+        <div>
+          <h3 className="font-semibold text-foreground">{item.title}</h3>
+          {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground pl-[calc(1.75rem_+_0.75rem)] group-hover:text-foreground/90 transition-colors">{description}</p>
+      <ChevronRight className="h-5 w-5 text-muted-foreground" />
     </a>
   </Link>
 );
+
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -67,10 +63,7 @@ export default function ProfilePage() {
   const getUserFirstName = () => {
     if (!user) return "User";
     if (user.isAnonymous) return "Guest";
-    if (user.displayName) {
-      const nameParts = user.displayName.split(' ');
-      return nameParts[0];
-    }
+    if (user.displayName) return user.displayName.split(' ')[0];
     if (user.email) {
       const emailName = user.email.split('@')[0];
       return emailName.charAt(0).toUpperCase() + emailName.slice(1);
@@ -78,22 +71,6 @@ export default function ProfilePage() {
     return "User";
   };
   const firstName = getUserFirstName();
-
-  const getAccountType = () => {
-    if (!user) return "N/A";
-    if (user.isAnonymous) return "Anonymous Guest";
-    if (user.providerData && user.providerData.length > 0) {
-      const provider = user.providerData[0].providerId;
-      if (provider === 'password') return "Email Account";
-      if (provider === 'google.com') return "Google Account";
-      return provider; 
-    }
-    return "Standard Account";
-  };
-
-  const creationTime = user?.metadata.creationTime 
-    ? format(new Date(user.metadata.creationTime), "PPPp") 
-    : "N/A";
 
   if (!user) {
     return (
@@ -114,117 +91,77 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 space-y-8">
+    <div className="container mx-auto max-w-2xl px-4 py-8 space-y-6">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm text-center">
         <CardHeader>
-          <Avatar className="h-20 w-20 md:h-24 md:w-24 border-4 border-primary/50 mx-auto mb-3 shadow-md">
+          <Avatar className="h-24 w-24 border-4 border-primary/50 mx-auto mb-3 shadow-md">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
-            <AvatarFallback className="text-3xl md:text-4xl bg-muted">
-              {user.isAnonymous ? <ShieldQuestion className="h-10 w-10 md:h-12 md:w-12" /> :
-                firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-10 w-10 md:h-12 md:w-12" />}
+            <AvatarFallback className="text-4xl bg-muted">
+              {user.isAnonymous ? <ShieldQuestion className="h-12 w-12" /> :
+                firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-12 w-12" />}
             </AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl md:text-4xl font-bold text-primary">
             Hi, {firstName}!
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground mt-1">
-            Welcome to your LearnMint profile. Manage your journey here.
+            Manage your account and explore all features from here.
           </CardDescription>
         </CardHeader>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Your Account Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!user.isAnonymous && user.email && (
-            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
-              <AtSign className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
-              <div>
-                <span className="font-medium text-sm">Email Address:</span>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
-              <Fingerprint className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
-              <div>
-                <span className="font-medium">Account Type:</span>
-                <p className="text-muted-foreground">{getAccountType()}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
-              <CalendarCheck2 className="h-5 w-5 text-primary/80 mt-0.5 shrink-0" />
-              <div>
-                <span className="font-medium">Joined LearnMint:</span>
-                <p className="text-muted-foreground">{creationTime}</p>
-              </div>
-            </div>
-            {!user.isAnonymous && (
-              <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md sm:col-span-2">
-                <Fingerprint className="h-5 w-5 text-primary/80 opacity-60 mt-0.5 shrink-0" />
-                <div>
-                  <span className="font-medium">User ID (for reference):</span>
-                  <p className="text-xs text-muted-foreground/80 break-all">{user.uid}</p>
-                </div>
-              </div>
-            )}
+        <CardHeader><CardTitle className="text-xl">All Features</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          <div className="border-t">
+            {NAV_ITEMS.map((item) => (
+              item.children ? (
+                <Accordion key={item.title} type="single" collapsible className="w-full">
+                  <AccordionItem value={item.title} className="border-b">
+                    <AccordionTrigger className="p-4 hover:bg-muted/50">
+                      <div className="flex items-center gap-4">
+                        <item.icon className="h-6 w-6 text-primary/80" />
+                        <div>
+                          <h3 className="font-semibold text-foreground text-left">{item.title}</h3>
+                          {item.description && <p className="text-xs text-muted-foreground text-left">{item.description}</p>}
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="bg-muted/20 pl-8 pb-0">
+                      {item.children.map(child => <FeatureLink key={child.href} item={child} onClick={playClickSound} />)}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : (
+                <FeatureLink key={item.href} item={item} onClick={playClickSound} />
+              )
+            ))}
           </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader><CardTitle className="text-xl">Settings</CardTitle></CardHeader>
+        <CardContent className="p-0">
+            <div className="p-4 border-t flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground">App Theme</h3>
+                  <p className="text-xs text-muted-foreground">Switch between light and dark mode.</p>
+                </div>
+                <ThemeToggle />
+            </div>
+             <div className="p-4 border-t flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground">Install App</h3>
+                  <p className="text-xs text-muted-foreground">Add LearnMint to your home screen.</p>
+                </div>
+                <InstallPWAButton />
+            </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/>Explore LearnMint Features</CardTitle>
-          <CardDescription>Dive into your favorite tools and resources.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FeatureLink
-            href="/notes"
-            icon={FileText}
-            title="Craft Your Study Notes"
-            description="AI-powered, detailed notes on any topic. Like having a top student by your side!"
-            onClick={playClickSound}
-          />
-          <FeatureLink
-            href="/custom-test"
-            icon={TestTubeDiagonal}
-            title="Design Your Ultimate Test"
-            description="Tailor exams with specific topics, difficulty, and timers for focused preparation."
-            onClick={playClickSound}
-          />
-          <FeatureLink
-            href="/news"
-            icon={Newspaper}
-            title="Stay Informed, Stay Ahead"
-            description="Your daily dose of global news, filterable to keep you updated on what matters."
-            onClick={playClickSound}
-          />
-          <FeatureLink
-            href="/library"
-            icon={LibraryIcon}
-            title="Expand Your Knowledge Base"
-            description="Explore curated textbooks, search YouTube & Google Books, and discover daily math facts."
-            onClick={playClickSound}
-          />
-          <FeatureLink
-            href="/calculator"
-            icon={CalculatorIcon}
-            title="Precision at Your Fingertips"
-            description="Solve complex equations and convert various units with ease and accuracy."
-            onClick={playClickSound}
-          />
-           <FeatureLink
-            href="/"
-            icon={LayoutDashboard}
-            title="Return to Dashboard"
-            description="Navigate back to the main dashboard to see an overview of all features."
-            onClick={playClickSound}
-          />
-        </CardContent>
-        <CardFooter className="mt-2">
+        <CardFooter className="p-4">
           {user.isAnonymous ? (
             <Button onClick={handleSignInRedirect} className="w-full" variant="default" size="lg">
               <LogIn className="mr-2 h-5 w-5" /> Sign In / Sign Up to Save Progress

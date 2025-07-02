@@ -7,22 +7,17 @@ import type { LucideIcon } from 'lucide-react'; // Type for Lucide icons
 import {
   LayoutDashboard, // Icon for Dashboard
   FileText,        // Icon for Note Generator
-  HelpCircle,      // Icon for Quiz Creator
+  HelpCircle,      // Icon for Quiz Creator (now unused but kept for reference)
   ListChecks,      // Icon for Flashcards
   Sparkles,        // Icon for AI Tools category and general AI features
   Calculator,      // Icon for Calculator
-  Menu,            // Icon for Menu
   Newspaper,       // Icon for Daily News
-  Library,         // Generic library icon (BookMarked is used for Library NAV_ITEM)
+  Library,         // Generic library icon
   Gamepad2,        // Icon for Arcade
-  Settings,        // Icon for Settings (currently placeholder)
-  BookOpen,        // Icon for OpenStax books or general reading
-  Puzzle,          // Icon for Definition Challenge (generic puzzle icon)
-  FlaskConical,    // Generic science icon
   Bot,             // Icon for AI Chatbot
   TestTubeDiagonal,// Icon for Custom Test
   BookMarked,       // Specific icon used for the Library navigation item
-  UserCircle,      // Icon for Profile
+  UserCircle,      // Icon for Profile / "You"
 } from 'lucide-react';
 
 /**
@@ -34,6 +29,7 @@ export interface NavItem {
   title: string;         // The display text for the navigation item.
   href: string;          // The URL path for the navigation link.
   icon: LucideIcon;      // The Lucide icon component to display next to the title.
+  description?: string;  // A short description for feature cards
   label?: string;        // An optional label (e.g., "AI", "New") to highlight the item.
   disabled?: boolean;    // If true, the navigation item is disabled.
   external?: boolean;    // If true, the link is an external URL (opens in a new tab).
@@ -43,34 +39,33 @@ export interface NavItem {
 // --- Main Navigation Items Configuration ---
 // This array defines the structure and content of the primary navigation menu.
 export const NAV_ITEMS: NavItem[] = [
-  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { title: 'Dashboard', href: '/', icon: LayoutDashboard, description: "Return to the main dashboard." },
   {
     title: 'AI Tools',     // Category for AI-powered features
     href: '#',             // '#' indicates a parent item, not a direct link
     icon: Sparkles,
+    description: "Harness the power of AI for your studies.",
     children: [            // Sub-menu items for AI Tools
-      { title: 'Note Generator', href: '/notes', icon: FileText, label: 'AI' },
-      { title: 'Quiz Creator', href: '/quiz', icon: HelpCircle, label: 'AI' },
-      { title: 'Flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
-      { title: 'AI Chatbot', href: '/chatbot', icon: Bot, label: 'AI' },
+      { title: 'Note Generator', href: '/notes', icon: FileText, description: "Generate comprehensive notes on any topic.", label: 'AI' },
+      { title: 'Flashcards', href: '/flashcards', icon: ListChecks, description: "Quickly create flashcard sets for review.", label: 'AI' },
+      { title: 'AI Chatbot', href: '/chatbot', icon: Bot, description: "Chat with helpful AI companions.", label: 'AI' },
     ],
   },
-  { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'Calculator', href: '/calculator', icon: Calculator },
-  { title: 'Daily News', href: '/news', icon: Newspaper },
-  { title: 'Library', href: '/library', icon: BookMarked }, // Uses BookMarked for specificity
-  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
-  { title: 'Profile', href: '/profile', icon: UserCircle }, // Added Profile link
+  { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal, description: "Build tailored tests with custom settings." },
+  { title: 'Calculator', href: '/calculator', icon: Calculator, description: "Access a scientific calculator and unit converter." },
+  { title: 'Daily News', href: '/news', icon: Newspaper, description: "Read the latest news from around the world." },
+  { title: 'Library', href: '/library', icon: BookMarked, description: "Explore textbooks, videos, and books." },
+  { title: 'Arcade', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
 ];
 
 // --- Mobile Bottom Navigation Items ---
-// A curated list for the mobile bottom nav bar. The 'Menu' item is special and handled in the component.
+// A curated list for the mobile bottom nav bar.
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   { title: 'Home', href: '/', icon: LayoutDashboard },
   { title: 'Generate', href: '/notes', icon: FileText },
   { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'Chat', href: '/chatbot', icon: Bot },
-  { title: 'Menu', href: '#', icon: Menu }, // Special item to trigger the full menu
+  { title: 'Library', href: '/library', icon: BookMarked },
+  { title: 'You', href: '/profile', icon: UserCircle }, 
 ];
 
 
