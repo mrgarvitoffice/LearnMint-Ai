@@ -139,9 +139,9 @@ export function useTTS(): TTSHook {
     // Adjust rate based on mobile/desktop and language
     const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
     if (isMobile) {
-      newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9; // More natural rate for mobile
+      newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9; // Normal speed for English on mobile
     } else {
-      newUtterance.rate = isCurrentUtteranceEnglish ? 1.2 : 1.0; // Slower, more natural rate for desktop
+      newUtterance.rate = isCurrentUtteranceEnglish ? 1.1 : 1.0; // Slightly faster for English on desktop
     }
 
     newUtterance.onstart = () => { if (utteranceRef.current === newUtterance) { setIsSpeaking(true); setIsPaused(false); }};
