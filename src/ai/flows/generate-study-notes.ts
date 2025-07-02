@@ -103,7 +103,7 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
     let notesWithPlaceholders = textGenerationResult.output.notes;
     console.log(`[AI Flow - Notes Text] Successfully generated notes text for topic: ${input.topic}. Length: ${notesWithPlaceholders.length}`);
 
-    // "Image" (Text/Link) generation step
+    // Real Image generation step
     const visualPromptRegex = /\[VISUAL_PROMPT:\s*([^\]]+)\]/g;
     let match;
     const visualPrompts: { fullMatch: string, promptText: string }[] = [];
@@ -113,33 +113,30 @@ const generateStudyNotesFlow = aiForNotes.defineFlow(
       visualPrompts.push({ fullMatch: match[0], promptText: match[1].trim() });
     }
     
-    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process for text/link generation:`, visualPrompts.map(vp => vp.promptText));
+    console.log(`[AI Flow - Notes Images] Found ${visualPrompts.length} visual prompts to process for image generation:`, visualPrompts.map(vp => vp.promptText));
 
     if (visualPrompts.length > 0) {
-        const imageInfoResults = await Promise.all(
+        const imageGenerationResults = await Promise.all(
             visualPrompts.map(vp => 
-                generateImageFromPrompt({ prompt: vp.promptText }) // Calls the updated flow
-                .then(imageInfoResult => ({ ...vp, imageInfoResult }))
+                generateImageFromPrompt({ prompt: vp.promptText })
+                .then(imageResult => ({ ...vp, imageResult }))
                 .catch(error => {
-                    console.error(`[AI Flow Error - Image Text/Link Sub-flow] Failed for prompt "${vp.promptText}":`, error);
-                    return { ...vp, imageInfoResult: { error: error.message || "Unknown error getting image text/link" } };
+                    console.error(`[AI Flow Error - Image Gen Sub-flow] Failed for prompt "${vp.promptText}":`, error);
+                    return { ...vp, imageResult: { error: error.message || "Unknown error generating image" } };
                 })
             )
         );
 
         let finalNotes = notesWithPlaceholders;
-        for (const result of imageInfoResults) {
-            if (result.imageInfoResult.imageUrl) {
+        for (const result of imageGenerationResults) {
+            if (result.imageResult.imageUrl) {
                 console.log(`[AI Flow - Notes Images] Got image URL for: "${result.promptText.substring(0,30)}...". Replacing placeholder with image link.`);
-                const markdownImage = `![Visual for: ${result.promptText.replace(/"/g, "'")}](${result.imageInfoResult.imageUrl})`;
+                // The data-ai-hint helps with semantic understanding of the image if needed elsewhere
+                const markdownImage = `![${result.promptText.replace(/"/g, "'")}](${result.imageResult.imageUrl} "data-ai-hint=${result.promptText.toLowerCase().split(' ').slice(0,2).join(' ')}")`;
                 finalNotes = finalNotes.replace(result.fullMatch, markdownImage);
-            } else if (result.imageInfoResult.textDescription) {
-                console.log(`[AI Flow - Notes Images] Got text description for: "${result.promptText.substring(0,30)}...". Replacing placeholder with description.`);
-                const markdownDescription = `> **AI Suggested Description for "${result.promptText.replace(/"/g, "'")}":**\n> ${result.imageInfoResult.textDescription.replace(/\n/g, '\n> ')}`;
-                finalNotes = finalNotes.replace(result.fullMatch, markdownDescription);
             } else {
-                console.warn(`[AI Flow - Notes Images] Failed to get URL or description for prompt: "${result.promptText}". Error: ${result.imageInfoResult.error}. Placeholder will remain.`);
-                // The [VISUAL_PROMPT: ...] will remain, and AiGeneratedImage.tsx will handle it.
+                console.warn(`[AI Flow - Notes Images] Failed to generate image for prompt: "${result.promptText}". Error: ${result.imageResult.error}. Placeholder will remain.`);
+                // The [VISUAL_PROMPT: ...] will remain, and AiGeneratedImage.tsx will handle rendering it as a placeholder.
             }
         }
         console.log(`[AI Flow - Notes Images] Finished processing all visual prompts. Final notes length: ${finalNotes.length}`);
