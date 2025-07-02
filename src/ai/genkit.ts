@@ -85,7 +85,7 @@ if (isApiKeyMissingOrPlaceholder(imageApiKey, 'GOOGLE_API_KEY_IMAGES')) {
   }
 }
 export const aiForImages = genkit({
-  plugins: [googleAI({apiKey: imageApiKey, model: 'googleai/gemini-2.5-flash-lite-preview-06-17'})],
+  plugins: [googleAI({apiKey: imageApiKey, model: 'googleai/gemini-2.0-flash-preview-image-generation'})],
   enableTracingAndMetrics: true,
 });
 

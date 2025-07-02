@@ -35,31 +35,29 @@ const generateImageFromPromptFlow = aiForImages.defineFlow(
   async (input) => {
     console.log(`[AI Flow - Image Gen] Attempting to generate image for prompt: "${input.prompt.substring(0, 50)}..."`);
     try {
-      // WARNING: Using a text model for image generation. This will not produce an image.
-      const { text, finishReason, "usage": _ } = await aiForImages.generate({
-        model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
-        prompt: `A visually appealing, educational diagram or illustration for a study note on the topic: ${input.prompt}. The style should be clear, simple, and easy to understand.`,
-        // The config for responseModalities has been removed as it's not supported by text models.
+      const { media, finishReason, "usage": _ } = await aiForImages.generate({
+        // Using the specific model for image generation.
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: input.prompt,
+        config: {
+          // Both TEXT and IMAGE are required for this model to work correctly.
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
       });
-
-      // The 'media' object will not be returned by a text model. It will always be undefined.
-      const media = undefined;
 
       if (finishReason !== 'STOP' && finishReason !== 'MODEL') {
         const errorDetail = `Generation did not finish successfully. Reason: ${finishReason}.`;
         console.warn(`[AI Flow - Image Gen] ${errorDetail}`);
         return { error: errorDetail };
       }
-
-      // This condition will now always be false.
+      
       if (media?.url) {
         console.log(`[AI Flow - Image Gen] Successfully generated image for prompt: "${input.prompt.substring(0, 50)}..."`);
         return { imageUrl: media.url };
       } else {
-        const errorDetail = 'Image generation did not produce any media output because a text model was used.';
-        console.warn(`[AI Flow - Image Gen] ${errorDetail}`);
-        // Add the text response from the model to the error for debugging.
-        return { error: `${errorDetail} The model returned the following text instead: "${text}"` };
+        const errorDetail = 'Image generation did not produce any media output.';
+        console.error(`[AI Flow - Image Gen] ${errorDetail}`);
+        return { error: errorDetail };
       }
 
     } catch (error: any) {
