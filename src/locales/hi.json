@@ -2,7 +2,7 @@
 {
   "dashboard.welcome": "लर्नमिंट में आपका स्वागत है!",
   "dashboard.description": "नोट्स, क्विज़, टेस्ट और बहुत कुछ के लिए आपका AI-संचालित शिक्षण सहायक।",
-  "dashboard.learnersOnline": "शिक्षार्थी ऑनलाइन",
+  "dashboard.totalLearners": "कुल शिक्षार्थी",
   "dashboard.generateMaterials.title": "अध्ययन सामग्री उत्पन्न करें",
   "dashboard.generateMaterials.description": "AI को किसी भी विषय के लिए व्यापक नोट्स, क्विज़ और फ्लैशकार्ड बनाने दें।",
   "dashboard.generateMaterials.button": "उत्पन्न करना शुरू करें",

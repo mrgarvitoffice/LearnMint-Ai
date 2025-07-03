@@ -2,7 +2,7 @@
 {
   "dashboard.welcome": "¡Bienvenido a LearnMint!",
   "dashboard.description": "Tu asistente de aprendizaje con IA para notas, cuestionarios, exámenes y más.",
-  "dashboard.learnersOnline": "Estudiantes en línea",
+  "dashboard.totalLearners": "Total de Estudiantes",
   "dashboard.generateMaterials.title": "Generar Materiales de Estudio",
   "dashboard.generateMaterials.description": "Deja que la IA cree notas completas, cuestionarios y tarjetas de memoria sobre cualquier tema.",
   "dashboard.generateMaterials.button": "Empezar a Generar",

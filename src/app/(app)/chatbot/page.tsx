@@ -62,8 +62,7 @@ export default function ChatbotPage() {
     currentSpokenMessageRef.current = greetingText;
     speak(greetingText, { priority: 'essential' });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacter]);
+  }, [selectedCharacter, cancelTTS, setVoicePreference, setMessages, speak]);
 
 
   useEffect(() => {

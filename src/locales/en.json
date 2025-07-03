@@ -2,7 +2,7 @@
 {
   "dashboard.welcome": "Welcome to LearnMint!",
   "dashboard.description": "Your AI-powered learning assistant for notes, quizzes, tests, and more.",
-  "dashboard.learnersOnline": "Learners Online",
+  "dashboard.totalLearners": "Total Learners",
   "dashboard.generateMaterials.title": "Generate Study Materials",
   "dashboard.generateMaterials.description": "Let AI create comprehensive notes, quizzes, and flashcards for any topic.",
   "dashboard.generateMaterials.button": "Start Generating",

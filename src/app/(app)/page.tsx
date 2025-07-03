@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -79,7 +80,23 @@ export default function DashboardPage() {
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
+    const [totalLearners, setTotalLearners] = useState(138);
     const pageTitleSpokenRef = useRef(false);
+
+    useEffect(() => {
+        const initialLearners = parseInt(localStorage.getItem('learnmint-learner-count') || '138', 10);
+        setTotalLearners(initialLearners);
+
+        const interval = setInterval(() => {
+            setTotalLearners(prevCount => {
+                const newCount = prevCount + Math.floor(Math.random() * 3); // Always increment
+                localStorage.setItem('learnmint-learner-count', newCount.toString());
+                return newCount;
+            });
+        }, 8000); // update every 8 seconds
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         setVoicePreference('gojo');
@@ -157,7 +174,7 @@ export default function DashboardPage() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                             </span>
-                            <span className="animate-pulse-status">138 {t('dashboard.learnersOnline')}</span>
+                            <span className="animate-pulse-status">{totalLearners} {t('dashboard.totalLearners')}</span>
                         </div>
                     </CardHeader>
                 </Card>

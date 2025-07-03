@@ -2,7 +2,7 @@
 {
   "dashboard.welcome": "LearnMintへようこそ！",
   "dashboard.description": "ノート、クイズ、テストなどのためのAI搭載学習アシスタント。",
-  "dashboard.learnersOnline": "オンライン学習者",
+  "dashboard.totalLearners": "総学習者数",
   "dashboard.generateMaterials.title": "学習教材の生成",
   "dashboard.generateMaterials.description": "AIにあらゆるトピックの包括的なノート、クイズ、フラッシュカードを作成させましょう。",
   "dashboard.generateMaterials.button": "生成を開始",
