@@ -4,15 +4,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { NAV_ITEMS } from "@/lib/constants";
-import { ArrowRight, Sparkles, Trash2, Bot } from "lucide-react";
+import { ArrowRight, Sparkles, Trash2, TestTubeDiagonal, Newspaper, Brain } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
+import { Logo } from '@/components/icons/Logo';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -64,33 +63,87 @@ export default function DashboardPage() {
     }
   };
 
-
   const handleRecentTopicClick = (topic: string) => {
     playClickSound();
     router.push(`/study?topic=${encodeURIComponent(topic)}`);
   }
   
-  const handleAskAiSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      playClickSound();
-      const formData = new FormData(e.currentTarget);
-      const query = formData.get("ai-query") as string;
-      if (query) {
-        router.push('/chatbot');
-      }
-  }
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
 
   return (
     <div className="container mx-auto max-w-4xl py-4 sm:py-8 space-y-6 md:space-y-8">
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+        <motion.div variants={cardVariants} initial="hidden" animate="visible">
+          <Card className="text-center bg-card/80 backdrop-blur-sm">
+            <CardHeader className="items-center">
+              <Logo size={60} />
+              <CardTitle className="text-4xl font-bold mt-4">Welcome to LearnMint!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white text-lg h-12 px-8">
+                <Link href="/notes">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Start Generating Notes
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div 
+            variants={cardVariants} 
+            initial="hidden" 
+            animate="visible"
+            transition={{ delay: 0.1 }}
+        >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Button asChild size="lg" className="h-20 text-lg bg-green-500 hover:bg-green-600 text-white shadow-lg">
+                    <Link href="/custom-test">
+                        <TestTubeDiagonal className="mr-3 h-6 w-6" />
+                        Create Custom Test
+                    </Link>
+                </Button>
+                <Button asChild size="lg" className="h-20 text-lg bg-green-500 hover:bg-green-600 text-white shadow-lg">
+                    <Link href="/news">
+                        <Newspaper className="mr-3 h-6 w-6" />
+                        Daily News
+                    </Link>
+                </Button>
+            </div>
+        </motion.div>
+
+        <motion.div 
+            variants={cardVariants} 
+            initial="hidden" 
+            animate="visible"
+            transition={{ delay: 0.2 }}
+        >
+            <Card>
+                <CardHeader className="flex-row items-center gap-3 space-y-0">
+                    <Brain className="h-6 w-6 text-primary" />
+                    <CardTitle>Daily Motivation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <blockquote className="border-l-2 border-primary/50 pl-4 italic text-muted-foreground">
+                        "The secret of getting ahead is getting started."
+                        <footer className="mt-2 text-sm not-italic">- Mark Twain</footer>
+                    </blockquote>
+                </CardContent>
+            </Card>
+        </motion.div>
+
+        <motion.div 
+            variants={cardVariants} 
+            initial="hidden" 
+            animate="visible"
+            transition={{ delay: 0.3 }}
         >
             <Card>
                 <CardHeader>
-                    <CardTitle>Resume Learning</CardTitle>
-                    <CardDescription>Pick up where you left off or start a new topic.</CardDescription>
+                    <CardTitle>Recent Topics</CardTitle>
+                    <CardDescription>Quickly revisit your recent study sessions.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      {recentTopics.length > 0 ? (
@@ -114,62 +167,6 @@ export default function DashboardPage() {
                             No recent topics. Generate some study materials to see them here!
                         </div>
                      )}
-                </CardContent>
-                <CardFooter>
-                     <Button size="sm" asChild>
-                        <Link href="/notes">
-                            <Sparkles className="mr-2 h-4 w-4" /> Start a New Topic
-                        </Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </motion.div>
-        
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-        >
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bot className="text-primary"/> Ask MintAI</CardTitle>
-                    <CardDescription>Have a question? Get instant help from your AI companion.</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleAskAiSubmit}>
-                    <CardContent>
-                        <Input name="ai-query" placeholder="e.g., Explain the theory of relativity..." className="text-base"/>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit">Go to Chatbot</Button>
-                    </CardFooter>
-                </form>
-            </Card>
-        </motion.div>
-
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-        >
-            <Card>
-                <CardHeader>
-                    <CardTitle>Explore Features</CardTitle>
-                    <CardDescription>Jump into any of LearnMint's powerful tools.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {NAV_ITEMS.flatMap(item => item.children || item).filter(item => item.href !== '/').map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <Link href={item.href} key={item.href} legacyBehavior>
-                                <a className="block group">
-                                    <div className="flex flex-col items-center justify-center text-center gap-2 p-3 border rounded-lg h-full hover:bg-muted/50 hover:border-primary/40 transition-all">
-                                        <Icon className="h-7 w-7 text-primary/80 group-hover:text-primary transition-colors" />
-                                        <span className="text-sm font-semibold">{item.title}</span>
-                                    </div>
-                                </a>
-                            </Link>
-                        );
-                    })}
                 </CardContent>
             </Card>
         </motion.div>
