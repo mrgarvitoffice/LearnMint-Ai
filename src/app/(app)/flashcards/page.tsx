@@ -127,7 +127,7 @@ function AudioFlashcardsGenerator() {
           <ScrollArea className="h-[500px] w-full pr-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {generatedContent.flashcards.map((card, index) => (
-                      <FlashcardItem key={index} flashcard={card} isCurrent={false} />
+                      <FlashcardItem key={index} flashcard={card} isCurrent={false} className="h-56" />
                   ))}
               </div>
           </ScrollArea>
