@@ -105,7 +105,7 @@ function StudyPageContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }

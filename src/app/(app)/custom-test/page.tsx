@@ -182,9 +182,9 @@ export default function CustomTestPage() {
       const percentage = totalPossibleScore > 0 ? Math.max(0, (currentScore / totalPossibleScore) * 100) : 0;
       const calculatedPerformanceTag = getPerformanceTag(percentage);
 
-      if (!resultAnnouncementSpokenRef.current && soundMode === 'full' && !isSpeaking && !isPaused) {
+      if (!resultAnnouncementSpokenRef.current && soundMode !== 'muted' && !isSpeaking && !isPaused) {
         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
-        speak(ttsMessage);
+        speak(ttsMessage, { priority: 'essential' });
         resultAnnouncementSpokenRef.current = true;
       }
       if (!autoSubmitted || (autoSubmitted && !prevTestState.isAutoSubmitting)) {
@@ -217,18 +217,18 @@ export default function CustomTestPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
         speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
-    }, 500); // Delay to allow TTS engine to initialize
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, testState, isLoading, soundMode]);
 
   useEffect(() => {
-    if (isLoading && soundMode === 'full' && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
-      speak("Creating custom test. Please wait.");
+    if (isLoading && soundMode !== 'muted' && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
+      speak("Creating custom test. Please wait.", { priority: 'essential' });
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
@@ -305,8 +305,8 @@ export default function CustomTestPage() {
     pageTitleSpokenRef.current = true;
     generatingMessageSpokenRef.current = false;
 
-    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
-      speak("Creating custom test. Please wait.");
+    if (soundMode !== 'muted' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+      speak("Creating custom test. Please wait.", { priority: 'essential' });
       generatingMessageSpokenRef.current = true;
     }
 
@@ -339,16 +339,16 @@ export default function CustomTestPage() {
           currentQuestionTimeLeft: settings.perQuestionTimer && settings.perQuestionTimer > 0 ? settings.perQuestionTimer : undefined,
         });
         toast({ title: 'Test Generated!', description: 'Your custom test is ready to start.' });
-        if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Test Generated!");
+        if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Test Generated!", { priority: 'essential' });
       } else {
         toast({ title: 'No Questions', description: 'The AI returned no questions for this configuration.', variant: 'destructive' });
-        if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, no questions were returned.");
+        if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Sorry, no questions were returned.", { priority: 'essential' });
       }
     } catch (error) {
       console.error('Error generating custom test:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate test. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, there was an error generating the test.");
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Sorry, there was an error generating the test.", { priority: 'essential' });
     } finally { setIsLoading(false); generatingMessageSpokenRef.current = false; }
   };
 
@@ -387,8 +387,8 @@ export default function CustomTestPage() {
     pageTitleSpokenRef.current = true;
     generatingMessageSpokenRef.current = false;
 
-    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
-      speak("Recreating test. Please wait.");
+    if (soundMode !== 'muted' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+      speak("Recreating test. Please wait.", { priority: 'essential' });
       generatingMessageSpokenRef.current = true;
     }
     let topicForAI = "";
@@ -405,10 +405,10 @@ export default function CustomTestPage() {
             timeLeft: originalSettings.timer && originalSettings.timer > 0 ? originalSettings.timer * 60 : undefined,
             currentQuestionTimeLeft: originalSettings.perQuestionTimer && originalSettings.perQuestionTimer > 0 ? originalSettings.perQuestionTimer : undefined,
           });
-          if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Test ready for retake!");
+          if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Test ready for retake!", { priority: 'essential' });
         } else {
           toast({ title: 'Retake Error', description: 'Could not regenerate questions for retake.', variant: 'destructive' });
-          if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, could not regenerate the test.");
+          if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Sorry, could not regenerate the test.", { priority: 'essential' });
         }
       })
       .catch(error => { console.error('Error retaking test:', error); const errorMessage = error instanceof Error ? error.message : 'Failed to retake test.'; toast({ title: 'Error', description: errorMessage, variant: 'destructive' }); })

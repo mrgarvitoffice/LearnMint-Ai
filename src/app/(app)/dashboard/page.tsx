@@ -74,7 +74,7 @@ const FeatureIcon = ({ item }: { item: NavItem }) => {
 
 export default function DashboardPage() {
     const { t, isReady } = useTranslation();
-    const { speak, setVoicePreference } = useTTS();
+    const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
     const { soundMode } = useSettings();
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
     const router = useRouter();
@@ -82,11 +82,16 @@ export default function DashboardPage() {
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
-    const [totalLearners, setTotalLearners] = useState(21); // Default to 21, will be updated by Firestore
+    const [totalLearners, setTotalLearners] = useState(21);
     const pageTitleSpokenRef = useRef(false);
 
     // Real-time listener for the total user count from Firestore
     useEffect(() => {
+        // Guard against running this effect if the user is not authenticated yet.
+        if (!user) {
+            return;
+        }
+
         const metadataRef = doc(db, 'metadata', 'userStats');
         const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -102,7 +107,7 @@ export default function DashboardPage() {
 
         // Cleanup the listener when the component unmounts
         return () => unsubscribe();
-    }, []);
+    }, [user]); // Depend on the user object to re-run when auth state is confirmed.
 
     useEffect(() => {
         setVoicePreference('gojo');
@@ -133,15 +138,15 @@ export default function DashboardPage() {
         if (isReady) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                if (!pageTitleSpokenRef.current && soundMode === 'full') {
+                if (!pageTitleSpokenRef.current && soundMode !== 'muted' && !isSpeaking && !isPaused) {
                     speak(PAGE_TITLE, { priority: 'optional' });
                     pageTitleSpokenRef.current = true;
                 }
-            }, 100);
+            }, 500);
             
             return () => clearTimeout(timer);
         }
-    }, [speak, soundMode, t, isReady]);
+    }, [speak, soundMode, t, isReady, isPaused, isSpeaking]);
 
     const handleRecentTopicClick = (topic: string) => {
         playClickSound();

@@ -51,11 +51,11 @@ export default function LibraryPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
         speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
-    }, 500); // Delay to allow TTS engine to initialize
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, soundMode]);
@@ -98,7 +98,7 @@ export default function LibraryPage() {
 
   const handleRefreshMathFact = () => {
     playClickSound(); refetchMathFact();
-    if(soundMode === 'full' && !isSpeaking && !isPaused) speak("Fetching new math fact.");
+    if(soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Fetching new math fact.", { priority: 'essential' });
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
@@ -141,7 +141,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
       playActionSound();
-      if(soundMode === 'full' && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
+      if(soundMode !== 'muted' && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`, { priority: 'essential' });
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
       if (isListening && voiceSearchTarget === 'youtube') stopListening();
@@ -153,7 +153,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
       playActionSound();
-      if(soundMode === 'full' && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
+      if(soundMode !== 'muted' && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`, { priority: 'essential' });
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
       if (isListening && voiceSearchTarget === 'books') stopListening();

@@ -24,7 +24,7 @@ export default function ArcadePage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
         speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }

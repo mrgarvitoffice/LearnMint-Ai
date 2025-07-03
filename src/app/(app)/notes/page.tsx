@@ -58,11 +58,11 @@ export default function GenerateNotesPage() {
   useEffect(() => {
     const PAGE_TITLE = t('generate.title');
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
         speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
-    }, 500); // Delay to allow TTS engine to initialize
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, isLoadingAll, soundMode, t]);
@@ -145,8 +145,8 @@ export default function GenerateNotesPage() {
     pageTitleSpokenRef.current = true; 
     generatingMessageSpokenRef.current = false;
 
-    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
-      speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.");
+    if (soundMode !== 'muted' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+      speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.", { priority: 'essential' });
       generatingMessageSpokenRef.current = true;
     }
 
@@ -192,7 +192,7 @@ export default function GenerateNotesPage() {
         toast({ title: t('generate.toast.flashcardsError'), description: fError, variant: 'default' });
       }
       
-      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Study materials generated and cached!");
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Study materials generated and cached!", { priority: 'essential' });
 
       if (navigationSuccess) {
         router.push(`/study?topic=${encodeURIComponent(trimmedTopic)}`);
@@ -203,7 +203,7 @@ export default function GenerateNotesPage() {
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
       toast({ title: t('generate.toast.generationFailed'), description: err.message, variant: 'destructive' });
-      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.");
+      if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.", { priority: 'essential' });
     } finally {
       setIsLoadingAll(false);
       generatingMessageSpokenRef.current = false;
