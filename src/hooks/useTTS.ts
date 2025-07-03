@@ -316,11 +316,12 @@ export function useTTS(): TTSHook {
 
 
   const handleSetVoicePreference = useCallback((preference: 'holo' | 'gojo' | null) => {
+    cancelTTS(); // Stop any current speech immediately upon switching preference.
     setVoicePreference(oldPref => {
         if (oldPref !== preference) return preference;
         return oldPref;
     });
-  }, []);
+  }, [cancelTTS]);
 
   return {
     speak,

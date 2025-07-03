@@ -261,13 +261,6 @@ export default function NewsPage() {
     setIsDisplayingPauseForHindi(false);
   };
   
-  const getSelectedDropdownValue = () => {
-    if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('holo')) return 'holo';
-    if (selectedVoice?.name.toLowerCase().includes('gojo')) return 'gojo';
-    return 'holo';
-  };
-
   const getPlaybackButtonTextAndIcon = () => {
     const currentLanguageFilter = appliedFilters.language || 'en';
     if (currentLanguageFilter === 'hi') {
@@ -295,22 +288,22 @@ export default function NewsPage() {
         </CardHeader>
         <CardContent className="pt-0 pb-4">
           <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
-              <Select
-                value={getSelectedDropdownValue()}
-                onValueChange={(value) => {
-                    playActionSound();
-                    setVoicePreference(value as 'holo' | 'gojo' | null);
-                }}
-              >
-                  <SelectTrigger className="w-full sm:w-auto text-xs h-9 min-w-[120px]">
-                      <Speaker className="h-3.5 w-3.5 mr-1.5 opacity-70"/>
-                      <SelectValue placeholder="Voice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="holo">Holo (Female)</SelectItem>
-                      <SelectItem value="gojo">Gojo (Male)</SelectItem>
-                  </SelectContent>
-              </Select>
+             <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
+                <Button
+                  onClick={() => { playActionSound(); setVoicePreference('gojo'); }}
+                  variant={voicePreference === 'gojo' ? 'default' : 'ghost'}
+                  size="sm" className="text-xs h-8 px-3"
+                >
+                  Gojo
+                </Button>
+                <Button
+                  onClick={() => { playActionSound(); setVoicePreference('holo'); }}
+                  variant={voicePreference === 'holo' || !voicePreference ? 'default' : 'ghost'}
+                  size="sm" className="text-xs h-8 px-3"
+                >
+                  Holo
+                </Button>
+              </div>
               <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText}>
                   {playbackButtonIcon} {playbackButtonText}
               </Button>

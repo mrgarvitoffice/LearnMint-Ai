@@ -7,7 +7,6 @@ import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -160,13 +159,6 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     },
   };
 
-  const getSelectedDropdownValue = () => {
-    if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('holo')) return 'holo';
-    if (selectedVoice?.name.toLowerCase().includes('gojo')) return 'gojo';
-    return 'holo'; // Default UI selection
-  };
-
   return (
     <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
       <CardHeader className="sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b">
@@ -175,16 +167,24 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
             Notes: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select
-              value={getSelectedDropdownValue()}
-              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'holo' | 'gojo' | null);}}
-            >
-              <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="holo">Holo</SelectItem>
-                <SelectItem value="gojo">Gojo</SelectItem>
-              </SelectContent>
-            </Select>
+             <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
+                <Button
+                  onClick={() => { playClickSound(); setVoicePreference('gojo'); }}
+                  variant={voicePreference === 'gojo' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="text-xs h-8 px-3"
+                >
+                  Gojo
+                </Button>
+                <Button
+                  onClick={() => { playClickSound(); setVoicePreference('holo'); }}
+                  variant={voicePreference === 'holo' || !voicePreference ? 'default' : 'ghost'}
+                  size="sm"
+                  className="text-xs h-8 px-3"
+                >
+                  Holo
+                </Button>
+              </div>
             <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
               {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
