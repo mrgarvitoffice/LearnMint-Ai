@@ -6,6 +6,7 @@
 import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
+import { generateAudioFlashcards, type GenerateAudioFlashcardsInput, type GenerateAudioFlashcardsOutput } from "@/ai/flows/generate-audio-flashcards";
 
 import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
@@ -190,6 +191,43 @@ export async function generateFlashcardsAction(input: GenerateFlashcardsInput): 
       clientErrorMessage = "Flashcard Generation: Failed due to an API key issue. Please check server configuration.";
     } else if (error.message) {
       clientErrorMessage = `Flashcard Generation: Failed. Error: ${error.message.substring(0, 150)}. Check server logs for full details.`;
+    }
+    throw new Error(clientErrorMessage);
+  }
+}
+
+/**
+ * generateAudioFlashcardsAction (Standalone Audio Flashcard Generation)
+ *
+ * This server action generates flashcards with accompanying audio narration.
+ *
+ * @param input - Contains the topic and number of flashcards.
+ * @returns A promise that resolves to the generated flashcards (text and audio).
+ * @throws Error if flashcard generation fails or input.topic is not a string.
+ */
+export async function generateAudioFlashcardsAction(input: GenerateAudioFlashcardsInput): Promise<GenerateAudioFlashcardsOutput> {
+  const actionName = "generateAudioFlashcardsAction";
+  console.log(`[Server Action] ${actionName} called for topic: ${input.topic}, numFlashcards: ${input.numFlashcards}`);
+
+  if (typeof input.topic !== 'string') {
+    console.error(`[Server Action Error - ${actionName}] Topic is not a string, received:`, input.topic);
+    throw new Error(`[Server Action - ${actionName}] Critical error: Topic must be a string. Received type: ${typeof input.topic}, value: ${input.topic}`);
+  }
+  const trimmedTopic = input.topic.trim();
+
+  try {
+    const result = await generateAudioFlashcards({ ...input, topic: trimmedTopic });
+     if (!result || !result.flashcards || result.flashcards.length === 0) {
+      throw new Error("AI returned empty or invalid flashcard data.");
+    }
+    return result;
+  } catch (error: any) {
+    console.error(`[Server Action Error - ${actionName}] Error generating audio flashcards:`, error);
+    let clientErrorMessage = "Failed to generate audio flashcards. Please try again.";
+    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid") || error.message.includes("API_KEY_INVALID"))) {
+      clientErrorMessage = "Audio Flashcard Generation: Failed due to an API key issue. Please check server configuration.";
+    } else if (error.message) {
+      clientErrorMessage = `Audio Flashcard Generation: Failed. Error: ${error.message.substring(0, 150)}. Check server logs for full details.`;
     }
     throw new Error(clientErrorMessage);
   }

@@ -52,6 +52,16 @@ export type GenerateFlashcardsFromNotesInput = {
 // Output type uses GenerateFlashcardsOutput as the structure is the same.
 
 
+// For Audio Flashcard Generation
+export type GenerateAudioFlashcardsInput = { 
+  topic: string; 
+  numFlashcards: number;
+};
+export type GenerateAudioFlashcardsOutput = {
+  flashcards: Flashcard[];
+  audioDataUri?: string;
+};
+
 // For News API
 export interface NewsArticle {
   article_id: string;
