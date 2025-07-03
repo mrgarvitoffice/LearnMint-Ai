@@ -126,6 +126,12 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=1:your-sender-id:web:your-app-id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional
 
+# === Firebase App Check (Security) ===
+# CRITICAL: To prevent abuse, enable App Check in your Firebase project and provide the reCAPTCHA v3 Site Key here.
+# Go to Google Cloud Console -> APIs & Services -> Credentials. Create a reCAPTCHA v3 Site Key.
+# Ensure your app's domain(s) (e.g., localhost, your-deployed-site.web.app) are added to the key's allowed domains.
+NEXT_PUBLIC_FIREBASE_RECAPTCHA_SITE_KEY=YOUR_RECAPTCHA_V3_SITE_KEY
+
 # === Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI, Image Generation) ===
 # Get keys from Google AI Studio: https://aistudio.google.com/app/apikey
 # Ensure "Generative Language API" (or Vertex AI) is enabled & billing configured for the Google Cloud project.

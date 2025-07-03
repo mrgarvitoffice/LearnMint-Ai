@@ -6,8 +6,7 @@
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// Add other Firebase SDKs here if needed (e.g., Storage)
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // --- Environment Variable Retrieval ---
 // Retrieve Firebase configuration values from environment variables.
@@ -19,6 +18,7 @@ const storageBucketFromEnv = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 const messagingSenderIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
 const appIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
 const measurementIdFromEnv = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID; // Optional for Firebase Analytics
+const recaptchaSiteKeyFromEnv = process.env.NEXT_PUBLIC_FIREBASE_RECAPTCHA_SITE_KEY; // For App Check
 
 // --- Configuration Logging & Validation (Server-Side) ---
 // These logs will appear in the terminal where your Next.js development server is running.
@@ -59,7 +59,6 @@ if (!projectIdFromEnv) {
 }
 
 // --- Firebase Configuration Object ---
-// Construct the FirebaseOptions object using the retrieved environment variables.
 const firebaseConfig: FirebaseOptions = {
   apiKey: apiKeyFromEnv,
   authDomain: authDomainFromEnv,
@@ -76,6 +75,26 @@ const firebaseConfig: FirebaseOptions = {
 let app;
 if (!getApps().length) { // Check if any Firebase apps have been initialized
   app = initializeApp(firebaseConfig); // Initialize a new app if none exist
+  // Initialize App Check on the client side only
+  if (typeof window !== 'undefined') {
+    if (recaptchaSiteKeyFromEnv) {
+      try {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(recaptchaSiteKeyFromEnv),
+          isTokenAutoRefreshEnabled: true,
+        });
+        console.log("Firebase App Check initialized successfully.");
+      } catch (e) {
+        console.error("Firebase App Check initialization failed:", e);
+      }
+    } else {
+      console.warn("************************************************************************************");
+      console.warn("FIREBASE APP CHECK WARNING: NEXT_PUBLIC_FIREBASE_RECAPTCHA_SITE_KEY is not set.");
+      console.warn("If you have App Check enforced in the Firebase Console, your app will fail to connect.");
+      console.warn("Get a reCAPTCHA v3 site key and add it to your .env file to enable App Check.");
+      console.warn("************************************************************************************");
+    }
+  }
 } else {
   app = getApp(); // Get the already initialized app
 }
