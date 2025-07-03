@@ -142,8 +142,12 @@ function TextAudioSummarizer() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const [textInput, setTextInput] = useState('');
   const [generatedContent, setGeneratedContent] = useState<GenerateAudioSummaryOutput | null>(null);
+
+  const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition } = useVoiceRecognition();
+  useEffect(() => { if (transcript) setTextInput(transcript); }, [transcript]);
 
   const { mutate: generate, isPending: isLoading } = useMutation({
     mutationFn: generateAudioSummaryAction,
@@ -164,23 +168,47 @@ function TextAudioSummarizer() {
     }
     generate({ text: textInput });
   };
+  
+  const handleMicClick = () => {
+    playClickSound();
+    if (isListening) stopListening();
+    else startListening();
+  };
 
   return (
     <Card className="shadow-lg border-none">
       <CardHeader>
         <CardTitle>Text Audio Summarizer</CardTitle>
-        <CardDescription>Paste your notes or any text to get a spoken summary.</CardDescription>
+        <CardDescription>Paste your notes, or dictate them, to get a spoken summary.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Label htmlFor="text-input">Your Text</Label>
-        <Textarea 
-          id="text-input" 
-          placeholder="Paste your content here (minimum 50 characters)..." 
-          value={textInput}
-          onChange={(e) => setTextInput(e.target.value)}
-          rows={8}
-          disabled={isLoading}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="text-input">Your Text</Label>
+          <div className="relative">
+             <Textarea 
+              id="text-input" 
+              placeholder="Paste your content here (minimum 50 characters) or use the mic..." 
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              rows={8}
+              disabled={isLoading}
+              className="pr-12"
+            />
+             {browserSupportsSpeechRecognition && (
+                <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleMicClick} 
+                    disabled={isLoading} 
+                    className="absolute bottom-2 right-2"
+                    title="Use voice input"
+                >
+                    <Mic className={`h-5 w-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
+                </Button>
+            )}
+          </div>
+        </div>
       </CardContent>
       <CardFooter className="flex-col items-center gap-4">
         <Button onClick={handleGenerate} disabled={textInput.trim().length < 50 || isLoading}>
