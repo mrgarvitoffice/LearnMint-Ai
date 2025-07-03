@@ -121,7 +121,7 @@ export function useTTS(): TTSHook {
     utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
     utterance.onend = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(false); setIsPaused(false); }};
     utterance.onerror = (e) => {
-      console.error("Browser TTS Error:", e);
+      console.error("Browser TTS Error:", e.error);
       if (requestId === activeRequestIdRef.current) {
          toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
          setIsSpeaking(false); setIsPaused(false);
