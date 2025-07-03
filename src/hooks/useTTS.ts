@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from './use-toast';
-import { textToSpeech } from '@/ai/flows/text-to-speech';
 
 interface SpeakOptions {
   priority?: 'essential' | 'optional';
@@ -21,8 +20,6 @@ interface TTSHook {
   voicePreference: 'holo' | 'gojo';
 }
 
-let ttsRequestCounter = 0;
-
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -32,22 +29,15 @@ export function useTTS(): TTSHook {
   const { soundMode, appLanguage } = useSettings();
   const { toast } = useToast();
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const isUsingAITtsRef = useRef(false);
   const activeRequestIdRef = useRef(0);
   
   const cancelTTS = useCallback(() => {
     activeRequestIdRef.current += 1; // Invalidate previous requests
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-    }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
     setIsPaused(false);
-    isUsingAITtsRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -67,31 +57,28 @@ export function useTTS(): TTSHook {
     return () => {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             window.speechSynthesis.onvoiceschanged = null;
+            window.speechSynthesis.cancel(); // Also cancel on unmount
         }
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !audioRef.current) {
-      audioRef.current = new Audio();
-    }
-    return cancelTTS; // Cleanup on unmount
-  }, [cancelTTS]);
-
-  const fallbackToBrowserTTS = useCallback((text: string, requestId: number) => {
+  const speakWithBrowserTTS = useCallback((text: string, requestId: number) => {
     if (requestId !== activeRequestIdRef.current) return; // Stale request, ignore.
     
-    isUsingAITtsRef.current = false;
-    console.warn("AI TTS failed or was bypassed. Using browser TTS as fallback.");
-
-    if (typeof window === 'undefined' || !window.speechSynthesis || voices.length === 0) {
-        if(voices.length === 0) console.error("Browser TTS fallback failed: No voices loaded.");
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+        toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
+        setIsSpeaking(false);
+        setIsPaused(false);
+        return;
+    }
+     if (voices.length === 0) {
+        toast({ title: "TTS Voices Not Ready", description: "Speech synthesis voices are not yet loaded. Please try again in a moment.", variant: "default" });
         setIsSpeaking(false);
         setIsPaused(false);
         return;
     }
     
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // Cancel any previous utterance
 
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -139,7 +126,7 @@ export function useTTS(): TTSHook {
 
   }, [appLanguage, voicePreference, toast, voices]);
 
-  const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {
+  const speak = useCallback((text: string, options: SpeakOptions = {}) => {
     const { priority = 'optional' } = options;
 
     if (soundMode === 'muted' || !text.trim()) return;
@@ -148,51 +135,19 @@ export function useTTS(): TTSHook {
     cancelTTS(); // Cancel any ongoing speech before starting a new one
     const currentRequestId = activeRequestIdRef.current += 1;
     
-    setIsSpeaking(true);
-    setIsPaused(false);
-    isUsingAITtsRef.current = true;
-    
-    try {
-      const response = await textToSpeech({ text, voice: voicePreference });
-      if (currentRequestId === activeRequestIdRef.current && audioRef.current) {
-        audioRef.current.src = response.audioDataUri;
-        audioRef.current.play().catch(e => {
-          console.error("AI Audio playback error, falling back:", e);
-          fallbackToBrowserTTS(text, currentRequestId);
-        });
-        audioRef.current.onended = () => {
-          if (currentRequestId === activeRequestIdRef.current) setIsSpeaking(false);
-        };
-        audioRef.current.onerror = (e) => {
-          if (currentRequestId === activeRequestIdRef.current) {
-             console.error("AI Audio element error, falling back.", e);
-             fallbackToBrowserTTS(text, currentRequestId);
-          }
-        };
-      }
-    } catch (error: any) {
-      console.error("AI TTS flow error, falling back:", error);
-      if (currentRequestId === activeRequestIdRef.current) {
-        fallbackToBrowserTTS(text, currentRequestId);
-      }
-    }
-  }, [soundMode, voicePreference, cancelTTS, fallbackToBrowserTTS]);
+    speakWithBrowserTTS(text, currentRequestId);
+
+  }, [soundMode, cancelTTS, speakWithBrowserTTS]);
 
   const pauseTTS = useCallback(() => {
-    if (isUsingAITtsRef.current && audioRef.current && !audioRef.current.paused) {
-      audioRef.current.pause();
-      setIsPaused(true);
-    } else if (typeof window !== 'undefined' && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+    if (typeof window !== 'undefined' && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
       window.speechSynthesis.pause();
       setIsPaused(true);
     }
   }, []);
 
   const resumeTTS = useCallback(() => {
-    if (isUsingAITtsRef.current && audioRef.current && audioRef.current.paused) {
-      audioRef.current.play();
-      setIsPaused(false);
-    } else if (typeof window !== 'undefined' && window.speechSynthesis.paused) {
+    if (typeof window !== 'undefined' && window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
       setIsPaused(false);
     }
