@@ -11,8 +11,8 @@ interface SettingsContextType {
   setSoundMode: (mode: SoundMode) => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
-  voiceLanguage: string;
-  setVoiceLanguage: (lang: string) => void;
+  appLanguage: string;
+  setAppLanguage: (lang: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -20,19 +20,19 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [soundMode, setSoundModeState] = useState<SoundMode>('essential');
   const [fontSize, setFontSizeState] = useState<FontSize>('normal');
-  const [voiceLanguage, setVoiceLanguageState] = useState<string>('en-US');
+  const [appLanguage, setAppLanguageState] = useState<string>('en');
 
   useEffect(() => {
     const savedSoundMode = localStorage.getItem('learnmint-soundMode') as SoundMode;
     const savedFontSize = localStorage.getItem('learnmint-fontSize') as FontSize;
-    const savedLanguage = localStorage.getItem('learnmint-voiceLanguage');
+    const savedLanguage = localStorage.getItem('learnmint-appLanguage');
     if (savedSoundMode && ['full', 'essential', 'muted'].includes(savedSoundMode)) {
       setSoundModeState(savedSoundMode);
     }
     if (savedFontSize && ['small', 'normal', 'large'].includes(savedFontSize)) {
       setFontSizeState(savedFontSize);
     }
-    if (savedLanguage) setVoiceLanguageState(savedLanguage);
+    if (savedLanguage) setAppLanguageState(savedLanguage);
   }, []);
 
   const handleSetFontSize = useCallback((size: FontSize) => {
@@ -52,9 +52,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSoundModeState(mode);
   }, []);
   
-  const handleSetVoiceLanguage = useCallback((lang: string) => {
-    localStorage.setItem('learnmint-voiceLanguage', lang);
-    setVoiceLanguageState(lang);
+  const handleSetAppLanguage = useCallback((lang: string) => {
+    localStorage.setItem('learnmint-appLanguage', lang);
+    setAppLanguageState(lang);
   }, []);
 
   const providerValue = {
@@ -62,8 +62,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSoundMode: handleSetSoundMode,
     fontSize,
     setFontSize: handleSetFontSize,
-    voiceLanguage,
-    setVoiceLanguage: handleSetVoiceLanguage,
+    appLanguage,
+    setAppLanguage: handleSetAppLanguage,
   };
 
   return (

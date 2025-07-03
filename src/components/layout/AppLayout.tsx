@@ -10,6 +10,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { Logo } from '@/components/icons/Logo';
+import { APP_NAME } from '@/lib/constants';
+import Link from 'next/link';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -17,14 +20,13 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
-  const { state: sidebarState } = useSidebar();
+  const { state: sidebarState, toggleSidebar } = useSidebar();
 
   if (isMobile) {
     return (
       <div className="flex min-h-screen w-full flex-col">
-        {/* Header is rendered inside TopMobileNav for mobile */}
         <TopMobileNav /> 
-        <main className="flex-1 overflow-y-auto p-4 pt-20 pb-20">
+        <main className="flex-1 overflow-y-auto p-4 pt-32 pb-20">
           {children}
         </main>
         <BottomMobileNav />
@@ -35,18 +37,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
       <DesktopSidebar />
-      <motion.div 
-        className="flex flex-1 flex-col"
-        animate={{
-            marginLeft: sidebarState === 'expanded' ? '256px' : '80px',
-        }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-      >
-        <Header />
-        <main className="flex-1 gap-4 p-4 sm:px-6 sm:py-4 overflow-y-auto">
-          {children}
-        </main>
-      </motion.div>
+      <div className="flex flex-1 flex-col">
+          <Header onSidebarToggle={toggleSidebar} sidebarState={sidebarState} />
+          <main 
+            className="flex-1 gap-4 p-4 sm:px-6 sm:py-4 overflow-y-auto transition-[margin-left] duration-300 ease-in-out"
+            style={{ marginLeft: sidebarState === 'expanded' ? '256px' : '80px' }}
+          >
+            {children}
+          </main>
+      </div>
     </div>
   );
 }

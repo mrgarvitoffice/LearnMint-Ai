@@ -20,14 +20,15 @@ import { generateNotesAction } from "@/lib/actions";
 import type { CombinedStudyMaterialsOutput } from '@/lib/types'; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const PAGE_TITLE = "Generate Study Materials";
 const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
 const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-";
 
 export default function GenerateNotesPage() {
   const router = useRouter(); 
   const { toast } = useToast(); 
+  const { t } = useTranslation();
 
   const [topic, setTopic] = useState<string>("");
   const [isLoadingAll, setIsLoadingAll] = useState<boolean>(false);
@@ -55,11 +56,11 @@ export default function GenerateNotesPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
-      speak(PAGE_TITLE);
+      speak(t('generate.title'));
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak, isLoadingAll, soundMode]);
+  }, [isSpeaking, isPaused, speak, isLoadingAll, soundMode, t]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
@@ -108,7 +109,7 @@ export default function GenerateNotesPage() {
   const handleGenerateAllMaterials = async () => {
     playActionSound(); 
     if (topic.trim().length < 3) {
-      toast({ title: "Invalid Topic", description: "Topic must be at least 3 characters long.", variant: "destructive" });
+      toast({ title: t('generate.toast.invalidTopic'), description: t('generate.toast.invalidTopicDesc'), variant: "destructive" });
       return;
     }
 
@@ -139,29 +140,29 @@ export default function GenerateNotesPage() {
 
       if (combinedResult.notesOutput?.notes) {
         localStorage.setItem(getCacheKey("notes", trimmedTopic), JSON.stringify(combinedResult.notesOutput));
-        toast({ title: 'Notes Generated & Cached!', description: `Study notes for "${trimmedTopic}" are ready.` });
+        toast({ title: t('generate.toast.notesSuccess'), description: t('generate.toast.notesSuccessDesc', { topic: trimmedTopic }) });
         navigationSuccess = true;
       } else {
-        setNotesError("Failed to generate notes or notes were empty.");
-        toast({ title: 'Notes Generation Failed', description: "Primary notes generation failed.", variant: 'destructive' });
+        setNotesError(t('generate.toast.notesErrorDesc'));
+        toast({ title: t('generate.toast.notesError'), description: t('generate.toast.notesErrorDesc'), variant: 'destructive' });
       }
 
       if (combinedResult.quizOutput?.questions && combinedResult.quizOutput.questions.length > 0) {
         localStorage.setItem(getCacheKey("quiz", trimmedTopic), JSON.stringify(combinedResult.quizOutput));
-        toast({ title: 'Quiz Generated & Cached!', description: `Quiz for "${trimmedTopic}" is ready.` });
+        toast({ title: t('generate.toast.quizSuccess'), description: t('generate.toast.quizSuccessDesc', { topic: trimmedTopic }) });
       } else {
         const qError = combinedResult.quizError || "AI returned no quiz questions.";
         setQuizError(qError);
-        toast({ title: 'Quiz Generation Info', description: qError, variant: 'default' });
+        toast({ title: t('generate.toast.quizError'), description: qError, variant: 'default' });
       }
 
       if (combinedResult.flashcardsOutput?.flashcards && combinedResult.flashcardsOutput.flashcards.length > 0) {
         localStorage.setItem(getCacheKey("flashcards", trimmedTopic), JSON.stringify(combinedResult.flashcardsOutput));
-        toast({ title: 'Flashcards Generated & Cached!', description: `Flashcards for "${trimmedTopic}" are ready.` });
+        toast({ title: t('generate.toast.flashcardsSuccess'), description: t('generate.toast.flashcardsSuccessDesc', { topic: trimmedTopic }) });
       } else {
         const fError = combinedResult.flashcardsError || "AI returned no flashcards.";
         setFlashcardsError(fError);
-        toast({ title: 'Flashcards Generation Info', description: fError, variant: 'default' });
+        toast({ title: t('generate.toast.flashcardsError'), description: fError, variant: 'default' });
       }
       
       if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Study materials generated and cached!");
@@ -174,7 +175,7 @@ export default function GenerateNotesPage() {
       setNotesError(err.message);
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
-      toast({ title: 'Study Material Generation Failed', description: err.message, variant: 'destructive' });
+      toast({ title: t('generate.toast.generationFailed'), description: err.message, variant: 'destructive' });
       if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.");
     } finally {
       setIsLoadingAll(false);
@@ -190,9 +191,9 @@ export default function GenerateNotesPage() {
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4"><GraduationCap className="h-12 w-12 text-primary" /></div>
-          <CardTitle className="text-center text-2xl sm:text-3xl font-bold text-primary">{PAGE_TITLE}</CardTitle>
+          <CardTitle className="text-center text-2xl sm:text-3xl font-bold text-primary">{t('generate.title')}</CardTitle>
           <CardDescription className="text-center text-sm sm:text-base text-muted-foreground px-2">
-            Enter any academic topic. LearnMint AI will generate notes, a 30-question quiz, and 20 flashcards, then take you to the Study Hub.
+            {t('generate.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
@@ -200,14 +201,14 @@ export default function GenerateNotesPage() {
             <Input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Quantum Physics, Cell Biology"
+              placeholder={t('generate.placeholder')}
               className="flex-1 text-base sm:text-lg py-3 px-4 transition-colors duration-200 ease-in-out focus-visible:ring-primary focus-visible:ring-2"
               aria-label="Study Topic"
               onKeyDown={(e) => e.key === 'Enter' && !isLoadingAll && topic.trim().length >=3 && handleGenerateAllMaterials()}
             />
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="outline" size="icon" title="Attach File">
+                <Button type="button" variant="outline" size="icon" title={t('generate.attachFile')}>
                   <FileText className="w-5 h-5 text-muted-foreground hover:text-primary" />
                 </Button>
               </PopoverTrigger>
@@ -220,7 +221,7 @@ export default function GenerateNotesPage() {
                           <ImageIcon className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>Upload Image</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.uploadImage')}</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -228,7 +229,7 @@ export default function GenerateNotesPage() {
                           <AudioLines className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>Audio (Coming Soon)</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.audio')} {t('generate.comingSoon')}</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -236,7 +237,7 @@ export default function GenerateNotesPage() {
                           <Video className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>Video (Coming Soon)</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.video')} {t('generate.comingSoon')}</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -244,7 +245,7 @@ export default function GenerateNotesPage() {
                           <FileText className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>PDF (Coming Soon)</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.pdf')} {t('generate.comingSoon')}</p></TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
@@ -257,8 +258,8 @@ export default function GenerateNotesPage() {
                 size="icon"
                 onClick={handleVoiceCommand}
                 disabled={isLoadingAll || isListening}
-                aria-label="Use Voice Input"
-                title="Use Voice Input"
+                aria-label={t('generate.useVoiceInput')}
+                title={t('generate.useVoiceInput')}
               >
                 <Mic className={`h-5 w-5 ${isListening ? 'text-destructive animate-pulse' : 'text-muted-foreground hover:text-primary'}`} />
               </Button>
@@ -293,7 +294,7 @@ export default function GenerateNotesPage() {
             ) : (
               <FileSignature className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-[5deg] group-hover:scale-110" />
             )}
-            {isLoadingAll ? "Generating & Caching..." : "Generate & Go to Study Hub"}
+            {isLoadingAll ? t('generate.button.loading') : t('generate.button.default')}
           </Button>
         </CardContent>
       </Card>

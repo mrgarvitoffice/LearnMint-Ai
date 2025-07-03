@@ -29,7 +29,7 @@ export function useTTS(): TTSHook {
   const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo'>('holo');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   
-  const { soundMode, voiceLanguage } = useSettings();
+  const { soundMode, appLanguage } = useSettings();
   const { toast } = useToast();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -95,15 +95,12 @@ export function useTTS(): TTSHook {
 
     const utterance = new SpeechSynthesisUtterance(text);
     
-    const targetLang = voiceLanguage.replace('_', '-');
-    const targetLangBase = targetLang.split('-')[0];
+    const targetLang = appLanguage.split('-')[0]; // Use base language code e.g. 'en', 'es'
 
     let selectedVoice: SpeechSynthesisVoice | undefined;
 
-    // Filter voices that match the language code exactly
-    const perfectMatchVoices = voices.filter(v => v.lang.replace('_', '-') === targetLang);
     // Filter voices that match the base language (e.g., 'en' for 'en-US')
-    const baseMatchVoices = voices.filter(v => v.lang.replace('_', '-').startsWith(targetLangBase));
+    const baseMatchVoices = voices.filter(v => v.lang.replace('_', '-').startsWith(targetLang));
 
     const getVoiceByPreference = (voicePool: SpeechSynthesisVoice[]) => {
         const isMale = voicePreference === 'gojo';
@@ -117,17 +114,15 @@ export function useTTS(): TTSHook {
         return preferredVoice || voicePool[0]; // Fallback to the first available voice in the pool
     };
 
-    if (perfectMatchVoices.length > 0) {
-        selectedVoice = getVoiceByPreference(perfectMatchVoices);
-    } else if (baseMatchVoices.length > 0) {
+    if (baseMatchVoices.length > 0) {
         selectedVoice = getVoiceByPreference(baseMatchVoices);
     }
     
     utterance.voice = selectedVoice || null;
-    utterance.lang = targetLang;
+    utterance.lang = appLanguage;
     
     if (!utterance.voice) {
-        console.warn(`Browser TTS: No specific voice found for language '${targetLang}'. Using browser default.`);
+        console.warn(`Browser TTS: No specific voice found for language '${appLanguage}'. Using browser default.`);
     }
 
     utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
@@ -142,7 +137,7 @@ export function useTTS(): TTSHook {
 
     window.speechSynthesis.speak(utterance);
 
-  }, [voiceLanguage, voicePreference, toast, voices]);
+  }, [appLanguage, voicePreference, toast, voices]);
 
   const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {
     const { priority = 'optional' } = options;

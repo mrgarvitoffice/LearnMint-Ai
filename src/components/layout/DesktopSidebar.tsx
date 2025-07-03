@@ -13,6 +13,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { useSidebar } from '../ui/sidebar';
 import { Button } from '../ui/button';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const navItemVariants = {
   expanded: { opacity: 1, x: 0 },
@@ -20,6 +21,7 @@ const navItemVariants = {
 };
 
 function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathname: string, isExpanded: boolean }) {
+  const { t } = useTranslation();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
   const Icon = item.icon;
   const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
@@ -38,11 +40,11 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
               )}
             >
               <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
-              <span className="sr-only">{item.title}</span>
+              <span className="sr-only">{t(item.title)}</span>
             </Link>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p>{item.title}</p>
+            <p>{t(item.title)}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -60,13 +62,14 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
     >
       <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
       <motion.span variants={navItemVariants}>
-        {item.title}
+        {t(item.title)}
       </motion.span>
     </Link>
   );
 }
 
 export function DesktopSidebar() {
+  const { t } = useTranslation();
   const { state, toggleSidebar } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
@@ -75,12 +78,11 @@ export function DesktopSidebar() {
     <motion.aside
       initial={false}
       animate={{ width: isExpanded ? 256 : 80 }}
-      className="fixed top-0 left-0 z-40 h-screen border-r bg-background flex-col hidden md:flex"
+      className="fixed top-0 left-0 z-20 h-full border-r bg-background flex-col hidden md:flex"
     >
-      {/* The branding is now moved to the main Header component */}
       <div className="flex h-16 items-center shrink-0" />
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 mt-5">
         <nav className="grid items-start p-2 text-sm font-medium">
           {NAV_ITEMS.map((item) => (
             <SidebarNavItem key={item.href || item.title} item={item} pathname={pathname} isExpanded={isExpanded} />
@@ -93,7 +95,7 @@ export function DesktopSidebar() {
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-10 w-10">
                   {isExpanded ? <PanelLeftClose className="h-5 w-5"/> : <PanelLeftOpen className="h-5 w-5"/>}
-                  <span className="sr-only">Toggle Sidebar</span>
+                  <span className="sr-only">{isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">

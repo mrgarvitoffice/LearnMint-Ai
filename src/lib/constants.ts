@@ -28,10 +28,10 @@ import {
  * Used for rendering sidebar and header navigation links.
  */
 export interface NavItem {
-  title: string;         // The display text for the navigation item.
+  title: string;         // The display text for the navigation item (acts as translation key).
   href: string;          // The URL path for the navigation link.
   icon: LucideIcon;      // The Lucide icon component to display next to the title.
-  description?: string;  // A short description for feature cards
+  description?: string;  // A short description for feature cards (acts as translation key)
   label?: string;        // An optional label (e.g., "AI", "New") to highlight the item.
   disabled?: boolean;    // If true, the navigation item is disabled.
   external?: boolean;    // If true, the link is an external URL (opens in a new tab).
@@ -40,53 +40,50 @@ export interface NavItem {
 
 // --- Main Navigation Items Configuration (for Desktop Sidebar) ---
 // This array defines the structure and content of the primary navigation menu.
+// Titles are now keys for translation (e.g., 'sidebar.dashboard').
 export const NAV_ITEMS: NavItem[] = [
-  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { title: 'AI Chat', href: '/chatbot', icon: Bot, label: 'AI' },
-  { title: 'Generate Notes', href: '/notes', icon: FileText, label: 'AI' },
-  { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'Flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
-  { title: 'Calculator', href: '/calculator', icon: Calculator },
-  { title: 'Daily News', href: '/news', icon: Newspaper },
-  { title: 'Library', href: '/library', icon: BookMarked },
-  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
-  { title: 'Profile', href: '/profile', icon: UserCircle },
+  { title: 'sidebar.dashboard', href: '/', icon: LayoutDashboard },
+  { title: 'sidebar.aiChat', href: '/chatbot', icon: Bot, label: 'AI' },
+  { title: 'sidebar.generateNotes', href: '/notes', icon: FileText, label: 'AI' },
+  { title: 'sidebar.customTest', href: '/custom-test', icon: TestTubeDiagonal },
+  { title: 'sidebar.flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
+  { title: 'sidebar.calculator', href: '/calculator', icon: Calculator },
+  { title: 'sidebar.dailyNews', href: '/news', icon: Newspaper },
+  { title: 'sidebar.library', href: '/library', icon: BookMarked },
+  { title: 'sidebar.arcade', href: '/arcade', icon: Gamepad2 },
+  { title: 'sidebar.profile', href: '/profile', icon: UserCircle },
 ];
 
 // --- Mobile Top Navigation ---
 export const TOP_NAV_ITEMS: NavItem[] = [
-  { title: 'Chat', href: '/chatbot', icon: Bot },
-  { title: 'Calculator', href: '/calculator', icon: Calculator },
-  { title: 'News', href: '/news', icon: Newspaper }, // Centered Item
-  { title: 'Flashcards', href: '/flashcards', icon: ListChecks },
-  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
+  { title: 'sidebar.aiChat', href: '/chatbot', icon: Bot },
+  { title: 'sidebar.calculator', href: '/calculator', icon: Calculator },
+  { title: 'sidebar.dailyNews', href: '/news', icon: Newspaper },
+  { title: 'sidebar.flashcards', href: '/flashcards', icon: ListChecks },
+  { title: 'sidebar.arcade', href: '/arcade', icon: Gamepad2 },
 ];
 
 // --- Mobile Bottom Navigation ---
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
-  { title: 'Home', href: '/', icon: Home },
-  { title: 'Generate', href: '/notes', icon: NotebookText },
-  { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'Library', href: '/library', icon: BookMarked },
-  { title: 'You', href: '/profile', icon: UserCircle },
+  { title: 'bottombar.home', href: '/', icon: Home },
+  { title: 'bottombar.generate', href: '/notes', icon: NotebookText },
+  { title: 'bottombar.test', href: '/custom-test', icon: TestTubeDiagonal },
+  { title: 'sidebar.library', href: '/library', icon: BookMarked },
+  { title: 'bottombar.you', href: '/profile', icon: UserCircle },
 ];
 
 
 // --- Application Name ---
 export const APP_NAME = "LearnMint";
 
-// --- TTS Languages (for Settings) ---
-export const VOICE_LANGUAGES: { value: string; label: string; }[] = [
-  { value: "en-US", label: "English (US)" },
-  { value: "en-GB", label: "English (UK)" },
-  { value: "es-ES", label: "Spanish (Spain)" },
-  { value: "fr-FR", label: "French (France)" },
-  { value: "de-DE", label: "German" },
-  { value: "it-IT", label: "Italian" },
-  { value: "ja-JP", label: "Japanese" },
-  { value: "ko-KR", label: "Korean" },
-  { value: "pt-BR", label: "Portuguese (Brazil)" },
-  { value: "hi-IN", label: "Hindi" },
+// --- App Languages (for Settings) ---
+export const APP_LANGUAGES: { value: string; label: string; }[] = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Español" },
+  { value: "hi", label: "हिन्दी" },
+  // { value: "fr", label: "Français" },
+  // { value: "de", label: "Deutsch" },
+  // { value: "ja", label: "日本語" },
 ];
 
 
@@ -299,8 +296,8 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Metaphor", definition: "A figure of speech in which a word or phrase is applied to an object or action to which it is not literally applicable.", hint: "Comparing without 'like' or 'as'." },
   { term: "Algorithm", definition: "A process or set of rules to be followed in calculations or other problem-solving operations, especially by a computer.", hint: "Step-by-step instructions." },
   { term: "Renaissance", definition: "The revival of art and literature under the influence of classical models in the 14th–16th centuries.", hint: "French for 'rebirth'." },
-  { value: "Evaporation", definition: "The process of turning from liquid into vapor.", hint: "Water cycle component." },
-  { value: "Hypothesis", definition: "A supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation.", hint: "Educated guess in science." },
-  { value: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
-  { value: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
+  { term: "Evaporation", definition: "The process of turning from liquid into vapor.", hint: "Water cycle component." },
+  { term: "Hypothesis", definition: "A supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation.", hint: "Educated guess in science." },
+  { term: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
+  { term: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
 ];

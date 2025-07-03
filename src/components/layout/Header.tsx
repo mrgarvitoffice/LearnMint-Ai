@@ -15,18 +15,25 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
 import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, ShieldQuestion, Settings, LogIn, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
-import { APP_NAME, VOICE_LANGUAGES } from '@/lib/constants';
+import { APP_NAME, APP_LANGUAGES } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useSidebar } from '../ui/sidebar';
+import { useTranslation } from '@/hooks/useTranslation';
+import { motion } from 'framer-motion';
 
-export function Header() {
+interface HeaderProps {
+  onSidebarToggle: () => void;
+  sidebarState: 'expanded' | 'collapsed';
+}
+
+export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
+  const { t } = useTranslation();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { soundMode, setSoundMode, fontSize, setFontSize, voiceLanguage, setVoiceLanguage } = useSettings();
+  const { soundMode, setSoundMode, fontSize, setFontSize, appLanguage, setAppLanguage } = useSettings();
   
   const handleSignOut = async () => {
     playClickSound();
@@ -62,7 +69,7 @@ export function Header() {
 
   const handleLanguageChange = (value: string) => {
     playClickSound();
-    setVoiceLanguage(value);
+    setAppLanguage(value);
   };
 
   const getUserFirstName = () => {
@@ -77,17 +84,30 @@ export function Header() {
   };
   const firstName = getUserFirstName();
 
-  // A reusable settings dropdown content component
   const SettingsMenuContent = () => (
     <>
-      <DropdownMenuLabel>Settings</DropdownMenuLabel>
+      <DropdownMenuLabel>{t('header.settings')}</DropdownMenuLabel>
       <DropdownMenuSeparator />
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Languages className="mr-2 h-4 w-4" />
+          <span>{t('header.appLanguage')}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
+            {APP_LANGUAGES.map(lang => (
+              <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           {soundMode === 'full' && <Volume2 className="mr-2 h-4 w-4" />}
           {soundMode === 'essential' && <Volume1 className="mr-2 h-4 w-4" />}
           {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
-          <span>Sound Mode</span>
+          <span>{t('header.soundMode')}</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
           <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
@@ -101,7 +121,7 @@ export function Header() {
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           <CaseSensitive className="mr-2 h-4 w-4" />
-          <span>Font Size</span>
+          <span>{t('header.fontSize')}</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
           <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
@@ -114,22 +134,8 @@ export function Header() {
 
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
-          <Languages className="mr-2 h-4 w-4" />
-          <span>Voice Language</span>
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
-          <DropdownMenuRadioGroup value={voiceLanguage} onValueChange={handleLanguageChange}>
-            {VOICE_LANGUAGES.map(lang => (
-              <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
-
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
           {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-          <span>Theme</span>
+          <span>{t('header.theme')}</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
           <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
@@ -144,22 +150,29 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-      <div className="hidden md:flex items-center gap-2">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={() => playClickSound()}>
-            <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Logo size={32} />
-            </motion.div>
-            <span className="font-bold text-xl text-foreground whitespace-nowrap">
-              {APP_NAME}
-            </span>
-        </Link>
-      </div>
+       {/* Pinned Logo and Brand Name */}
+       <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={() => playClickSound()}>
+              <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <Logo size={32} />
+              </motion.div>
+              <span className="hidden sm:inline-block font-bold text-xl text-foreground whitespace-nowrap">
+                {APP_NAME}
+              </span>
+          </Link>
+        </div>
+      
+        {/* Mobile: Hamburger/Sidebar Toggle */}
+        <div className="md:hidden">
+            <Button variant="ghost" size="icon" onClick={onSidebarToggle}>
+                {sidebarState === 'expanded' ? <PanelLeftClose className="h-5 w-5"/> : <PanelLeftOpen className="h-5 w-5"/>}
+                <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+        </div>
 
-      {/* This div pushes the other items to the right */}
       <div className="flex-1" />
 
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Desktop Settings Button */}
         <div className="hidden md:flex items-center gap-1.5">
             <TooltipProvider>
               <Tooltip>
@@ -175,12 +188,11 @@ export function Header() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TooltipTrigger>
-                <TooltipContent><p>Settings</p></TooltipContent>
+                <TooltipContent><p>{t('header.settings')}</p></TooltipContent>
               </Tooltip>
             </TooltipProvider>
         </div>
         
-        {/* Mobile Settings Button */}
         <div className="md:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -193,7 +205,6 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
 
         {user && (
             <DropdownMenu>
@@ -210,7 +221,7 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
-                    <p className="font-semibold">{firstName}</p>
+                    <p className="font-semibold">{t('header.profile.greeting', { name: firstName })}</p>
                     {!user.isAnonymous && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -218,18 +229,18 @@ export function Header() {
                 {user.isAnonymous ? (
                   <DropdownMenuItem onClick={handleSignInRedirect} className="text-primary focus:bg-primary/10 focus:text-primary">
                     <LogIn className="mr-2 h-4 w-4" />
-                    <span>Sign In / Sign Up</span>
+                    <span>{t('header.profile.signIn')}</span>
                   </DropdownMenuItem>
                 ) : (
                   <>
                     <DropdownMenuItem onClick={() => router.push('/profile')}>
                       <UserCircle className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
+                      <span>{t('header.profile.profile')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sign Out</span>
+                      <span>{t('header.profile.signOut')}</span>
                     </DropdownMenuItem>
                   </>
                 )}

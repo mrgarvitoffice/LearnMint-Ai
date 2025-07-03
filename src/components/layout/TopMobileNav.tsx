@@ -8,20 +8,23 @@ import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
 import { NewslyIcon } from '../icons/NewslyIcon';
 import { Header } from './Header';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function TopMobileNav() {
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 md:hidden">
-      <Header />
+      <Header onSidebarToggle={() => {}} sidebarState="collapsed" />
       <nav className="grid h-16 grid-cols-5 items-center justify-around border-b bg-background/90 px-1 backdrop-blur-sm">
         {TOP_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
+          const title = t(item.title);
           
-          if (item.title === 'News') {
+          if (item.title === 'sidebar.dailyNews') {
             return (
               <Link
                 key={item.href}
@@ -34,7 +37,7 @@ export function TopMobileNav() {
               >
                 <div className="flex flex-col items-center justify-center -mt-1">
                   <NewslyIcon className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="text-[10px] font-bold leading-tight mt-0.5">{item.title}</span>
+                  <span className="text-[10px] font-bold leading-tight mt-0.5">{title}</span>
                 </div>
               </Link>
             );
@@ -51,7 +54,7 @@ export function TopMobileNav() {
               onClick={playSound}
             >
               <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
-              <span className="text-[10px] font-medium leading-tight">{item.title}</span>
+              <span className="text-[10px] font-medium leading-tight">{title}</span>
             </Link>
           );
         })}
