@@ -20,6 +20,20 @@ interface TTSHook {
   voicePreference: 'holo' | 'gojo';
 }
 
+// Helper functions to check for gender keywords in voice names
+const isMaleVoice = (name: string): boolean => {
+  const lowerName = name.toLowerCase();
+  const maleKeywords = ['male', 'david', 'mark', 'james', 'tom', 'daniel', 'fred', 'alex', 'john', 'paul', 'michael', 'man'];
+  return maleKeywords.some(kw => lowerName.includes(kw));
+};
+
+const isFemaleVoice = (name: string): boolean => {
+  const lowerName = name.toLowerCase();
+  const femaleKeywords = ['female', 'zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona', 'eva', 'kate', 'linda', 'sarah', 'emily', 'woman', 'girl'];
+  return femaleKeywords.some(kw => lowerName.includes(kw));
+};
+
+
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -41,7 +55,6 @@ export function useTTS(): TTSHook {
   }, []);
 
   useEffect(() => {
-    // Effect to pre-load browser voices
     const getAndSetVoices = () => {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             const availableVoices = window.speechSynthesis.getVoices();
@@ -50,66 +63,63 @@ export function useTTS(): TTSHook {
             }
         }
     };
-    getAndSetVoices(); // Initial attempt
+    getAndSetVoices();
     if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = getAndSetVoices;
     }
     return () => {
         if (typeof window !== 'undefined' && window.speechSynthesis) {
             window.speechSynthesis.onvoiceschanged = null;
-            window.speechSynthesis.cancel(); // Also cancel on unmount
+            cancelTTS();
         }
     };
-  }, []);
+  }, [cancelTTS]);
 
   const speakWithBrowserTTS = useCallback((text: string, requestId: number) => {
-    if (requestId !== activeRequestIdRef.current) return; // Stale request, ignore.
+    if (requestId !== activeRequestIdRef.current) return;
     
     if (typeof window === 'undefined' || !window.speechSynthesis) {
         toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
-        setIsSpeaking(false);
-        setIsPaused(false);
         return;
     }
      if (voices.length === 0) {
         toast({ title: "TTS Voices Not Ready", description: "Speech synthesis voices are not yet loaded. Please try again in a moment.", variant: "default" });
-        setIsSpeaking(false);
-        setIsPaused(false);
         return;
     }
     
-    window.speechSynthesis.cancel(); // Cancel any previous utterance
+    window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    
-    const targetLang = appLanguage.split('-')[0]; // Use base language code e.g. 'en', 'es'
+    const targetLang = appLanguage.split('-')[0];
+    const langMatchingVoices = voices.filter(v => v.lang.replace('_', '-').startsWith(targetLang));
 
     let selectedVoice: SpeechSynthesisVoice | undefined;
 
-    // Filter voices that match the base language (e.g., 'en' for 'en-US')
-    const baseMatchVoices = voices.filter(v => v.lang.replace('_', '-').startsWith(targetLang));
+    if (langMatchingVoices.length > 0) {
+      const isMaleRequired = voicePreference === 'gojo';
+      
+      const genderAppropriateVoices = langMatchingVoices.filter(v => 
+          isMaleRequired ? isMaleVoice(v.name) : isFemaleVoice(v.name)
+      );
 
-    const getVoiceByPreference = (voicePool: SpeechSynthesisVoice[]) => {
-        const isMale = voicePreference === 'gojo';
-        // Try to find a voice that matches the gender preference
-        const preferredVoice = voicePool.find(v => {
-            const name = v.name.toLowerCase();
-            const isMaleVoice = name.includes('male') || ['david', 'mark', 'james', 'tom', 'daniel', 'fred', 'alex'].some(maleName => name.includes(maleName));
-            const isFemaleVoice = name.includes('female') || ['zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona', 'eva'].some(femaleName => name.includes(femaleName));
-            return isMale ? isMaleVoice : isFemaleVoice;
-        });
-        return preferredVoice || voicePool[0]; // Fallback to the first available voice in the pool
-    };
-
-    if (baseMatchVoices.length > 0) {
-        selectedVoice = getVoiceByPreference(baseMatchVoices);
+      const nonConflictingVoices = langMatchingVoices.filter(v =>
+          isMaleRequired ? !isFemaleVoice(v.name) : !isMaleVoice(v.name)
+      );
+      
+      if (genderAppropriateVoices.length > 0) {
+          selectedVoice = genderAppropriateVoices[0]; // Use the first matching gendered voice
+      } else if (nonConflictingVoices.length > 0) {
+          selectedVoice = nonConflictingVoices[0]; // Fallback to a voice that doesn't conflict
+      } else {
+          selectedVoice = langMatchingVoices[0]; // Last resort: use any voice for the language
+      }
     }
     
     utterance.voice = selectedVoice || null;
-    utterance.lang = appLanguage;
+    utterance.lang = selectedVoice?.lang || appLanguage;
     
-    if (!utterance.voice) {
-        console.warn(`Browser TTS: No specific voice found for language '${appLanguage}'. Using browser default.`);
+    if (!selectedVoice) {
+      console.warn(`Browser TTS: No specific voice found for language '${appLanguage}' and preference '${voicePreference}'. Using browser default.`);
     }
 
     utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
@@ -132,9 +142,8 @@ export function useTTS(): TTSHook {
     if (soundMode === 'muted' || !text.trim()) return;
     if (soundMode === 'essential' && priority !== 'essential') return;
     
-    cancelTTS(); // Cancel any ongoing speech before starting a new one
+    cancelTTS();
     const currentRequestId = activeRequestIdRef.current += 1;
-    
     speakWithBrowserTTS(text, currentRequestId);
 
   }, [soundMode, cancelTTS, speakWithBrowserTTS]);

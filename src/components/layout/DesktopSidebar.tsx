@@ -11,8 +11,6 @@ import type { NavItem } from '@/lib/constants';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useSidebar } from '../ui/sidebar';
-import { Button } from '../ui/button';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const navItemVariants = {
@@ -69,14 +67,15 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
 }
 
 export function DesktopSidebar() {
-  const { t } = useTranslation();
-  const { state, toggleSidebar } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
 
   return (
     <motion.aside
       initial={false}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
       animate={{ width: isExpanded ? 256 : 80 }}
       className="fixed top-0 left-0 z-20 h-full border-r bg-background flex-col hidden md:flex"
     >
@@ -89,21 +88,6 @@ export function DesktopSidebar() {
           ))}
         </nav>
       </ScrollArea>
-       <div className="mt-auto flex h-16 items-center justify-center border-t p-2">
-         <TooltipProvider delayDuration={100}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-10 w-10">
-                  {isExpanded ? <PanelLeftClose className="h-5 w-5"/> : <PanelLeftOpen className="h-5 w-5"/>}
-                  <span className="sr-only">{isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}</p>
-              </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-      </div>
     </motion.aside>
   );
 }

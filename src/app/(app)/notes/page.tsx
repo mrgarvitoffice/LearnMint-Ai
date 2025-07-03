@@ -225,27 +225,27 @@ export default function GenerateNotesPage() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" disabled>
+                        <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Audio file input will be supported soon.' })}>
                           <AudioLines className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.audio')} {t('generate.comingSoon')}</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.audio')}</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" disabled>
+                        <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Video file input will be supported soon.' })}>
                           <Video className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.video')} {t('generate.comingSoon')}</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.video')}</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" disabled>
+                        <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'PDF file input will be supported soon.' })}>
                           <FileText className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.pdf')} {t('generate.comingSoon')}</p></TooltipContent>
+                      <TooltipContent><p>{t('generate.pdf')}</p></TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>

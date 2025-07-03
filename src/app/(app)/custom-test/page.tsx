@@ -528,27 +528,27 @@ export default function CustomTestPage() {
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" disabled>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Audio file input will be supported soon.' })}>
                                     <AudioLines className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Audio (Coming Soon)</p></TooltipContent>
+                                <TooltipContent><p>Audio</p></TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" disabled>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Video file input will be supported soon.' })}>
                                     <Video className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Video (Coming Soon)</p></TooltipContent>
+                                <TooltipContent><p>Video</p></TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" disabled>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'PDF file input will be supported soon.' })}>
                                     <FileText className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>PDF (Coming Soon)</p></TooltipContent>
+                                <TooltipContent><p>PDF</p></TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                           </div>
