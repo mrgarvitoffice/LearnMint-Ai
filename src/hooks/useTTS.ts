@@ -84,53 +84,75 @@ export function useTTS(): TTSHook {
     isUsingAITtsRef.current = false;
     console.warn("AI TTS failed or was bypassed. Using browser TTS as fallback.");
 
-    if (typeof window === 'undefined' || !window.speechSynthesis || voices.length === 0) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
         setIsSpeaking(false);
         setIsPaused(false);
-        if (voices.length === 0) console.warn("Browser TTS fallback failed: No voices loaded.");
         return;
     }
     
-    window.speechSynthesis.cancel(); // Ensure any previous speech is stopped.
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language;
-    
-    let suitableVoices = voices.filter(v => v.lang === language);
-    if (suitableVoices.length === 0 && language.includes('-')) {
-      suitableVoices = voices.filter(v => v.lang.startsWith(language.split('-')[0]));
-    }
-
-    let selectedVoice: SpeechSynthesisVoice | undefined;
-    if (suitableVoices.length > 0) {
-      const isMale = voicePreference === 'gojo';
-      selectedVoice = suitableVoices.find(v => {
-        const name = v.name.toLowerCase();
-        if (isMale) {
-          return name.includes('male') || ['david', 'mark', 'james', 'tom', 'daniel', 'fred'].some(maleName => name.includes(maleName));
-        } else {
-          return name.includes('female') || ['zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona'].some(femaleName => name.includes(femaleName));
+    // Voices might not be loaded yet. We need a robust way to get them.
+    const getVoicesAndSpeak = () => {
+        const allVoices = window.speechSynthesis.getVoices();
+        if (allVoices.length === 0 && voices.length === 0) {
+            // This can happen on some browsers. We try again on voiceschanged.
+            toast({ title: "Voice Error", description: `Browser voices not ready. Cannot play audio.`, variant: "destructive" });
+            setIsSpeaking(false);
+            setIsPaused(false);
+            return;
         }
-      });
-      if (!selectedVoice) {
-        selectedVoice = suitableVoices[0];
-      }
+        
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        const targetLang = language.replace('_', '-');
+        const targetLangBase = targetLang.split('-')[0];
+
+        let selectedVoice: SpeechSynthesisVoice | undefined;
+        const voiceList = allVoices.length > 0 ? allVoices : voices;
+
+        // 1. Exact language match (e.g., 'en-US')
+        const perfectMatchVoices = voiceList.filter(v => v.lang.replace('_', '-') === targetLang);
+
+        // 2. Base language match (e.g., 'en')
+        const baseMatchVoices = voiceList.filter(v => v.lang.replace('_', '-').startsWith(targetLangBase));
+
+        const getVoiceByPreference = (voicePool: SpeechSynthesisVoice[]) => {
+           const isMale = voicePreference === 'gojo';
+           let preferredVoice = voicePool.find(v => {
+                const name = v.name.toLowerCase();
+                const genderHint = isMale ? (name.includes('male') || ['david', 'mark', 'james', 'tom', 'daniel', 'fred'].some(maleName => name.includes(maleName))) : (name.includes('female') || ['zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona'].some(femaleName => name.includes(femaleName)));
+                return genderHint;
+           });
+           return preferredVoice || voicePool[0];
+        }
+
+        if (perfectMatchVoices.length > 0) {
+            selectedVoice = getVoiceByPreference(perfectMatchVoices);
+        } else if (baseMatchVoices.length > 0) {
+            selectedVoice = getVoiceByPreference(baseMatchVoices);
+        }
+        
+        utterance.voice = selectedVoice || null;
+        utterance.lang = targetLang; // Set lang on utterance anyway
+        
+        if (!utterance.voice) console.warn(`Browser TTS: No specific voice found for language '${targetLang}'. Using browser default.`);
+
+        utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
+        utterance.onend = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(false); setIsPaused(false); }};
+        utterance.onerror = (e) => {
+          console.error("Browser TTS Error:", e);
+          if (requestId === activeRequestIdRef.current) {
+             toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
+             setIsSpeaking(false); setIsPaused(false);
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
     }
     
-    utterance.voice = selectedVoice || voices.find(v => v.default) || null;
-    if (!utterance.voice) console.warn(`Browser TTS: No voice found for language '${language}'. Using browser default.`);
-    
-    utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
-    utterance.onend = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(false); setIsPaused(false); }};
-    utterance.onerror = (e) => {
-      console.error("Browser TTS Error:", e);
-      if (requestId === activeRequestIdRef.current) {
-         toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
-         setIsSpeaking(false); setIsPaused(false);
-      }
-    };
-    
-    window.speechSynthesis.speak(utterance);
+    getVoicesAndSpeak();
+
   }, [language, voicePreference, toast, voices]);
 
   const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {

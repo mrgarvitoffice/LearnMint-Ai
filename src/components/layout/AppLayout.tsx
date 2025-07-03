@@ -9,6 +9,7 @@ import { BottomMobileNav } from './BottomNavBar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -34,15 +35,18 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
       <DesktopSidebar />
-      <div className={cn(
-        "flex flex-1 flex-col transition-all duration-300 ease-in-out",
-        sidebarState === 'expanded' ? "md:ml-64" : "md:ml-20"
-      )}>
+      <motion.div 
+        className="flex flex-1 flex-col"
+        animate={{
+            marginLeft: sidebarState === 'expanded' ? '256px' : '80px',
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      >
         <Header />
         <main className="flex-1 gap-4 p-4 sm:px-6 sm:py-4 overflow-y-auto">
           {children}
         </main>
-      </div>
+      </motion.div>
     </div>
   );
 }

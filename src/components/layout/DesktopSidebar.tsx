@@ -12,6 +12,8 @@ import { Logo } from '@/components/icons/Logo';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useSidebar } from '../ui/sidebar';
+import { Button } from '../ui/button';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const navItemVariants = {
   expanded: { opacity: 1, x: 0 },
@@ -66,7 +68,7 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
 }
 
 export function DesktopSidebar() {
-  const { state, setOpen } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -80,13 +82,13 @@ export function DesktopSidebar() {
     <motion.aside
       initial={false}
       animate={{ width: isExpanded ? 256 : 80 }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
       className="fixed top-0 left-0 z-50 h-screen border-r bg-background flex-col hidden md:flex"
     >
       <div className="flex h-16 items-center border-b px-4 shrink-0 overflow-hidden">
         <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={playSound}>
-          <Logo size={32} />
+          <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
+             <Logo size={32} />
+          </motion.div>
           <motion.div
             initial="collapsed"
             animate={isExpanded ? "expanded" : "collapsed"}
@@ -105,6 +107,21 @@ export function DesktopSidebar() {
           ))}
         </nav>
       </ScrollArea>
+       <div className="mt-auto flex h-16 items-center justify-center border-t p-2">
+         <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-10 w-10">
+                  {isExpanded ? <PanelLeftClose className="h-5 w-5"/> : <PanelLeftOpen className="h-5 w-5"/>}
+                  <span className="sr-only">Toggle Sidebar</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}</p>
+              </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+      </div>
     </motion.aside>
   );
 }
