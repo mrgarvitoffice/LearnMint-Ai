@@ -27,6 +27,7 @@ export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo'>('holo');
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   
   const { soundMode, language } = useSettings();
   const { toast } = useToast();
@@ -50,6 +51,27 @@ export function useTTS(): TTSHook {
   }, []);
 
   useEffect(() => {
+    // Effect to pre-load browser voices
+    const getAndSetVoices = () => {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+            const availableVoices = window.speechSynthesis.getVoices();
+            if (availableVoices.length > 0) {
+                setVoices(availableVoices);
+            }
+        }
+    };
+    getAndSetVoices(); // Initial attempt
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.addEventListener('voiceschanged', getAndSetVoices);
+    }
+    return () => {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.removeEventListener('voiceschanged', getAndSetVoices);
+        }
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== 'undefined' && !audioRef.current) {
       audioRef.current = new Audio();
     }
@@ -62,46 +84,41 @@ export function useTTS(): TTSHook {
     isUsingAITtsRef.current = false;
     console.warn("AI TTS failed or was bypassed. Using browser TTS as fallback.");
 
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
+    if (typeof window === 'undefined' || !window.speechSynthesis || voices.length === 0) {
         setIsSpeaking(false);
         setIsPaused(false);
+        if (voices.length === 0) console.warn("Browser TTS fallback failed: No voices loaded.");
         return;
     }
     
     window.speechSynthesis.cancel(); // Ensure any previous speech is stopped.
 
     const utterance = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
     utterance.lang = language;
     
-    // --- NEW, ROBUST VOICE SELECTION LOGIC ---
     let suitableVoices = voices.filter(v => v.lang === language);
     if (suitableVoices.length === 0 && language.includes('-')) {
-      // Fallback to base language (e.g., 'en' from 'en-US')
       suitableVoices = voices.filter(v => v.lang.startsWith(language.split('-')[0]));
     }
 
     let selectedVoice: SpeechSynthesisVoice | undefined;
     if (suitableVoices.length > 0) {
       const isMale = voicePreference === 'gojo';
-      // Try to find a voice matching the gender preference by checking for keywords in the voice name
       selectedVoice = suitableVoices.find(v => {
         const name = v.name.toLowerCase();
-        // More comprehensive checks for gendered voice names
         if (isMale) {
           return name.includes('male') || ['david', 'mark', 'james', 'tom', 'daniel', 'fred'].some(maleName => name.includes(maleName));
         } else {
           return name.includes('female') || ['zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona'].some(femaleName => name.includes(femaleName));
         }
       });
-      // If no gender-specific voice is found, just pick the first available one for the language
       if (!selectedVoice) {
         selectedVoice = suitableVoices[0];
       }
     }
     
-    // Final fallback to browser default if no suitable voice was found at all
     utterance.voice = selectedVoice || voices.find(v => v.default) || null;
+    if (!utterance.voice) console.warn(`Browser TTS: No voice found for language '${language}'. Using browser default.`);
     
     utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
     utterance.onend = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(false); setIsPaused(false); }};
@@ -114,7 +131,7 @@ export function useTTS(): TTSHook {
     };
     
     window.speechSynthesis.speak(utterance);
-  }, [language, voicePreference, toast]);
+  }, [language, voicePreference, toast, voices]);
 
   const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {
     const { priority = 'optional' } = options;

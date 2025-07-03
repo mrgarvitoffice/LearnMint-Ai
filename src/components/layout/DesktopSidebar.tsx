@@ -71,6 +71,11 @@ export function DesktopSidebar() {
   const pathname = usePathname();
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
 
+  const brandTextVariants = {
+    expanded: { opacity: 1, x: 0, transition: { duration: 0.3, delay: 0.1 } },
+    collapsed: { opacity: 0, x: -10, transition: { duration: 0.2 } },
+  };
+
   return (
     <motion.aside
       initial={false}
@@ -82,17 +87,15 @@ export function DesktopSidebar() {
       <div className="flex h-16 items-center border-b px-4 shrink-0 overflow-hidden">
         <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={playSound}>
           <Logo size={32} />
-          {isExpanded && (
-            <motion.span
-              variants={navItemVariants}
-              initial="collapsed"
-              animate="expanded"
-              exit="collapsed"
-              className="font-bold text-xl text-foreground whitespace-nowrap"
-            >
+          <motion.div
+            initial="collapsed"
+            animate={isExpanded ? "expanded" : "collapsed"}
+            variants={brandTextVariants}
+          >
+            <span className="font-bold text-xl text-foreground whitespace-nowrap">
               {APP_NAME}
-            </motion.span>
-          )}
+            </span>
+          </motion.div>
         </Link>
       </div>
       <ScrollArea className="flex-1">
