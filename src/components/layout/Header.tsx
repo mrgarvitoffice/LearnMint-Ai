@@ -187,9 +187,6 @@ export function Header() {
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <SettingsMenuContent />
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
