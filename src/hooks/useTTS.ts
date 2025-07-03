@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from './use-toast';
-import { APP_LANGUAGES } from '@/lib/constants';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 
 interface SpeakOptions {
   priority?: 'essential' | 'optional';
@@ -17,165 +17,127 @@ interface TTSHook {
   cancelTTS: () => void;
   isSpeaking: boolean;
   isPaused: boolean;
+  isLoading: boolean;
   setVoicePreference: (preference: 'holo' | 'gojo') => void;
   voicePreference: 'holo' | 'gojo';
 }
 
-// Helper functions to check for gender keywords in voice names
-const isMaleVoice = (name: string): boolean => {
-  const lowerName = name.toLowerCase();
-  const maleKeywords = ['male', 'david', 'mark', 'james', 'tom', 'daniel', 'fred', 'alex', 'john', 'paul', 'michael', 'man'];
-  return maleKeywords.some(kw => lowerName.includes(kw));
-};
-
-const isFemaleVoice = (name: string): boolean => {
-  const lowerName = name.toLowerCase();
-  const femaleKeywords = ['female', 'zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona', 'eva', 'kate', 'linda', 'sarah', 'emily', 'woman', 'girl'];
-  return femaleKeywords.some(kw => lowerName.includes(kw));
-};
-
-
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo'>('holo');
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [voicePreference, setVoicePreferenceState] = useState<'holo' | 'gojo'>('holo');
   
-  const { soundMode, appLanguage } = useSettings();
+  const { soundMode } = useSettings();
   const { toast } = useToast();
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const activeRequestIdRef = useRef(0);
-  
+
   const cancelTTS = useCallback(() => {
     activeRequestIdRef.current += 1; // Invalidate previous requests
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
     }
     setIsSpeaking(false);
     setIsPaused(false);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    const getAndSetVoices = () => {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            const availableVoices = window.speechSynthesis.getVoices();
-            if (availableVoices.length > 0) {
-                setVoices(availableVoices);
+    // Initialize audio element
+    if (!audioRef.current && typeof window !== 'undefined') {
+        audioRef.current = new Audio();
+        
+        audioRef.current.onplay = () => {
+            setIsSpeaking(true);
+            setIsPaused(false);
+            setIsLoading(false);
+        };
+        audioRef.current.onpause = () => {
+            // Differentiate between natural end of audio and manual pause
+            if (audioRef.current && audioRef.current.duration > 0 && audioRef.current.currentTime < audioRef.current.duration) {
+                setIsPaused(true);
+            } else {
+                setIsPaused(false);
             }
-        }
-    };
-    getAndSetVoices();
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = getAndSetVoices;
+            setIsSpeaking(false);
+        };
+        audioRef.current.onended = () => {
+            setIsSpeaking(false);
+            setIsPaused(false);
+            if (audioRef.current) audioRef.current.src = "";
+        };
+        audioRef.current.onstalled = () => {
+          if (isLoading) {
+            toast({ title: "Audio Stalled", description: "The audio stream is having trouble loading.", variant: "default"});
+            setIsLoading(false);
+          }
+        };
     }
+
+    // Cleanup function to cancel any speech when the component unmounts
     return () => {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.onvoiceschanged = null;
-            cancelTTS();
-        }
+      cancelTTS();
     };
-  }, [cancelTTS]);
+  }, [cancelTTS, isLoading, toast]);
 
-  const speakWithBrowserTTS = useCallback((text: string, requestId: number) => {
-    if (requestId !== activeRequestIdRef.current) return;
-    
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-        toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
-        return;
-    }
-    
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const targetLangInfo = APP_LANGUAGES.find(l => l.value === appLanguage) || APP_LANGUAGES[0];
-    const targetBcp47 = targetLangInfo.bcp47;
-    
-    // Find voices that exactly match the BCP 47 tag (e.g., "en-US")
-    const langMatchingVoices = voices.filter(v => v.lang.replace('_', '-') === targetBcp47);
-
-    let selectedVoice: SpeechSynthesisVoice | undefined;
-
-    if (langMatchingVoices.length > 0) {
-      const isMaleRequired = voicePreference === 'gojo';
-      
-      const genderAppropriateVoices = langMatchingVoices.filter(v => 
-          isMaleRequired ? isMaleVoice(v.name) : isFemaleVoice(v.name)
-      );
-
-      // Find voices for the language that are not the opposite gender (a less strict fallback)
-      const nonConflictingVoices = langMatchingVoices.filter(v =>
-          isMaleRequired ? !isFemaleVoice(v.name) : !isMaleVoice(v.name)
-      );
-      
-      if (genderAppropriateVoices.length > 0) {
-          selectedVoice = genderAppropriateVoices[0]; // Use the first matching gendered voice
-      } else if (nonConflictingVoices.length > 0) {
-          selectedVoice = nonConflictingVoices[0]; // Fallback to a voice that doesn't conflict
-      } else {
-          selectedVoice = langMatchingVoices[0]; // Last resort: use any voice for the language
-      }
-    }
-    
-    utterance.voice = selectedVoice || null;
-    utterance.lang = selectedVoice?.lang || targetBcp47; // Use the specific BCP47 tag
-    
-    if (!selectedVoice && voices.length > 0) {
-      console.warn(`Browser TTS: No specific voice found for language '${targetBcp47}' and preference '${voicePreference}'. Using browser default.`);
-    }
-
-    utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
-    utterance.onend = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(false); setIsPaused(false); }};
-    utterance.onerror = (e) => {
-      console.error("Browser TTS Error:", e.error);
-      if (requestId === activeRequestIdRef.current) {
-         toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
-         setIsSpeaking(false); setIsPaused(false);
-      }
-    };
-
-    window.speechSynthesis.speak(utterance);
-
-  }, [appLanguage, voicePreference, toast, voices]);
-
-  const speak = useCallback((text: string, options: SpeakOptions = {}) => {
+  const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {
     const { priority = 'optional' } = options;
 
     if (!text.trim()) return;
     
-    // New, more robust sound mode check
-    if (soundMode === 'muted') {
-      return; // Never speak if muted.
+    // Sound mode check
+    if (soundMode === 'muted' || (soundMode === 'essential' && priority === 'optional')) {
+      return;
     }
-    if (soundMode === 'essential' && priority === 'optional') {
-      return; // Don't speak optional announcements in essential mode.
-    }
-    // In 'full' mode, everything passes.
-    // In 'essential' mode, 'essential' priority sounds pass.
     
-    cancelTTS();
+    // Invalidate any ongoing request and start a new one
     const currentRequestId = activeRequestIdRef.current += 1;
-    speakWithBrowserTTS(text, currentRequestId);
+    cancelTTS(); // Cancel previous sounds before starting a new one
+    setIsLoading(true);
 
-  }, [soundMode, cancelTTS, speakWithBrowserTTS]);
+    try {
+        const result = await textToSpeech({ text, voice: voicePreference });
+        
+        // If another request has started while we were waiting, do nothing.
+        if (currentRequestId !== activeRequestIdRef.current) {
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.audioDataUri && audioRef.current) {
+            audioRef.current.src = result.audioDataUri;
+            await audioRef.current.play();
+        } else {
+            throw new Error("Received no audio data from the server.");
+        }
+    } catch (error: any) {
+        console.error("TTS Generation Error:", error);
+        toast({ title: "Voice Error", description: `Could not generate audio: ${error.message}`, variant: "destructive" });
+        if (currentRequestId === activeRequestIdRef.current) {
+           setIsLoading(false);
+        }
+    }
+  }, [soundMode, cancelTTS, toast, voicePreference]);
 
   const pauseTTS = useCallback(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-      window.speechSynthesis.pause();
-      setIsPaused(true);
+    if (isSpeaking && !isPaused) {
+      audioRef.current?.pause();
     }
-  }, []);
+  }, [isSpeaking, isPaused]);
 
   const resumeTTS = useCallback(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setIsPaused(false);
+    if (isPaused) {
+      audioRef.current?.play().catch(e => console.error("Resume TTS failed", e));
     }
-  }, []);
-
-  const handleSetVoicePreference = useCallback((preference: 'holo' | 'gojo') => {
+  }, [isPaused]);
+  
+  const setVoicePreference = useCallback((preference: 'holo' | 'gojo') => {
     cancelTTS();
-    setVoicePreference(preference);
+    setVoicePreferenceState(preference);
   }, [cancelTTS]);
 
-  return { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, setVoicePreference: handleSetVoicePreference, voicePreference };
+  return { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, isLoading, setVoicePreference, voicePreference };
 }

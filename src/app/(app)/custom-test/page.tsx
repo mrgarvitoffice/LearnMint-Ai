@@ -91,11 +91,9 @@ export default function CustomTestPage() {
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
   const { speak, setVoicePreference } = useTTS();
-  const { soundMode } = useSettings();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
   const pageTitleSpokenRef = useRef(false);
-  const generatingMessageSpokenRef = useRef(false);
   const resultAnnouncementSpokenRef = useRef(false);
 
   const currentQuestionTimerIdRef = useRef<NodeJS.Timeout | null>(null);
@@ -182,9 +180,9 @@ export default function CustomTestPage() {
       const percentage = totalPossibleScore > 0 ? Math.max(0, (currentScore / totalPossibleScore) * 100) : 0;
       const calculatedPerformanceTag = getPerformanceTag(percentage);
 
-      if (!resultAnnouncementSpokenRef.current && soundMode !== 'muted') {
+      if (!resultAnnouncementSpokenRef.current) {
         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
-        speak(ttsMessage);
+        speak(ttsMessage, { priority: 'essential' });
         resultAnnouncementSpokenRef.current = true;
       }
       if (!autoSubmitted || (autoSubmitted && !prevTestState.isAutoSubmitting)) {
@@ -197,7 +195,7 @@ export default function CustomTestPage() {
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, soundMode, speak, toast]);
+  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, speak, toast]);
 
   const handleNextQuestion = useCallback(() => {
       playClickSound();
@@ -217,22 +215,20 @@ export default function CustomTestPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !pageTitleSpokenRef.current && !testState && !isLoading) {
-        speak(PAGE_TITLE);
+      if (!pageTitleSpokenRef.current && !testState && !isLoading) {
+        speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [speak, testState, isLoading, soundMode]);
+  }, [speak, testState, isLoading]);
 
   useEffect(() => {
-    if (isLoading && soundMode !== 'muted' && !generatingMessageSpokenRef.current) {
-      speak("Creating custom test. Please wait.");
-      generatingMessageSpokenRef.current = true;
+    if (isLoading) {
+      speak("Creating custom test. Please wait.", { priority: 'essential' });
     }
-    if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
-  }, [isLoading, speak, soundMode]);
+  }, [isLoading, speak]);
 
   useEffect(() => {
     if (transcript && sourceType === 'topic') setValue('topics', transcript);
@@ -303,18 +299,14 @@ export default function CustomTestPage() {
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
     pageTitleSpokenRef.current = true;
-    generatingMessageSpokenRef.current = false;
 
-    if (soundMode !== 'muted') {
-      speak("Creating custom test. Please wait.");
-      generatingMessageSpokenRef.current = true;
-    }
+    speak("Creating custom test. Please wait.", { priority: 'essential' });
 
     let topicForAI = ""; let topicsForSettings: string[] = [];
     if (data.sourceType === 'topic' && data.topics) { topicForAI = data.topics; topicsForSettings = [data.topics]; }
     else if (data.sourceType === 'notes' && data.notes) { topicForAI = `the following notes: ${data.notes}`; topicsForSettings = ["Notes-based Test"]; }
     else if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > 0) { topicForAI = data.selectedRecentTopics.join(', '); topicsForSettings = data.selectedRecentTopics; }
-    else { toast({ title: "Error", description: "Please provide a topic, notes, or select recent topics.", variant: "destructive" }); setIsLoading(false); generatingMessageSpokenRef.current = false; return; }
+    else { toast({ title: "Error", description: "Please provide a topic, notes, or select recent topics.", variant: "destructive" }); setIsLoading(false); return; }
 
     const settings: TestSettings = {
       topics: topicsForSettings, sourceType: data.sourceType, selectedRecentTopics: data.selectedRecentTopics,
@@ -339,17 +331,17 @@ export default function CustomTestPage() {
           currentQuestionTimeLeft: settings.perQuestionTimer && settings.perQuestionTimer > 0 ? settings.perQuestionTimer : undefined,
         });
         toast({ title: 'Test Generated!', description: 'Your custom test is ready to start.' });
-        if (soundMode !== 'muted') speak("Test Generated!");
+        speak("Test Generated!", { priority: 'essential' });
       } else {
         toast({ title: 'No Questions', description: 'The AI returned no questions for this configuration.', variant: 'destructive' });
-        if (soundMode !== 'muted') speak("Sorry, no questions were returned.");
+        speak("Sorry, no questions were returned.", { priority: 'essential' });
       }
     } catch (error) {
       console.error('Error generating custom test:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate test. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      if (soundMode !== 'muted') speak("Sorry, there was an error generating the test.");
-    } finally { setIsLoading(false); generatingMessageSpokenRef.current = false; }
+      speak("Sorry, there was an error generating the test.", { priority: 'essential' });
+    } finally { setIsLoading(false); }
   };
 
   const handleAnswerSelect = (answer: string) => { 
@@ -385,12 +377,8 @@ export default function CustomTestPage() {
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
     pageTitleSpokenRef.current = true;
-    generatingMessageSpokenRef.current = false;
 
-    if (soundMode !== 'muted' && !generatingMessageSpokenRef.current) {
-      speak("Recreating test. Please wait.");
-      generatingMessageSpokenRef.current = true;
-    }
+    speak("Recreating test. Please wait.", { priority: 'essential' });
     let topicForAI = "";
     if (originalSettings.sourceType === 'topic' && originalSettings.topics.length > 0) topicForAI = originalSettings.topics.join(', ');
     else if (originalSettings.sourceType === 'notes' && originalSettings.notes) topicForAI = `questions based on the following notes: ${originalSettings.notes}`;
@@ -405,21 +393,20 @@ export default function CustomTestPage() {
             timeLeft: originalSettings.timer && originalSettings.timer > 0 ? originalSettings.timer * 60 : undefined,
             currentQuestionTimeLeft: originalSettings.perQuestionTimer && originalSettings.perQuestionTimer > 0 ? originalSettings.perQuestionTimer : undefined,
           });
-          if (soundMode !== 'muted') speak("Test ready for retake!");
+          speak("Test ready for retake!", { priority: 'essential' });
         } else {
           toast({ title: 'Retake Error', description: 'Could not regenerate questions for retake.', variant: 'destructive' });
-          if (soundMode !== 'muted') speak("Sorry, could not regenerate the test.");
+          speak("Sorry, could not regenerate the test.", { priority: 'essential' });
         }
       })
       .catch(error => { console.error('Error retaking test:', error); const errorMessage = error instanceof Error ? error.message : 'Failed to retake test.'; toast({ title: 'Error', description: errorMessage, variant: 'destructive' }); })
-      .finally(() => { setIsLoading(false); generatingMessageSpokenRef.current = false; });
+      .finally(() => { setIsLoading(false); });
   };
 
   const handleNewTest = () => {
     playActionSound(); 
     setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
     pageTitleSpokenRef.current = false; resultAnnouncementSpokenRef.current = false;
-    generatingMessageSpokenRef.current = false;
     setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []);
     setValue('difficulty', 'medium'); setValue('numQuestions', 5); setValue('timer', 0); setValue('perQuestionTimer', 0);
     setRecentTopicsSelectionDone(false);

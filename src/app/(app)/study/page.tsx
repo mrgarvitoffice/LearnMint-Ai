@@ -82,7 +82,6 @@ function StudyPageContent() {
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, setVoicePreference } = useTTS();
-  const { soundMode } = useSettings();
   const queryClient = useQueryClient();
 
   const pageTitleSpokenRef = useRef(false);
@@ -105,14 +104,14 @@ function StudyPageContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !pageTitleSpokenRef.current && activeTopic) {
-        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
+      if (!pageTitleSpokenRef.current && activeTopic) {
+        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [speak, activeTopic, soundMode]);
+  }, [speak, activeTopic]);
 
 
   const getCacheKey = (type: string, topic: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topic.toLowerCase().replace(/\s+/g, '-')}`;

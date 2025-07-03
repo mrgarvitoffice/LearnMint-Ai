@@ -7,12 +7,11 @@ import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, PlayCircle, PauseCircle, StopCircle, VolumeX } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
 import AiGeneratedImage from './AiGeneratedImage';
-import { useSettings } from '@/contexts/SettingsContext';
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -27,11 +26,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     cancelTTS,
     isSpeaking,
     isPaused,
+    isLoading: isTTSLoading,
     setVoicePreference,
   } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
-  const { soundMode } = useSettings();
 
   const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
 
@@ -62,9 +61,6 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   const handlePlaybackControl = useCallback(() => {
     playClickSound();
-    if (soundMode === 'full') {
-        toast({ title: "Sound Mode Info", description: "This is a manual action, so it works in Essential and Muted modes too." });
-    }
     if (!cleanedNotesForTTS) {
         toast({title: "No Content", description: "Nothing to speak.", variant: "destructive"});
         return;
@@ -72,7 +68,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
     else speak(cleanedNotesForTTS, { priority: 'essential' });
-  }, [playClickSound, soundMode, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
+  }, [playClickSound, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
   const handleStopTTS = useCallback(() => {
     playClickSound();
@@ -140,7 +136,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     h3: (props: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80">{props.children}</h3>,
     h4: (props: any) => <h4 className="text-lg font-semibold mt-3 mb-1.5 text-primary/70">{props.children}</h4>,
     ul: (props: any) => <ul className="list-disc pl-5 my-2 space-y-1">{props.children}</ul>,
-    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ol>,
+    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ul>,
     li: (props: any) => <li className="mb-1">{props.children}</li>,
     blockquote: (props: any) => <blockquote className="border-l-4 border-accent pl-4 py-2 my-3 italic bg-accent/10 text-accent-foreground/90 rounded-r-md">{props.children}</blockquote>,
     code: (props: any) => {
@@ -168,8 +164,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
             Notes: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
-              {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isTTSLoading ? "Loading Audio..." : isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"} disabled={isTTSLoading}>
+              {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
             <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
               <StopCircle className="h-4 w-4" />

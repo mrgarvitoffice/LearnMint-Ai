@@ -178,7 +178,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
                             <Settings className="h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-45"/>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuContent align="end" className="w-56" collisionPadding={10}>
                        <SettingsMenuContent />
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -195,7 +195,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
                     <Settings className="h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-45" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56" collisionPadding={10}>
                 <SettingsMenuContent />
             </DropdownMenuContent>
           </DropdownMenu>
@@ -213,7 +213,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56" collisionPadding={10}>
                 <DropdownMenuLabel>
                     <p className="font-semibold">{isGuest ? 'Guest User' : t('header.profile.greeting', { name: firstName })}</p>
                     {user.email && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}

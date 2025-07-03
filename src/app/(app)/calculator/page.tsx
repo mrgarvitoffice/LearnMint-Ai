@@ -51,7 +51,6 @@ export default function CalculatorPage() {
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
   const { speak, setVoicePreference } = useTTS();
-  const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
 
   useEffect(() => {
@@ -60,14 +59,14 @@ export default function CalculatorPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE);
+      if (!pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [speak, soundMode]);
+  }, [speak]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

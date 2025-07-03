@@ -8,12 +8,11 @@ import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, VolumeX } from 'lucide-react';
+import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import { useSettings } from '@/contexts/SettingsContext';
 import { useTTS } from '@/hooks/useTTS';
 
 const PAGE_TITLE = "Global News Terminal";
@@ -46,7 +45,6 @@ export default function NewsPage() {
     isPaused,
     setVoicePreference
   } = useTTS();
-  const { soundMode } = useSettings();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -71,14 +69,14 @@ export default function NewsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-        if (soundMode === 'full' && !pageTitleSpokenRef.current) {
-            speak(PAGE_TITLE);
+        if (!pageTitleSpokenRef.current) {
+            speak(PAGE_TITLE, { priority: 'optional' });
             pageTitleSpokenRef.current = true;
         }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [soundMode, speak]);
+  }, [speak]);
 
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
@@ -147,7 +145,7 @@ export default function NewsPage() {
   const readAllHeadlines = useCallback(() => {
     const headlines = articles.map(a => a.title).filter(Boolean).join('. ');
     if (headlines) {
-        speak(headlines);
+        speak(headlines, { priority: 'essential' });
     } else {
         toast({ title: "No Headlines", description: "No news headlines available to read." });
     }
@@ -155,9 +153,6 @@ export default function NewsPage() {
 
   const handlePlaybackControl = () => {
     playActionSound();
-    if (soundMode === 'full') {
-        toast({ title: "Full Sound Muted", description: "This is a manual action, so it works in Essential and Muted modes too." });
-    }
     if (isSpeaking && !isPaused) {
         pauseTTS();
     } else if (isPaused) {

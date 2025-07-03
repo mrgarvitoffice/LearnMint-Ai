@@ -429,8 +429,8 @@ export default function AudioFactoryPage() {
         </CardHeader>
       </Card>
       
-      <Tabs defaultValue="flashcards" orientation="vertical" className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8">
-        <TabsList className="grid w-full grid-cols-2 gap-4 md:w-full md:grid-cols-1 md:justify-start md:h-auto">
+      <Tabs defaultValue="flashcards" orientation="vertical" className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] gap-12">
+        <TabsList className="grid w-full grid-cols-2 gap-6 md:w-full md:grid-cols-1 md:justify-start md:h-auto">
           <TabsTrigger value="flashcards">{t('audioFactory.tabs.flashcards')}</TabsTrigger>
           <TabsTrigger value="text-summary">Text Summary</TabsTrigger>
           <TabsTrigger value="image-summary">{t('audioFactory.tabs.image')}</TabsTrigger>

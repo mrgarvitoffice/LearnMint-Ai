@@ -36,7 +36,6 @@ export default function LibraryPage() {
   const [selectedBook, setSelectedBook] = useState<GoogleBookItem | null>(null);
   
   const { speak, setVoicePreference } = useTTS();
-  const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
@@ -51,14 +50,14 @@ export default function LibraryPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode === 'full' && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE);
+      if (!pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [speak, soundMode]);
+  }, [speak]);
 
   useEffect(() => {
     if (transcript && voiceSearchTarget) {
@@ -98,7 +97,7 @@ export default function LibraryPage() {
 
   const handleRefreshMathFact = () => {
     playClickSound(); refetchMathFact();
-    if(soundMode !== 'muted') speak("Fetching new math fact.");
+    speak("Fetching new math fact.", { priority: 'optional' });
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
@@ -141,7 +140,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
       playActionSound();
-      if(soundMode !== 'muted') speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
+      speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`, { priority: 'optional' });
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
       if (isListening && voiceSearchTarget === 'youtube') stopListening();
@@ -153,7 +152,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
       playActionSound();
-      if(soundMode !== 'muted') speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
+      speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`, { priority: 'optional' });
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
       if (isListening && voiceSearchTarget === 'books') stopListening();

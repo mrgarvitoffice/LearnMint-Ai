@@ -73,7 +73,6 @@ const FeatureIcon = ({ item }: { item: NavItem }) => {
 export default function DashboardPage() {
     const { t, isReady } = useTranslation();
     const { speak, setVoicePreference } = useTTS();
-    const { soundMode } = useSettings();
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
     const router = useRouter();
     const { totalLearners } = useAuth();
@@ -108,15 +107,17 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
   
     useEffect(() => {
-        if (soundMode === 'full' && !pageTitleSpokenRef.current && isReady) {
+        if (isReady) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                speak(PAGE_TITLE);
-                pageTitleSpokenRef.current = true;
+                if (!pageTitleSpokenRef.current) {
+                    speak(PAGE_TITLE, { priority: 'optional' });
+                    pageTitleSpokenRef.current = true;
+                }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [speak, soundMode, t, isReady]);
+    }, [speak, t, isReady]);
 
     const handleRecentTopicClick = (topic: string) => {
         playClickSound();
@@ -138,7 +139,7 @@ export default function DashboardPage() {
   
     return (
         <motion.div 
-            className="mx-auto max-w-5xl px-4 py-4 sm:py-6 space-y-6 md:space-y-8"
+            className="mx-auto max-w-7xl px-4 py-4 sm:py-6 space-y-6 md:space-y-8"
             initial="hidden"
             animate="visible"
         >
