@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions';
 import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Palette, ImageIcon, Image as ImageIconLucide, FileText, AudioLines, Video } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, ImageIcon, FileText } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -549,22 +549,6 @@ export default function CustomTestPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
-                                    <AudioLines className="w-5 h-5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Audio</p></TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
-                                    <Video className="w-5 h-5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Video</p></TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
                                     <FileText className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -591,7 +575,7 @@ export default function CustomTestPage() {
                       </Button>
                     </div>
                   )}
-                  <input type="file" ref={notesImageInputRef} onChange={handleFileUpload} accept="image/*,application/pdf,audio/*,video/*" className="hidden" />
+                  <input type="file" ref={notesImageInputRef} onChange={handleFileUpload} accept="image/*,application/pdf" className="hidden" />
                   {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
                 </div>
               )}

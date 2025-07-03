@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, Mic, FileSignature, Loader2, AlertTriangle, ImageIcon, XCircle, FileText, AudioLines, Video } from "lucide-react"; 
+import { GraduationCap, Mic, FileSignature, Loader2, AlertTriangle, ImageIcon, XCircle, FileText } from "lucide-react"; 
 import Image from 'next/image';
 
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
@@ -116,7 +116,7 @@ export default function GenerateNotesPage() {
           toast({ title: "PDF Error", description: "Could not extract text from the PDF.", variant: "destructive" });
         }
       } else {
-        toast({ title: "Unsupported File", description: "This feature currently supports Images and PDFs. Audio/Video support is coming next!", variant: "default" });
+        toast({ title: "Unsupported File", description: "This feature currently supports Images and PDFs.", variant: "default" });
       }
     }
   };
@@ -250,22 +250,6 @@ export default function GenerateNotesPage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                          <AudioLines className="w-5 h-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.audio')}</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                          <Video className="w-5 h-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.video')}</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                           <FileText className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
@@ -275,7 +259,7 @@ export default function GenerateNotesPage() {
                 </div>
               </PopoverContent>
             </Popover>
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,application/pdf,audio/*,video/*" className="hidden" />
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,application/pdf" className="hidden" />
              {browserSupportsSpeechRecognition && (
               <Button
                 variant="outline"

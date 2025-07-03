@@ -4,7 +4,7 @@
 import { useState, useRef, type ChangeEvent, type FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Mic, ImageIcon, Loader2, X, FileText, AudioLines, Video } from 'lucide-react';
+import { Send, Mic, ImageIcon, Loader2, X, FileText } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
@@ -53,7 +53,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
         };
         reader.readAsDataURL(file);
       } else {
-        toast({ title: "File Type Not Supported in Chat", description: "Chat currently only supports image uploads. Support for other file types is coming soon!", variant: "default" });
+        toast({ title: "File Type Not Supported in Chat", description: "Chat currently only supports image uploads.", variant: "default" });
       }
     }
   };
@@ -129,35 +129,12 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
                     </TooltipTrigger>
                     <TooltipContent><p>Upload Image</p></TooltipContent>
                   </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                        <AudioLines className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Audio</p></TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                        <Video className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Video</p></TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                        <FileText className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>PDF</p></TooltipContent>
-                  </Tooltip>
+                  {/* PDF upload is not supported in chat, so it's removed from here */}
                 </TooltipProvider>
               </div>
             </PopoverContent>
           </Popover>
-          <input type="file" accept="image/*,application/pdf,audio/*,video/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
 
           {browserSupportsSpeechRecognition && (
             <Button type="button" variant="ghost" size="icon" onClick={toggleListening} disabled={isLoading}>

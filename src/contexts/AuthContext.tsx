@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userDoc = await transaction.get(userRef);
           
           // If the user document already exists, it means they've been counted.
-          // This prevents incrementing the count on subsequent logins.
+          // This is a robust way to prevent incrementing the count on subsequent logins.
           if (userDoc.exists()) {
             return;
           }
@@ -74,12 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     // Check if the user object is available and not loading.
-    // The `metadata.creationTime` check helps ensure this logic runs for newly created users.
-    if (user && user.metadata.creationTime === user.metadata.lastSignInTime) {
+    if (user && !loading) {
+      // A more robust check for a new user is to just attempt the transaction.
+      // The transaction itself will check if the user document exists.
+      // This is better than relying on timestamps which can be unreliable.
       setupNewUser(user);
     }
     
-  }, [user]); // This effect runs whenever the user object changes.
+  }, [user, loading]);
 
 
   if (loading) {
