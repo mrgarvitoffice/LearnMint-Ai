@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -14,10 +13,8 @@ import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Menu, Flame, Bell, ShieldCheck, UserCircle, ShieldQuestion, Settings } from 'lucide-react';
-import { APP_NAME, NAV_ITEMS } from '@/lib/constants';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { SidebarNav } from './SidebarNav';
+import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, ShieldQuestion, Settings } from 'lucide-react';
+import { APP_NAME } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -27,7 +24,7 @@ export function Header() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { soundMode, cycleSoundMode, fontSize, setFontSize, language, setLanguage } = useSettings();
+  const { soundMode, setSoundMode, fontSize, setFontSize, language, setLanguage } = useSettings();
 
   const handleSignOut = async () => {
     playClickSound();
@@ -41,28 +38,20 @@ export function Header() {
     }
   };
   
+  const handleSoundModeChange = (value: string) => {
+    playClickSound();
+    setSoundMode(value as any);
+  };
+  
   const handleFontSizeChange = (value: string) => {
     playClickSound();
     setFontSize(value as any);
   };
   
-  const handleLanguageChange = (value: string) => {
+  const handleThemeChange = (value: string) => {
     playClickSound();
-    setLanguage(value);
-  };
-
-  const handleCycleSoundMode = () => {
-    playClickSound();
-    cycleSoundMode();
-  };
-  
-  const getSoundModeIconAndText = () => {
-    switch (soundMode) {
-      case 'full': return { icon: <Volume2 className="mr-2 h-4 w-4" />, text: "Sound: Full" };
-      case 'essential': return { icon: <Volume1 className="mr-2 h-4 w-4" />, text: "Sound: Essential" };
-      case 'muted': return { icon: <VolumeX className="mr-2 h-4 w-4" />, text: "Sound: Muted" };
-    }
-  };
+    setTheme(value);
+  }
 
   const getUserFirstName = () => {
     if (!user) return "User";
@@ -76,6 +65,57 @@ export function Header() {
   };
   const firstName = getUserFirstName();
 
+  // A reusable settings dropdown content component
+  const SettingsMenuContent = () => (
+    <>
+      <DropdownMenuLabel>Settings</DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          {soundMode === 'full' && <Volume2 className="mr-2 h-4 w-4" />}
+          {soundMode === 'essential' && <Volume1 className="mr-2 h-4 w-4" />}
+          {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
+          <span>Sound Mode</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
+            <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="muted">Muted</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <CaseSensitive className="mr-2 h-4 w-4" />
+          <span>Font Size</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+            <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+          <span>Theme</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
+            <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+    </>
+  );
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       <div className="flex items-center gap-4 md:hidden">
@@ -88,24 +128,23 @@ export function Header() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-1.5 sm:gap-2">
-         <div className="hidden md:flex items-center gap-1.5">
+        <div className="hidden md:flex items-center gap-1.5">
             <TooltipProvider>
-               <Tooltip>
-                    <TooltipTrigger asChild><Button variant="ghost" size="icon"><Flame className="h-5 w-5"/></Button></TooltipTrigger>
-                    <TooltipContent><p>Streak: 7 Days</p></TooltipContent>
-                </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild><Button variant="ghost" size="icon"><ShieldCheck className="h-5 w-5"/></Button></TooltipTrigger>
-                    <TooltipContent><p>Daily Quests</p></TooltipContent>
-                </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild><Button variant="ghost" size="icon"><Bell className="h-5 w-5"/></Button></TooltipTrigger>
-                    <TooltipContent><p>Notifications</p></TooltipContent>
-                </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={handleCycleSoundMode}><Volume2 className="h-5 w-5"/></Button></TooltipTrigger>
-                    <TooltipContent><p>Cycle Sound Mode</p></TooltipContent>
-                </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                   <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Settings className="h-5 w-5"/>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                       <SettingsMenuContent />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TooltipTrigger>
+                <TooltipContent><p>Settings</p></TooltipContent>
+              </Tooltip>
             </TooltipProvider>
         </div>
         
@@ -118,29 +157,7 @@ export function Header() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Settings</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleCycleSoundMode}>
-                  {getSoundModeIconAndText().icon}
-                  <span>{getSoundModeIconAndText().text}</span>
-                </DropdownMenuItem>
-                 <DropdownMenuSub>
-                   <DropdownMenuSubTrigger>
-                     {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                     <span>Theme</span>
-                   </DropdownMenuSubTrigger>
-                   <DropdownMenuSubContent>
-                         <DropdownMenuItem onClick={() => setTheme("light")}>
-                             Light
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => setTheme("dark")}>
-                             Dark
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => setTheme("system")}>
-                             System
-                         </DropdownMenuItem>
-                   </DropdownMenuSubContent>
-                </DropdownMenuSub>
+                <SettingsMenuContent />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -171,58 +188,10 @@ export function Header() {
                   <span>Profile</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <CaseSensitive className="mr-2 h-4 w-4" />
-                    <span>Font Size</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
-                        <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
-                      </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Languages className="mr-2 h-4 w-4" />
-                    <span>Language</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                      {/* Language selection removed from here to simplify, handled by settings page if needed */}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-
-                <div className="md:hidden">
-                  <DropdownMenuItem onClick={handleCycleSoundMode}>
-                    {getSoundModeIconAndText().icon}
-                    <span>{getSoundModeIconAndText().text}</span>
-                  </DropdownMenuItem>
-                </div>
-                
                 <DropdownMenuSeparator />
-                
-                <DropdownMenuSub>
-                   <DropdownMenuSubTrigger>
-                     {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                     <span>Theme</span>
-                   </DropdownMenuSubTrigger>
-                   <DropdownMenuSubContent>
-                         <DropdownMenuItem onClick={() => setTheme("light")}>
-                             Light
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => setTheme("dark")}>
-                             Dark
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => setTheme("system")}>
-                             System
-                         </DropdownMenuItem>
-                   </DropdownMenuSubContent>
-                </DropdownMenuSub>
-
+                <SettingsMenuContent />
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sign Out</span>

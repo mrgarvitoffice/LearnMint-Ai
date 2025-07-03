@@ -1,18 +1,15 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSound } from '@/hooks/useSound';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS, APP_NAME } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Pin, PinOff } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 
 const navItemVariants = {
@@ -72,22 +69,9 @@ export function DesktopSidebar() {
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
-  const [isPinned, setIsPinned] = useState(false);
 
-  const handleMouseEnter = () => {
-    if (!isPinned) setOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    if (!isPinned) setOpen(false);
-  };
-  
-  const togglePin = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIsPinned(!isPinned);
-    setOpen(true); // Keep it open when pinning
-  };
+  const handleMouseEnter = () => setOpen(true);
+  const handleMouseLeave = () => setOpen(false);
 
   return (
     <motion.aside
@@ -120,31 +104,6 @@ export function DesktopSidebar() {
           ))}
         </nav>
       </ScrollArea>
-      <div className="mt-auto p-4 border-t">
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-                <button
-                  onClick={togglePin}
-                  className="flex items-center justify-center h-10 w-full rounded-lg text-muted-foreground transition-colors hover:text-primary hover:bg-muted"
-                >
-                  {isPinned ? <PinOff className="h-5 w-5" /> : <Pin className="h-5 w-5" />}
-                  {isExpanded && (
-                     <motion.span variants={navItemVariants} className="ml-3 whitespace-nowrap">
-                       {isPinned ? "Unpin" : "Pin Sidebar"}
-                     </motion.span>
-                  )}
-                  <span className="sr-only">{isPinned ? "Unpin sidebar" : "Pin sidebar"}</span>
-                </button>
-            </TooltipTrigger>
-             {!isExpanded && (
-                <TooltipContent side="right">
-                    <p>{isPinned ? "Unpin Sidebar" : "Pin Sidebar"}</p>
-                </TooltipContent>
-             )}
-          </Tooltip>
-        </TooltipProvider>
-      </div>
     </motion.aside>
   );
 }

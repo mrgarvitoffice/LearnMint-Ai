@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Brain, Trash2, CheckCircle, FileText, TestTubeDiagonal, Newspaper, Sparkles, BookHeart, History, ListChecks } from "lucide-react";
+import { ArrowRight, Brain, CheckCircle, FileText, TestTubeDiagonal, Newspaper, Sparkles, BookHeart, History } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -184,8 +183,21 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </motion.div>
-
+            
             <motion.div custom={3} variants={cardVariants}>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3"><Brain className="text-primary"/>Daily Quests</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2"><CheckCircle className="text-green-500 h-4 w-4"/> Generate 1 new note set.</div>
+                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> Complete 1 quiz.</div>
+                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> Learn 5 new flashcards.</div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            <motion.div custom={4} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3"><BookHeart className="text-primary"/>Explore All Features</CardTitle>
@@ -198,7 +210,7 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <motion.div custom={4} variants={cardVariants}>
+            <motion.div custom={5} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3"><History className="text-primary"/>Recent Topics</CardTitle>
@@ -221,19 +233,6 @@ export default function DashboardPage() {
                                 No recent topics. Generate some study materials to see them here!
                             </div>
                         )}
-                    </CardContent>
-                </Card>
-            </motion.div>
-
-            <motion.div custom={5} variants={cardVariants}>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Brain className="text-primary"/>Daily Quests</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2"><CheckCircle className="text-green-500 h-4 w-4"/> Generate 1 new note set.</div>
-                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> Complete 1 quiz.</div>
-                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> Learn 5 new flashcards.</div>
                     </CardContent>
                 </Card>
             </motion.div>

@@ -1,15 +1,13 @@
-
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { useSound } from '@/hooks/useSound';
 
 export type SoundMode = 'full' | 'essential' | 'muted';
 export type FontSize = 'small' | 'normal' | 'large';
 
 interface SettingsContextType {
   soundMode: SoundMode;
-  cycleSoundMode: () => void;
+  setSoundMode: (mode: SoundMode) => void;
   setFontSize: (size: FontSize) => void;
   setLanguage: (lang: string) => void;
   fontSize: FontSize;
@@ -19,7 +17,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [soundMode, setSoundMode] = useState<SoundMode>('essential'); // Default to essential
+  const [soundMode, setSoundModeState] = useState<SoundMode>('essential');
   const [fontSize, setFontSize] = useState<FontSize>('normal');
   const [language, setLanguage] = useState<string>('en-US');
 
@@ -28,7 +26,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const savedFontSize = localStorage.getItem('learnmint-fontSize') as FontSize;
     const savedLanguage = localStorage.getItem('learnmint-language');
     if (savedSoundMode && ['full', 'essential', 'muted'].includes(savedSoundMode)) {
-      setSoundMode(savedSoundMode);
+      setSoundModeState(savedSoundMode);
     }
     if (savedFontSize && ['small', 'normal', 'large'].includes(savedFontSize)) {
       setFontSize(savedFontSize);
@@ -43,12 +41,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('learnmint-fontSize', fontSize);
   }, [fontSize]);
 
-  const cycleSoundMode = useCallback(() => {
-    setSoundMode(prev => {
-      const newMode = prev === 'full' ? 'essential' : prev === 'essential' ? 'muted' : 'full';
-      localStorage.setItem('learnmint-soundMode', newMode);
-      return newMode;
-    });
+  const handleSetSoundMode = useCallback((mode: SoundMode) => {
+    localStorage.setItem('learnmint-soundMode', mode);
+    setSoundModeState(mode);
   }, []);
 
   const handleSetFontSize = useCallback((size: FontSize) => {
@@ -62,7 +57,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const providerValue = {
     soundMode,
-    cycleSoundMode,
+    setSoundMode: handleSetSoundMode,
     fontSize,
     setFontSize: handleSetFontSize,
     language,
