@@ -108,7 +108,7 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
   
     useEffect(() => {
-        if (isReady && soundMode === 'full' && !pageTitleSpokenRef.current) {
+        if (soundMode === 'full' && !pageTitleSpokenRef.current && isReady) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
                 speak(PAGE_TITLE);
@@ -138,7 +138,7 @@ export default function DashboardPage() {
   
     return (
         <motion.div 
-            className="container mx-auto max-w-4xl py-4 sm:py-6 space-y-6 md:space-y-8"
+            className="mx-auto max-w-5xl px-4 py-4 sm:py-6 space-y-6 md:space-y-8"
             initial="hidden"
             animate="visible"
         >

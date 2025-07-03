@@ -4,13 +4,14 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
+import { doc, onSnapshot } from "firebase/firestore";
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  totalLearners: number; // Keep the property for type consistency, but it will be static.
+  totalLearners: number;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,18 +23,37 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [totalLearners, setTotalLearners] = useState(21); // Default value
 
-  // Core authentication listener. This is the only effect needed.
+  // Core authentication listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // The AuthProvider now handles the initial loading state for the entire app.
+  // Real-time listener for total learners count
+  useEffect(() => {
+    // Only attach the listener if authentication is resolved (not loading)
+    if (!loading) {
+      const docRef = doc(db, 'metadata', 'userCount');
+      const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setTotalLearners(docSnap.data().count || 21);
+        } else {
+          console.warn("Learner count document does not exist in Firestore at 'metadata/userCount'.");
+        }
+      }, (error) => {
+        console.error("Error fetching real-time learner count:", error);
+      });
+      // Detach listener on cleanup
+      return () => unsubscribe();
+    }
+  }, [loading]); // This effect depends only on the loading state
+
+  // Initial loading screen for the entire app
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
@@ -44,8 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    // Provide the core auth state. The `totalLearners` is now a static number to avoid database calls during auth.
-    <AuthContext.Provider value={{ user, loading, totalLearners: 21 }}>
+    <AuthContext.Provider value={{ user, loading, totalLearners }}>
       {children}
     </AuthContext.Provider>
   );
