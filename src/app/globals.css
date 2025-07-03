@@ -107,26 +107,15 @@
     --chart-5: 340 75% 50%;
   }
 
-  /* Font Size Variables */
-  html {
-    --font-scale: 1;
-  }
+  /* Font Size Variables - This approach ensures all rem-based units scale correctly */
   html.font-size-small {
-    --font-scale: 0.9;
+    font-size: 15px;
+  }
+  html.font-size-normal {
+    font-size: 16px; /* Default */
   }
   html.font-size-large {
-    --font-scale: 1.1;
-  }
-  
-  /* Apply font scaling */
-  body {
-    font-size: calc(1rem * var(--font-scale));
-  }
-  .prose {
-    font-size: calc(1rem * var(--font-scale));
-  }
-  .prose-sm {
-    font-size: calc(0.875rem * var(--font-scale));
+    font-size: 17.5px;
   }
 }
 
@@ -169,25 +158,25 @@
   /* Custom styles for prose content (e.g., generated notes) */
   .prose h1, .dark .prose h1, .light .prose h1 {
     color: hsl(var(--primary));
-    font-size: calc(2.25rem * var(--font-scale)); /* 36px */
+    font-size: 2.25rem;
     @apply font-extrabold mt-0 mb-6 first:mt-0;
   }
   
   .prose h2, .dark .prose h2, .light .prose h2 {
     color: hsl(var(--foreground));
-    font-size: calc(1.875rem * var(--font-scale)); /* 30px */
+    font-size: 1.875rem;
     @apply font-bold mt-8 mb-4 border-b pb-2;
   }
   
   .prose h3, .dark .prose h3, .light .prose h3 {
     color: hsl(var(--foreground));
-    font-size: calc(1.5rem * var(--font-scale)); /* 24px */
+    font-size: 1.5rem;
     @apply font-semibold mt-6 mb-3;
   }
   
   .prose h4, .dark .prose h4, .light .prose h4 {
     color: hsl(var(--foreground));
-    font-size: calc(1.25rem * var(--font-scale)); /* 20px */
+    font-size: 1.25rem;
     @apply font-semibold mt-4 mb-2;
   }
 
@@ -205,7 +194,7 @@
     color: hsl(var(--card-foreground));
   }
    .prose blockquote p { 
-    font-size: calc(1rem * var(--font-scale)); 
+    font-size: 1rem; 
     @apply mb-0; 
   }
   .prose blockquote p:last-child {
