@@ -17,7 +17,7 @@ import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { useSettings } from '@/contexts/SettingsContext';
 
-import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
+import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from "@/lib/actions";
 import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QueryError } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
@@ -104,14 +104,14 @@ function StudyPageContent() {
   }, [setVoicePreference]);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
-        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
+    const timer = setTimeout(() => {
+      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
+        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
-    }
-    return () => {
-      isMounted = false;
-    };
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, activeTopic, soundMode]);
 
 

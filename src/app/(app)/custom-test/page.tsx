@@ -216,12 +216,14 @@ export default function CustomTestPage() {
 
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
-      speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
-    }
-    return () => { isMounted = false; };
+    const timer = setTimeout(() => {
+      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
+        speak(PAGE_TITLE, { priority: 'optional' });
+        pageTitleSpokenRef.current = true;
+      }
+    }, 500); // Delay to allow TTS engine to initialize
+
+    return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, testState, isLoading, soundMode]);
 
   useEffect(() => {

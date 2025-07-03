@@ -59,12 +59,14 @@ export default function CalculatorPage() {
   }, [setVoicePreference]);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE, { priority: 'optional' });
-      pageTitleSpokenRef.current = true;
-    }
-    return () => { isMounted = false; };
+    const timer = setTimeout(() => {
+      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE, { priority: 'optional' });
+        pageTitleSpokenRef.current = true;
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, soundMode]);
 
   useEffect(() => {

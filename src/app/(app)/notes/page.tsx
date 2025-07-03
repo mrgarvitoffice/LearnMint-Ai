@@ -56,12 +56,15 @@ export default function GenerateNotesPage() {
   }, [setVoicePreference]);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
-      speak(t('generate.title'));
-      pageTitleSpokenRef.current = true;
-    }
-    return () => { isMounted = false; };
+    const PAGE_TITLE = t('generate.title');
+    const timer = setTimeout(() => {
+      if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
+        speak(PAGE_TITLE, { priority: 'optional' });
+        pageTitleSpokenRef.current = true;
+      }
+    }, 500); // Delay to allow TTS engine to initialize
+
+    return () => clearTimeout(timer);
   }, [isSpeaking, isPaused, speak, isLoadingAll, soundMode, t]);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
@@ -32,6 +32,7 @@ const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion:
 export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
+  const pageTitleSpokenRef = useRef(false);
   
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { toast } = useToast();
@@ -67,6 +68,17 @@ export default function NewsPage() {
       cancelTTS();
     };
   }, [setVoicePreference, cancelTTS]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        if (soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+            speak(PAGE_TITLE, { priority: 'optional' });
+            pageTitleSpokenRef.current = true;
+        }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [soundMode, isSpeaking, isPaused, speak]);
 
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
