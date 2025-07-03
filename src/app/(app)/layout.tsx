@@ -44,13 +44,13 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
     );
   }
 
-  // If not loading and still no user (e.g., redirect is in progress or failed)
+  // If not loading and still no user, or user object is not fully loaded.
   // This state might be briefly visible before redirection completes.
-  if (!user) {
+  if (!user || !user.uid) {
     return (
        <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Redirecting to sign in...</p>
+        <p className="mt-4 text-lg">Verifying session...</p>
       </div>
     );
   }

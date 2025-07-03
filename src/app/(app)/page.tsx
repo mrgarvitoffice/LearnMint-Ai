@@ -16,8 +16,6 @@ import { Logo } from '@/components/icons/Logo';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
-import { db } from '@/lib/firebase/config';
-import { doc, onSnapshot } from 'firebase/firestore';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -78,32 +76,11 @@ export default function DashboardPage() {
     const { soundMode } = useSettings();
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
     const router = useRouter();
-    const { user } = useAuth();
+    const { totalLearners } = useAuth();
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
-    const [totalLearners, setTotalLearners] = useState(21);
     const pageTitleSpokenRef = useRef(false);
-
-    useEffect(() => {
-        if (!user) return; // Guard: Don't run if user is not authenticated.
-
-        const metadataRef = doc(db, 'metadata', 'userStats');
-        const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setTotalLearners(docSnap.data().totalUsers || 21);
-            } else {
-                console.log("User statistics document does not exist yet.");
-                setTotalLearners(21);
-            }
-        }, (error) => {
-            console.error("Error fetching real-time user count:", error);
-            setTotalLearners(21); // Fallback on error
-        });
-
-        // Cleanup the listener when the component unmounts
-        return () => unsubscribe();
-    }, [user]); // Depend on the user object to re-run when auth state is confirmed.
 
     useEffect(() => {
         setVoicePreference('gojo');
@@ -131,15 +108,12 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
   
     useEffect(() => {
-        if (isReady) {
+        if (isReady && soundMode === 'full' && !pageTitleSpokenRef.current) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                if (soundMode === 'full' && !pageTitleSpokenRef.current) {
-                    speak(PAGE_TITLE);
-                    pageTitleSpokenRef.current = true;
-                }
+                speak(PAGE_TITLE);
+                pageTitleSpokenRef.current = true;
             }, 500);
-            
             return () => clearTimeout(timer);
         }
     }, [speak, soundMode, t, isReady]);

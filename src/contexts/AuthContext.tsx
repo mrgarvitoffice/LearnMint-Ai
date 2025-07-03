@@ -6,21 +6,24 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { Loader2 } from 'lucide-react';
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  totalLearners: number;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  totalLearners: 21,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [totalLearners, setTotalLearners] = useState(21);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -31,9 +34,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Effect to listen for totalLearners count
+  useEffect(() => {
+    // Only set up the listener if there's a user, preventing permission errors
+    if (user) {
+        const metadataRef = doc(db, 'metadata', 'userStats');
+        const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setTotalLearners(docSnap.data().totalUsers || 21);
+            }
+        }, (error) => {
+            console.error("AuthContext: Error fetching real-time user count:", error);
+            setTotalLearners(21); // Fallback on error
+        });
+
+        // Cleanup listener on unmount or when user changes
+        return () => unsubscribe();
+    }
+  }, [user]);
+
   // Effect to create a user document and increment the total user count on first sign-up
   useEffect(() => {
     const setupNewUser = async (newUser: User) => {
+      // Don't run for anonymous users
+      if (newUser.isAnonymous) return;
+
       const userRef = doc(db, 'users', newUser.uid);
       const metadataRef = doc(db, 'metadata', 'userStats');
 
@@ -41,19 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await runTransaction(db, async (transaction) => {
           const userDoc = await transaction.get(userRef);
           
-          // If the user document already exists, it means they've been counted.
-          // This is a robust way to prevent incrementing the count on subsequent logins.
           if (userDoc.exists()) {
             return;
           }
 
-          // User does not exist, so this is their first registration.
-          // Get the current total user count.
           const metadataDoc = await transaction.get(metadataRef);
-          // If the count is 0 or doesn't exist, start from 21. Otherwise, increment.
           const newTotal = (metadataDoc.data()?.totalUsers || 21) + 1;
 
-          // Create the new user's document in Firestore.
           transaction.set(userRef, {
             uid: newUser.uid,
             email: newUser.email,
@@ -62,22 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             createdAt: serverTimestamp(),
           });
 
-          // Update the total user count.
           transaction.set(metadataRef, { totalUsers: newTotal }, { merge: true });
-
           console.log(`New user registered and counted: ${newUser.uid}. New total: ${newTotal}`);
         });
       } catch (error) {
         console.error("Failed to run new user setup transaction:", error);
-        // This failure is logged but doesn't block the user's experience.
       }
     };
     
-    // Check if the user object is available and not loading.
     if (user && !loading) {
-      // A more robust check for a new user is to just attempt the transaction.
-      // The transaction itself will check if the user document exists.
-      // This is better than relying on timestamps which can be unreliable.
       setupNewUser(user);
     }
     
@@ -94,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, totalLearners }}>
       {children}
     </AuthContext.Provider>
   );
