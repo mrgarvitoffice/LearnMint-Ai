@@ -12,7 +12,6 @@ import { useSound } from '@/hooks/useSound';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-
 interface ChatInputProps {
   onSendMessage: (message: string, image?: string) => void;
   isLoading: boolean;
@@ -38,20 +37,24 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     setInputValue(e.target.value);
   };
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
-        return;
+      if (file.type.startsWith('image/')) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+          toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+          setImageData(reader.result as string); 
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({ title: "File Type Not Supported in Chat", description: "Chat currently only supports image uploads. Support for other file types is coming soon!", variant: "default" });
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setImageData(reader.result as string); 
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -128,7 +131,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Audio file input will be supported soon.' })}>
+                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                         <AudioLines className="w-5 h-5" />
                       </Button>
                     </TooltipTrigger>
@@ -136,7 +139,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Video file input will be supported soon.' })}>
+                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                         <Video className="w-5 h-5" />
                       </Button>
                     </TooltipTrigger>
@@ -144,7 +147,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'PDF file input will be supported soon.' })}>
+                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                         <FileText className="w-5 h-5" />
                       </Button>
                     </TooltipTrigger>
@@ -154,7 +157,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
               </div>
             </PopoverContent>
           </Popover>
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
+          <input type="file" accept="image/*,application/pdf,audio/*,video/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
 
           {browserSupportsSpeechRecognition && (
             <Button type="button" variant="ghost" size="icon" onClick={toggleListening} disabled={isLoading}>

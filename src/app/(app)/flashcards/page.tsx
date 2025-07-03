@@ -21,6 +21,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useSettings } from '@/contexts/SettingsContext';
+import { extractTextFromPdf } from '@/lib/utils';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -48,7 +49,6 @@ export default function FlashcardsPage() {
 
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
-
   const { register, handleSubmit, formState: { errors }, watch, reset, setValue } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -74,7 +74,6 @@ export default function FlashcardsPage() {
     else { setValue("topic", ""); startListening(); }
   }, [isListening, startListening, stopListening, playClickSound, setValue]);
 
-
   useEffect(() => {
     setVoicePreference('holo'); 
   }, [setVoicePreference]);
@@ -98,22 +97,42 @@ export default function FlashcardsPage() {
     }
   }, [isLoading, isSpeaking, isPaused, speak, soundMode]);
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
-        return;
+      if (file.type.startsWith('image/')) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit for images
+          toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+          setImageData(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === 'application/pdf') {
+         if (file.size > 5 * 1024 * 1024) { // 5MB limit for PDFs
+          toast({ title: "PDF too large", description: "Please upload a PDF smaller than 5MB.", variant: "destructive" });
+          return;
+        }
+        toast({ title: "Processing PDF", description: "Extracting text..." });
+        try {
+          const text = await extractTextFromPdf(file);
+          setValue('topic', text);
+          setImagePreview(null);
+          setImageData(null);
+          toast({ title: "PDF Processed!", description: "Text extracted to topic field." });
+        } catch (error) {
+          toast({ title: "PDF Error", description: "Could not extract text.", variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Unsupported File", description: "This feature currently supports Images and PDFs.", variant: "default" });
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setImageData(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
+
 
   const handleRemoveImage = () => {
     playClickSound();
@@ -123,7 +142,6 @@ export default function FlashcardsPage() {
       fileInputRef.current.value = "";
     }
   };
-
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playActionSound();
@@ -221,7 +239,7 @@ export default function FlashcardsPage() {
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Audio file input will be supported soon.' })}>
+                              <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                                 <AudioLines className="w-5 h-5" />
                               </Button>
                             </TooltipTrigger>
@@ -229,7 +247,7 @@ export default function FlashcardsPage() {
                           </Tooltip>
                            <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Video file input will be supported soon.' })}>
+                              <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                                 <Video className="w-5 h-5" />
                               </Button>
                             </TooltipTrigger>
@@ -237,7 +255,7 @@ export default function FlashcardsPage() {
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'PDF file input will be supported soon.' })}>
+                              <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                                 <FileText className="w-5 h-5" />
                               </Button>
                             </TooltipTrigger>
@@ -260,7 +278,7 @@ export default function FlashcardsPage() {
                   </Button>
                 </div>
               )}
-               <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,application/pdf,audio/*,video/*" className="hidden" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="numFlashcards">Number of Flashcards (1-50)</Label>

@@ -21,6 +21,7 @@ import type { CombinedStudyMaterialsOutput } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useTranslation } from '@/hooks/useTranslation';
+import { extractTextFromPdf } from '@/lib/utils';
 
 const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
 const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-";
@@ -39,6 +40,7 @@ export default function GenerateNotesPage() {
   const [notesError, setNotesError] = useState<string | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const { soundMode } = useSettings();
@@ -80,20 +82,42 @@ export default function GenerateNotesPage() {
 
   const getCacheKey = (type: string, topicKey: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topicKey.toLowerCase().replace(/\s+/g, '-')}`;
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
+    setFileError(null);
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
-        return;
+      if (file.type.startsWith('image/')) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit for images
+          toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+          setImageData(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === 'application/pdf') {
+         if (file.size > 5 * 1024 * 1024) { // 5MB limit for PDFs
+          toast({ title: "PDF too large", description: "Please upload a PDF smaller than 5MB.", variant: "destructive" });
+          return;
+        }
+        toast({ title: "Processing PDF", description: "Extracting text from your document, please wait..." });
+        try {
+          const text = await extractTextFromPdf(file);
+          setTopic(text); // Set the extracted text into the topic input
+          setImagePreview(null); // Clear any image preview
+          setImageData(null);
+          toast({ title: "PDF Processed!", description: "Text has been extracted and placed in the topic field." });
+        } catch (error) {
+          console.error("Error parsing PDF:", error);
+          setFileError("Could not extract text from the PDF. The file might be corrupt or incompatible.");
+          toast({ title: "PDF Error", description: "Could not extract text from the PDF.", variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Unsupported File", description: "This feature currently supports Images and PDFs. Audio/Video support is coming next!", variant: "default" });
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setImageData(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -225,7 +249,7 @@ export default function GenerateNotesPage() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Audio file input will be supported soon.' })}>
+                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                           <AudioLines className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
@@ -233,7 +257,7 @@ export default function GenerateNotesPage() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Video file input will be supported soon.' })}>
+                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                           <Video className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
@@ -241,7 +265,7 @@ export default function GenerateNotesPage() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'PDF file input will be supported soon.' })}>
+                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
                           <FileText className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
@@ -251,7 +275,7 @@ export default function GenerateNotesPage() {
                 </div>
               </PopoverContent>
             </Popover>
-            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,application/pdf,audio/*,video/*" className="hidden" />
              {browserSupportsSpeechRecognition && (
               <Button
                 variant="outline"
@@ -265,6 +289,7 @@ export default function GenerateNotesPage() {
               </Button>
             )}
           </div>
+          {fileError && <p className="text-sm text-destructive text-center">{fileError}</p>}
           {voiceError && <p className="text-sm text-destructive text-center">{voiceError}</p>}
           
           {imagePreview && (

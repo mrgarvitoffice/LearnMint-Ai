@@ -29,6 +29,7 @@ import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSettings } from '@/contexts/SettingsContext';
+import { extractTextFromPdf } from '@/lib/utils';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -443,20 +444,39 @@ export default function CustomTestPage() {
     setValue('selectedRecentTopics', newSelected, { shouldValidate: true });
   };
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
-        return;
+      if (file.type.startsWith('image/')) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+          toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNotesImagePreview(reader.result as string);
+          setValue('notesImage', reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === 'application/pdf') {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          toast({ title: "PDF too large", description: "Please upload a PDF smaller than 5MB.", variant: "destructive" });
+          return;
+        }
+        toast({ title: "Processing PDF...", description: "Extracting text from your document." });
+        try {
+          const text = await extractTextFromPdf(file);
+          setValue('notes', text);
+          setNotesImagePreview(null);
+          setValue('notesImage', undefined);
+          toast({ title: "PDF Processed!", description: "Text has been placed in the notes field." });
+        } catch (error) {
+          toast({ title: "PDF Error", description: "Could not extract text from the PDF.", variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Unsupported File", description: "This feature currently supports Images and PDFs.", variant: "default" });
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNotesImagePreview(reader.result as string);
-        setValue('notesImage', reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -528,7 +548,7 @@ export default function CustomTestPage() {
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Audio file input will be supported soon.' })}>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
                                     <AudioLines className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -536,7 +556,7 @@ export default function CustomTestPage() {
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Video file input will be supported soon.' })}>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
                                     <Video className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -544,7 +564,7 @@ export default function CustomTestPage() {
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => toast({ title: 'Feature Coming Soon', description: 'PDF file input will be supported soon.' })}>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
                                     <FileText className="w-5 h-5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -571,7 +591,7 @@ export default function CustomTestPage() {
                       </Button>
                     </div>
                   )}
-                  <input type="file" ref={notesImageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                  <input type="file" ref={notesImageInputRef} onChange={handleFileUpload} accept="image/*,application/pdf,audio/*,video/*" className="hidden" />
                   {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
                 </div>
               )}
