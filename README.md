@@ -298,7 +298,7 @@ Click Deploy to apply changes
 
 **LearnMint**, by **MrGarvit**, demonstrates cutting-edge AI in education and modern web development. !!!
 
-Enjoy the LearnMint-Ai !!!
+Enjoy the LearnMint-Ai !!
 
 ---
 Made by **MrGarvit**!
