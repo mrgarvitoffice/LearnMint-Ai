@@ -9,6 +9,7 @@
  */
 
 import { aiForTTS } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import wav from 'wav';
 import type { GenerateAudioSummaryOutput } from '@/lib/types';
@@ -108,7 +109,7 @@ const generateAudioSummaryFlow = aiForTTS.defineFlow(
     // Step 3: Convert the summary text to audio using the TTS model.
     console.log("[AI Flow - Audio Summary] Converting summary to audio...");
     const { media } = await aiForTTS.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
       prompt: summaryText,
       config: {
         responseModalities: ['AUDIO'],
