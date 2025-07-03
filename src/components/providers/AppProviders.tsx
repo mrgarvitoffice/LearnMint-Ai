@@ -6,6 +6,7 @@ import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -18,7 +19,9 @@ export function AppProviders({ children }: AppProvidersProps) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <QueryClientProvider client={queryClient}>
         <SettingsProvider>
-          {children}
+          <SidebarProvider>
+            {children}
+          </SidebarProvider>
         </SettingsProvider>
       </QueryClientProvider>
     </ThemeProvider>
