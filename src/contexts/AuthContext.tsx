@@ -1,17 +1,15 @@
-
 "use client";
 
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase/config';
+import { auth } from '@/lib/firebase/config';
 import { Loader2 } from 'lucide-react';
-import { doc, runTransaction, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  totalLearners: number;
+  totalLearners: number; // Keep the property for type consistency, but it will be static.
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,8 +21,8 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [totalLearners, setTotalLearners] = useState(21);
 
+  // Core authentication listener. This is the only effect needed.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -34,84 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Effect to listen for totalLearners count
-  useEffect(() => {
-    // Only set up the listener if the initial auth check is complete.
-    if (!loading) {
-        const metadataRef = doc(db, 'metadata', 'userStats');
-        const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setTotalLearners(docSnap.data().totalUsers || 21);
-            }
-        }, (error) => {
-            console.error("AuthContext: Error fetching real-time user count:", error);
-            setTotalLearners(21); // Fallback on error
-        });
-
-        // Cleanup listener on unmount or when loading state changes
-        return () => unsubscribe();
-    }
-  }, [loading]); // Only depends on the initial loading state
-
-  // Effect to create a user document and increment the total user count on first sign-up
-  useEffect(() => {
-    const setupNewUser = async (newUser: User) => {
-      // Don't run for anonymous users
-      if (newUser.isAnonymous) return;
-
-      const userRef = doc(db, 'users', newUser.uid);
-      const metadataRef = doc(db, 'metadata', 'userStats');
-
-      try {
-        await runTransaction(db, async (transaction) => {
-          const userDoc = await transaction.get(userRef);
-          
-          if (userDoc.exists()) {
-            return;
-          }
-
-          const metadataDoc = await transaction.get(metadataRef);
-          const newTotal = (metadataDoc.data()?.totalUsers || 21) + 1;
-
-          transaction.set(userRef, {
-            uid: newUser.uid,
-            email: newUser.email,
-            displayName: newUser.displayName,
-            photoURL: newUser.photoURL,
-            createdAt: serverTimestamp(),
-          });
-
-          transaction.set(metadataRef, { totalUsers: newTotal }, { merge: true });
-
-          // Manually update the local state for instant UI feedback for the new user.
-          // The onSnapshot listener will handle updates for all other clients.
-          setTotalLearners(newTotal);
-          
-          console.log(`New user registered and counted: ${newUser.uid}. New total: ${newTotal}`);
-        });
-      } catch (error) {
-        console.error("Failed to run new user setup transaction:", error);
-      }
-    };
-    
-    if (user && !loading) {
-      setupNewUser(user);
-    }
-    
-  }, [user, loading]);
-
-
+  // The AuthProvider now handles the initial loading state for the entire app.
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Loading Authentication...</p>
+        <p className="mt-4 text-lg">Initializing Session...</p>
       </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, totalLearners }}>
+    // Provide the core auth state. The `totalLearners` is now a static number to avoid database calls during auth.
+    <AuthContext.Provider value={{ user, loading, totalLearners: 21 }}>
       {children}
     </AuthContext.Provider>
   );

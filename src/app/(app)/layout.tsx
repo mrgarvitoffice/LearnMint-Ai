@@ -1,4 +1,3 @@
-
 "use client"; // This layout uses client-side hooks (useEffect, useRouter, useAuth).
 
 import type { ReactNode } from 'react';
@@ -15,12 +14,10 @@ interface MainAppLayoutProps {
 /**
  * MainAppLayout Component
  * 
- * This layout component wraps all authenticated application pages (e.g., Dashboard, Notes, Quiz).
- * It handles authentication checks:
- * - If the user is not authenticated, it redirects them to the sign-in page.
- * - It displays a loading state while authentication status is being verified.
- * - Once authenticated, it renders the `AppLayout` which includes the header and sidebar navigation,
- *   passing the page's children to be displayed within that main layout.
+ * This layout is the primary guard for all authenticated pages (e.g., Dashboard, Notes). It uses the AuthContext to:
+ * 1. Redirect unauthenticated users to the sign-in page.
+ * 2. Display a loading screen during the initial session verification.
+ * This ensures that no authenticated content is ever displayed to an unauthorized user and provides a smooth transition from the initial app load.
  */
 export default function MainAppLayout({ children }: MainAppLayoutProps) {
   const { user, loading } = useAuth(); // Get user and loading state from AuthContext
@@ -28,29 +25,19 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
 
   // Effect to handle redirection based on authentication state
   useEffect(() => {
-    // If authentication check is complete (not loading) and there's no user
+    // If authentication check is complete (not loading) and there's no user, redirect
     if (!loading && !user) {
-      router.push('/sign-in'); // Redirect to the sign-in page
+      router.push('/sign-in'); 
     }
   }, [user, loading, router]); // Dependencies for the effect
 
-  // Display a loading screen while authentication is being verified
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Verifying Authentication...</p>
-      </div>
-    );
-  }
-
-  // If not loading and still no user, or user object is not fully loaded.
-  // This state might be briefly visible before redirection completes.
-  if (!user || !user.uid) {
+  // The primary loading screen is handled by AuthProvider. This guard handles the transition state
+  // and ensures no content is rendered until the user session is fully verified.
+  if (loading || !user?.uid) {
     return (
        <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Verifying session...</p>
+        <p className="mt-4 text-lg">Verifying your session...</p>
       </div>
     );
   }
