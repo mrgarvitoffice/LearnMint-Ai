@@ -73,6 +73,7 @@
   "audioFactory.title": "オーディオファクトリー",
   "audioFactory.description": "テキスト、画像、ドキュメントから音声の要約を生成し、オーディオフラッシュカードを作成します。",
   "audioFactory.tabs.flashcards": "オーディオフラッシュカード",
+  "audioFactory.tabs.text": "テキスト要約",
   "audioFactory.tabs.image": "画像要約",
   "audioFactory.tabs.pdf": "PDF要約",
   "audioFactory.flashcards.title": "オーディオフラッシュカードジェネレーター",

@@ -73,6 +73,7 @@
   "audioFactory.title": "Fábrica de Audio",
   "audioFactory.description": "Genere resúmenes hablados a partir de texto, imágenes o documentos, y cree tarjetas de audio.",
   "audioFactory.tabs.flashcards": "Tarjetas de Audio",
+  "audioFactory.tabs.text": "Resumen de Texto",
   "audioFactory.tabs.image": "Resumen de Imagen",
   "audioFactory.tabs.pdf": "Resumen de PDF",
   "audioFactory.flashcards.title": "Generador de Tarjetas de Audio",

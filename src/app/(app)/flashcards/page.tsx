@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from '@/hooks/useTranslation';
 import NextImage from 'next/image';
 import { extractTextFromPdf } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 
 // Sub-component for Audio Flashcards
@@ -132,6 +133,70 @@ function AudioFlashcardsGenerator() {
           </ScrollArea>
         </CardContent>
       )}
+    </Card>
+  );
+}
+
+// Sub-component for Text Audio Summary
+function TextAudioSummarizer() {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const [textInput, setTextInput] = useState('');
+  const [generatedContent, setGeneratedContent] = useState<GenerateAudioSummaryOutput | null>(null);
+
+  const { mutate: generate, isPending: isLoading } = useMutation({
+    mutationFn: generateAudioSummaryAction,
+    onSuccess: (data) => {
+      setGeneratedContent(data);
+      toast({ title: "Summary Complete!", description: "AI has generated a summary and audio for your text."});
+    },
+    onError: (error) => {
+      toast({ title: "Summary Failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleGenerate = () => {
+    playActionSound();
+    if (textInput.trim().length < 50) {
+      toast({ title: "Text Too Short", description: "Please provide at least 50 characters to summarize.", variant: "destructive" });
+      return;
+    }
+    generate({ text: textInput });
+  };
+
+  return (
+    <Card className="shadow-lg border-none">
+      <CardHeader>
+        <CardTitle>Text Audio Summarizer</CardTitle>
+        <CardDescription>Paste your notes or any text to get a spoken summary.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Label htmlFor="text-input">Your Text</Label>
+        <Textarea 
+          id="text-input" 
+          placeholder="Paste your content here (minimum 50 characters)..." 
+          value={textInput}
+          onChange={(e) => setTextInput(e.target.value)}
+          rows={8}
+          disabled={isLoading}
+        />
+      </CardContent>
+      <CardFooter className="flex-col items-center gap-4">
+        <Button onClick={handleGenerate} disabled={textInput.trim().length < 50 || isLoading}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+          {t('audioFactory.generate')} Summary
+        </Button>
+        {isLoading && <p className="text-sm text-muted-foreground">{t('audioFactory.generating')}</p>}
+        {generatedContent && (
+          <div className="w-full space-y-4 pt-4 border-t">
+            <h3 className="font-semibold">{t('audioFactory.summary')}</h3>
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">{generatedContent.summary}</p>
+            <h3 className="font-semibold">{t('audioFactory.audio')}</h3>
+            <audio controls src={generatedContent.audioDataUri} className="w-full" />
+          </div>
+        )}
+      </CardFooter>
     </Card>
   );
 }
@@ -337,13 +402,17 @@ export default function AudioFactoryPage() {
       </Card>
       
       <Tabs defaultValue="flashcards" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="flashcards">{t('audioFactory.tabs.flashcards')}</TabsTrigger>
+          <TabsTrigger value="text-summary">Text Summary</TabsTrigger>
           <TabsTrigger value="image-summary">{t('audioFactory.tabs.image')}</TabsTrigger>
           <TabsTrigger value="pdf-summary">{t('audioFactory.tabs.pdf')}</TabsTrigger>
         </TabsList>
         <TabsContent value="flashcards">
           <AudioFlashcardsGenerator />
+        </TabsContent>
+        <TabsContent value="text-summary">
+          <TextAudioSummarizer />
         </TabsContent>
         <TabsContent value="image-summary">
           <ImageAudioSummarizer />

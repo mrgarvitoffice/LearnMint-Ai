@@ -73,6 +73,7 @@
   "audioFactory.title": "ऑडियो फैक्टरी",
   "audioFactory.description": "पाठ, छवियों या दस्तावेजों से बोले गए सारांश उत्पन्न करें, और ऑडियो फ्लैशकार्ड बनाएं।",
   "audioFactory.tabs.flashcards": "ऑडियो फ्लैशकार्ड",
+  "audioFactory.tabs.text": "पाठ सारांश",
   "audioFactory.tabs.image": "छवि सारांश",
   "audioFactory.tabs.pdf": "पीडीएफ सारांश",
   "audioFactory.flashcards.title": "ऑडियो फ्लैशकार्ड जेनरेटर",

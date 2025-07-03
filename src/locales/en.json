@@ -73,6 +73,7 @@
   "audioFactory.title": "Audio Factory",
   "audioFactory.description": "Generate spoken summaries from text, images, or documents, and create audio flashcards.",
   "audioFactory.tabs.flashcards": "Audio Flashcards",
+  "audioFactory.tabs.text": "Text Summary",
   "audioFactory.tabs.image": "Image Summary",
   "audioFactory.tabs.pdf": "PDF Summary",
   "audioFactory.flashcards.title": "Audio Flashcards Generator",
