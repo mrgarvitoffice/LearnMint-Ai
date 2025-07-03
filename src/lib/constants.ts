@@ -79,11 +79,26 @@ export const APP_NAME = "LearnMint";
 // --- App Languages (for Settings) ---
 export const APP_LANGUAGES: { value: string; label: string; }[] = [
   { value: "en", label: "English" },
-  { value: "es", label: "Español" },
-  { value: "hi", label: "हिन्दी" },
-  // { value: "fr", label: "Français" },
-  // { value: "de", label: "Deutsch" },
-  // { value: "ja", label: "日本語" },
+  { value: "es", label: "Español (Spanish)" },
+  { value: "hi", label: "हिन्दी (Hindi)" },
+  { value: "ja", label: "日本語 (Japanese)" },
+  { value: "fr", label: "Français (French)" },
+  { value: "de", label: "Deutsch (German)" },
+  { value: "ru", label: "Русский (Russian)" },
+  { value: "pt", label: "Português (Portuguese)" },
+  { value: "it", label: "Italiano (Italian)" },
+  { value: "zh", label: "中文 (Chinese)" },
+  { value: "ar", label: "العربية (Arabic)" },
+  { value: "ko", label: "한국어 (Korean)" },
+  { value: "tr", label: "Türkçe (Turkish)" },
+  { value: "nl", label: "Nederlands (Dutch)" },
+  { value: "sv", label: "Svenska (Swedish)" },
+  { value: "pl", label: "Polski (Polish)" },
+  { value: "id", label: "Bahasa Indonesia" },
+  { value: "vi", label: "Tiếng Việt (Vietnamese)" },
+  { value: "th", label: "ไทย (Thai)" },
+  { value: "el", label: "Ελληνικά (Greek)" },
+  { value: "he", label: "עברית (Hebrew)" },
 ];
 
 
