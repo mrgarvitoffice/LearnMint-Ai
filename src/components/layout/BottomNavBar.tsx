@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BOTTOM_NAV_ITEMS } from '@/lib/constants';
+import { QUICK_NAV_ITEMS } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/lib/constants';
@@ -15,7 +14,7 @@ export function BottomNavBar() {
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/30 backdrop-blur-lg md:hidden">
       <div className="grid h-16 grid-cols-5 items-center justify-around px-2">
-        {BOTTOM_NAV_ITEMS.map((item) => {
+        {QUICK_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
 

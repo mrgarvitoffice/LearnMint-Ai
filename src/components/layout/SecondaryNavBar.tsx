@@ -1,20 +1,11 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Bot, Calculator, Gamepad2, ListChecks, Newspaper } from 'lucide-react';
+import { QUICK_NAV_ITEMS } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-
-const secondaryNavItems = [
-  { href: '/chatbot', icon: Bot, label: 'Chatbot' },
-  { href: '/calculator', icon: Calculator, label: 'Calculator' },
-  { href: '/news', icon: Newspaper, label: 'Newsly', isCenter: true },
-  { href: '/flashcards', icon: ListChecks, label: 'Flashcards' },
-  { href: '/arcade', icon: Gamepad2, label: 'Arcade' },
-];
 
 export function SecondaryNavBar() {
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -22,20 +13,23 @@ export function SecondaryNavBar() {
 
   return (
     <nav className="sticky top-16 z-20 hidden h-14 items-center justify-around bg-background/80 px-2 backdrop-blur-sm md:flex">
-       {secondaryNavItems.map((item) => {
+       {QUICK_NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = pathname.startsWith(item.href);
 
-        if (item.isCenter) {
+        // Special styling for the center item, 'Newsly'
+        if (item.title === 'Newsly') {
           return (
             <Button key={item.href} asChild variant={isActive ? "default" : "secondary"} size="sm" className="h-9 gap-1.5 px-3" onClick={playSound}>
               <Link href={item.href}>
                 <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <span>{item.title}</span>
               </Link>
             </Button>
           );
         }
+
+        // Standard styling for other items
         return (
           <TooltipProvider key={item.href} delayDuration={300}>
             <Tooltip>
@@ -43,12 +37,12 @@ export function SecondaryNavBar() {
                 <Button asChild variant="ghost" size="icon" onClick={playSound}>
                   <Link href={item.href}>
                     <Icon className="h-5 w-5" />
-                    <span className="sr-only">{item.label}</span>
+                    <span className="sr-only">{item.title}</span>
                   </Link>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{item.label}</p>
+                <p>{item.title}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

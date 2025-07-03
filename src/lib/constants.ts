@@ -1,4 +1,3 @@
-
 // This file defines constants used throughout the LearnMint application.
 // It includes navigation items, application name, and static data for features like the library and news.
 
@@ -57,14 +56,14 @@ export const NAV_ITEMS: NavItem[] = [
   { title: 'Arcade', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
 ];
 
-// --- Mobile Bottom Navigation Items ---
-// A curated list for the mobile bottom nav bar.
-export const BOTTOM_NAV_ITEMS: NavItem[] = [
-  { title: 'Home', href: '/', icon: LayoutDashboard },
-  { title: 'Generate', href: '/notes', icon: FileText },
-  { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'Library', href: '/library', icon: BookMarked },
-  { title: 'You', href: '/profile', icon: UserCircle }, 
+// --- Quick Access Navigation Items ---
+// A curated list for the mobile bottom nav bar and desktop secondary nav.
+export const QUICK_NAV_ITEMS: NavItem[] = [
+  { title: 'Chatbot', href: '/chatbot', icon: Bot, description: "Chat with helpful AI companions." },
+  { title: 'Calculator', href: '/calculator', icon: Calculator, description: "Access a scientific calculator and unit converter." },
+  { title: 'Newsly', href: '/news', icon: Newspaper, description: "Read the latest news from around the world." },
+  { title: 'Flashcards', href: '/flashcards', icon: ListChecks, description: "Quickly create flashcard sets for review." },
+  { title: 'Arcade', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
 ];
 
 
