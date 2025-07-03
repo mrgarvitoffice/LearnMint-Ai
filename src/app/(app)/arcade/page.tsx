@@ -13,27 +13,27 @@ import Link from 'next/link';
 const PAGE_TITLE = "LearnMint Arcade";
 
 export default function ArcadePage() {
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+    if (!voicePreferenceWasSetRef.current) {
       setVoicePreference('holo');
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">

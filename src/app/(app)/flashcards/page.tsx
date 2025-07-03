@@ -40,7 +40,7 @@ export default function FlashcardsPage() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
@@ -75,30 +75,30 @@ export default function FlashcardsPage() {
 
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); 
+    if (!voicePreferenceWasSetRef.current) {
+      setVoicePreference('holo'); 
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !generatedFlashcardsData) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !generatedFlashcardsData) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
+  }, [isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
 
   useEffect(() => {
-    if (isLoading && !generatingMessageSpokenRef.current && selectedVoice && !isSpeaking && !isPaused) {
+    if (isLoading && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading && generatingMessageSpokenRef.current) { 
       generatingMessageSpokenRef.current = false; 
     }
-  }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
+  }, [isLoading, isSpeaking, isPaused, speak]);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
@@ -134,7 +134,7 @@ export default function FlashcardsPage() {
     pageTitleSpokenRef.current = true; 
     generatingMessageSpokenRef.current = false;
 
-    if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+    if (!isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
@@ -149,16 +149,16 @@ export default function FlashcardsPage() {
       if (result.flashcards && result.flashcards.length > 0) {
         setGeneratedFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: `Your flashcards for "${data.topic}" are ready.` });
-        if (selectedVoice && !isSpeaking && !isPaused) speak("Flashcards ready!");
+        if (!isSpeaking && !isPaused) speak("Flashcards ready!");
       } else {
         toast({ title: 'No Flashcards', description: 'The AI returned no flashcards for this topic.', variant: 'destructive' });
-        if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, no flashcards were returned.");
+        if (!isSpeaking && !isPaused) speak("Sorry, no flashcards were returned.");
       }
     } catch (error) {
       console.error('Error generating flashcards:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate flashcards. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      if (selectedVoice && !isSpeaking && !isPaused) speak("Sorry, there was an error generating flashcards.");
+      if (!isSpeaking && !isPaused) speak("Sorry, there was an error generating flashcards.");
     } finally {
       setIsLoading(false);
       generatingMessageSpokenRef.current = false;

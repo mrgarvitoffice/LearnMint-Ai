@@ -31,15 +31,15 @@ export function DefinitionChallenge() {
   const { playSound: playCorrectSound } = useSound('correct'); 
   const { playSound: playIncorrectSound } = useSound('incorrect'); 
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia'); 
+    if (!voicePreferenceWasSetRef.current) {
+      setVoicePreference('holo'); 
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   const shuffleArray = (array: DefinitionChallengeWord[]) => {
     const newArray = [...array];
@@ -88,9 +88,9 @@ export function DefinitionChallenge() {
       setGameOver(true);
       const finalMessage = `Game Over! You completed all words. Your final streak: ${streak}. High Score: ${highScore}`;
       setFeedback(finalMessage);
-      if (selectedVoice && !isSpeaking && !isPaused) speak(finalMessage);
+      if (!isSpeaking && !isPaused) speak(finalMessage);
     }
-  }, [currentWordIndex, words.length, streak, highScore, selectedVoice, isSpeaking, isPaused, speak]);
+  }, [currentWordIndex, words.length, streak, highScore, isSpeaking, isPaused, speak]);
 
   const handleGuessSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -107,20 +107,20 @@ export function DefinitionChallenge() {
         localStorage.setItem('learnmint-dc-highscore', newStreak.toString());
       }
       playCorrectSound();
-      if (selectedVoice && !isSpeaking && !isPaused) speak("Correct!");
+      if (!isSpeaking && !isPaused) speak("Correct!");
       setTimeout(nextWord, 1500);
     } else {
       const newMistakes = mistakesMadeThisWord + 1;
       setMistakesMadeThisWord(newMistakes);
       setStreak(0);
       playIncorrectSound();
-      if (selectedVoice && !isSpeaking && !isPaused) speak("Incorrect.");
+      if (!isSpeaking && !isPaused) speak("Incorrect.");
 
       if (newMistakes >= 3) {
         const failMsg = `Oops! The correct answer was: ${currentWord.term}`;
         setFeedback(failMsg);
         setWordFailedMessage(`The word was: ${currentWord.term}.`);
-        if (selectedVoice && !isSpeaking && !isPaused) speak(`The correct word was ${currentWord.term}.`);
+        if (!isSpeaking && !isPaused) speak(`The correct word was ${currentWord.term}.`);
         setIsCorrect(false); 
         setTimeout(nextWord, 2500); 
       } else {
@@ -128,7 +128,7 @@ export function DefinitionChallenge() {
         setIsCorrect(false);
       }
     }
-  }, [playClickSound, currentWord, gameOver, isCorrect, guess, streak, highScore, mistakesMadeThisWord, nextWord, playCorrectSound, playIncorrectSound, speak, selectedVoice, isSpeaking, isPaused]);
+  }, [playClickSound, currentWord, gameOver, isCorrect, guess, streak, highScore, mistakesMadeThisWord, nextWord, playCorrectSound, playIncorrectSound, speak, isSpeaking, isPaused]);
 
   const handleUseHint = () => {
     playClickSound();
@@ -146,14 +146,14 @@ export function DefinitionChallenge() {
       hintText = `Hint: Starts with "${currentWord.term.substring(0, lettersToShow)}..."`;
     }
     setFeedback(hintText);
-    if (selectedVoice && !isSpeaking && !isPaused) speak(hintText);
+    if (!isSpeaking && !isPaused) speak(hintText);
   };
 
   const handleResetGameAndStreak = () => {
     playClickSound();
     setStreak(0); 
     initializeGame();
-    if (selectedVoice && !isSpeaking && !isPaused) speak("New game started.");
+    if (!isSpeaking && !isPaused) speak("New game started.");
   }
   
   if (!currentWord && !gameOver) {

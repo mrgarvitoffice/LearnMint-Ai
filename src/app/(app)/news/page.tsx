@@ -43,8 +43,6 @@ export default function NewsPage() {
     cancelTTS,
     isSpeaking,
     isPaused,
-    supportedVoices,
-    selectedVoice,
     setVoicePreference,
     voicePreference
   } = useTTS();
@@ -61,25 +59,22 @@ export default function NewsPage() {
 
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+    if (!voicePreferenceWasSetRef.current) {
       setVoicePreference('holo');
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-        const currentLanguageFilter = appliedFilters.language || 'en';
-        const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
-        const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
-        speak(PAGE_TITLE, bcp47Lang);
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, appliedFilters.language]);
+  }, [isSpeaking, isPaused, speak, appliedFilters.language]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -112,11 +107,8 @@ export default function NewsPage() {
     setIsDisplayingPauseForHindi(false);
     setAppliedFilters(filters);
     pageTitleSpokenRef.current = true; 
-    if (selectedVoice && !isSpeaking && !isPaused) {
-      const currentLanguageFilter = filters.language || 'en';
-      const languageInfo = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter);
-      const bcp47Lang = languageInfo ? languageInfo.bcp47 : 'en-US';
-      speak("Fetching news with new filters.", bcp47Lang);
+    if (!isSpeaking && !isPaused) {
+      speak("Fetching news with new filters.");
     }
   };
   const handleResetFilters = () => {
@@ -128,8 +120,8 @@ export default function NewsPage() {
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
     pageTitleSpokenRef.current = true;
-    if (selectedVoice && !isSpeaking && !isPaused) {
-      speak("News filters reset.", "en-US");
+    if (!isSpeaking && !isPaused) {
+      speak("News filters reset.");
     }
   };
 
@@ -197,7 +189,7 @@ export default function NewsPage() {
       return;
     }
     const headlineToSpeak = headlinesArrayForTTS.current[currentSpokenHeadlineIndexRef.current];
-    speak(headlineToSpeak, 'hi-IN', () => { // Pass the onEndCallback
+    speak(headlineToSpeak, () => { // Pass the onEndCallback
       if (isSpeakingHindiSequenceRef.current) { // Check if still in sequence mode
         currentSpokenHeadlineIndexRef.current += 1;
         speakNextHindiHeadline(); // Call for the next one
@@ -247,8 +239,7 @@ export default function NewsPage() {
           resumeTTS();
       } else {
           cancelTTS();
-          const bcp47Lang = NEWS_LANGUAGES.find(l => l.value === currentLanguageFilter)?.bcp47 || 'en-US';
-          speak(nonHindiHeadlinesText, bcp47Lang);
+          speak(nonHindiHeadlinesText);
       }
     }
   };
@@ -311,7 +302,7 @@ export default function NewsPage() {
           </div>
         </CardContent>
         <CardContent>
-          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
+          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={onApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
         </CardContent>
       </Card>
 

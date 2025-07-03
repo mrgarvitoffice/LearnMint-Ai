@@ -34,7 +34,7 @@ export default function LibraryPage() {
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
   const [selectedBook, setSelectedBook] = useState<GoogleBookItem | null>(null);
   
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const { toast } = useToast();
@@ -45,20 +45,20 @@ export default function LibraryPage() {
   const [voiceSearchTarget, setVoiceSearchTarget] = useState<'youtube' | 'books' | null>(null);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+    if (!voicePreferenceWasSetRef.current) {
+      setVoicePreference('holo');
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak]);
 
   useEffect(() => {
     if (transcript && voiceSearchTarget) {
@@ -98,7 +98,7 @@ export default function LibraryPage() {
 
   const handleRefreshMathFact = () => {
     playClickSound(); refetchMathFact();
-    if(selectedVoice && !isSpeaking && !isPaused) speak("Fetching new math fact.");
+    if(!isSpeaking && !isPaused) speak("Fetching new math fact.");
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
@@ -141,7 +141,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
       playActionSound();
-      if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
+      if(!isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
       if (isListening && voiceSearchTarget === 'youtube') stopListening();
@@ -153,7 +153,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
       playActionSound();
-      if(selectedVoice && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
+      if(!isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
       if (isListening && voiceSearchTarget === 'books') stopListening();

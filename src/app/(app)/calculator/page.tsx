@@ -49,25 +49,25 @@ export default function CalculatorPage() {
   const [justEvaluated, setJustEvaluated] = useState(false);
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+    if (!voicePreferenceWasSetRef.current) {
       setVoicePreference('gojo');
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

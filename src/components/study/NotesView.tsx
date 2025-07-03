@@ -26,10 +26,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     cancelTTS,
     isSpeaking,
     isPaused,
-    selectedVoice,
     setVoicePreference,
     voicePreference,
-    supportedVoices
   } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
@@ -38,11 +36,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+    if (!voicePreferenceWasSetRef.current) {
         setVoicePreference('holo'); // Default to Holo for notes reading
         voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     if (notesContent) {
@@ -103,7 +101,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast({ title: "Notes Downloaded", description: "Notes saved as a .txt file." });
-    if (selectedVoice && !isSpeaking && !isPaused) speak("Notes downloaded!");
+    if (!isSpeaking && !isPaused) speak("Notes downloaded!");
   };
 
   const customRenderers = {

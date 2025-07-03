@@ -41,7 +41,7 @@ const motivationalQuotes = [
 ];
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, isPaused, supportedVoices, setVoicePreference, selectedVoice } = useTTS();
+  const { speak, isSpeaking, isPaused } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
   const { user } = useAuth();
@@ -51,7 +51,6 @@ export default function DashboardPage() {
   const [liveUserCount, setLiveUserCount] = useState(137);
 
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
@@ -82,22 +81,15 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma');
-      voicePreferenceWasSetRef.current = true;
-    }
-  }, [supportedVoices, setVoicePreference]);
-
-  useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak]);
 
   const handleRemoveTopic = (topicToRemove: string) => {
     playClickSound();

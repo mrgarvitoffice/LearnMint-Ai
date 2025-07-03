@@ -38,8 +38,6 @@ export default function ChatbotPage() {
     cancelTTS,
     isSpeaking,
     isPaused,
-    supportedVoices,
-    selectedVoice,
     setVoicePreference,
     voicePreference,
   } = useTTS();
@@ -50,14 +48,14 @@ export default function ChatbotPage() {
   const initialGreetingSpokenRef = useRef(false);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+    if (!voicePreferenceWasSetRef.current) {
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
       if (voicePreference !== characterExpectedVoicePref || !currentCharacterGreeting) {
          speak(PAGE_TITLE_CHATBOT);
@@ -65,7 +63,7 @@ export default function ChatbotPage() {
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak, currentCharacterGreeting, selectedCharacter]);
+  }, [voicePreference, isSpeaking, isPaused, speak, currentCharacterGreeting, selectedCharacter]);
 
   useEffect(() => {
     initialGreetingSpokenRef.current = false;
@@ -94,7 +92,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
-    if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
+    if (currentCharacterGreeting && !initialGreetingSpokenRef.current && 
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
       const speakNow = () => {
@@ -107,7 +105,7 @@ export default function ChatbotPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [currentCharacterGreeting, selectedVoice, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
+  }, [currentCharacterGreeting, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
 
 
   useEffect(() => {
@@ -144,7 +142,7 @@ export default function ChatbotPage() {
       setMessages(prev => [...prev, assistantMessage]);
 
       const characterVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
-      if (selectedVoice && voicePreference === characterVoicePref && !isSpeaking && !isPaused) {
+      if (voicePreference === characterVoicePref && !isSpeaking && !isPaused) {
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
@@ -175,14 +173,14 @@ export default function ChatbotPage() {
     if (voicePreference !== characterExpectedVoicePref) {
         setVoicePreference(characterExpectedVoicePref);
         setTimeout(() => {
-            if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay!);
+            if (!isSpeaking && !isPaused) speak(textToPlay!);
             else if (isSpeaking && !isPaused) pauseTTS();
             else if (isPaused) resumeTTS();
         }, 150); // Add delay to ensure voice switch
         return;
     }
 
-    if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay);
+    if (!isSpeaking && !isPaused) speak(textToPlay);
     else if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
   };

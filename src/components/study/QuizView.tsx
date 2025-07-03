@@ -34,15 +34,16 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
   const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, selectedVoice, isSpeaking, isPaused, setVoicePreference, supportedVoices, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   
   const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
+    if (!voicePreferenceWasSetRef.current) {
+      setVoicePreference('gojo');
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     if (questions && questions.length > 0) {
@@ -68,15 +69,15 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
     if (isCorrect) {
       setScore(prev => prev + 4);
-      if (selectedVoice && !isSpeaking && !isPaused) speak("Correct!");
+      if (!isSpeaking && !isPaused) speak("Correct!");
       playCorrectSound();
     } else {
       setScore(prev => prev - 1); 
-      if (selectedVoice && !isSpeaking && !isPaused) speak("Incorrect.");
+      if (!isSpeaking && !isPaused) speak("Incorrect.");
       playIncorrectSound();
     }
     setIsAnswerFinalized(true);
-  }, [currentQuestion, isAnswerFinalized, userAnswers, currentQuestionIndex, playCorrectSound, playIncorrectSound, speak, selectedVoice, isSpeaking, isPaused]);
+  }, [currentQuestion, isAnswerFinalized, userAnswers, currentQuestionIndex, playCorrectSound, playIncorrectSound, speak, isSpeaking, isPaused]);
 
 
   const handleMcqOptionClick = useCallback((optionValue: string) => {
@@ -134,7 +135,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     setQuizFinished(true);
     const totalPossibleScore = questions.length * 4;
     const finalScoreMessage = `Quiz finished! Your final score is ${score} out of ${totalPossibleScore}.`;
-    if (selectedVoice && !isSpeaking && !isPaused) speak(finalScoreMessage);
+    if (!isSpeaking && !isPaused) speak(finalScoreMessage);
   };
   
   const handleRestartQuiz = () => {
@@ -148,7 +149,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     setIsAnswerFinalized(false);
     setShortAnswerValue('');
     setSelectedMcqOption(null);
-    if (selectedVoice && !isSpeaking && !isPaused) speak("Quiz restarted.");
+    if (!isSpeaking && !isPaused) speak("Quiz restarted.");
   };
 
   if (!questions || questions.length === 0) {

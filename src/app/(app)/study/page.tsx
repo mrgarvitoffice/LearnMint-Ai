@@ -80,7 +80,7 @@ function StudyPageContent() {
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, isSpeaking, isPaused, supportedVoices, selectedVoice, setVoicePreference, voicePreference, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const queryClient = useQueryClient();
 
   const pageTitleSpokenRef = useRef(false);
@@ -104,22 +104,22 @@ function StudyPageContent() {
 
 
   useEffect(() => {
-    if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma');
+    if (!voicePreferenceWasSetRef.current) {
+      setVoicePreference('holo');
       voicePreferenceWasSetRef.current = true;
     }
-  }, [supportedVoices, setVoicePreference]);
+  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [selectedVoice, isSpeaking, isPaused, speak, activeTopic]);
+  }, [isSpeaking, isPaused, speak, activeTopic]);
 
 
   const getCacheKey = (type: string, topic: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topic.toLowerCase().replace(/\s+/g, '-')}`;
@@ -299,4 +299,3 @@ export default function StudyPage() {
     </Suspense>
   );
 }
-    
