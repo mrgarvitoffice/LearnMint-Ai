@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Trash2, TestTubeDiagonal, Newspaper, Brain } from "lucide-react";
+import { ArrowRight, Sparkles, Trash2, TestTubeDiagonal, Newspaper, Brain, FileText } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -12,10 +12,41 @@ import { useRouter } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { motion } from 'framer-motion';
 import { Logo } from '@/components/icons/Logo';
+import { NAV_ITEMS } from '@/lib/constants';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = "Welcome to LearnMint!";
+
+// A new reusable component for the main action cards on the dashboard.
+const ActionCard = ({ icon: Icon, title, description, buttonText, href, delay }: { icon: React.ElementType, title: string, description: string, buttonText: string, href: string, delay: number }) => {
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay } },
+    };
+
+    return (
+        <motion.div variants={cardVariants}>
+            <Card className="w-full text-left">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-xl">
+                        <Icon className="h-6 w-6 text-primary" />
+                        {title}
+                    </CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <Button asChild size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white shadow-lg">
+                        <Link href={href}>
+                            {buttonText} <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </motion.div>
+    );
+};
+
 
 export default function DashboardPage() {
   const { speak } = useTTS();
@@ -74,52 +105,47 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl py-4 sm:py-8 space-y-6 md:space-y-8">
-        <motion.div variants={cardVariants} initial="hidden" animate="visible">
+    <motion.div 
+        className="container mx-auto max-w-4xl py-4 sm:py-8 space-y-6 md:space-y-8"
+        initial="hidden"
+        animate="visible"
+        transition={{ staggerChildren: 0.1 }}
+    >
+        <motion.div variants={cardVariants}>
           <Card className="text-center bg-card/80 backdrop-blur-sm">
             <CardHeader className="items-center">
               <Logo size={60} />
               <CardTitle className="text-4xl font-bold mt-4">Welcome to LearnMint!</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white text-lg h-12 px-8">
-                <Link href="/notes">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Start Generating Notes
-                </Link>
-              </Button>
-            </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div 
-            variants={cardVariants} 
-            initial="hidden" 
-            animate="visible"
-            transition={{ delay: 0.1 }}
-        >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Button asChild size="lg" className="h-20 text-lg bg-green-500 hover:bg-green-600 text-white shadow-lg">
-                    <Link href="/custom-test">
-                        <TestTubeDiagonal className="mr-3 h-6 w-6" />
-                        Create Custom Test
-                    </Link>
-                </Button>
-                <Button asChild size="lg" className="h-20 text-lg bg-green-500 hover:bg-green-600 text-white shadow-lg">
-                    <Link href="/news">
-                        <Newspaper className="mr-3 h-6 w-6" />
-                        Daily News
-                    </Link>
-                </Button>
-            </div>
-        </motion.div>
-
-        <motion.div 
-            variants={cardVariants} 
-            initial="hidden" 
-            animate="visible"
-            transition={{ delay: 0.2 }}
-        >
+        <ActionCard
+            icon={FileText}
+            title="Generate Study Materials"
+            description="Let AI create comprehensive notes, quizzes, and flashcards on any topic."
+            buttonText="Start Generating"
+            href="/notes"
+            delay={0.1}
+        />
+        <ActionCard
+            icon={TestTubeDiagonal}
+            title="Create a Custom Test"
+            description="Tailor a test from specific topics, notes, or recent studies."
+            buttonText="Build a Test"
+            href="/custom-test"
+            delay={0.2}
+        />
+        <ActionCard
+            icon={Newspaper}
+            title="Daily News Digest"
+            description="Stay informed with the latest articles, filterable by location and category."
+            buttonText="Read News"
+            href="/news"
+            delay={0.3}
+        />
+        
+        <motion.div variants={cardVariants}>
             <Card>
                 <CardHeader className="flex-row items-center gap-3 space-y-0">
                     <Brain className="h-6 w-6 text-primary" />
@@ -133,13 +159,34 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
         </motion.div>
+        
+        <motion.div variants={cardVariants}>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Explore All Features</CardTitle>
+                    <CardDescription>Quickly access all of LearnMint's powerful tools.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {NAV_ITEMS.map(item => {
+                            const Icon = item.icon;
+                            return (
+                                <Link key={item.href} href={item.href} passHref legacyBehavior>
+                                    <a className="w-full">
+                                        <Button variant="outline" className="w-full h-20 flex-col gap-1.5" onClick={playClickSound}>
+                                            <Icon className="h-6 w-6" />
+                                            <span className="text-xs text-center">{item.title}</span>
+                                        </Button>
+                                    </a>
+                                </Link>
+                            )
+                        })}
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
 
-        <motion.div 
-            variants={cardVariants} 
-            initial="hidden" 
-            animate="visible"
-            transition={{ delay: 0.3 }}
-        >
+        <motion.div variants={cardVariants}>
             <Card>
                 <CardHeader>
                     <CardTitle>Recent Topics</CardTitle>
@@ -174,6 +221,6 @@ export default function DashboardPage() {
         <div className="text-center text-xs text-muted-foreground mt-8 sm:mt-12 py-4 border-t border-border/50">
             Made by <span className="font-bold text-primary">MrGarvit</span>
         </div>
-    </div>
+    </motion.div>
   );
 }
