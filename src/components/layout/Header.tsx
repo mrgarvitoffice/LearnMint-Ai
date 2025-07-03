@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, ShieldQuestion, Settings, LogIn, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, LogIn, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import { APP_NAME, APP_LANGUAGES } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -45,11 +46,6 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
       toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
     }
   };
-  
-  const handleSignInRedirect = () => {
-    playClickSound();
-    router.push('/sign-in');
-  };
 
   const handleSoundModeChange = (value: string) => {
     playClickSound();
@@ -73,7 +69,6 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
 
   const getUserFirstName = () => {
     if (!user) return "User";
-    if (user.isAnonymous) return "Guest";
     if (user.displayName) return user.displayName.split(' ')[0];
     if (user.email) {
       const emailName = user.email.split('@')[0];
@@ -212,8 +207,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
                   <Avatar className="h-9 w-9 transition-transform duration-200 group-hover:scale-110">
                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
                         <AvatarFallback className="bg-muted">
-                        {user.isAnonymous ? <ShieldQuestion className="h-5 w-5" /> :
-                            firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-5 w-5" />}
+                        {firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-5 w-5" />}
                         </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -221,28 +215,19 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                     <p className="font-semibold">{t('header.profile.greeting', { name: firstName })}</p>
-                    {!user.isAnonymous && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}
+                    {user.email && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 
-                {user.isAnonymous ? (
-                  <DropdownMenuItem onClick={handleSignInRedirect} className="text-primary focus:bg-primary/10 focus:text-primary">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    <span>{t('header.profile.signIn')}</span>
-                  </DropdownMenuItem>
-                ) : (
-                  <>
-                    <DropdownMenuItem onClick={() => router.push('/profile')}>
-                      <UserCircle className="mr-2 h-4 w-4" />
-                      <span>{t('header.profile.profile')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>{t('header.profile.signOut')}</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
+                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  <span>{t('header.profile.profile')}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>{t('header.profile.signOut')}</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
         )}

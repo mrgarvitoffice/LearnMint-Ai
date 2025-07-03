@@ -34,8 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Effect to create a user document and increment the total user count on first sign-up
   useEffect(() => {
     const setupNewUser = async (newUser: User) => {
-      if (newUser.isAnonymous) return; // We don't count anonymous guests as "registered users"
-
       const userRef = doc(db, 'users', newUser.uid);
       const metadataRef = doc(db, 'metadata', 'userStats');
 

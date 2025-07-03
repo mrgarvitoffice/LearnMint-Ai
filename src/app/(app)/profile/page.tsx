@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSound } from '@/hooks/useSound';
-import { LogIn, UserCircle, ShieldQuestion, ChevronRight } from 'lucide-react';
+import { UserCircle, ShieldQuestion, ChevronRight } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -37,14 +37,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
 
-  const handleSignInRedirect = () => {
-    playClickSound();
-    router.push('/sign-in');
-  };
-
   const getUserFirstName = () => {
     if (!user) return "User";
-    if (user.isAnonymous) return "Guest";
     if (user.displayName) return user.displayName.split(' ')[0];
     if (user.email) {
       const emailName = user.email.split('@')[0];
@@ -79,8 +73,7 @@ export default function ProfilePage() {
           <Avatar className="h-24 w-24 border-4 border-primary/50 mx-auto mb-3 shadow-md">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
             <AvatarFallback className="text-4xl bg-muted">
-              {user.isAnonymous ? <ShieldQuestion className="h-12 w-12" /> :
-                firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-12 w-12" />}
+              {firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-12 w-12" />}
             </AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl md:text-4xl font-bold text-primary">
@@ -121,16 +114,6 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
-      
-      {user.isAnonymous && (
-        <Card>
-            <CardFooter className="p-4">
-                <Button onClick={handleSignInRedirect} className="w-full" variant="default" size="lg">
-                  <LogIn className="mr-2 h-5 w-5" /> Sign In / Sign Up to Save Progress
-                </Button>
-            </CardFooter>
-        </Card>
-      )}
     </div>
   );
 }

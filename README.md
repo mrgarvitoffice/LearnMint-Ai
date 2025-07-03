@@ -49,7 +49,7 @@ LearnMint is built on the principles of efficiency, engagement, and elegance, a 
 
 **MrGarvit** has packed LearnMint with a suite of powerful, AI-driven tools:
 
-*   **User Authentication**: Secure sign-up (Email/Password, Google) and sign-in (Email/Password, Anonymous) via Firebase.
+*   **User Authentication**: Secure sign-up and sign-in (Email/Password, Google) via Firebase.
 *   **AI Content Generation Suite**:
     *   **Unified Material Generation**: Enter a topic for AI-generated:
         *   📝 **Comprehensive Notes**: Markdown formatted, emojis, and embedded AI-generated images.
@@ -82,7 +82,7 @@ LearnMint leverages a modern, robust tech stack, carefully selected by **MrGarvi
 *   TypeScript
 *   Tailwind CSS
 *   ShadCN UI Components
-*   Firebase Authentication (Email/Password, Google, Anonymous)
+*   Firebase Authentication (Email/Password, Google)
 *   Genkit (Google Gemini for AI text & image generation)
 *   Lucide Icons
 *   `@tanstack/react-query`
@@ -103,7 +103,7 @@ Embark on your AI-enhanced learning adventure, crafted by **MrGarvit**!
 *   `npm` or `yarn`
 *   A Firebase Project:
     *   Create at [firebase.google.com](https://firebase.google.com/).
-    *   Enable **Email/Password**, **Google**, and **Anonymous** sign-in providers in Authentication -> Sign-in method. (Ensure project support email is configured for Google).
+    *   Enable **Email/Password** and **Google** sign-in providers in Authentication -> Sign-in method. (Ensure project support email is configured for Google).
 
 ### 2. CRITICAL: Set up Environment Variables using a `.env` file
 
