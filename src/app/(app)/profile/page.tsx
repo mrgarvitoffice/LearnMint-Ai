@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSound } from '@/hooks/useSound';
-import { UserCircle, ShieldQuestion, ChevronRight } from 'lucide-react';
+import { UserCircle, ShieldQuestion, ChevronRight, UserPlus, LogIn } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -61,6 +61,38 @@ export default function ProfilePage() {
               <Link href="/sign-in">Go to Sign In</Link>
             </Button>
           </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isGuest = user?.isAnonymous;
+
+  if (isGuest) {
+    return (
+      <div className="container mx-auto max-w-xl py-8 text-center">
+        <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
+            <CardHeader>
+                <UserCircle className="mx-auto h-24 w-24 text-primary/80" />
+                <CardTitle className="text-3xl font-bold text-primary mt-4">You are a Guest</CardTitle>
+                <CardDescription className="text-base text-muted-foreground mt-1">
+                    Sign up to save your progress and unlock all features.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 p-6">
+                <Button asChild className="w-full" size="lg">
+                    <Link href="/sign-up">
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Create a Free Account
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full" size="lg">
+                    <Link href="/sign-in">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Sign In to an Existing Account
+                    </Link>
+                </Button>
+            </CardContent>
         </Card>
       </div>
     );

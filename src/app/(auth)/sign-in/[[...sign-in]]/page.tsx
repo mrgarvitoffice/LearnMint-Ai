@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, signInAnonymously } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, Chrome } from 'lucide-react';
+import { Loader2, Chrome, UserX } from 'lucide-react';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -69,6 +70,24 @@ export default function SignInPage() {
     }
   };
 
+  const handleGuestSignIn = async () => {
+    setIsGuestLoading(true);
+    setError(null);
+    try {
+      await signInAnonymously(auth);
+      toast({ title: 'Signed In as Guest', description: "Welcome! Some features may be limited for guest users." });
+      router.push('/');
+    } catch (err: any) {
+      let description = 'An unknown error occurred while trying to sign in as a guest.';
+      if (err.message) {
+        description = err.message;
+      }
+      setError(description);
+      toast({ title: 'Guest Sign In Failed', description, variant: 'destructive' });
+    } finally {
+      setIsGuestLoading(false);
+    }
+  };
 
   return (
     <Card className="w-full max-w-md shadow-xl">
@@ -77,12 +96,19 @@ export default function SignInPage() {
         <CardDescription>Enter your credentials to access your account.</CardDescription>
       </CardHeader>
       
-      <CardContent>
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-          {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
-          Sign in with Google
-        </Button>
-        <div className="relative my-4">
+      <CardContent className="space-y-4">
+        <div className="space-y-3">
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading || isGuestLoading}>
+            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
+            Sign in with Google
+          </Button>
+          <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={isLoading || isGoogleLoading || isGuestLoading}>
+              {isGuestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
+              Continue as Guest
+          </Button>
+        </div>
+
+        <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
@@ -92,29 +118,25 @@ export default function SignInPage() {
             </span>
           </div>
         </div>
-      </CardContent>
-
-      <form onSubmit={handleEmailSignIn}>
-        <CardContent className="space-y-4 pt-0">
+        
+        <form onSubmit={handleEmailSignIn} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isGoogleLoading} />
+            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading || isGoogleLoading || isGuestLoading} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isGoogleLoading} />
+            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading || isGoogleLoading || isGuestLoading} />
           </div>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading || isGuestLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In with Email
+            Sign In
           </Button>
-        </CardFooter>
-      </form>
+        </form>
+      </CardContent>
       
-      <CardFooter className="flex-col gap-2 pt-2 border-t mt-3">
+      <CardFooter className="flex-col gap-2 pt-4 border-t">
         <p className="text-sm text-muted-foreground text-center">
           Don&apos;t have an account?{' '}
           <Button variant="link" asChild className="p-0 h-auto">

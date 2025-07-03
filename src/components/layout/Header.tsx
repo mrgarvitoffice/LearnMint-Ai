@@ -14,7 +14,7 @@ import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, LogIn, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, LogIn, PanelLeftOpen, PanelLeftClose, UserPlus } from 'lucide-react';
 import { APP_NAME, APP_LANGUAGES } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -77,6 +77,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
     return "User";
   };
   const firstName = getUserFirstName();
+  const isGuest = user?.isAnonymous;
 
   const SettingsMenuContent = () => (
     <>
@@ -207,26 +208,40 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
                   <Avatar className="h-9 w-9 transition-transform duration-200 group-hover:scale-110">
                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
                         <AvatarFallback className="bg-muted">
-                        {firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-5 w-5" />}
+                          {isGuest ? <UserCircle className="h-5 w-5" /> : firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-5 w-5" />}
                         </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
-                    <p className="font-semibold">{t('header.profile.greeting', { name: firstName })}</p>
+                    <p className="font-semibold">{isGuest ? 'Guest User' : t('header.profile.greeting', { name: firstName })}</p>
                     {user.email && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>{t('header.profile.profile')}</span>
-                </DropdownMenuItem>
+                {isGuest ? (
+                    <>
+                        <DropdownMenuItem onClick={() => router.push('/sign-up')}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            <span>Create Account</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/sign-in')}>
+                            <LogIn className="mr-2 h-4 w-4" />
+                            <span>Sign In</span>
+                        </DropdownMenuItem>
+                    </>
+                ) : (
+                    <DropdownMenuItem onClick={() => router.push('/profile')}>
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>{t('header.profile.profile')}</span>
+                    </DropdownMenuItem>
+                )}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t('header.profile.signOut')}</span>
+                  <span>{isGuest ? 'Exit Guest Session' : t('header.profile.signOut')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
