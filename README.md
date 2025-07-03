@@ -151,7 +151,7 @@ GOOGLE_API_KEY_IMAGES=AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
 
 # Optional: Key for Text-to-Speech (TTS) voice generation
 # Uses GOOGLE_API_KEY if blank.
-GOOGLE_API_KEY_TTS=YOUR_GEMINI_API_KEY_FOR_TTS
+GOOGLE_API_KEY_TTS=AIzaSyD_8o9PtlwoqUbuV8Z2IZfe2m9B9UfckuE
 
 # === Other Service API Keys ===
 
