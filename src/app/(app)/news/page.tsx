@@ -135,7 +135,7 @@ export default function NewsPage() {
   const readAllHeadlines = useCallback(() => {
     const headlines = articles.map(a => a.title).filter(Boolean).join('. ');
     if (headlines) {
-        speak(headlines, { useBrowserTTS: true }); // Use quota-free browser TTS for this feature
+        speak(headlines);
     } else {
         toast({ title: "No Headlines", description: "No news headlines available to read." });
     }

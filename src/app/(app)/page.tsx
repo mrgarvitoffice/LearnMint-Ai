@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Brain, Trash2, CheckCircle, FileText, TestTubeDiagonal, Newspaper, Sparkles, BookHeart, History } from "lucide-react";
+import { ArrowRight, Brain, Trash2, CheckCircle, FileText, TestTubeDiagonal, Newspaper, Sparkles, BookHeart, History, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -29,32 +29,37 @@ const dailyMotivationQuotes = [
 ];
 
 const ActionCard = ({ title, description, buttonText, href, icon: Icon }: { title: string, description: string, buttonText: string, href: string, icon: React.ElementType }) => (
-    <Card className="bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-primary/20 transition-all duration-300">
-        <CardHeader>
-            <div className="flex items-center gap-3">
-                <Icon className="w-8 h-8 text-primary" />
-                <CardTitle className="text-xl font-bold">{title}</CardTitle>
-            </div>
-        </CardHeader>
-        <CardContent>
-            <p className="text-muted-foreground">{description}</p>
-        </CardContent>
-        <CardFooter>
-            <Button asChild className="w-full">
-                <Link href={href}>{buttonText} <ArrowRight className="ml-2 w-4 h-4"/></Link>
-            </Button>
-        </CardFooter>
-    </Card>
+    <motion.div whileHover={{ y: -5, scale: 1.02 }} className="w-full">
+        <Card className="bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-primary/20 transition-all duration-300 h-full flex flex-col">
+            <CardHeader>
+                <div className="flex items-center gap-3">
+                    <Icon className="w-8 h-8 text-primary" />
+                    <CardTitle className="text-xl font-bold">{title}</CardTitle>
+                </div>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                <p className="text-muted-foreground">{description}</p>
+            </CardContent>
+            <CardFooter>
+                <Button asChild className="w-full">
+                    <Link href={href}>{buttonText} <ArrowRight className="ml-2 w-4 h-4"/></Link>
+                </Button>
+            </CardFooter>
+        </Card>
+    </motion.div>
 );
 
 const FeatureIcon = ({ item }: { item: NavItem }) => (
     <Link href={item.href} passHref>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer text-center">
+        <motion.div 
+            whileHover={{ scale: 1.1, y: -3 }}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer text-center"
+        >
             <div className="p-3 bg-muted rounded-full">
                 <item.icon className="w-6 h-6 text-primary" />
             </div>
             <p className="text-xs font-medium text-muted-foreground">{item.title}</p>
-        </div>
+        </motion.div>
     </Link>
 );
 
@@ -129,7 +134,9 @@ export default function DashboardPage() {
             <motion.div custom={0} variants={cardVariants}>
                 <Card className="text-center bg-transparent border-none shadow-none">
                     <CardHeader>
-                        <Logo size={64} className="mx-auto" />
+                        <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
+                            <Logo size={64} className="mx-auto" />
+                        </motion.div>
                         <CardTitle className="text-4xl font-bold mt-4">Welcome to LearnMint!</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">Your AI-powered learning assistant for notes, quizzes, tests, and more.</CardDescription>
                          <div className="flex items-center justify-center gap-2 mt-3 text-primary">
@@ -143,37 +150,31 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div custom={1} variants={cardVariants} className="md:col-span-1">
-                   <ActionCard 
-                       title="Generate Materials"
-                       description="Let AI create comprehensive notes, quizzes, and flashcards for any topic."
-                       buttonText="Start Generating Notes"
-                       href="/notes"
-                       icon={FileText}
-                   />
-                </motion.div>
-                 <motion.div custom={2} variants={cardVariants} className="md:col-span-1">
-                   <ActionCard 
-                       title="Create Custom Test"
-                       description="Build a tailored test from topics, notes, or recent study sessions."
-                       buttonText="Go to Test Creator"
-                       href="/custom-test"
-                       icon={TestTubeDiagonal}
-                   />
-                </motion.div>
-                <motion.div custom={3} variants={cardVariants} className="md:col-span-1">
-                   <ActionCard 
-                       title="Daily News Digest"
-                       description="Catch up on the latest headlines from around the world, filtered your way."
-                       buttonText="Read Today's News"
-                       href="/news"
-                       icon={Newspaper}
-                   />
-                </motion.div>
-            </div>
+            <motion.div custom={1} variants={cardVariants} className="space-y-6">
+               <ActionCard 
+                   title="Generate Study Materials"
+                   description="Let AI create comprehensive notes, quizzes, and flashcards for any topic."
+                   buttonText="Start Generating"
+                   href="/notes"
+                   icon={FileText}
+               />
+               <ActionCard 
+                   title="Create Custom Test"
+                   description="Build a tailored test from topics, notes, or recent study sessions."
+                   buttonText="Go to Test Creator"
+                   href="/custom-test"
+                   icon={TestTubeDiagonal}
+               />
+               <ActionCard 
+                   title="Daily News Digest"
+                   description="Catch up on the latest headlines from around the world, filtered your way."
+                   buttonText="Read Today's News"
+                   href="/news"
+                   icon={Newspaper}
+               />
+            </motion.div>
             
-            <motion.div custom={4} variants={cardVariants}>
+            <motion.div custom={2} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3"><Sparkles className="text-primary"/>Daily Motivation</CardTitle>
@@ -184,7 +185,7 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <motion.div custom={5} variants={cardVariants}>
+            <motion.div custom={3} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3"><BookHeart className="text-primary"/>Explore All Features</CardTitle>
@@ -197,7 +198,7 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <motion.div custom={6} variants={cardVariants}>
+            <motion.div custom={4} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3"><History className="text-primary"/>Recent Topics</CardTitle>
@@ -223,6 +224,20 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </motion.div>
+
+            <motion.div custom={5} variants={cardVariants}>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3"><Brain className="text-primary"/>Daily Quests</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2"><CheckCircle className="text-green-500 h-4 w-4"/> Generate 1 new note set.</div>
+                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> Complete 1 quiz.</div>
+                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> Learn 5 new flashcards.</div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+            
             <div className="text-center text-xs text-muted-foreground mt-8 sm:mt-12 py-4 border-t border-border/50">
                 Made by <span className="font-bold text-primary">MrGarvit</span>
             </div>

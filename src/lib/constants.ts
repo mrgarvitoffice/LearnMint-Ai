@@ -58,7 +58,7 @@ export const TOP_NAV_ITEMS: NavItem[] = [
   { title: 'Chat', href: '/chatbot', icon: Bot },
   { title: 'Calculator', href: '/calculator', icon: Calculator },
   { title: 'News', href: '/news', icon: Newspaper }, // Centered Item
-  { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
+  { title: 'Flashcards', href: '/flashcards', icon: ListChecks },
   { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
 ];
 
@@ -66,7 +66,7 @@ export const TOP_NAV_ITEMS: NavItem[] = [
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   { title: 'Home', href: '/', icon: Home },
   { title: 'Generate', href: '/notes', icon: NotebookText },
-  { title: 'Flashcards', href: '/flashcards', icon: ListChecks },
+  { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
   { title: 'Library', href: '/library', icon: BookMarked },
   { title: 'You', href: '/profile', icon: UserCircle },
 ];
