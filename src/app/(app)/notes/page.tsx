@@ -19,7 +19,6 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { generateNotesAction } from "@/lib/actions";
 import type { CombinedStudyMaterialsOutput } from '@/lib/types'; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useTranslation } from '@/hooks/useTranslation';
 import { extractTextFromPdf } from '@/lib/utils';
 
@@ -233,35 +232,16 @@ export default function GenerateNotesPage() {
               aria-label="Study Topic"
               onKeyDown={(e) => e.key === 'Enter' && !isLoadingAll && topic.trim().length >=3 && handleGenerateAllMaterials()}
             />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" size="icon" title={t('generate.attachFile')}>
-                  <FileText className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-2">
-                <div className="flex gap-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                          <ImageIcon className="w-5 h-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.uploadImage')}</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                          <FileText className="w-5 h-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>{t('generate.pdf')}</p></TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} title={t('generate.attachFile')}>
+                    <ImageIcon className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Attach Image or PDF</p></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,application/pdf" className="hidden" />
              {browserSupportsSpeechRecognition && (
               <Button

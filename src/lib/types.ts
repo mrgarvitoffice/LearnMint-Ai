@@ -1,3 +1,4 @@
+
 // For AI Generated Content
 export interface QuizQuestion {
   question: string;
@@ -68,7 +69,7 @@ export interface GenerateAudioSummaryInput {
 }
 export interface GenerateAudioSummaryOutput {
   summary: string;
-  audioDataUri: string;
+  audioDataUri?: string; // Changed to optional as it's no longer generated on the server
 }
 
 
@@ -158,7 +159,7 @@ export interface ChatMessage {
 export interface TestSettings {
   topics: string[];
   notes?: string;
-  sourceType?: 'topic' | 'notes' | 'recent';
+  sourceType: 'topic' | 'notes' | 'recent';
   selectedRecentTopics?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   numQuestions: number;

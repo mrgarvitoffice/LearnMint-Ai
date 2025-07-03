@@ -210,13 +210,10 @@ function StudyPageContent() {
       queryClient.invalidateQueries({ queryKey: ["studyNotes", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["quizQuestions", activeTopic] });
       queryClient.invalidateQueries({ queryKey: ["flashcards", activeTopic] });
-      refetchNotes();
-      refetchQuiz();
-      refetchFlashcards();
     } else {
       toast({ title: "No Topic", description: "Cannot refresh without a valid topic.", variant: "destructive" });
     }
-  }, [activeTopic, queryClient, toast, playActionSound, refetchNotes, refetchQuiz, refetchFlashcards]);
+  }, [activeTopic, queryClient, toast, playActionSound]);
 
   const handleTabChange = (value: string) => {
     playClickSound();

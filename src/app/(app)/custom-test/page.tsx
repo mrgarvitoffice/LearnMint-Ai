@@ -27,7 +27,6 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSettings } from '@/contexts/SettingsContext';
 import { extractTextFromPdf } from '@/lib/utils';
 
@@ -518,35 +517,16 @@ export default function CustomTestPage() {
                    <div className="flex gap-2">
                     <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base flex-1" />
                     <div className="flex flex-col gap-2">
-                       <Popover>
-                        <PopoverTrigger asChild>
-                          <Button type="button" variant="outline" size="icon" title="Attach File">
-                            <FileText className="w-5 h-5" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2">
-                          <div className="flex gap-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
-                                    <ImageIcon className="w-5 h-5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Upload Image</p></TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
-                                    <FileText className="w-5 h-5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>PDF</p></TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                     <TooltipProvider>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()} title="Attach Image or PDF">
+                             <ImageIcon className="w-5 h-5" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent><p>Attach Image or PDF</p></TooltipContent>
+                       </Tooltip>
+                     </TooltipProvider>
                       {browserSupportsSpeechRecognition && (
                         <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading || isListening}>
                           <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />

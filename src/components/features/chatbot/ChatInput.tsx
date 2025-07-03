@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useSound } from '@/hooks/useSound';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ChatInputProps {
   onSendMessage: (message: string, image?: string) => void;
@@ -112,28 +111,16 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           </div>
         )}
         <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" title="Attach File">
-                <FileText className="w-5 h-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2">
-              <div className="flex gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                        <ImageIcon className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Upload Image</p></TooltipContent>
-                  </Tooltip>
-                  {/* PDF upload is not supported in chat, so it's removed from here */}
-                </TooltipProvider>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                  <ImageIcon className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Attach Image</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
 
           {browserSupportsSpeechRecognition && (
