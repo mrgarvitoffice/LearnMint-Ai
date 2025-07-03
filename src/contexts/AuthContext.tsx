@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [totalLearners, setTotalLearners] = useState(21); // Default value
 
-  // Core authentication listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -34,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Real-time listener for total learners count
   useEffect(() => {
     // Only attach the listener if authentication is resolved (not loading)
     if (!loading) {
@@ -53,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loading]); // This effect depends only on the loading state
 
-  // Initial loading screen for the entire app
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">

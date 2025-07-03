@@ -18,7 +18,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [soundMode, setSoundModeState] = useState<SoundMode>('essential');
+  const [soundMode, setSoundModeState] = useState<SoundMode>('full'); // Default to full
   const [fontSize, setFontSizeState] = useState<FontSize>('normal');
   const [appLanguage, setAppLanguageState] = useState<string>('en');
 

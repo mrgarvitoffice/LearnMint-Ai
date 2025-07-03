@@ -4,10 +4,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from './use-toast';
-import { textToSpeech } from '@/ai/flows/text-to-speech';
+import { APP_LANGUAGES } from '@/lib/constants';
 
 interface SpeakOptions {
   priority?: 'essential' | 'optional';
+  lang?: string; // e.g., 'en', 'es', 'hi'
 }
 
 interface TTSHook {
@@ -17,122 +18,148 @@ interface TTSHook {
   cancelTTS: () => void;
   isSpeaking: boolean;
   isPaused: boolean;
-  isLoading: boolean;
+  isLoading: boolean; // Represents voices loading
   setVoicePreference: (preference: 'holo' | 'gojo') => void;
   voicePreference: 'holo' | 'gojo';
+}
+
+// Browser's built-in Speech Synthesis (Free, no AI quota)
+let synth: SpeechSynthesis | null = null;
+if (typeof window !== 'undefined') {
+  synth = window.speechSynthesis;
 }
 
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voicePreference, setVoicePreferenceState] = useState<'holo' | 'gojo'>('holo');
   
-  const { soundMode } = useSettings();
+  const { soundMode, appLanguage } = useSettings();
   const { toast } = useToast();
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const activeRequestIdRef = useRef(0);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  const cancelTTS = useCallback(() => {
-    activeRequestIdRef.current += 1; // Invalidate previous requests
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
+  const populateVoiceList = useCallback(() => {
+    if (!synth) return;
+    const availableVoices = synth.getVoices();
+    if (availableVoices.length > 0) {
+      setVoices(availableVoices);
+      setIsLoading(false);
     }
-    setIsSpeaking(false);
-    setIsPaused(false);
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    // Initialize audio element
-    if (!audioRef.current && typeof window !== 'undefined') {
-        audioRef.current = new Audio();
-        
-        audioRef.current.onplay = () => {
-            setIsSpeaking(true);
-            setIsPaused(false);
-            setIsLoading(false);
-        };
-        audioRef.current.onpause = () => {
-            // Differentiate between natural end of audio and manual pause
-            if (audioRef.current && audioRef.current.duration > 0 && audioRef.current.currentTime < audioRef.current.duration) {
-                setIsPaused(true);
-            } else {
-                setIsPaused(false);
-            }
-            setIsSpeaking(false);
-        };
-        audioRef.current.onended = () => {
-            setIsSpeaking(false);
-            setIsPaused(false);
-            if (audioRef.current) audioRef.current.src = "";
-        };
-        audioRef.current.onstalled = () => {
-          if (isLoading) {
-            toast({ title: "Audio Stalled", description: "The audio stream is having trouble loading.", variant: "default"});
-            setIsLoading(false);
-          }
-        };
+    if (!synth) {
+      setIsLoading(false);
+      return;
     }
+    populateVoiceList();
+    // Some browsers load voices asynchronously.
+    synth.onvoiceschanged = populateVoiceList;
 
-    // Cleanup function to cancel any speech when the component unmounts
     return () => {
+      if (synth) synth.onvoiceschanged = null;
       cancelTTS();
     };
-  }, [cancelTTS, isLoading, toast]);
+  }, [populateVoiceList]);
+  
+  const cancelTTS = useCallback(() => {
+    if (synth?.speaking) {
+      synth.cancel();
+    }
+    setIsSpeaking(false);
+    setIsPaused(false);
+  }, []);
 
-  const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {
-    const { priority = 'optional' } = options;
+  const speak = useCallback((text: string, options: SpeakOptions = {}) => {
+    const { priority = 'optional', lang = appLanguage } = options;
 
-    if (!text.trim()) return;
+    if (!text.trim() || !synth) return;
     
-    // Sound mode check
+    // Respect sound mode settings
     if (soundMode === 'muted' || (soundMode === 'essential' && priority === 'optional')) {
       return;
     }
     
-    // Invalidate any ongoing request and start a new one
-    const currentRequestId = activeRequestIdRef.current += 1;
-    cancelTTS(); // Cancel previous sounds before starting a new one
-    setIsLoading(true);
+    cancelTTS(); // Stop any current speech
 
-    try {
-        const result = await textToSpeech({ text, voice: voicePreference });
-        
-        // If another request has started while we were waiting, do nothing.
-        if (currentRequestId !== activeRequestIdRef.current) {
-          setIsLoading(false);
-          return;
-        }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utteranceRef.current = utterance;
 
-        if (result.audioDataUri && audioRef.current) {
-            audioRef.current.src = result.audioDataUri;
-            await audioRef.current.play();
+    const bcp47Lang = APP_LANGUAGES.find(l => l.value === lang)?.bcp47 || 'en-US';
+    utterance.lang = bcp47Lang;
+    
+    // Voice selection logic
+    const potentialVoices = voices.filter(v => v.lang.startsWith(lang) && !v.localService);
+    let selectedVoice: SpeechSynthesisVoice | null = null;
+
+    if (voicePreference === 'holo') { // Female
+      selectedVoice = potentialVoices.find(v => v.name.toLowerCase().includes('female')) || potentialVoices.find(v => !v.name.toLowerCase().includes('male')) || null;
+    } else { // 'gojo' -> Male
+      selectedVoice = potentialVoices.find(v => v.name.toLowerCase().includes('male')) || null;
+    }
+    
+    // Fallback if preferred gender not found
+    if (!selectedVoice && potentialVoices.length > 0) {
+      selectedVoice = potentialVoices[0];
+    }
+    // Final fallback to any available voice
+    if (!selectedVoice && voices.length > 0) {
+      selectedVoice = voices.find(v => v.lang.startsWith(lang)) || voices[0];
+    }
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    } else {
+        if (voices.length > 0) { // If no language match, just use the first available voice
+            utterance.voice = voices[0];
         } else {
-            throw new Error("Received no audio data from the server.");
-        }
-    } catch (error: any) {
-        console.error("TTS Generation Error:", error);
-        toast({ title: "Voice Error", description: `Could not generate audio: ${error.message}`, variant: "destructive" });
-        if (currentRequestId === activeRequestIdRef.current) {
-           setIsLoading(false);
+            console.warn("TTS: No synthesis voices available.");
+            toast({ title: "Voice Error", description: "No text-to-speech voices were found on your browser.", variant: "destructive" });
+            return;
         }
     }
-  }, [soundMode, cancelTTS, toast, voicePreference]);
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      setIsPaused(false);
+    };
+    utterance.onpause = () => {
+      setIsSpeaking(true);
+      setIsPaused(true);
+    };
+    utterance.onresume = () => {
+      setIsSpeaking(true);
+      setIsPaused(false);
+    };
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      utteranceRef.current = null;
+    };
+    utterance.onerror = (event) => {
+      console.error("SpeechSynthesisUtterance.onerror", event);
+      toast({ title: "Voice Error", description: `An error occurred during speech synthesis: ${event.error}`, variant: "destructive" });
+      setIsSpeaking(false);
+      setIsPaused(false);
+    };
+
+    synth.speak(utterance);
+  }, [voices, voicePreference, soundMode, appLanguage, cancelTTS, toast]);
 
   const pauseTTS = useCallback(() => {
-    if (isSpeaking && !isPaused) {
-      audioRef.current?.pause();
+    if (synth?.speaking && !synth.paused) {
+      synth.pause();
     }
-  }, [isSpeaking, isPaused]);
+  }, []);
 
   const resumeTTS = useCallback(() => {
-    if (isPaused) {
-      audioRef.current?.play().catch(e => console.error("Resume TTS failed", e));
+    if (synth?.paused) {
+      synth.resume();
     }
-  }, [isPaused]);
+  }, []);
   
   const setVoicePreference = useCallback((preference: 'holo' | 'gojo') => {
     cancelTTS();

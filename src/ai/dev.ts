@@ -15,7 +15,7 @@ import '@/ai/flows/generate-flashcards-from-notes';
 import '@/ai/flows/search-youtube-videos';
 import '@/ai/flows/search-google-books';
 import '@/ai/flows/generate-image-from-prompt';
-import '@/ai/flows/text-to-speech';
+// import '@/ai/flows/text-to-speech'; // DEPRECATED: Replaced with browser-based TTS.
 import '@/ai/flows/generate-audio-flashcards';
 import '@/ai/flows/generate-audio-summary';
 

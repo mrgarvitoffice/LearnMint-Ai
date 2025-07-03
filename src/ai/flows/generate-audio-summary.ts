@@ -1,17 +1,16 @@
 
 'use server';
 /**
- * @fileOverview An AI agent that generates a text summary from content (text or image) and then converts that summary to audio.
+ * @fileOverview An AI agent that generates a text summary from content (text or image).
+ * NOTE: This flow has been updated to ONLY generate text. Audio is now handled client-side.
  *
- * - generateAudioSummary - A function that handles the full summary-to-audio process.
+ * - generateAudioSummary - A function that handles the summary process.
  * - GenerateAudioSummaryInput - The input type for this function.
  * - GenerateAudioSummaryOutput - The return type for this function.
  */
 
-import { aiForTTS } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/googleai';
+import { aiForNotes } from '@/ai/genkit';
 import { z } from 'zod';
-import wav from 'wav';
 import type { GenerateAudioSummaryOutput } from '@/lib/types';
 
 const GenerateAudioSummaryInputSchema = z.object({
@@ -24,7 +23,7 @@ export type GenerateAudioSummaryInput = z.infer<typeof GenerateAudioSummaryInput
 
 const GenerateAudioSummaryOutputSchema = z.object({
   summary: z.string().describe("The generated text summary."),
-  audioDataUri: z.string().describe("A data URI for the WAV audio file of the summary."),
+  audioDataUri: z.string().optional().describe("DEPRECATED: This will no longer be populated. Audio is handled client-side."),
 });
 
 // This function is exported and called from a server action.
@@ -32,27 +31,10 @@ export async function generateAudioSummary(input: GenerateAudioSummaryInput): Pr
   return generateAudioSummaryFlow(input);
 }
 
-// Helper to convert raw PCM audio buffer to a Base64 encoded WAV string.
-async function toWav(pcmData: Buffer): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels: 1,
-      sampleRate: 24000,
-      bitDepth: 16,
-    });
-    const buffers: Buffer[] = [];
-    writer.on('data', (chunk: Buffer) => buffers.push(chunk));
-    writer.on('end', () => resolve(Buffer.concat(buffers).toString('base64')));
-    writer.on('error', reject);
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
 // Define a prompt specifically for summarizing content.
-const summaryPrompt = aiForTTS.definePrompt({
+const summaryPrompt = aiForNotes.definePrompt({
   name: 'generateSummaryForAudioPrompt',
-  model: 'googleai/gemini-1.5-flash-latest', // Good for text tasks
+  model: 'googleai/gemini-1.5-flash-latest', 
   input: { schema: z.object({ content: z.string() }) },
   output: { schema: z.object({ summary: z.string() }) },
   prompt: `You are an expert summarizer. Your task is to provide a clear, concise, and informative summary of the provided content. The summary should capture the main points and be easy to understand when read aloud.
@@ -66,7 +48,7 @@ const summaryPrompt = aiForTTS.definePrompt({
 });
 
 // The main Genkit flow definition.
-const generateAudioSummaryFlow = aiForTTS.defineFlow(
+const generateAudioSummaryFlow = aiForNotes.defineFlow(
   {
     name: 'generateAudioSummaryFlow',
     inputSchema: GenerateAudioSummaryInputSchema,
@@ -78,7 +60,7 @@ const generateAudioSummaryFlow = aiForTTS.defineFlow(
     // Step 1: If an image is provided, generate a description of it first.
     if (input.imageDataUri) {
       console.log("[AI Flow - Audio Summary] Describing provided image...");
-      const { output: imageDescriptionOutput, finishReason } = await aiForTTS.generate({
+      const { output: imageDescriptionOutput, finishReason } = await aiForNotes.generate({
         model: 'googleai/gemini-1.5-flash-latest', // Vision model
         prompt: [
           { text: "Your task is to describe the contents of this image in detail. Focus on the key subjects, actions, and environment. This description will be used to create a summary." },
@@ -106,40 +88,10 @@ const generateAudioSummaryFlow = aiForTTS.defineFlow(
     }
     console.log(`[AI Flow - Audio Summary] Text summary generated: "${summaryText.substring(0, 50)}..."`);
 
-    // Step 3: Convert the summary text to audio using the TTS model.
-    console.log("[AI Flow - Audio Summary] Converting summary to audio...");
-    const { media } = await aiForTTS.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      prompt: summaryText,
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Achernar' }, // Using a consistent female voice for summaries
-          },
-        },
-        safetySettings: [
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        ],
-      },
-    });
-
-    if (!media?.url) {
-      throw new Error('No audio media was returned from the AI model.');
-    }
-
-    // Step 4: Convert the raw PCM audio to WAV format.
-    const pcmData = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
-    const wavBase64 = await toWav(pcmData);
-    console.log("[AI Flow - Audio Summary] Audio generated and converted to WAV successfully.");
-
-    // Step 5: Return the final output.
+    // Step 3: Return the final output. The audioDataUri is intentionally left undefined.
     return {
       summary: summaryText,
-      audioDataUri: 'data:audio/wav;base64,' + wavBase64,
+      audioDataUri: undefined,
     };
   }
 );

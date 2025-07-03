@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const PAGE_TITLE = "Global News Terminal";
 
@@ -29,6 +30,7 @@ interface NewsPageFilters {
 const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top', language: 'en' };
 
 export default function NewsPage() {
+  const { soundMode } = useSettings();
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
   const pageTitleSpokenRef = useRef(false);
@@ -59,24 +61,19 @@ export default function NewsPage() {
   });
 
   useEffect(() => {
-    // Set voice preference for this page
     setVoicePreference('gojo');
-    // Cleanup function to cancel any speech when the component unmounts
-    return () => {
-      cancelTTS();
-    };
+    return () => { cancelTTS(); };
   }, [setVoicePreference, cancelTTS]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-        if (!pageTitleSpokenRef.current) {
-            speak(PAGE_TITLE, { priority: 'optional' });
+        if (soundMode === 'full' && !pageTitleSpokenRef.current) {
+            speak(PAGE_TITLE, { priority: 'essential' });
             pageTitleSpokenRef.current = true;
         }
     }, 500);
-
     return () => clearTimeout(timer);
-  }, [speak]);
+  }, [speak, soundMode]);
 
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
@@ -126,6 +123,9 @@ export default function NewsPage() {
         newFilters.stateOrRegion = '';
         newFilters.city = '';
       }
+      if (name === 'language' && value !== prev.language) {
+          cancelTTS(); // Stop speaking if language changes
+      }
       return newFilters;
     });
   };
@@ -145,11 +145,11 @@ export default function NewsPage() {
   const readAllHeadlines = useCallback(() => {
     const headlines = articles.map(a => a.title).filter(Boolean).join('. ');
     if (headlines) {
-        speak(headlines, { priority: 'essential' });
+        speak(headlines, { priority: 'essential', lang: appliedFilters.language });
     } else {
         toast({ title: "No Headlines", description: "No news headlines available to read." });
     }
-  }, [articles, speak, toast]);
+  }, [articles, speak, toast, appliedFilters.language]);
 
   const handlePlaybackControl = () => {
     playActionSound();
