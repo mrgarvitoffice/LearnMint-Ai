@@ -8,15 +8,12 @@ import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Speaker } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
 import { NEWS_LANGUAGES } from '@/lib/constants';
-
 
 const PAGE_TITLE = "Global News Terminal";
 
@@ -31,44 +28,50 @@ interface NewsPageFilters {
 
 const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top', language: 'en' };
 
-
 export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
+  const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo'>('holo');
 
-  const {
-    speak,
-    pauseTTS,
-    resumeTTS,
-    cancelTTS,
-    isSpeaking,
-    isPaused,
-    isLoading: isTTSLoading,
-    setVoicePreference,
-    voicePreference
-  } = useTTS();
-  const pageTitleSpokenRef = useRef(false);
+  // Local TTS state
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
+  
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { toast } = useToast();
 
   const headlinesArrayForTTS = useRef<string[]>([]);
   const currentSpokenHeadlineIndexRef = useRef(0);
   const isReadingSequenceRef = useRef(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  // Load browser voices
   useEffect(() => {
-    setVoicePreference('holo');
-  }, [setVoicePreference]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE);
-      pageTitleSpokenRef.current = true;
+    const loadVoices = () => setBrowserVoices(window.speechSynthesis.getVoices());
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      loadVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
     }
     return () => {
-      isMounted = false;
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+        window.speechSynthesis.cancel();
+      }
     };
-  }, [isSpeaking, isPaused, speak, appliedFilters.language]);
+  }, []);
+
+  const cancelLocalTTS = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    setIsPaused(false);
+    isReadingSequenceRef.current = false;
+    currentSpokenHeadlineIndexRef.current = 0;
+  }, []);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -95,26 +98,14 @@ export default function NewsPage() {
 
   const handleApplyFilters = () => {
     playActionSound();
-    cancelTTS();
-    isReadingSequenceRef.current = false;
-    currentSpokenHeadlineIndexRef.current = 0;
+    cancelLocalTTS();
     setAppliedFilters(filters);
-    pageTitleSpokenRef.current = true; 
-    if (!isSpeaking && !isPaused) {
-      speak("Fetching news with new filters.");
-    }
   };
   const handleResetFilters = () => {
     playActionSound();
-    cancelTTS();
-    isReadingSequenceRef.current = false;
-    currentSpokenHeadlineIndexRef.current = 0;
+    cancelLocalTTS();
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
-    pageTitleSpokenRef.current = true;
-    if (!isSpeaking && !isPaused) {
-      speak("News filters reset.");
-    }
   };
 
   const articles = useMemo(() => {
@@ -163,13 +154,49 @@ export default function NewsPage() {
     if (JSON.stringify(headlinesArrayForTTS.current) !== JSON.stringify(newHeadlinesArray)) {
         headlinesArrayForTTS.current = newHeadlinesArray;
         if (isReadingSequenceRef.current) {
-            cancelTTS();
-            isReadingSequenceRef.current = false;
-            currentSpokenHeadlineIndexRef.current = 0;
+            cancelLocalTTS();
         }
     }
-  }, [articles, cancelTTS]);
+  }, [articles, cancelLocalTTS]);
 
+  const speakHeadlineLocally = useCallback((text: string, onEnd: () => void) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis || browserVoices.length === 0) {
+      toast({ title: "TTS Not Ready", description: "Browser voices are not available yet.", variant: "default" });
+      onEnd();
+      return;
+    }
+    
+    cancelLocalTTS();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utteranceRef.current = utterance;
+    const lang = NEWS_LANGUAGES.find(l => l.value === appliedFilters.language)?.bcp47 || 'en-US';
+    utterance.lang = lang;
+
+    let targetVoice: SpeechSynthesisVoice | undefined;
+    const voicesForLang = browserVoices.filter(v => v.lang.startsWith(lang.split('-')[0]));
+    
+    if (voicePreference === 'gojo') {
+      const maleVoicePreferences = ['Daniel', 'Google US English', 'David', 'Alex'];
+      targetVoice = voicesForLang.find(v => maleVoicePreferences.some(p => v.name.includes(p))) || voicesForLang.find(v => v.gender === 'male');
+    } else { // 'holo'
+      const femaleVoicePreferences = ['Samantha', 'Google UK English Female', 'Zira', 'Fiona'];
+      targetVoice = voicesForLang.find(v => femaleVoicePreferences.some(p => v.name.includes(p))) || voicesForLang.find(v => v.gender === 'female');
+    }
+    utterance.voice = targetVoice || voicesForLang.find(v => v.default) || voicesForLang[0];
+
+    utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
+    utterance.onpause = () => { setIsSpeaking(true); setIsPaused(true); };
+    utterance.onresume = () => { setIsSpeaking(true); setIsPaused(false); };
+    utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); onEnd(); };
+    utterance.onerror = (e) => {
+        console.error("SpeechSynthesis Error:", e);
+        toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
+        setIsSpeaking(false); setIsPaused(false); onEnd();
+    };
+    
+    window.speechSynthesis.speak(utterance);
+  }, [browserVoices, voicePreference, appliedFilters.language, toast, cancelLocalTTS]);
 
   const speakNextHeadline = useCallback(() => {
     if (!isReadingSequenceRef.current || currentSpokenHeadlineIndexRef.current >= headlinesArrayForTTS.current.length) {
@@ -178,27 +205,25 @@ export default function NewsPage() {
       return;
     }
     const headlineToSpeak = headlinesArrayForTTS.current[currentSpokenHeadlineIndexRef.current];
-    speak(headlineToSpeak, () => {
+    speakHeadlineLocally(headlineToSpeak, () => {
       if (isReadingSequenceRef.current) {
         currentSpokenHeadlineIndexRef.current += 1;
         speakNextHeadline();
       }
     });
-  }, [speak]);
+  }, [speakHeadlineLocally]);
 
   const handlePlaybackControl = () => {
     playActionSound();
-    
     if (isReadingSequenceRef.current) {
-      if (isSpeaking && !isPaused) pauseTTS();
-      else if (isPaused) resumeTTS();
+      if (isSpeaking && !isPaused) window.speechSynthesis.pause();
+      else if (isPaused) window.speechSynthesis.resume();
       else speakNextHeadline();
     } else {
       if (headlinesArrayForTTS.current.length === 0) {
         toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
         return;
       }
-      cancelTTS();
       isReadingSequenceRef.current = true;
       currentSpokenHeadlineIndexRef.current = 0;
       speakNextHeadline();
@@ -207,10 +232,14 @@ export default function NewsPage() {
 
   const handleStopTTS = () => {
     playActionSound();
-    cancelTTS();
-    isReadingSequenceRef.current = false;
-    currentSpokenHeadlineIndexRef.current = 0;
+    cancelLocalTTS();
   };
+
+  const handleSetVoicePreference = (pref: 'gojo' | 'holo') => {
+    playActionSound();
+    cancelLocalTTS();
+    setVoicePreference(pref);
+  }
 
   const getPlaybackButtonTextAndIcon = () => {
     if (isReadingSequenceRef.current) {
@@ -221,7 +250,6 @@ export default function NewsPage() {
   };
 
   const { text: playbackButtonText, icon: playbackButtonIcon } = getPlaybackButtonTextAndIcon();
-
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -235,14 +263,14 @@ export default function NewsPage() {
           <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
              <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
                 <Button
-                  onClick={() => { playActionSound(); setVoicePreference('gojo'); }}
+                  onClick={() => handleSetVoicePreference('gojo')}
                   variant={voicePreference === 'gojo' ? 'default' : 'ghost'}
                   size="sm" className="text-xs h-8 px-3"
                 >
                   Gojo
                 </Button>
                 <Button
-                  onClick={() => { playActionSound(); setVoicePreference('holo'); }}
+                  onClick={() => handleSetVoicePreference('holo')}
                   variant={voicePreference === 'holo' || !voicePreference ? 'default' : 'ghost'}
                   size="sm" className="text-xs h-8 px-3"
                 >
@@ -250,9 +278,11 @@ export default function NewsPage() {
                 </Button>
               </div>
               <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText}>
-                  {isTTSLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : playbackButtonIcon} {playbackButtonText}
+                  {playbackButtonIcon} {playbackButtonText}
               </Button>
-              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused && !isTTSLoading}> <StopCircle className="h-5 w-5" /> </Button>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused}>
+                <StopCircle className="h-5 w-5" />
+              </Button>
           </div>
         </CardContent>
         <CardContent>

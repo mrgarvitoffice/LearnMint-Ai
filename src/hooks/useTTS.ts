@@ -18,58 +18,101 @@ interface TTSHook {
   voicePreference: 'holo' | 'gojo' | null;
 }
 
-/**
- * `useTTS` Hook
- *
- * A custom React hook for Text-To-Speech (TTS) functionality using a server-side
- * AI model for consistent, high-quality voice generation across all devices.
- */
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo' | null>(null);
+  const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo' | null>('holo');
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [usingFallback, setUsingFallback] = useState(false);
   
   const { isMuted } = useSettings();
   const { toast } = useToast();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const onEndCallbackRef = useRef<(() => void) | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Effect to manage the audio element lifecycle
+  useEffect(() => {
+    const loadVoices = () => setBrowserVoices(window.speechSynthesis.getVoices());
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      loadVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    }
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && !audioRef.current) {
         audioRef.current = new Audio();
     }
     const audio = audioRef.current;
-
-    const handleEnded = () => {
-        setIsSpeaking(false);
-        setIsPaused(false);
-        onEndCallbackRef.current?.();
-        onEndCallbackRef.current = null; // Clear callback after execution
+    const handleAudioEnd = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      onEndCallbackRef.current?.();
+      onEndCallbackRef.current = null;
     };
-    const handlePlay = () => setIsSpeaking(true);
-    const handlePause = () => setIsPaused(true);
-
-    audio?.addEventListener('ended', handleEnded);
-    audio?.addEventListener('play', handlePlay);
-    audio?.addEventListener('pause', handlePause);
-
+    audio?.addEventListener('ended', handleAudioEnd);
     return () => {
-        audio?.removeEventListener('ended', handleEnded);
-        audio?.removeEventListener('play', handlePlay);
-        audio?.removeEventListener('pause', handlePause);
+        audio?.removeEventListener('ended', handleAudioEnd);
         audio?.pause();
-        audioRef.current = null;
     };
   }, []);
 
+  const speakWithBrowserFallback = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utteranceRef.current = utterance;
+    
+    let targetVoice: SpeechSynthesisVoice | undefined;
+    const lang = "en-US";
+    const voicesForLang = browserVoices.filter(v => v.lang.startsWith(lang.split('-')[0]));
+    
+    if (voicePreference === 'gojo') {
+      const maleVoicePreferences = ['Daniel', 'Google US English', 'David', 'Alex'];
+      targetVoice = voicesForLang.find(v => maleVoicePreferences.some(p => v.name.includes(p))) || voicesForLang.find(v => v.gender === 'male');
+    } else { // 'holo'
+      const femaleVoicePreferences = ['Samantha', 'Google UK English Female', 'Zira', 'Fiona'];
+      targetVoice = voicesForLang.find(v => femaleVoicePreferences.some(p => v.name.includes(p))) || voicesForLang.find(v => v.gender === 'female');
+    }
+    utterance.voice = targetVoice || voicesForLang.find(v => v.default) || voicesForLang[0];
+
+    utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
+    utterance.onpause = () => setIsPaused(true);
+    utterance.onresume = () => setIsPaused(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      onEndCallbackRef.current?.();
+      onEndCallbackRef.current = null;
+    };
+    utterance.onerror = () => {
+      toast({ title: "Browser Voice Error", description: "Could not play browser-based voice.", variant: "destructive" });
+      setIsSpeaking(false);
+      setIsPaused(false);
+    };
+    
+    window.speechSynthesis.speak(utterance);
+  }, [browserVoices, voicePreference, toast]);
+
   const cancelTTS = useCallback(() => {
+    setUsingFallback(false);
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
-      audio.src = ''; // Detach the source
+      if (audio.src) audio.src = '';
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
     setIsPaused(false);
@@ -83,66 +126,81 @@ export function useTTS(): TTSHook {
         return;
     }
 
-    cancelTTS(); // Stop any currently playing audio
+    cancelTTS();
     setIsLoading(true);
+    setUsingFallback(false);
     onEndCallbackRef.current = onEndCallback || null;
     
     try {
         const result = await textToSpeech({
             text,
-            voice: voicePreference || 'holo', // Default to Holo if not set
+            voice: voicePreference || 'holo',
         });
 
+        setIsLoading(false);
         const audio = audioRef.current;
         if (audio && result.audioDataUri) {
             audio.src = result.audioDataUri;
             await audio.play();
+            setIsSpeaking(true);
             setIsPaused(false);
         } else {
             throw new Error("Audio element not available or no audio data returned.");
         }
     } catch (error: any) {
-        console.error("Error in TTS generation:", error);
-        toast({
-            title: "Voice Generation Failed",
-            description: error.message || "Could not generate speech.",
-            variant: "destructive"
-        });
-        onEndCallbackRef.current?.(); // Ensure callback is called on error
-    } finally {
-        setIsLoading(false);
+        console.warn("AI TTS failed, attempting browser fallback.", error);
+        const errorMessage = error.message?.toLowerCase() || "";
+        if (errorMessage.includes("quota") || errorMessage.includes("billing")) {
+          toast({
+              title: "AI Voice Notice",
+              description: "AI voice quota might be exhausted. Using standard browser voice as a backup.",
+              variant: "default"
+          });
+          setIsLoading(false);
+          setUsingFallback(true);
+          speakWithBrowserFallback(text);
+        } else {
+          toast({ title: "Voice Generation Failed", description: "Could not generate speech.", variant: "destructive" });
+          setIsLoading(false);
+          onEndCallbackRef.current?.();
+        }
     }
-  }, [isMuted, voicePreference, cancelTTS, toast]);
+  }, [isMuted, voicePreference, cancelTTS, toast, speakWithBrowserFallback]);
 
   const pauseTTS = useCallback(() => {
-    const audio = audioRef.current;
-    if (audio && !audio.paused) {
-      audio.pause();
+    if (usingFallback) {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+            window.speechSynthesis.pause();
+            setIsPaused(true);
+        }
+    } else {
+        const audio = audioRef.current;
+        if (audio && !audio.paused) {
+          audio.pause();
+          setIsPaused(true);
+        }
     }
-  }, []);
+  }, [usingFallback]);
 
   const resumeTTS = useCallback(() => {
-    const audio = audioRef.current;
-    if (audio && audio.paused) {
-      audio.play();
-      setIsPaused(false);
+    if (usingFallback) {
+        if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+            setIsPaused(false);
+        }
+    } else {
+        const audio = audioRef.current;
+        if (audio && audio.paused) {
+          audio.play();
+          setIsPaused(false);
+        }
     }
-  }, []);
+  }, [usingFallback]);
 
   const handleSetVoicePreference = useCallback((preference: 'holo' | 'gojo' | null) => {
     cancelTTS();
     setVoicePreference(preference);
   }, [cancelTTS]);
 
-  return {
-    speak,
-    pauseTTS,
-    resumeTTS,
-    cancelTTS,
-    isSpeaking,
-    isPaused,
-    isLoading,
-    setVoicePreference: handleSetVoicePreference,
-    voicePreference,
-  };
+  return { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, isLoading, setVoicePreference: handleSetVoicePreference, voicePreference };
 }
