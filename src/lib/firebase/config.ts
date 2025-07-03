@@ -1,3 +1,4 @@
+
 // Firebase Configuration File for LearnMint
 // This file initializes Firebase and sets up authentication.
 // It's crucial that the environment variables are correctly set in your .env file.
