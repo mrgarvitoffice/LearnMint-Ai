@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -141,7 +140,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     h3: (props: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80">{props.children}</h3>,
     h4: (props: any) => <h4 className="text-lg font-semibold mt-3 mb-1.5 text-primary/70">{props.children}</h4>,
     ul: (props: any) => <ul className="list-disc pl-5 my-2 space-y-1">{props.children}</ul>,
-    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ul>,
+    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ol>,
     li: (props: any) => <li className="mb-1">{props.children}</li>,
     blockquote: (props: any) => <blockquote className="border-l-4 border-accent pl-4 py-2 my-3 italic bg-accent/10 text-accent-foreground/90 rounded-r-md">{props.children}</blockquote>,
     code: (props: any) => {
