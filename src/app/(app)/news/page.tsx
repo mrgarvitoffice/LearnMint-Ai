@@ -62,7 +62,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma');
+      setVoicePreference('zia');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -263,10 +263,9 @@ export default function NewsPage() {
   
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('luma')) return 'luma';
     if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
     if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'luma';
+    return 'zia';
   };
 
   const getPlaybackButtonTextAndIcon = () => {
@@ -300,7 +299,7 @@ export default function NewsPage() {
                 value={getSelectedDropdownValue()}
                 onValueChange={(value) => {
                     playActionSound();
-                    setVoicePreference(value as 'zia' | 'kai' | 'luma' | null);
+                    setVoicePreference(value as 'zia' | 'kai' | null);
                 }}
               >
                   <SelectTrigger className="w-full sm:w-auto text-xs h-9 min-w-[120px]">
@@ -308,7 +307,6 @@ export default function NewsPage() {
                       <SelectValue placeholder="Voice" />
                   </SelectTrigger>
                   <SelectContent>
-                      <SelectItem value="luma">Luma (Female)</SelectItem>
                       <SelectItem value="zia">Zia (Female)</SelectItem>
                       <SelectItem value="kai">Kai (Male)</SelectItem>
                   </SelectContent>
@@ -363,4 +361,3 @@ export default function NewsPage() {
     </div>
   );
 }
-

@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/lib/actions';
 import type { TestSettings, QuizQuestion as TestQuestionType, GenerateQuizQuestionsOutput } from '@/lib/types';
-import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Palette, ImageIcon, Image as ImageIconLucide } from 'lucide-react';
+import { Loader2, TestTubeDiagonal, CheckCircle, XCircle, RotateCcw, Clock, Lightbulb, AlertTriangle, Mic, Sparkles, Award, HelpCircle, TimerIcon, PlayCircle, PauseCircle, StopCircle, Palette, ImageIcon, Image as ImageIconLucide, FileText, AudioLines, Video } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
@@ -26,6 +26,8 @@ import { useTTS } from '@/hooks/useTTS';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -538,7 +540,61 @@ export default function CustomTestPage() {
               {sourceType === 'notes' && (
                 <div className="space-y-2 animate-in fade-in-50">
                   <Label htmlFor="notes" className="text-base">Your Notes</Label>
-                  <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base" />
+                   <div className="flex gap-2">
+                    <Textarea id="notes" placeholder="Paste your study notes here (min 50 characters)..." {...register('notes')} rows={6} className="transition-colors duration-200 ease-in-out text-base flex-1" />
+                    <div className="flex flex-col gap-2">
+                       <Popover>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" size="icon" title="Attach File">
+                            <FileText className="w-5 h-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2">
+                          <div className="flex gap-2">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => notesImageInputRef.current?.click()}>
+                                    <ImageIcon className="w-5 h-5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Upload Image</p></TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button type="button" variant="outline" size="icon" disabled>
+                                    <AudioLines className="w-5 h-5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Audio (Coming Soon)</p></TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button type="button" variant="outline" size="icon" disabled>
+                                    <Video className="w-5 h-5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Video (Coming Soon)</p></TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button type="button" variant="outline" size="icon" disabled>
+                                    <FileText className="w-5 h-5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>PDF (Coming Soon)</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      {browserSupportsSpeechRecognition && (
+                        <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading || isListening}>
+                          <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                   {errors.notes && <p className="text-sm text-destructive mt-1">{errors.notes.message}</p>}
                   
                   {notesImagePreview && (
@@ -549,17 +605,6 @@ export default function CustomTestPage() {
                       </Button>
                     </div>
                   )}
-
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" onClick={() => notesImageInputRef.current?.click()} className="text-xs" size="sm">
-                      <ImageIconLucide className="w-4 h-4 mr-2" /> {notesImagePreview ? "Change" : "Upload"} Image (Optional)
-                    </Button>
-                    {browserSupportsSpeechRecognition && (
-                      <Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading || isListening}>
-                        <Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} />
-                      </Button>
-                    )}
-                  </div>
                   <input type="file" ref={notesImageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                   {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
                 </div>
@@ -633,15 +678,7 @@ export default function CustomTestPage() {
     );
   }
 
-  if (isLoading && !testState) {
-    return (
-      <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="w-16 h-16 animate-spin text-primary mb-6" />
-        <p className="text-2xl text-muted-foreground font-semibold">Generating your custom test...</p><p className="text-lg text-muted-foreground">Please wait a moment.</p>
-      </div>
-    );
-  }
-  
+  const currentQuestionData = testState.questions[testState.currentQuestionIndex];
   const currentAnswerForQuestion = testState?.userAnswers[testState.currentQuestionIndex];
 
   return (

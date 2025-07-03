@@ -20,6 +20,12 @@ const FlashcardSchema = z.object({
 const GenerateFlashcardsInputSchema = z.object({
   topic: z.string().describe('The academic topic for which to generate flashcards.'),
   numFlashcards: z.number().min(1).max(50).describe('The number of flashcards to generate.'),
+  image: z
+    .string()
+    .optional()
+    .describe(
+      "An optional image provided by the user as a data URI for context. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
@@ -36,6 +42,11 @@ const generateFlashcardsPrompt = aiForQuizzes.definePrompt({
   output: {schema: GenerateFlashcardsOutputSchema},
   prompt: `You are an expert educator specializing in creating effective flashcards for students.
   Given the topic: {{{topic}}}, generate a list of {{numFlashcards}} flashcards.
+  {{#if image}}
+  The user has also provided an image for additional context. Analyze the image and incorporate relevant information from it into the flashcards.
+  User's Image: {{media url=image}}
+  {{/if}}
+  
   Each flashcard must have a key 'term' (for the front) and its corresponding 'definition' (for the back).
   The 'term' should be a specific keyword, concept, or a short question.
   The 'definition' should be concise and clear. For more complex definitions, use 2-3 bullet points to break down the information. If the term involves a formula crucial for quick recall, include it in the definition in a clear, simple format.
@@ -61,7 +72,7 @@ const generateFlashcardsFlow = aiForQuizzes.defineFlow(
     outputSchema: GenerateFlashcardsOutputSchema,
   },
   async (input) => {
-    console.log(`[AI Flow - Flashcards] Generating ${input.numFlashcards} flashcards for topic: ${input.topic}`);
+    console.log(`[AI Flow - Flashcards] Generating ${input.numFlashcards} flashcards for topic: ${input.topic}${input.image ? ' with image' : ''}`);
     const { output } = await generateFlashcardsPrompt(input);
     if (!output || !output.flashcards || !Array.isArray(output.flashcards) || output.flashcards.length === 0) {
       console.error("[AI Flow Error - Flashcards] Invalid or empty output from LLM:", output);

@@ -19,17 +19,16 @@ interface TTSHook {
   supportedVoices: SpeechSynthesisVoice[];
   selectedVoice: SpeechSynthesisVoice | null;
   setSelectedVoiceURI: (uri: string) => void;
-  setVoicePreference: (preference: 'zia' | 'luma' | 'kai' | null) => void;
-  voicePreference: 'zia' | 'luma' | 'kai' | null;
+  setVoicePreference: (preference: 'zia' | 'kai' | null) => void;
+  voicePreference: 'zia' | 'kai' | null;
 }
 
 // Keywords to help identify voice gender and quality.
 const FEMALE_INDICATOR_KEYWORDS = ["female", "samantha", "zira", "ava", "allison", "susan", "joanna", "stephanie", "eva", "google us english", "microsoft zira", "google uk english female", "microsoft hazel", "kate", "serena", "moira", "fiona", "emily", "microsoft catherine", "microsoft linda"];
 const MALE_INDICATOR_KEYWORDS = ["male", "david", "mark", "tom", "alex", "daniel", "oliver", "google us english male", "microsoft david"];
 
-// Preferences mapped to specific keyword lists (used for UI selections like "Zia", "Luma", "Kai")
+// Preferences mapped to specific keyword lists (used for UI selections like "Zia", "Kai")
 const ziaKeywords = ["zia", ...FEMALE_INDICATOR_KEYWORDS];
-const lumaKeywords = ["luma", ...FEMALE_INDICATOR_KEYWORDS];
 const kaiKeywords = ["kai", ...MALE_INDICATOR_KEYWORDS];
 
 
@@ -44,7 +43,7 @@ export function useTTS(): TTSHook {
   const [isPaused, setIsPaused] = useState(false);
   const [supportedVoices, setSupportedVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const [voicePreference, setVoicePreference] = useState<'zia' | 'luma' | 'kai' | null>(null);
+  const [voicePreference, setVoicePreference] = useState<'zia' | 'kai' | null>(null);
   const isMobile = useIsMobile(); // Detect mobile environment
   const { isMuted } = useSettings();
 
@@ -262,11 +261,9 @@ export function useTTS(): TTSHook {
     };
 
     if (voicePreference === 'zia') {
-        chosenVoice = findVoice(enVoices, FEMALE_INDICATOR_KEYWORDS, MALE_INDICATOR_KEYWORDS);
-    } else if (voicePreference === 'luma') {
-        chosenVoice = findVoice(enVoices, FEMALE_INDICATOR_KEYWORDS, MALE_INDICATOR_KEYWORDS);
+        chosenVoice = findVoice(enVoices, ziaKeywords, MALE_INDICATOR_KEYWORDS);
     } else if (voicePreference === 'kai') {
-        chosenVoice = findVoice(enVoices, MALE_INDICATOR_KEYWORDS, FEMALE_INDICATOR_KEYWORDS);
+        chosenVoice = findVoice(enVoices, kaiKeywords, FEMALE_INDICATOR_KEYWORDS);
     }
 
 
@@ -301,7 +298,7 @@ export function useTTS(): TTSHook {
   }, [updateSelectedVoiceLogic]);
 
 
-  const handleSetVoicePreference = useCallback((preference: 'zia' | 'luma' | 'kai' | null) => {
+  const handleSetVoicePreference = useCallback((preference: 'zia' | 'kai' | null) => {
     setVoicePreference(oldPref => {
         if (oldPref !== preference) return preference;
         return oldPref;

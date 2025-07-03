@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,12 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { generateFlashcardsAction } from '@/lib/actions'; 
-import type { GenerateFlashcardsOutput } from '@/lib/types'; 
-import { Loader2, ListChecks, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import type { GenerateFlashcardsOutput, GenerateFlashcardsInput } from '@/lib/types'; 
+import { Loader2, ListChecks, Sparkles, FileText, ImageIcon, AudioLines, Video, XCircle, Mic } from 'lucide-react';
 import FlashcardsView from '@/components/study/FlashcardsView';
-import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
+import Image from 'next/image';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -29,16 +32,23 @@ const PAGE_TITLE = "AI Flashcard Factory";
 export default function FlashcardsPage() {
   const [generatedFlashcardsData, setGeneratedFlashcardsData] = useState<GenerateFlashcardsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
-  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices, voicePreference, cancelTTS } = useTTS();
+  const { speak, isSpeaking, isPaused, selectedVoice, setVoicePreference, supportedVoices } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
 
-  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm<FormData>({
+  const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
+
+
+  const { register, handleSubmit, formState: { errors }, watch, reset, setValue } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       numFlashcards: 10,
@@ -46,6 +56,23 @@ export default function FlashcardsPage() {
     }
   });
   const topicValue = watch('topic'); 
+
+  useEffect(() => {
+    if (transcript) setValue('topic', transcript);
+  }, [transcript, setValue]);
+
+  useEffect(() => { 
+    if (voiceError) {
+      toast({ title: "Voice Input Error", description: voiceError, variant: "destructive" });
+    }
+  }, [voiceError, toast]);
+
+  const handleVoiceCommand = useCallback(() => {
+    playClickSound();
+    if (isListening) stopListening();
+    else { setValue("topic", ""); startListening(); }
+  }, [isListening, startListening, stopListening, playClickSound, setValue]);
+
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
@@ -60,9 +87,7 @@ export default function FlashcardsPage() {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
-    return () => { 
-      isMounted = false;
-     };
+    return () => { isMounted = false; };
   }, [selectedVoice, isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
 
   useEffect(() => {
@@ -75,6 +100,33 @@ export default function FlashcardsPage() {
     }
   }, [isLoading, selectedVoice, isSpeaking, isPaused, speak]);
 
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    playClickSound();
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({ title: "Image too large", description: "Please upload an image smaller than 2MB.", variant: "destructive" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        setImageData(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    playClickSound();
+    setImagePreview(null);
+    setImageData(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playActionSound();
     setIsLoading(true);
@@ -82,14 +134,18 @@ export default function FlashcardsPage() {
     pageTitleSpokenRef.current = true; 
     generatingMessageSpokenRef.current = false;
 
-
     if (selectedVoice && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
+    
+    const input: GenerateFlashcardsInput = {
+      ...data,
+      image: imageData || undefined,
+    };
 
     try {
-      const result = await generateFlashcardsAction(data);
+      const result = await generateFlashcardsAction(input);
       if (result.flashcards && result.flashcards.length > 0) {
         setGeneratedFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: `Your flashcards for "${data.topic}" are ready.` });
@@ -115,6 +171,8 @@ export default function FlashcardsPage() {
     pageTitleSpokenRef.current = false; 
     generatingMessageSpokenRef.current = false;
     reset({ topic: '', numFlashcards: 10 }); 
+    setImageData(null);
+    setImagePreview(null);
   }
 
   if (generatedFlashcardsData && topicValue) {
@@ -144,8 +202,67 @@ export default function FlashcardsPage() {
           <CardContent className="space-y-6 p-6">
             <div className="space-y-2">
               <Label htmlFor="topic">Topic</Label>
-              <Input id="topic" placeholder="e.g., Key Historical Figures, Chemical Elements" {...register('topic')} className="text-base"/>
-              {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
+              <div className="flex items-center gap-2">
+                <Input id="topic" placeholder="e.g., Key Historical Figures" {...register('topic')} className="text-base flex-1" />
+                 <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" size="icon" title="Attach File">
+                        <FileText className="w-5 h-5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2">
+                      <div className="flex gap-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
+                                <ImageIcon className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Upload Image</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button type="button" variant="outline" size="icon" disabled>
+                                <AudioLines className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Audio (Coming Soon)</p></TooltipContent>
+                          </Tooltip>
+                           <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button type="button" variant="outline" size="icon" disabled>
+                                <Video className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Video (Coming Soon)</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button type="button" variant="outline" size="icon" disabled>
+                                <FileText className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>PDF (Coming Soon)</p></TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                 {browserSupportsSpeechRecognition && (
+                    <Button type="button" variant="outline" size="icon" onClick={handleVoiceCommand} disabled={isLoading || isListening}><Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} /></Button>
+                )}
+              </div>
+              {errors.topic && <p className="text-sm text-destructive mt-1">{errors.topic.message}</p>}
+               {imagePreview && (
+                <div className="relative w-20 h-20 mt-2">
+                  <Image src={imagePreview} alt="Image preview" layout="fill" objectFit="cover" className="rounded-md" />
+                  <Button type="button" variant="ghost" size="icon" onClick={handleRemoveImage} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground">
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+               <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="numFlashcards">Number of Flashcards (1-50)</Label>

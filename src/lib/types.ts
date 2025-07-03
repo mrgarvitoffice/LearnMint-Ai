@@ -30,7 +30,11 @@ export type GenerateQuizQuestionsInput = {
 };
 export type GenerateQuizQuestionsOutput = { questions: QuizQuestion[] };
 
-export type GenerateFlashcardsInput = { topic: string, numFlashcards: number };
+export type GenerateFlashcardsInput = { 
+  topic: string; 
+  numFlashcards: number;
+  image?: string; 
+};
 export type GenerateFlashcardsOutput = { flashcards: Flashcard[] };
 
 // For Quiz Generation from Notes

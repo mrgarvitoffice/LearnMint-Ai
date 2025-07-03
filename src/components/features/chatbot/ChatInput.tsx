@@ -4,11 +4,13 @@
 import { useState, useRef, type ChangeEvent, type FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Mic, ImageIcon, Loader2, X } from 'lucide-react';
+import { Send, Mic, ImageIcon, Loader2, X, FileText, AudioLines, Video } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useSound } from '@/hooks/useSound';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 interface ChatInputProps {
@@ -89,11 +91,6 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     if(fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const handleImageIconClick = () => {
-    playClickSound();
-    fileInputRef.current?.click();
-  }
-
   return (
     <div className="bg-background/80 backdrop-blur-md p-4 border-t">
       <form onSubmit={handleSubmit} >
@@ -112,10 +109,51 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           </div>
         )}
         <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="icon" onClick={handleImageIconClick} disabled={isLoading}>
-            <ImageIcon className="w-5 h-5" />
-            <span className="sr-only">Upload Image</span>
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="ghost" size="icon" title="Attach File">
+                <FileText className="w-5 h-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+              <div className="flex gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
+                        <ImageIcon className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Upload Image</p></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="outline" size="icon" disabled>
+                        <AudioLines className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Audio (Coming Soon)</p></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="outline" size="icon" disabled>
+                        <Video className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Video (Coming Soon)</p></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="outline" size="icon" disabled>
+                        <FileText className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>PDF (Coming Soon)</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </PopoverContent>
+          </Popover>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
 
           {browserSupportsSpeechRecognition && (

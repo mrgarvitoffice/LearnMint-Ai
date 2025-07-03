@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast"; // For displaying notifications
 // Icons from lucide-react
-import { GraduationCap, Mic, FileSignature, Loader2, AlertTriangle, ImageIcon, XCircle } from "lucide-react"; 
+import { GraduationCap, Mic, FileSignature, Loader2, AlertTriangle, ImageIcon, XCircle, FileText, AudioLines, Video } from "lucide-react"; 
 import Image from 'next/image';
 
 // Hooks for enhanced user experience
@@ -20,6 +20,8 @@ import { useSound } from '@/hooks/useSound'; // For sound effects
 // Server actions and types
 import { generateNotesAction } from "@/lib/actions"; // Combined server action for all materials
 import type { CombinedStudyMaterialsOutput } from '@/lib/types'; 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 const PAGE_TITLE = "Generate Study Materials"; // Title for TTS and UI
 const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics"; // Key for storing recent topics in localStorage
@@ -50,7 +52,7 @@ export default function GenerateNotesPage() {
   
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('luma'); 
+      setVoicePreference('zia'); 
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -211,17 +213,51 @@ export default function GenerateNotesPage() {
               aria-label="Study Topic"
               onKeyDown={(e) => e.key === 'Enter' && !isLoadingAll && topic.trim().length >=3 && handleGenerateAllMaterials()}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoadingAll}
-              aria-label="Upload Image"
-              title="Upload Image (Optional)"
-            >
-              <ImageIcon className="h-5 w-5 text-muted-foreground hover:text-primary" />
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="icon" title="Attach File">
+                  <FileText className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2">
+                <div className="flex gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
+                          <ImageIcon className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Upload Image</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="button" variant="outline" size="icon" disabled>
+                          <AudioLines className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Audio (Coming Soon)</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="button" variant="outline" size="icon" disabled>
+                          <Video className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Video (Coming Soon)</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="button" variant="outline" size="icon" disabled>
+                          <FileText className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>PDF (Coming Soon)</p></TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </PopoverContent>
+            </Popover>
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
              {browserSupportsSpeechRecognition && (
               <Button
