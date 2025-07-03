@@ -37,8 +37,16 @@ export default function SignUpPage() {
       toast({ title: 'Account Created!', description: 'You have successfully signed up.' });
       router.push('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to sign up. Please try again.');
-      toast({ title: 'Sign Up Failed', description: err.message || 'Please try again.', variant: 'destructive' });
+      let description = 'An unknown error occurred. Please try again.';
+      if (err.code === 'auth/email-already-in-use') {
+        description = 'This email is already in use. Please sign in or use a different email.';
+      } else if (err.code === 'auth/weak-password') {
+        description = 'The password is too weak. Please choose a stronger password.';
+      } else if (err.message) {
+        description = err.message;
+      }
+      setError(description);
+      toast({ title: 'Sign Up Failed', description, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -52,8 +60,18 @@ export default function SignUpPage() {
       toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
       router.push('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to sign up with Google.');
-      toast({ title: 'Google Sign Up Failed', description: err.message || 'Please try again.', variant: 'destructive' });
+      let description = 'An unknown error occurred. Please try again.';
+      if (err.code === 'auth/popup-blocked') {
+        description = 'Your browser blocked the sign-in pop-up. Please allow pop-ups for this site and try again.';
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        description = 'The sign-in window was closed before completing. Please try again.';
+      } else if (err.code === 'auth/account-exists-with-different-credential') {
+        description = 'An account with this email already exists. Please sign in using the method you originally used.';
+      } else if (err.message) {
+        description = err.message;
+      }
+      setError(description);
+      toast({ title: 'Google Sign Up Failed', description, variant: 'destructive' });
     } finally {
       setIsGoogleLoading(false);
     }
