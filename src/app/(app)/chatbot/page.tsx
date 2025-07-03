@@ -97,11 +97,18 @@ export default function ChatbotPage() {
     if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
-      currentSpokenMessageRef.current = currentCharacterGreeting;
-      speak(currentCharacterGreeting);
-      initialGreetingSpokenRef.current = true;
+      const speakNow = () => {
+        currentSpokenMessageRef.current = currentCharacterGreeting;
+        speak(currentCharacterGreeting);
+        initialGreetingSpokenRef.current = true;
+      }
+      // Delay to ensure voice profile update propagates before speaking
+      const timer = setTimeout(speakNow, 150);
+
+      return () => clearTimeout(timer);
     }
   }, [currentCharacterGreeting, selectedVoice, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -256,5 +263,3 @@ export default function ChatbotPage() {
     </div>
   );
 }
-
-    
