@@ -36,9 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Effect to listen for totalLearners count
   useEffect(() => {
-    // Only set up the listener if there's a user AND the initial auth check is complete.
-    // This prevents a race condition on mobile where the listener attaches before permissions are ready.
-    if (user && !loading) {
+    // Only set up the listener if the initial auth check is complete.
+    if (!loading) {
         const metadataRef = doc(db, 'metadata', 'userStats');
         const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -49,10 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setTotalLearners(21); // Fallback on error
         });
 
-        // Cleanup listener on unmount or when user/loading state changes
+        // Cleanup listener on unmount or when loading state changes
         return () => unsubscribe();
     }
-  }, [user, loading]); // Added `loading` to the dependency array
+  }, [loading]); // Only depends on the initial loading state
 
   // Effect to create a user document and increment the total user count on first sign-up
   useEffect(() => {
@@ -83,6 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
 
           transaction.set(metadataRef, { totalUsers: newTotal }, { merge: true });
+
+          // Manually update the local state for instant UI feedback for the new user.
+          // The onSnapshot listener will handle updates for all other clients.
+          setTotalLearners(newTotal);
+          
           console.log(`New user registered and counted: ${newUser.uid}. New total: ${newTotal}`);
         });
       } catch (error) {

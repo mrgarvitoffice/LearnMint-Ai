@@ -57,7 +57,7 @@ export default function SignInPage() {
       if (err.code === 'auth/popup-blocked') {
         description = 'Your browser blocked the sign-in pop-up. Please allow pop-ups for this site and try again.';
       } else if (err.code === 'auth/popup-closed-by-user') {
-        description = 'The sign-in window was closed before completing. Please try again. Do not close the pop-up window until sign-in is complete.';
+        description = 'The sign-in window was closed before completing. Please try again. It is important to not close the pop-up window until sign-in is complete.';
       } else if (err.code === 'auth/account-exists-with-different-credential') {
         description = 'An account with this email already exists with a different sign-in method. Please use the method you originally used.';
       } else if (err.message) {
