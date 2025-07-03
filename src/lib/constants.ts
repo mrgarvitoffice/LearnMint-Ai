@@ -18,6 +18,8 @@ import {
   UserCircle,      // Icon for Profile / "You"
   Settings,        // Icon for Settings
   BarChart,        // Icon for Progress
+  Home,            // Icon for Home
+  NotebookText,    // Icon for Generate
 } from 'lucide-react';
 
 /**
@@ -54,19 +56,19 @@ export const NAV_ITEMS: NavItem[] = [
 // --- Mobile Top Navigation ---
 export const TOP_NAV_ITEMS: NavItem[] = [
   { title: 'Chat', href: '/chatbot', icon: Bot },
-  { title: 'Notes', href: '/notes', icon: FileText },
+  { title: 'Calculator', href: '/calculator', icon: Calculator },
   { title: 'News', href: '/news', icon: Newspaper }, // Centered Item
   { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'Cards', href: '/flashcards', icon: ListChecks },
+  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
 ];
 
 // --- Mobile Bottom Navigation ---
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
-  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { title: 'Home', href: '/', icon: Home },
+  { title: 'Generate', href: '/notes', icon: NotebookText },
+  { title: 'Flashcards', href: '/flashcards', icon: ListChecks },
   { title: 'Library', href: '/library', icon: BookMarked },
-  { title: 'Calculator', href: '/calculator', icon: Calculator },
-  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
-  { title: 'Profile', href: '/profile', icon: UserCircle },
+  { title: 'You', href: '/profile', icon: UserCircle },
 ];
 
 
@@ -297,8 +299,8 @@ export const DEFINITION_CHALLENGE_WORDS = [
   { term: "Metaphor", definition: "A figure of speech in which a word or phrase is applied to an object or action to which it is not literally applicable.", hint: "Comparing without 'like' or 'as'." },
   { term: "Algorithm", definition: "A process or set of rules to be followed in calculations or other problem-solving operations, especially by a computer.", hint: "Step-by-step instructions." },
   { term: "Renaissance", definition: "The revival of art and literature under the influence of classical models in the 14th–16th centuries.", hint: "French for 'rebirth'." },
-  { term: "Evaporation", definition: "The process of turning from liquid into vapor.", hint: "Water cycle component." },
-  { term: "Hypothesis", definition: "A supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation.", hint: "Educated guess in science." },
-  { term: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
-  { term: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
+  { value: "Evaporation", definition: "The process of turning from liquid into vapor.", hint: "Water cycle component." },
+  { value: "Hypothesis", definition: "A supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation.", hint: "Educated guess in science." },
+  { value: "Soliloquy", definition: "An act of speaking one's thoughts aloud when by oneself or regardless of any hearers, especially by a character in a play.", hint: "Dramatic speech, alone on stage." },
+  { value: "Inflation", definition: "A general increase in prices and fall in the purchasing value of money.", hint: "Economic term, money buys less." },
 ];

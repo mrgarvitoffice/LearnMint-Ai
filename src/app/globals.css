@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    /* New Futuristic "Elite" Dark Theme */
+    /* New Futuristic "Elite" Dark Theme based on user image */
     --background: 222 47% 11%;      /* Deep Midnight Blue */
     --foreground: 210 40% 98%;       /* Light Cyan/White */
 

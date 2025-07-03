@@ -14,8 +14,8 @@ import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Menu, Flame, Bell, ShieldCheck, UserCircle, ShieldQuestion } from 'lucide-react';
-import { APP_NAME, TTS_LANGUAGES, NAV_ITEMS } from '@/lib/constants';
+import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Menu, Flame, Bell, ShieldCheck, UserCircle, ShieldQuestion, Settings } from 'lucide-react';
+import { APP_NAME, NAV_ITEMS } from '@/lib/constants';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarNav } from './SidebarNav';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -79,28 +79,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       <div className="flex items-center gap-4 md:hidden">
-        <Sheet>
-            <SheetTrigger asChild>
-                <Button size="icon" variant="outline">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle Menu</span>
-                </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-full max-w-xs sm:max-w-sm p-0">
-                <nav className="grid gap-2 text-lg font-medium p-4">
-                    <Link
-                        href="/"
-                        className="group flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base mb-4"
-                    >
-                        <Logo size={28} />
-                        <span className="sr-only">{APP_NAME}</span>
-                    </Link>
-                    <SidebarNav items={NAV_ITEMS} />
-                </nav>
-            </SheetContent>
-        </Sheet>
-
-        <Link href="/" className="flex items-center gap-2 font-semibold text-lg" onClick={() => playClickSound()}>
+         <Link href="/" className="flex items-center gap-2 font-semibold text-lg" onClick={() => playClickSound()}>
           <Logo size={28} />
           <span className="hidden sm:inline-block">{APP_NAME}</span>
         </Link>
@@ -109,8 +88,8 @@ export function Header() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-1.5 sm:gap-2">
-         <TooltipProvider>
-            <div className="hidden md:flex items-center gap-1.5">
+         <div className="hidden md:flex items-center gap-1.5">
+            <TooltipProvider>
                <Tooltip>
                     <TooltipTrigger asChild><Button variant="ghost" size="icon"><Flame className="h-5 w-5"/></Button></TooltipTrigger>
                     <TooltipContent><p>Streak: 7 Days</p></TooltipContent>
@@ -127,8 +106,45 @@ export function Header() {
                     <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={handleCycleSoundMode}><Volume2 className="h-5 w-5"/></Button></TooltipTrigger>
                     <TooltipContent><p>Cycle Sound Mode</p></TooltipContent>
                 </Tooltip>
-            </div>
-        </TooltipProvider>
+            </TooltipProvider>
+        </div>
+        
+        {/* Settings button on mobile */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Settings className="h-5 w-5" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Settings</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleCycleSoundMode}>
+                  {getSoundModeIconAndText().icon}
+                  <span>{getSoundModeIconAndText().text}</span>
+                </DropdownMenuItem>
+                 <DropdownMenuSub>
+                   <DropdownMenuSubTrigger>
+                     {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                     <span>Theme</span>
+                   </DropdownMenuSubTrigger>
+                   <DropdownMenuSubContent>
+                         <DropdownMenuItem onClick={() => setTheme("light")}>
+                             Light
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => setTheme("dark")}>
+                             Dark
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => setTheme("system")}>
+                             System
+                         </DropdownMenuItem>
+                   </DropdownMenuSubContent>
+                </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
 
         {user && (
             <DropdownMenu>
@@ -175,18 +191,16 @@ export function Header() {
                     <span>Language</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
-                         {TTS_LANGUAGES.map(lang => (
-                           <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
-                         ))}
-                      </DropdownMenuRadioGroup>
+                      {/* Language selection removed from here to simplify, handled by settings page if needed */}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
-                <DropdownMenuItem onClick={handleCycleSoundMode}>
-                  {getSoundModeIconAndText().icon}
-                  <span>{getSoundModeIconAndText().text}</span>
-                </DropdownMenuItem>
+                <div className="md:hidden">
+                  <DropdownMenuItem onClick={handleCycleSoundMode}>
+                    {getSoundModeIconAndText().icon}
+                    <span>{getSoundModeIconAndText().text}</span>
+                  </DropdownMenuItem>
+                </div>
                 
                 <DropdownMenuSeparator />
                 
