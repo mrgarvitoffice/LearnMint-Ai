@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { Header } from './Header';
 import { DesktopSidebar } from './DesktopSidebar';
 import { TopMobileNav } from './TopMobileNav';
-import { BottomMobileNav } from './BottomMobileNav';
+import { BottomMobileNav } from './BottomNavBar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';

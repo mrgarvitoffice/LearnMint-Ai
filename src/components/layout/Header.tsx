@@ -14,12 +14,10 @@ import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { Settings, LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Menu, Flame, Bell, ShieldCheck, Search, UserCircle, ShieldQuestion } from 'lucide-react';
-import { APP_NAME, TTS_LANGUAGES } from '@/lib/constants';
+import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Menu, Flame, Bell, ShieldCheck, UserCircle, ShieldQuestion } from 'lucide-react';
+import { APP_NAME, TTS_LANGUAGES, NAV_ITEMS } from '@/lib/constants';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MobileSidebarContent } from './MobileSidebarContent';
-import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { SidebarNav } from './SidebarNav';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -44,11 +42,18 @@ export function Header() {
   };
   
   const handleFontSizeChange = (value: string) => {
+    playClickSound();
     setFontSize(value as any);
   };
   
   const handleLanguageChange = (value: string) => {
+    playClickSound();
     setLanguage(value);
+  };
+
+  const handleCycleSoundMode = () => {
+    playClickSound();
+    cycleSoundMode();
   };
   
   const getSoundModeIconAndText = () => {
@@ -73,25 +78,39 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-      <div className="flex items-center gap-4">
-        {/* Mobile Header: Logo */}
-        <Link href="/" className="flex items-center gap-2 font-semibold text-lg md:hidden" onClick={() => playClickSound()}>
+      <div className="flex items-center gap-4 md:hidden">
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button size="icon" variant="outline">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle Menu</span>
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full max-w-xs sm:max-w-sm p-0">
+                <nav className="grid gap-2 text-lg font-medium p-4">
+                    <Link
+                        href="/"
+                        className="group flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base mb-4"
+                    >
+                        <Logo size={28} />
+                        <span className="sr-only">{APP_NAME}</span>
+                    </Link>
+                    <SidebarNav items={NAV_ITEMS} />
+                </nav>
+            </SheetContent>
+        </Sheet>
+
+        <Link href="/" className="flex items-center gap-2 font-semibold text-lg" onClick={() => playClickSound()}>
           <Logo size={28} />
-          <span>{APP_NAME}</span>
+          <span className="hidden sm:inline-block">{APP_NAME}</span>
         </Link>
       </div>
 
-      {/* Desktop Header Items */}
-      <div className="hidden md:flex items-center gap-6 flex-1">
-        <div className="relative flex-1">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-           <Input placeholder="Search features..." className="pl-9 w-full max-w-xs" />
-        </div>
-      </div>
+      <div className="flex-1" />
 
       <div className="flex items-center gap-1.5 sm:gap-2">
          <TooltipProvider>
-            <div className="flex items-center gap-1.5">
+            <div className="hidden md:flex items-center gap-1.5">
                <Tooltip>
                     <TooltipTrigger asChild><Button variant="ghost" size="icon"><Flame className="h-5 w-5"/></Button></TooltipTrigger>
                     <TooltipContent><p>Streak: 7 Days</p></TooltipContent>
@@ -105,7 +124,7 @@ export function Header() {
                     <TooltipContent><p>Notifications</p></TooltipContent>
                 </Tooltip>
                  <Tooltip>
-                    <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={cycleSoundMode}><Volume2 className="h-5 w-5"/></Button></TooltipTrigger>
+                    <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={handleCycleSoundMode}><Volume2 className="h-5 w-5"/></Button></TooltipTrigger>
                     <TooltipContent><p>Cycle Sound Mode</p></TooltipContent>
                 </Tooltip>
             </div>
@@ -133,7 +152,7 @@ export function Header() {
                 
                 <DropdownMenuItem onClick={() => router.push('/profile')}>
                   <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profile & Settings</span>
+                  <span>Profile</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuSub>
@@ -164,7 +183,7 @@ export function Header() {
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
-                <DropdownMenuItem onClick={cycleSoundMode}>
+                <DropdownMenuItem onClick={handleCycleSoundMode}>
                   {getSoundModeIconAndText().icon}
                   <span>{getSoundModeIconAndText().text}</span>
                 </DropdownMenuItem>
