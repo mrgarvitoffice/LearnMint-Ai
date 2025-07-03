@@ -36,8 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Effect to listen for totalLearners count
   useEffect(() => {
-    // Only set up the listener if there's a user, preventing permission errors
-    if (user) {
+    // Only set up the listener if there's a user AND the initial auth check is complete.
+    // This prevents a race condition on mobile where the listener attaches before permissions are ready.
+    if (user && !loading) {
         const metadataRef = doc(db, 'metadata', 'userStats');
         const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -48,10 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setTotalLearners(21); // Fallback on error
         });
 
-        // Cleanup listener on unmount or when user changes
+        // Cleanup listener on unmount or when user/loading state changes
         return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, loading]); // Added `loading` to the dependency array
 
   // Effect to create a user document and increment the total user count on first sign-up
   useEffect(() => {
