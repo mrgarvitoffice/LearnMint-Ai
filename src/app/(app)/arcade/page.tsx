@@ -15,13 +15,9 @@ const PAGE_TITLE = "LearnMint Arcade";
 export default function ArcadePage() {
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo');
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo');
   }, [setVoicePreference]);
 
   useEffect(() => {

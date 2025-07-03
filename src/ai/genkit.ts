@@ -8,6 +8,7 @@ const GOOGLE_API_KEY_NOTES = process.env.GOOGLE_API_KEY_NOTES;
 const GOOGLE_API_KEY_CHATBOT = process.env.GOOGLE_API_KEY_CHATBOT;
 const GOOGLE_API_KEY_IMAGES = process.env.GOOGLE_API_KEY_IMAGES;
 const GOOGLE_API_KEY_QUIZZES = process.env.GOOGLE_API_KEY_QUIZZES;
+const GOOGLE_API_KEY_TTS = process.env.GOOGLE_API_KEY_TTS; // Added for Text-to-Speech
 
 // A robust helper to check if a key is a known placeholder or simply missing.
 const isApiKeyMissingOrPlaceholder = (keyToCheck?: string, keyName?: string) => {
@@ -100,4 +101,17 @@ const quizzesApiKey = !isApiKeyMissingOrPlaceholder(
 export const aiForQuizzes = genkit({
   plugins: [googleAI({apiKey: quizzesApiKey})],
   enableTracingAndMetrics: true,
+});
+
+// --- Text-to-Speech (TTS) Specific AI Client ---
+// Uses GOOGLE_API_KEY_TTS if available, otherwise falls back to the main key.
+const ttsApiKey = !isApiKeyMissingOrPlaceholder(
+    GOOGLE_API_KEY_TTS,
+    'GOOGLE_API_KEY_TTS'
+)
+    ? GOOGLE_API_KEY_TTS
+    : GOOGLE_API_KEY;
+export const aiForTTS = genkit({
+    plugins: [googleAI({ apiKey: ttsApiKey })],
+    enableTracingAndMetrics: true,
 });

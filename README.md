@@ -149,6 +149,10 @@ GOOGLE_API_KEY_CHATBOT=AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs
 # Suggestion from MrGarvit: AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
 GOOGLE_API_KEY_IMAGES=AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
 
+# Optional: Key for Text-to-Speech (TTS) voice generation
+# Uses GOOGLE_API_KEY if blank.
+GOOGLE_API_KEY_TTS=YOUR_GEMINI_API_KEY_FOR_TTS
+
 # === Other Service API Keys ===
 
 # Daily News Digest (Newsdata.io - get free key)

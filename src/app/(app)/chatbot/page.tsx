@@ -8,8 +8,8 @@ import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { gojoChatbot, type GojoChatbotInput } from '@/ai/flows/ai-chatbot';
-import { holoChatbot, type HoloChatbotInput } from '@/ai/flows/megumin-chatbot'; // This file now exports Holo's logic
-import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users } from 'lucide-react';
+import { holoChatbot, type HoloChatbotInput } from '@/ai/flows/megumin-chatbot';
+import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
@@ -24,9 +24,8 @@ type ChatbotCharacter = 'gojo' | 'holo';
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAiResponding, setIsAiResponding] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<ChatbotCharacter>('gojo');
-  const [currentCharacterGreeting, setCurrentCharacterGreeting] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
@@ -38,77 +37,42 @@ export default function ChatbotPage() {
     cancelTTS,
     isSpeaking,
     isPaused,
+    isLoading: isTTSLoading,
     setVoicePreference,
-    voicePreference,
   } = useTTS();
 
-  const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const currentSpokenMessageRef = useRef<string | null>(null);
-  const initialGreetingSpokenRef = useRef(false);
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      voicePreferenceWasSetRef.current = true;
-    }
-  }, []);
+    // This effect runs when the character changes.
+    // It cancels any ongoing speech and sets the new voice preference.
+    cancelTTS();
+    setVoicePreference(selectedCharacter);
 
-  useEffect(() => {
-    let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
-      if (voicePreference !== characterExpectedVoicePref || !currentCharacterGreeting) {
-         speak(PAGE_TITLE_CHATBOT);
-      }
-      pageTitleSpokenRef.current = true;
-    }
-    return () => { isMounted = false; };
-  }, [voicePreference, isSpeaking, isPaused, speak, currentCharacterGreeting, selectedCharacter]);
-
-  useEffect(() => {
-    initialGreetingSpokenRef.current = false;
-    pageTitleSpokenRef.current = true; 
-    let greetingText = "";
-    let characterVoicePref: 'gojo' | 'holo' | null = null;
-
-    if (selectedCharacter === 'gojo') {
-      greetingText = "Yo! Took you long enough. Thought I’d have to go fight boredom without you.";
-      characterVoicePref = 'gojo';
-    } else if (selectedCharacter === 'holo') {
-      greetingText = "Ah, the little one returns. Have you come to bask in my brilliance again?";
-      characterVoicePref = 'holo';
-    }
-    
-    setVoicePreference(characterVoicePref);
-    setCurrentCharacterGreeting(greetingText);
+    const greetingText = selectedCharacter === 'gojo'
+      ? "Yo! Took you long enough. Thought I’d have to go fight boredom without you."
+      : "Ah, the little one returns. Have you come to bask in my brilliance again?";
 
     const initialGreetingMessage: ChatMessageType = {
       id: `${selectedCharacter}-initial-greeting-${Date.now()}`, role: 'assistant',
       content: greetingText, timestamp: new Date()
     };
+    
     setMessages([initialGreetingMessage]);
+    
+    // Speak the greeting after a short delay to ensure the voice is ready.
+    const timer = setTimeout(() => {
+      currentSpokenMessageRef.current = greetingText;
+      speak(greetingText);
+    }, 150);
 
-  }, [selectedCharacter, setVoicePreference]);
+    return () => clearTimeout(timer); // Cleanup timer on component unmount or character change
 
-  useEffect(() => {
-    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
-    if (currentCharacterGreeting && !initialGreetingSpokenRef.current && 
-        voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
-      
-      const speakNow = () => {
-        currentSpokenMessageRef.current = currentCharacterGreeting;
-        speak(currentCharacterGreeting);
-        initialGreetingSpokenRef.current = true;
-      }
-      // Delay to ensure voice profile update propagates before speaking
-      const timer = setTimeout(speakNow, 150);
-
-      return () => clearTimeout(timer);
-    }
-  }, [currentCharacterGreeting, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
+  }, [selectedCharacter, setVoicePreference, cancelTTS, speak]);
 
 
   useEffect(() => {
+    // Auto-scroll to the bottom of the chat view when new messages are added.
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (viewport) viewport.scrollTop = viewport.scrollHeight;
@@ -117,7 +81,8 @@ export default function ChatbotPage() {
 
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
-    cancelTTS(); 
+    
+    cancelTTS(); // Stop any current speech before sending a new message.
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicatorMessage = selectedCharacter === 'gojo'
@@ -126,7 +91,7 @@ export default function ChatbotPage() {
     const typingIndicator: ChatMessageType = { id: TYPING_INDICATOR_ID, role: 'assistant', content: typingIndicatorMessage, timestamp: new Date(), type: 'typing_indicator' };
 
     setMessages(prev => [...prev, userMessage, typingIndicator]);
-    setIsLoading(true);
+    setIsAiResponding(true);
 
     try {
       const input: GojoChatbotInput | HoloChatbotInput = { message: messageText };
@@ -141,11 +106,9 @@ export default function ChatbotPage() {
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      const characterVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
-      if (voicePreference === characterVoicePref && !isSpeaking && !isPaused) {
-        currentSpokenMessageRef.current = assistantMessage.content;
-        speak(assistantMessage.content);
-      }
+      currentSpokenMessageRef.current = assistantMessage.content;
+      speak(assistantMessage.content);
+      
     } catch (error) {
       console.error('Error sending message to chatbot:', error);
       const errorText = selectedCharacter === 'gojo' ? "Hoh? Something went wrong. Let's try that again." : "Hmph. My wisdom must have been too much for this device. Try again.";
@@ -154,35 +117,32 @@ export default function ChatbotPage() {
       const errorMessage: ChatMessageType = { id: Date.now().toString() + '-error', role: 'system', content: errorMessageContent, timestamp: new Date() };
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, errorMessage]);
-    } finally { setIsLoading(false); }
+    } finally {
+      setIsAiResponding(false);
+    }
   };
 
   const handlePlaybackControl = () => {
     playClickSound();
+    if (isSpeaking && !isPaused) {
+        pauseTTS();
+        return;
+    }
+    if (isPaused) {
+        resumeTTS();
+        return;
+    }
+    
+    // If not speaking, play the last assistant message
     let textToPlay = currentSpokenMessageRef.current;
-    if (!textToPlay && messages.length > 0) {
+    if (!textToPlay) {
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
       if (lastAssistantMessage) textToPlay = lastAssistantMessage.content;
     }
-    if (!textToPlay && messages.length > 0 && messages[0].role === 'assistant') { 
-        textToPlay = messages[0].content;
+    
+    if (textToPlay) {
+        speak(textToPlay);
     }
-    if (!textToPlay) return;
-
-    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
-    if (voicePreference !== characterExpectedVoicePref) {
-        setVoicePreference(characterExpectedVoicePref);
-        setTimeout(() => {
-            if (!isSpeaking && !isPaused) speak(textToPlay!);
-            else if (isSpeaking && !isPaused) pauseTTS();
-            else if (isPaused) resumeTTS();
-        }, 150); // Add delay to ensure voice switch
-        return;
-    }
-
-    if (!isSpeaking && !isPaused) speak(textToPlay);
-    else if (isSpeaking && !isPaused) pauseTTS();
-    else if (isPaused) resumeTTS();
   };
 
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
@@ -190,8 +150,7 @@ export default function ChatbotPage() {
   const handleCharacterChange = (newCharacter: ChatbotCharacter) => {
     if (newCharacter === selectedCharacter) return;
     playClickSound();
-    cancelTTS(); // Immediately stop any speech before changing state
-    setSelectedCharacter(newCharacter);
+    setSelectedCharacter(newCharacter); // This will trigger the useEffect for character change
   };
 
   const getCurrentCharacterAvatar = () => {
@@ -241,9 +200,9 @@ export default function ChatbotPage() {
               </div>
 
               <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
-                {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
               </Button>
-              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused}>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused && !isTTSLoading}>
                 <StopCircle className="h-4 w-4" />
               </Button>
             </div>
@@ -256,7 +215,7 @@ export default function ChatbotPage() {
           </div>
         </ScrollArea>
       </CardContent>
-      <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+      <ChatInput onSendMessage={handleSendMessage} isLoading={isAiResponding} />
     </Card>
     </div>
   );

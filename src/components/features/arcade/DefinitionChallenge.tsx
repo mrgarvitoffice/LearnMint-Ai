@@ -28,17 +28,13 @@ export function DefinitionChallenge() {
   const [highScore, setHighScore] = useState(0);
   const [wordFailedMessage, setWordFailedMessage] = useState('');
   
-  const { playSound: playCorrectSound } = useSound('correct'); 
-  const { playSound: playIncorrectSound } = useSound('incorrect'); 
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5); 
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5); 
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
-  const voicePreferenceWasSetRef = useRef(false);
-
+  
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo'); 
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo'); 
   }, [setVoicePreference]);
 
   const shuffleArray = (array: DefinitionChallengeWord[]) => {
@@ -135,7 +131,6 @@ export function DefinitionChallenge() {
     if (!currentWord || hintsUsed >= 3 || gameOver || isCorrect === true) return; 
     setShowHint(true);
     const newHintsUsed = hintsUsed + 1;
-    setHintsUsed(newHintsUsed);
     let hintText = "";
     if (newHintsUsed === 1) {
       hintText = `Hint: ${currentWord.hint}`;

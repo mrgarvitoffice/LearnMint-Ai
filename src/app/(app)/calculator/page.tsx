@@ -51,13 +51,9 @@ export default function CalculatorPage() {
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('gojo');
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('gojo');
   }, [setVoicePreference]);
 
   useEffect(() => {

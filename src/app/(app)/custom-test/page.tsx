@@ -88,11 +88,10 @@ export default function CustomTestPage() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
-  const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, setVoicePreference, voicePreference } = useTTS();
+  const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, isLoading: isTTSLoading, setVoicePreference, voicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
   const resultAnnouncementSpokenRef = useRef(false);
 
@@ -108,6 +107,10 @@ export default function CustomTestPage() {
 
   const sourceType = watch('sourceType');
   const selectedRecentTopicsWatch = watch('selectedRecentTopics');
+
+  useEffect(() => {
+    setVoicePreference('holo');
+  }, [setVoicePreference]);
 
   useEffect(() => {
     if (sourceType !== 'recent' || (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length === 0)) {
@@ -151,6 +154,22 @@ export default function CustomTestPage() {
     overallTestTimerIdRef.current = null;
   }, []);
 
+  const handleNextQuestion = useCallback(() => {
+      playClickSound();
+      if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) {
+          if (!testState?.isAutoSubmitting) handleSubmitTest(false);
+          return;
+      }
+      clearCurrentQuestionTimer();
+      setTestState(prev => {
+          if (!prev) return null;
+          const nextIndex = prev.currentQuestionIndex + 1;
+          const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
+          return { ...prev, currentQuestionIndex: nextIndex, currentQuestionTimeLeft: nextQuestionTime };
+      });
+  }, [testState, playClickSound, clearCurrentQuestionTimer]);
+
+
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     if (!autoSubmitted) playClickSound();
     clearCurrentQuestionTimer();
@@ -192,15 +211,6 @@ export default function CustomTestPage() {
       };
     });
   }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, isSpeaking, isPaused, speak, toast]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (isMounted && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo');
-      voicePreferenceWasSetRef.current = true;
-    }
-    return () => { isMounted = false; };
-  }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
@@ -433,6 +443,15 @@ export default function CustomTestPage() {
 
   const handlePlaybackControl = () => {
     playClickSound();
+    if (isSpeaking && !isPaused) {
+        pauseTTS();
+        return;
+    }
+    if (isPaused) {
+        resumeTTS();
+        return;
+    }
+
     let textToPlay = "";
     if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
     else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
@@ -440,13 +459,12 @@ export default function CustomTestPage() {
     } else if (isLoading && !generatingMessageSpokenRef.current) {
       textToPlay = "Creating custom test. Please wait.";
     }
-    if (textToPlay && !isSpeaking && !isPaused) {
-      speak(textToPlay);
-      if (textToPlay === PAGE_TITLE && !pageTitleSpokenRef.current) pageTitleSpokenRef.current = true;
-      else if (textToPlay.startsWith("Test submitted") && !resultAnnouncementSpokenRef.current) resultAnnouncementSpokenRef.current = true;
-      else if (textToPlay.startsWith("Creating custom test") && !generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = true;
-    } else if (isSpeaking && !isPaused) pauseTTS();
-    else if (isPaused) resumeTTS();
+    if (textToPlay) {
+        speak(textToPlay);
+        if (textToPlay === PAGE_TITLE) pageTitleSpokenRef.current = true;
+        else if (textToPlay.startsWith("Test submitted")) resultAnnouncementSpokenRef.current = true;
+        else if (textToPlay.startsWith("Creating custom test")) generatingMessageSpokenRef.current = true;
+    }
   };
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
 
@@ -504,9 +522,9 @@ export default function CustomTestPage() {
                     </Button>
                 </div>
                 <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
-                  {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                  {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
                 </Button>
-                <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused}><StopCircle className="h-4 w-4" /></Button>
+                <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused && !isTTSLoading}><StopCircle className="h-4 w-4" /></Button>
               </div>
             </div>
             <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">Configure your test parameters. Generate questions from topics, notes, or recent studies.</CardDescription>

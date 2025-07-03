@@ -25,7 +25,7 @@ interface QuizViewProps {
 const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'medium' }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Array<string | undefined>>([]);
-  const [isAnswerFinalized, setIsAnswerFinalized] = useState<boolean>(false); // Feedback shown for current question
+  const [isAnswerFinalized, setIsAnswerFinalized] = useState<boolean>(false);
   const [quizFinished, setQuizFinished] = useState(false);
   const [score, setScore] = useState(0);
   const [shortAnswerValue, setShortAnswerValue] = useState('');
@@ -36,13 +36,8 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   
-  const voicePreferenceWasSetRef = useRef(false);
-
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('gojo');
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('gojo');
   }, [setVoicePreference]);
 
   useEffect(() => {
@@ -89,7 +84,6 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   const handleShortAnswerSubmit = useCallback(() => {
     if (isAnswerFinalized || !currentQuestion || !shortAnswerValue.trim()) return;
-    // This check ensures it only submits if it's effectively a short answer question
     const isEffectivelyShortAnswer = currentQuestion.type === 'short-answer' || 
                                  (currentQuestion.type === 'multiple-choice' && (!currentQuestion.options || currentQuestion.options.length === 0));
     if (!isEffectivelyShortAnswer) return;
@@ -200,7 +194,6 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
 
   const isCurrentAnswerCorrect = isAnswerFinalized && userAnswers[currentQuestionIndex]?.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
 
-  // Determine effective type for rendering
   const isEffectivelyMultipleChoice = currentQuestion.type === 'multiple-choice' && 
                                       currentQuestion.options && currentQuestion.options.length > 0;
   const isEffectivelyShortAnswer = currentQuestion.type === 'short-answer' || 

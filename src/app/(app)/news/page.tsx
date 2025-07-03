@@ -43,26 +43,20 @@ export default function NewsPage() {
     cancelTTS,
     isSpeaking,
     isPaused,
+    isLoading: isTTSLoading,
     setVoicePreference,
     voicePreference
   } = useTTS();
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { toast } = useToast();
 
   const headlinesArrayForTTS = useRef<string[]>([]);
   const currentSpokenHeadlineIndexRef = useRef(0);
-  const isSpeakingHindiSequenceRef = useRef(false);
-  // State to help button text reflect sequence state accurately
-  const [isDisplayingPauseForHindi, setIsDisplayingPauseForHindi] = useState(false);
-
+  const isReadingSequenceRef = useRef(false);
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo');
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo');
   }, [setVoicePreference]);
 
   useEffect(() => {
@@ -101,10 +95,9 @@ export default function NewsPage() {
 
   const handleApplyFilters = () => {
     playActionSound();
-    cancelTTS(); // Stop any ongoing speech
-    isSpeakingHindiSequenceRef.current = false; // Reset Hindi sequence state
+    cancelTTS();
+    isReadingSequenceRef.current = false;
     currentSpokenHeadlineIndexRef.current = 0;
-    setIsDisplayingPauseForHindi(false);
     setAppliedFilters(filters);
     pageTitleSpokenRef.current = true; 
     if (!isSpeaking && !isPaused) {
@@ -114,9 +107,8 @@ export default function NewsPage() {
   const handleResetFilters = () => {
     playActionSound();
     cancelTTS();
-    isSpeakingHindiSequenceRef.current = false;
+    isReadingSequenceRef.current = false;
     currentSpokenHeadlineIndexRef.current = 0;
-    setIsDisplayingPauseForHindi(false);
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
     pageTitleSpokenRef.current = true;
@@ -168,102 +160,64 @@ export default function NewsPage() {
 
   useEffect(() => {
     const newHeadlinesArray = articles.map(article => article.title).filter(title => !!title);
-    // Only update ref if content actually changed to prevent issues with ongoing sequences
     if (JSON.stringify(headlinesArrayForTTS.current) !== JSON.stringify(newHeadlinesArray)) {
         headlinesArrayForTTS.current = newHeadlinesArray;
-        if (isSpeakingHindiSequenceRef.current) {
+        if (isReadingSequenceRef.current) {
             cancelTTS();
-            isSpeakingHindiSequenceRef.current = false;
+            isReadingSequenceRef.current = false;
             currentSpokenHeadlineIndexRef.current = 0;
-            setIsDisplayingPauseForHindi(false);
         }
     }
   }, [articles, cancelTTS]);
 
 
-  const speakNextHindiHeadline = useCallback(() => {
-    if (!isSpeakingHindiSequenceRef.current || currentSpokenHeadlineIndexRef.current >= headlinesArrayForTTS.current.length) {
-      isSpeakingHindiSequenceRef.current = false;
-      setIsDisplayingPauseForHindi(false);
-      currentSpokenHeadlineIndexRef.current = 0; // Reset for next time
+  const speakNextHeadline = useCallback(() => {
+    if (!isReadingSequenceRef.current || currentSpokenHeadlineIndexRef.current >= headlinesArrayForTTS.current.length) {
+      isReadingSequenceRef.current = false;
+      currentSpokenHeadlineIndexRef.current = 0;
       return;
     }
     const headlineToSpeak = headlinesArrayForTTS.current[currentSpokenHeadlineIndexRef.current];
-    speak(headlineToSpeak, () => { // Pass the onEndCallback
-      if (isSpeakingHindiSequenceRef.current) { // Check if still in sequence mode
+    speak(headlineToSpeak, () => {
+      if (isReadingSequenceRef.current) {
         currentSpokenHeadlineIndexRef.current += 1;
-        speakNextHindiHeadline(); // Call for the next one
+        speakNextHeadline();
       }
     });
-  }, [speak]); // Removed headlinesArrayForTTS from deps, using ref directly
+  }, [speak]);
 
   const handlePlaybackControl = () => {
     playActionSound();
-    const currentLanguageFilter = appliedFilters.language || 'en';
-
-    if (currentLanguageFilter === 'hi') {
-      if (isSpeakingHindiSequenceRef.current) { // If sequence is active
-        if (isSpeaking && !isPaused) {
-          pauseTTS();
-          setIsDisplayingPauseForHindi(true); // Indicates we should show "Resume"
-        } else if (isPaused) {
-          resumeTTS();
-          setIsDisplayingPauseForHindi(false); // Indicates we should show "Pause"
-        } else { // Sequence was active but not speaking/paused (e.g., error, or just finished one and waiting)
-          // This case might need re-triggering if it was an error state.
-          // For simplicity, let's treat it as if we are starting the sequence from current index.
-           cancelTTS(); // Clear any odd state
-           setIsDisplayingPauseForHindi(false);
-           speakNextHindiHeadline(); // Try to speak the current or next headline
-        }
-      } else { // Start new Hindi sequence
-        if (headlinesArrayForTTS.current.length === 0) {
-          toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
-          return;
-        }
-        cancelTTS(); // Ensure any previous non-sequence speech is stopped
-        isSpeakingHindiSequenceRef.current = true;
-        currentSpokenHeadlineIndexRef.current = 0; // Start from the beginning
-        setIsDisplayingPauseForHindi(false); // Should show "Pause" once speech starts
-        speakNextHindiHeadline();
+    
+    if (isReadingSequenceRef.current) {
+      if (isSpeaking && !isPaused) pauseTTS();
+      else if (isPaused) resumeTTS();
+      else speakNextHeadline();
+    } else {
+      if (headlinesArrayForTTS.current.length === 0) {
+        toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
+        return;
       }
-    } else { // For non-Hindi languages
-      const nonHindiHeadlinesText = headlinesArrayForTTS.current.join('. ');
-      if (!nonHindiHeadlinesText.trim()) {
-          toast({ title: "No Headlines", description: "No news headlines available to read.", variant: "default" });
-          return;
-      }
-      if (isSpeaking && !isPaused) {
-          pauseTTS();
-      } else if (isPaused) {
-          resumeTTS();
-      } else {
-          cancelTTS();
-          speak(nonHindiHeadlinesText);
-      }
+      cancelTTS();
+      isReadingSequenceRef.current = true;
+      currentSpokenHeadlineIndexRef.current = 0;
+      speakNextHeadline();
     }
   };
 
   const handleStopTTS = () => {
     playActionSound();
     cancelTTS();
-    isSpeakingHindiSequenceRef.current = false;
+    isReadingSequenceRef.current = false;
     currentSpokenHeadlineIndexRef.current = 0;
-    setIsDisplayingPauseForHindi(false);
   };
-  
+
   const getPlaybackButtonTextAndIcon = () => {
-    const currentLanguageFilter = appliedFilters.language || 'en';
-    if (currentLanguageFilter === 'hi') {
-      if (isSpeakingHindiSequenceRef.current) {
-        return isPaused || isDisplayingPauseForHindi ? { text: "Resume", icon: <PlayCircle className="h-4 w-4 mr-2" /> } : { text: "Pause", icon: <PauseCircle className="h-4 w-4 mr-2" /> };
-      }
-      return { text: "Read Headlines", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
+    if (isReadingSequenceRef.current) {
+        if (isSpeaking && !isPaused) return { text: "Pause", icon: <PauseCircle className="h-4 w-4 mr-2" /> };
+        if (isPaused) return { text: "Resume", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
     }
-    // For non-Hindi
-    return isSpeaking && !isPaused ? { text: "Pause", icon: <PauseCircle className="h-4 w-4 mr-2" /> } : 
-           isPaused ? { text: "Resume", icon: <PlayCircle className="h-4 w-4 mr-2" /> } : 
-           { text: "Read Headlines", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
+    return { text: "Read Headlines", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
   };
 
   const { text: playbackButtonText, icon: playbackButtonIcon } = getPlaybackButtonTextAndIcon();
@@ -296,9 +250,9 @@ export default function NewsPage() {
                 </Button>
               </div>
               <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText}>
-                  {playbackButtonIcon} {playbackButtonText}
+                  {isTTSLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : playbackButtonIcon} {playbackButtonText}
               </Button>
-              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused && !isSpeakingHindiSequenceRef.current}> <StopCircle className="h-5 w-5" /> </Button>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused && !isTTSLoading}> <StopCircle className="h-5 w-5" /> </Button>
           </div>
         </CardContent>
         <CardContent>

@@ -41,7 +41,7 @@ const motivationalQuotes = [
 ];
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, isPaused } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
   const { user } = useAuth();
@@ -51,6 +51,11 @@ export default function DashboardPage() {
   const [liveUserCount, setLiveUserCount] = useState(137);
 
   const pageTitleSpokenRef = useRef(false);
+
+  useEffect(() => {
+    // Set a default voice on page load if not already set by user action
+    setVoicePreference('holo');
+  }, [setVoicePreference]);
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);

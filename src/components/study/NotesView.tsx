@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     cancelTTS,
     isSpeaking,
     isPaused,
+    isLoading: isTTSLoading,
     setVoicePreference,
     voicePreference,
   } = useTTS();
@@ -33,13 +34,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   const { toast } = useToast();
 
   const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
-  const voicePreferenceWasSetRef = useRef(false);
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-        setVoicePreference('holo'); // Default to Holo for notes reading
-        voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo');
   }, [setVoicePreference]);
 
   useEffect(() => {
@@ -134,7 +131,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     h3: (props: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80">{props.children}</h3>,
     h4: (props: any) => <h4 className="text-lg font-semibold mt-3 mb-1.5 text-primary/70">{props.children}</h4>,
     ul: (props: any) => <ul className="list-disc pl-5 my-2 space-y-1">{props.children}</ul>,
-    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ol>,
+    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ul>,
     li: (props: any) => <li className="mb-1">{props.children}</li>,
     blockquote: (props: any) => <blockquote className="border-l-4 border-accent pl-4 py-2 my-3 italic bg-accent/10 text-accent-foreground/90 rounded-r-md">{props.children}</blockquote>,
     code: (props: any) => {
@@ -150,9 +147,6 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     th: (props: any) => <th className="border border-border px-3 py-1.5 bg-muted/40 font-medium text-left">{props.children}</th>,
     td: (props: any) => <td className="border border-border px-3 py-1.5 text-left">{props.children}</td>,
     img: ({ node, ...props }) => {
-      // AI-generated images are data URIs. Render them with a standard <img> tag for reliability.
-      // This is safer than using next/image for data URIs without specific configuration.
-      // eslint-disable-next-line @next/next/no-img-element
       return <img {...props} className="max-w-full h-auto rounded-lg shadow-md my-4 mx-auto" alt={props.alt || 'AI generated image'} />;
     },
   };
@@ -184,9 +178,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
                 </Button>
               </div>
             <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
-              {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+              {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
             </Button>
-            <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
+            <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused && !isTTSLoading}>
               <StopCircle className="h-4 w-4" />
             </Button>
             <Button onClick={handleDownloadNotes} variant="outline" size="sm" className="h-8 text-xs"><Download className="mr-1.5 h-3.5 w-3.5"/>Download</Button>
