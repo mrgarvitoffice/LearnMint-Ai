@@ -8,7 +8,7 @@ import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { gojoChatbot, type GojoChatbotInput } from '@/ai/flows/ai-chatbot';
-import { holoChatbot, type HoloChatbotInput } from '@/ai/flows/megumin-chatbot';
+import { holoChatbot, type HoloChatbotInput } from '@/ai/flows/holo-chatbot';
 import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -60,13 +60,9 @@ export default function ChatbotPage() {
     
     setMessages([initialGreetingMessage]);
     
-    // Speak the greeting after a short delay to ensure the voice is ready.
-    const timer = setTimeout(() => {
-      currentSpokenMessageRef.current = greetingText;
-      speak(greetingText);
-    }, 150);
-
-    return () => clearTimeout(timer); // Cleanup timer on component unmount or character change
+    // Speak the greeting immediately without delay
+    currentSpokenMessageRef.current = greetingText;
+    speak(greetingText);
 
   }, [selectedCharacter, setVoicePreference, cancelTTS, speak]);
 
