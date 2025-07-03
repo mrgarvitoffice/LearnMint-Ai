@@ -132,15 +132,21 @@ export function useTTS(): TTSHook {
     if (voiceForUtterance) newUtterance.voice = voiceForUtterance;
     if (langForUtterance) newUtterance.lang = langForUtterance;
     
-    newUtterance.pitch = 1.0;
     newUtterance.volume = 1.0;
     
+    // Custom voice profiles
+    if (voicePreference === 'kai') { // Gojo's voice profile
+        newUtterance.pitch = 0.95; // Slightly lower for a calmer, more confident tone
+    } else {
+        newUtterance.pitch = 1.0; // Default pitch
+    }
+
     // Adjust rate based on mobile/desktop and language
     const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
     if (isMobile) {
-      newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9; // Normal speed for English on mobile
+      newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9;
     } else {
-      newUtterance.rate = isCurrentUtteranceEnglish ? 1.1 : 1.0; // Slightly faster for English on desktop
+      newUtterance.rate = isCurrentUtteranceEnglish ? 1.1 : 1.0;
     }
 
     newUtterance.onstart = () => { if (utteranceRef.current === newUtterance) { setIsSpeaking(true); setIsPaused(false); }};
@@ -165,7 +171,7 @@ export function useTTS(): TTSHook {
     newUtterance.onresume = () => { if (utteranceRef.current === newUtterance) setIsPaused(false); };
 
     window.speechSynthesis.speak(newUtterance);
-  }, [selectedVoice, supportedVoices, cancelTTS, isMobile, isMuted]); // Added isMobile and isMuted dependency
+  }, [selectedVoice, supportedVoices, cancelTTS, isMobile, isMuted, voicePreference]); // Added voicePreference
 
 
   const speak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
