@@ -21,10 +21,10 @@ export function SecondaryNavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-16 z-20 flex h-14 items-center justify-around bg-background/80 px-2 backdrop-blur-sm md:hidden">
+    <nav className="sticky top-16 z-20 hidden h-14 items-center justify-around bg-background/80 px-2 backdrop-blur-sm md:flex">
        {secondaryNavItems.map((item) => {
         const Icon = item.icon;
-        const isActive = pathname === item.href;
+        const isActive = pathname.startsWith(item.href);
 
         if (item.isCenter) {
           return (

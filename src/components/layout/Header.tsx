@@ -19,7 +19,7 @@ import { APP_NAME, TTS_LANGUAGES } from '@/lib/constants';
 
 import { useSidebar } from '../ui/sidebar';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { DesktopSidebar } from './DesktopSidebar';
+import { MobileSidebarContent } from './MobileSidebarContent';
 
 export function Header() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -67,7 +67,7 @@ export function Header() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="flex flex-col p-0 w-64">
-                   <DesktopSidebar />
+                   <MobileSidebarContent />
                 </SheetContent>
             </Sheet>
              <Link href="/" className="flex items-center gap-2 font-semibold" onClick={() => playClickSound()}>
