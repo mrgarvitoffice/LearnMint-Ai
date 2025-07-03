@@ -4,15 +4,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Trash2, TestTubeDiagonal, Newspaper, Brain, FileText, CheckCircle, Flame } from "lucide-react";
+import { ArrowRight, Brain, Trash2, Flame, CheckCircle, Bot, ShieldCheck, Bell } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { motion } from 'framer-motion';
-import { Logo } from '@/components/icons/Logo';
-import { NAV_ITEMS } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InteractiveCharacterElement from '@/components/features/InteractiveCharacterElement';
@@ -20,36 +18,6 @@ import InteractiveCharacterElement from '@/components/features/InteractiveCharac
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = "Welcome to LearnMint!";
-
-// A new reusable component for the main action cards on the dashboard.
-const ActionCard = ({ icon: Icon, title, description, buttonText, href, delay }: { icon: React.ElementType, title: string, description: string, buttonText: string, href: string, delay: number }) => {
-    const cardVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay } },
-    };
-
-    return (
-        <motion.div variants={cardVariants}>
-            <Card className="w-full text-left">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                        <Icon className="h-6 w-6 text-primary" />
-                        {title}
-                    </CardTitle>
-                    <CardDescription>{description}</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                    <Button asChild size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white shadow-lg">
-                        <Link href={href}>
-                            {buttonText} <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </motion.div>
-    );
-};
-
 
 export default function DashboardPage() {
   const { speak } = useTTS();
@@ -110,9 +78,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
-  // Desktop View
-  if (!isMobile) {
-    return (
+  return (
       <motion.div 
           className="container mx-auto max-w-7xl py-4 sm:py-6 space-y-6 md:space-y-8"
           initial="hidden"
@@ -164,22 +130,20 @@ export default function DashboardPage() {
              <motion.div variants={cardVariants}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Ask Mint AI</CardTitle>
+                  <CardTitle className="flex items-center gap-3"><Bot className="text-primary"/>Ask Mint AI</CardTitle>
+                   <CardDescription>Have a quick question? Jump into a chat with one of our AI assistants.</CardDescription>
                 </CardHeader>
                 <CardContent>
                    <div className="flex gap-4 items-center">
                         <InteractiveCharacterElement characterName="Gojo" imageUrl="/images/gojo-dp.jpg" dataAiHint="Gojo Satoru" />
                         <InteractiveCharacterElement characterName="Holo" imageUrl="/images/holo-dp.jpg" dataAiHint="Holo wise wolf" />
                         <div className="flex-1">
-                          <p className="text-muted-foreground text-sm">Have a quick question? Jump into a chat with one of our AI assistants.</p>
+                           <Button asChild>
+                              <Link href="/chatbot">Go to AI Chat <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                          </Button>
                         </div>
                    </div>
                 </CardContent>
-                <CardFooter>
-                    <Button asChild>
-                        <Link href="/chatbot">Go to AI Chat <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                    </Button>
-                </CardFooter>
               </Card>
             </motion.div>
           </div>
@@ -200,7 +164,7 @@ export default function DashboardPage() {
             <motion.div variants={cardVariants}>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Daily Quests</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><ShieldCheck className="text-primary"/>Daily Quests</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center gap-2"><CheckCircle className="text-green-500 h-4 w-4"/> Generate 1 new note set.</div>
@@ -212,7 +176,7 @@ export default function DashboardPage() {
             <motion.div variants={cardVariants}>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Featured Subject</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Bell className="text-primary" />Featured Subject</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p>Biology: The Krebs Cycle</p>
@@ -228,69 +192,5 @@ export default function DashboardPage() {
             Made by <span className="font-bold text-primary">MrGarvit</span>
         </div>
       </motion.div>
-    );
-  }
-
-  // Mobile View
-  return (
-    <motion.div 
-        className="container mx-auto max-w-4xl py-4 sm:py-8 space-y-6 md:space-y-8"
-        initial="hidden"
-        animate="visible"
-        transition={{ staggerChildren: 0.1 }}
-    >
-        <motion.div variants={cardVariants}>
-          <Card className="text-center bg-transparent border-none shadow-none">
-            <CardHeader className="items-center p-0">
-              <Logo size={60} />
-              <CardTitle className="text-4xl font-bold mt-4">Welcome to LearnMint!</CardTitle>
-              <CardDescription className="text-muted-foreground mt-2 max-w-xs">
-                Your AI-powered learning assistant for notes, quizzes, tests, and more.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 mt-4">
-                <div className="flex items-center justify-center gap-2 text-sm">
-                    <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                    </span>
-                    <span>138 Learners Online</span>
-                </div>
-            </CardContent>
-             <CardFooter className="flex-col p-0 mt-6">
-                <Button asChild size="lg" className="w-full">
-                    <Link href="/notes">
-                        <Sparkles className="mr-2 h-5 w-5"/> Start Generating Materials
-                    </Link>
-                </Button>
-            </CardFooter>
-          </Card>
-        </motion.div>
-        
-        <motion.div variants={cardVariants}>
-            <h2 className="text-lg font-semibold text-center text-muted-foreground my-4">Explore Features</h2>
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {NAV_ITEMS.map(item => {
-                    const Icon = item.icon;
-                    // Exclude Dashboard and Profile from this grid for mobile view to avoid redundancy
-                    if (item.href === '/' || item.href === '/profile') return null;
-                    return (
-                        <Link key={item.href} href={item.href} passHref legacyBehavior>
-                            <a className="w-full">
-                                <Button variant="outline" className="w-full h-20 flex-col gap-1.5" onClick={playClickSound}>
-                                    <Icon className="h-6 w-6" />
-                                    <span className="text-xs text-center">{item.title}</span>
-                                </Button>
-                            </a>
-                        </Link>
-                    )
-                })}
-            </div>
-        </motion.div>
-        
-        <div className="text-center text-xs text-muted-foreground mt-8 sm:mt-12 py-4 border-t border-border/50">
-            Made by <span className="font-bold text-primary">MrGarvit</span>
-        </div>
-    </motion.div>
   );
 }
