@@ -17,6 +17,7 @@ import '@/ai/flows/search-google-books';
 import '@/ai/flows/generate-image-from-prompt';
 import '@/ai/flows/text-to-speech';
 import '@/ai/flows/generate-audio-flashcards';
+import '@/ai/flows/generate-audio-summary';
 
 
 // The Genkit dev server will pick up flows defined with ai.defineFlow(...)

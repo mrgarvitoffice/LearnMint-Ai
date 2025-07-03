@@ -1,4 +1,3 @@
-
 // This file defines constants used throughout the LearnMint application.
 // It includes navigation items, application name, and static data for features like the library and news.
 
@@ -7,7 +6,7 @@ import type { LucideIcon } from 'lucide-react'; // Type for Lucide icons
 import {
   LayoutDashboard, // Icon for Dashboard
   FileText,        // Icon for Note Generator
-  ListChecks,      // Icon for Flashcards
+  AudioLines,      // Icon for Audio Factory
   Calculator,      // Icon for Calculator
   Newspaper,       // Icon for Daily News
   Library,         // Generic library icon
@@ -46,7 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: 'sidebar.aiChat', href: '/chatbot', icon: Bot, label: 'AI' },
   { title: 'sidebar.generateNotes', href: '/notes', icon: FileText, label: 'AI' },
   { title: 'sidebar.customTest', href: '/custom-test', icon: TestTubeDiagonal },
-  { title: 'sidebar.flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
+  { title: 'sidebar.audioFactory', href: '/flashcards', icon: AudioLines, label: 'AI' },
   { title: 'sidebar.calculator', href: '/calculator', icon: Calculator },
   { title: 'sidebar.dailyNews', href: '/news', icon: Newspaper },
   { title: 'sidebar.library', href: '/library', icon: BookMarked },
@@ -59,7 +58,7 @@ export const TOP_NAV_ITEMS: NavItem[] = [
   { title: 'sidebar.aiChat', href: '/chatbot', icon: Bot },
   { title: 'sidebar.calculator', href: '/calculator', icon: Calculator },
   { title: 'sidebar.dailyNews', href: '/news', icon: Newspaper },
-  { title: 'sidebar.flashcards', href: '/flashcards', icon: ListChecks },
+  { title: 'sidebar.audioFactory', href: '/flashcards', icon: AudioLines },
   { title: 'sidebar.arcade', href: '/arcade', icon: Gamepad2 },
 ];
 

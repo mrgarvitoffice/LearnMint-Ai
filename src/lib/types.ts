@@ -1,4 +1,3 @@
-
 // For AI Generated Content
 export interface QuizQuestion {
   question: string;
@@ -61,6 +60,17 @@ export type GenerateAudioFlashcardsOutput = {
   flashcards: Flashcard[];
   audioDataUri?: string;
 };
+
+// For Audio Summary Generation (New for Audio Factory)
+export interface GenerateAudioSummaryInput {
+  text?: string;
+  imageDataUri?: string;
+}
+export interface GenerateAudioSummaryOutput {
+  summary: string;
+  audioDataUri: string;
+}
+
 
 // For News API
 export interface NewsArticle {

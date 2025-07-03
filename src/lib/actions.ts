@@ -7,6 +7,7 @@ import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNot
 import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
 import { generateAudioFlashcards, type GenerateAudioFlashcardsInput, type GenerateAudioFlashcardsOutput } from "@/ai/flows/generate-audio-flashcards";
+import { generateAudioSummary, type GenerateAudioSummaryInput, type GenerateAudioSummaryOutput } from "@/ai/flows/generate-audio-summary";
 
 import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
@@ -228,6 +229,38 @@ export async function generateAudioFlashcardsAction(input: GenerateAudioFlashcar
       clientErrorMessage = "Audio Flashcard Generation: Failed due to an API key issue. Please check server configuration.";
     } else if (error.message) {
       clientErrorMessage = `Audio Flashcard Generation: Failed. Error: ${error.message.substring(0, 150)}. Check server logs for full details.`;
+    }
+    throw new Error(clientErrorMessage);
+  }
+}
+
+/**
+ * generateAudioSummaryAction
+ *
+ * This server action takes text OR an image, generates a summary, and converts it to audio.
+ * It's the engine for the new features in the Audio Factory.
+ *
+ * @param input - Contains optional text and/or an image data URI.
+ * @returns A promise that resolves to the summary and audio data.
+ * @throws Error if generation fails.
+ */
+export async function generateAudioSummaryAction(input: GenerateAudioSummaryInput): Promise<GenerateAudioSummaryOutput> {
+  const actionName = "generateAudioSummaryAction";
+  console.log(`[Server Action] ${actionName} called with: ${input.text ? 'text input' : 'image input'}`);
+
+  try {
+    const result = await generateAudioSummary(input);
+    if (!result || !result.summary || !result.audioDataUri) {
+      throw new Error("AI returned empty or invalid audio summary data.");
+    }
+    return result;
+  } catch (error: any) {
+    console.error(`[Server Action Error - ${actionName}] Error generating audio summary:`, error);
+    let clientErrorMessage = "Failed to generate audio summary. Please try again.";
+    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid"))) {
+        clientErrorMessage = "Audio Summary: Failed due to an API key or configuration issue. Please check the GOOGLE_API_KEY_TTS key.";
+    } else if (error.message) {
+        clientErrorMessage = `Audio Summary: Failed. Error: ${error.message.substring(0, 150)}.`;
     }
     throw new Error(clientErrorMessage);
   }
