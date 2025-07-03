@@ -18,7 +18,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@/contexts/SettingsContext';
 
-const PAGE_TITLE_CHATBOT = "AI Chat Central";
 const TYPING_INDICATOR_ID = 'typing-indicator';
 
 type ChatbotCharacter = 'gojo' | 'holo';
@@ -39,6 +38,7 @@ export default function ChatbotPage() {
     isSpeaking,
     isPaused,
     setVoicePreference,
+    voicePreference
   } = useTTS();
   const { soundMode } = useSettings();
 
@@ -63,7 +63,7 @@ export default function ChatbotPage() {
     speak(greetingText, { priority: 'essential' });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacter, soundMode]);
+  }, [selectedCharacter]);
 
 
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function ChatbotPage() {
   const getCurrentCharacterAvatarHint = () => selectedCharacter === 'gojo' ? 'Gojo Satoru' : 'Holo wise wolf';
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8 h-full flex flex-col">
+    <div className="container mx-auto p-2 sm:p-4 md:p-6 lg:p-8 h-full flex flex-col">
     <Card className="h-full flex flex-col flex-1">
       <CardHeader className="border-b">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">

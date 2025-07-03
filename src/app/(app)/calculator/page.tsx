@@ -61,7 +61,7 @@ export default function CalculatorPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE);
+      speak(PAGE_TITLE, { priority: 'optional' });
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
@@ -186,7 +186,7 @@ export default function CalculatorPage() {
   const clearAllHistory = () => { playSound(); setCalculationHistory([]); }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
+    <div className="container mx-auto max-w-5xl px-4 py-8 space-y-6">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4"><CalculatorIcon className="h-12 w-12 text-primary" /></div>

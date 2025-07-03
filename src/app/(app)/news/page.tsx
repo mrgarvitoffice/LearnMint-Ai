@@ -8,7 +8,7 @@ import type { NewsArticle } from '@/lib/types';
 import { NewsCard } from '@/components/features/news/NewsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, Volume1, Volume2, VolumeX } from 'lucide-react';
+import { Newspaper, Loader2, AlertTriangle, PlayCircle, PauseCircle, StopCircle, VolumeX } from 'lucide-react';
 import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSound } from '@/hooks/useSound';
@@ -32,35 +32,17 @@ const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion:
 export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
-  const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo'>('holo');
-
-  const { soundMode } = useSettings();
+  
+  const { soundMode, language } = useSettings();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { toast } = useToast();
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   
   const headlinesArrayForTTS = useRef<string[]>([]);
   const currentSpokenHeadlineIndexRef = useRef(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  useEffect(() => {
-    const loadVoices = () => setBrowserVoices(window.speechSynthesis.getVoices());
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      loadVoices();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-      }
-    }
-    return () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = null;
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
 
   const cancelLocalTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -161,27 +143,18 @@ export default function NewsPage() {
     }
     const text = headlinesArrayForTTS.current[currentSpokenHeadlineIndexRef.current];
 
-    if (typeof window === 'undefined' || !window.speechSynthesis || browserVoices.length === 0) {
-      toast({ title: "TTS Not Ready", description: "Browser voices are not available yet.", variant: "default" });
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
       return;
     }
     
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
-    const lang = NEWS_LANGUAGES.find(l => l.value === appliedFilters.language)?.bcp47 || 'en-US';
-    utterance.lang = lang;
-
-    let targetVoice: SpeechSynthesisVoice | undefined;
-    const voicesForLang = browserVoices.filter(v => v.lang.startsWith(lang.split('-')[0]));
     
-    if (voicePreference === 'gojo') {
-      const maleVoicePreferences = ['Daniel', 'Google US English', 'David', 'Alex'];
-      targetVoice = voicesForLang.find(v => maleVoicePreferences.some(p => v.name.includes(p))) || voicesForLang.find(v => v.gender === 'male');
-    } else {
-      const femaleVoicePreferences = ['Samantha', 'Google UK English Female', 'Zira', 'Fiona'];
-      targetVoice = voicesForLang.find(v => femaleVoicePreferences.some(p => v.name.includes(p))) || voicesForLang.find(v => v.gender === 'female');
-    }
-    utterance.voice = targetVoice || voicesForLang.find(v => v.default) || voicesForLang[0];
+    const voices = window.speechSynthesis.getVoices();
+    const langForTTS = NEWS_LANGUAGES.find(l => l.value === appliedFilters.language)?.bcp47 || language;
+    utterance.lang = langForTTS;
+    
+    utterance.voice = voices.find(v => v.lang === langForTTS && v.localService) || voices.find(v => v.lang.startsWith(langForTTS.split('-')[0]) && v.localService) || voices.find(v => v.lang === langForTTS) || voices.find(v => v.lang.startsWith(langForTTS.split('-')[0])) || null;
 
     utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
     utterance.onpause = () => { setIsSpeaking(true); setIsPaused(true); };
@@ -197,12 +170,12 @@ export default function NewsPage() {
     };
     
     window.speechSynthesis.speak(utterance);
-  }, [browserVoices, voicePreference, appliedFilters.language, toast]);
+  }, [language, appliedFilters.language, toast]);
 
   const handlePlaybackControl = () => {
     playActionSound();
-    if (soundMode === 'muted') {
-        toast({ title: "Sound Muted", description: "Please enable sound in settings to use this feature." });
+    if (soundMode !== 'full') {
+        toast({ title: "Full Sound Muted", description: "Please enable full sound in settings to use this feature." });
         return;
     }
     if (isSpeaking && !isPaused) {
@@ -224,12 +197,6 @@ export default function NewsPage() {
     cancelLocalTTS();
   };
 
-  const handleSetVoicePreference = (pref: 'gojo' | 'holo') => {
-    playActionSound();
-    cancelLocalTTS();
-    setVoicePreference(pref);
-  }
-
   const getPlaybackButtonTextAndIcon = () => {
     if (isSpeaking && !isPaused) return { text: "Pause", icon: <PauseCircle className="h-4 w-4 mr-2" /> };
     if (isPaused) return { text: "Resume", icon: <PlayCircle className="h-4 w-4 mr-2" /> };
@@ -248,22 +215,6 @@ export default function NewsPage() {
         </CardHeader>
         <CardContent className="pt-0 pb-4">
           <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
-             <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
-                <Button
-                  onClick={() => handleSetVoicePreference('gojo')}
-                  variant={voicePreference === 'gojo' ? 'default' : 'ghost'}
-                  size="sm" className="text-xs h-8 px-3"
-                >
-                  Gojo
-                </Button>
-                <Button
-                  onClick={() => handleSetVoicePreference('holo')}
-                  variant={voicePreference === 'holo' || !voicePreference ? 'default' : 'ghost'}
-                  size="sm" className="text-xs h-8 px-3"
-                >
-                  Holo
-                </Button>
-              </div>
               <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText} disabled={soundMode !== 'full'}>
                   {soundMode !== 'full' ? <VolumeX className="h-4 w-4 mr-2" /> : playbackButtonIcon} {soundMode === 'full' ? playbackButtonText : "Enable Full Sound"}
               </Button>

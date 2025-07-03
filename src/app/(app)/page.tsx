@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
 import { ArrowRight, Brain, TestTubeDiagonal, FileText, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
@@ -18,17 +18,6 @@ import { useSettings } from '@/contexts/SettingsContext';
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
-
-const exploreFeaturesCards = [
-  { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
-  { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests." },
-  { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcard sets." },
-  { title: "AI Chatbot", href: "/chatbot", icon: Bot, description: "Chat with our witty AI companions." },
-  { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations & convert units." },
-  { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with global news." },
-  { title: "LearnMint Arcade", href: "/arcade", icon: Gamepad2, description: "Play educational games." },
-  { title: "Resource Library", href: "/library", icon: BookMarked, description: "Explore learning resources." },
-];
 
 const motivationalQuotes = [
   { quote: "The only way to do great work is to love what you do. ✨", author: "Steve Jobs" },
@@ -89,12 +78,10 @@ export default function DashboardPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE, { priority: 'essential' });
-      pageTitleSpokenRef.current = true;
+        speak(PAGE_TITLE, { priority: 'essential' });
+        pageTitleSpokenRef.current = true;
     }
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [isSpeaking, isPaused, speak, soundMode]);
 
   const handleRemoveTopic = (topicToRemove: string) => {
@@ -118,6 +105,8 @@ export default function DashboardPage() {
     playClickSound();
     router.push(`/study?topic=${encodeURIComponent(topic)}`);
   }
+
+  const exploreFeaturesCards = NAV_ITEMS.filter(item => item.href !== '/').flatMap(item => item.children || item);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-10">
@@ -151,7 +140,7 @@ export default function DashboardPage() {
 
       <section>
          <h2 className="text-2xl font-semibold text-foreground mb-6 text-center sm:text-left">Explore Features</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {exploreFeaturesCards.map((item) => {
             const Icon = item.icon;
             return (
@@ -229,7 +218,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="text-center text-sm text-muted-foreground mt-12 py-4 border-t border-border/50">
-        Crafted with <Sparkles className="inline-block h-4 w-4 text-accent" /> by <span className="font-bold text-primary">MrGarvit</span>
+        Made by <span className="font-bold text-primary">MrGarvit</span>
       </div>
     </div>
   );

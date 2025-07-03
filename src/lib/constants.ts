@@ -71,6 +71,21 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
 // --- Application Name ---
 export const APP_NAME = "LearnMint";
 
+// --- TTS Languages (for Settings) ---
+export const TTS_LANGUAGES: { value: string; label: string; }[] = [
+  { value: "en-US", label: "English (US)" },
+  { value: "en-GB", label: "English (UK)" },
+  { value: "es-ES", label: "Spanish (Spain)" },
+  { value: "fr-FR", label: "French (France)" },
+  { value: "de-DE", label: "German" },
+  { value: "it-IT", label: "Italian" },
+  { value: "ja-JP", label: "Japanese" },
+  { value: "ko-KR", label: "Korean" },
+  { value: "pt-BR", label: "Portuguese (Brazil)" },
+  { value: "hi-IN", label: "Hindi" },
+];
+
+
 // --- OpenStax Textbooks Data (for Library page) ---
 // A curated list of sample OpenStax textbooks with links and subjects.
 export const OPENSTAX_BOOKS = [

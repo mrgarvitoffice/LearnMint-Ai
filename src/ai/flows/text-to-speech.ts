@@ -65,10 +65,10 @@ const textToSpeechFlow = aiForTTS.defineFlow(
     try {
       const { media } = await aiForTTS.generate({
         model: 'googleai/gemini-2.5-flash-preview-tts',
-        prompt: text, // Simplified prompt for a single voice
+        prompt: text,
         config: {
           responseModalities: ['AUDIO'],
-          speechConfig: { // Simplified to use a single voice config, which is more efficient.
+          speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: voiceName },
             },
@@ -93,7 +93,7 @@ const textToSpeechFlow = aiForTTS.defineFlow(
         let errorMessage = "Failed to generate audio due to an unexpected error.";
         if (error.message.includes("API key") || error.message.includes("GOOGLE_API_KEY_TTS")) {
             errorMessage = "TTS: API key issue. Check GOOGLE_API_KEY_TTS and ensure billing is enabled for the project.";
-        } else if (error.message.includes("quota")) {
+        } else if (error.message.toLowerCase().includes("quota")) {
             errorMessage = "TTS: Quota exceeded. Please check your Google Cloud project quotas.";
         }
         throw new Error(errorMessage);
