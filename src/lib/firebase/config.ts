@@ -1,4 +1,3 @@
-
 // Firebase Configuration File for LearnMint
 // This file initializes Firebase and sets up authentication.
 // It's crucial that the environment variables are correctly set in your .env file.
@@ -6,7 +5,8 @@
 // Import necessary functions from Firebase SDKs
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-// Add other Firebase SDKs here if needed (e.g., Firestore, Storage)
+import { getFirestore } from "firebase/firestore";
+// Add other Firebase SDKs here if needed (e.g., Storage)
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // --- Environment Variable Retrieval ---
@@ -83,9 +83,11 @@ if (!getApps().length) { // Check if any Firebase apps have been initialized
 // --- Firebase Authentication Setup ---
 // Get the Firebase Auth instance associated with the initialized app.
 const auth = getAuth(app);
+// Get the Firestore database instance
+const db = getFirestore(app);
 // Create a new GoogleAuthProvider instance for Google Sign-In.
 const googleProvider = new GoogleAuthProvider();
 
 // --- Exports ---
 // Export the initialized app, auth instance, and Google provider for use throughout the application.
-export { app, auth, googleProvider };
+export { app, auth, db, googleProvider };

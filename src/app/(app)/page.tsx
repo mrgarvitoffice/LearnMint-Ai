@@ -16,6 +16,8 @@ import { Logo } from '@/components/icons/Logo';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
+import { db } from '@/lib/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -80,22 +82,26 @@ export default function DashboardPage() {
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
-    const [totalLearners, setTotalLearners] = useState(138);
+    const [totalLearners, setTotalLearners] = useState(0); // Default to 0, will be updated by Firestore
     const pageTitleSpokenRef = useRef(false);
 
+    // Real-time listener for the total user count from Firestore
     useEffect(() => {
-        const initialLearners = parseInt(localStorage.getItem('learnmint-learner-count') || '138', 10);
-        setTotalLearners(initialLearners);
+        const metadataRef = doc(db, 'metadata', 'userStats');
+        const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setTotalLearners(docSnap.data().totalUsers || 0);
+            } else {
+                console.log("User statistics document does not exist yet.");
+                setTotalLearners(0);
+            }
+        }, (error) => {
+            console.error("Error fetching real-time user count:", error);
+            // Optionally set a fallback or show an error state
+        });
 
-        const interval = setInterval(() => {
-            setTotalLearners(prevCount => {
-                const newCount = prevCount + Math.floor(Math.random() * 3); // Always increment
-                localStorage.setItem('learnmint-learner-count', newCount.toString());
-                return newCount;
-            });
-        }, 8000); // update every 8 seconds
-
-        return () => clearInterval(interval);
+        // Cleanup the listener when the component unmounts
+        return () => unsubscribe();
     }, []);
 
     useEffect(() => {
@@ -174,7 +180,7 @@ export default function DashboardPage() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                             </span>
-                            <span className="animate-pulse-status">{totalLearners} {t('dashboard.totalLearners')}</span>
+                            <span className="animate-pulse-status">{totalLearners.toLocaleString()} {t('dashboard.totalLearners')}</span>
                         </div>
                     </CardHeader>
                 </Card>
