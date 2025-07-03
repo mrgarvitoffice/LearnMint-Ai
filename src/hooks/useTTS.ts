@@ -8,7 +8,6 @@ import { textToSpeech } from '@/ai/flows/text-to-speech';
 
 interface SpeakOptions {
   priority?: 'essential' | 'optional';
-  useBrowserTTS?: boolean;
 }
 
 interface TTSHook {
@@ -33,11 +32,11 @@ export function useTTS(): TTSHook {
   const { toast } = useToast();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isUsingAITtsRef = useRef(false);
+  const activeRequestIdRef = useRef(0);
   
   const cancelTTS = useCallback(() => {
-    ttsRequestCounter++;
+    activeRequestIdRef.current += 1; // Invalidate previous requests
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = "";
@@ -54,21 +53,24 @@ export function useTTS(): TTSHook {
     if (typeof window !== 'undefined' && !audioRef.current) {
       audioRef.current = new Audio();
     }
-    return cancelTTS;
+    return cancelTTS; // Cleanup on unmount
   }, [cancelTTS]);
 
-  const fallbackToBrowserTTS = useCallback((text: string, currentRequestId: number) => {
-    if (currentRequestId !== ttsRequestCounter) return;
+  const fallbackToBrowserTTS = useCallback((text: string, requestId: number) => {
+    if (requestId !== activeRequestIdRef.current) return; // Stale request, ignore.
+    
     isUsingAITtsRef.current = false;
+    console.warn("AI TTS failed or was bypassed. Using browser TTS as fallback.");
+
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+        setIsSpeaking(false);
+        setIsPaused(false);
+        return;
+    }
     
-    console.warn("Using browser TTS as fallback.");
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // Ensure any previous speech is stopped.
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
-    
     const voices = window.speechSynthesis.getVoices();
     utterance.lang = language;
     
@@ -84,11 +86,11 @@ export function useTTS(): TTSHook {
 
     utterance.voice = selectedVoice || voices.find(v => v.default) || null;
     
-    utterance.onstart = () => { if (currentRequestId === ttsRequestCounter) { setIsSpeaking(true); setIsPaused(false); }};
-    utterance.onend = () => { if (currentRequestId === ttsRequestCounter) { setIsSpeaking(false); setIsPaused(false); }};
+    utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
+    utterance.onend = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(false); setIsPaused(false); }};
     utterance.onerror = (e) => {
       console.error("Browser TTS Error:", e);
-      if (currentRequestId === ttsRequestCounter) {
+      if (requestId === activeRequestIdRef.current) {
          toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
          setIsSpeaking(false); setIsPaused(false);
       }
@@ -98,42 +100,39 @@ export function useTTS(): TTSHook {
   }, [language, voicePreference, toast]);
 
   const speak = useCallback(async (text: string, options: SpeakOptions = {}) => {
-    const { priority = 'optional', useBrowserTTS = false } = options;
+    const { priority = 'optional' } = options;
 
     if (soundMode === 'muted' || !text.trim()) return;
     if (soundMode === 'essential' && priority !== 'essential') return;
     
-    cancelTTS();
-    const currentRequestId = ++ttsRequestCounter;
+    cancelTTS(); // Cancel any ongoing speech before starting a new one
+    const currentRequestId = activeRequestIdRef.current;
     
-    if (useBrowserTTS) {
-        fallbackToBrowserTTS(text, currentRequestId);
-        return;
-    }
-
     setIsSpeaking(true);
+    setIsPaused(false);
     isUsingAITtsRef.current = true;
+    
     try {
       const response = await textToSpeech({ text, voice: voicePreference });
-      if (currentRequestId === ttsRequestCounter && audioRef.current) {
+      if (currentRequestId === activeRequestIdRef.current && audioRef.current) {
         audioRef.current.src = response.audioDataUri;
         audioRef.current.play().catch(e => {
-          console.error("AI Audio playback error:", e);
+          console.error("AI Audio playback error, falling back:", e);
           fallbackToBrowserTTS(text, currentRequestId);
         });
         audioRef.current.onended = () => {
-          if (currentRequestId === ttsRequestCounter) setIsSpeaking(false);
+          if (currentRequestId === activeRequestIdRef.current) setIsSpeaking(false);
         };
-        audioRef.current.onerror = () => {
-          if (currentRequestId === ttsRequestCounter) {
-             console.error("AI Audio element error, falling back.");
+        audioRef.current.onerror = (e) => {
+          if (currentRequestId === activeRequestIdRef.current) {
+             console.error("AI Audio element error, falling back.", e);
              fallbackToBrowserTTS(text, currentRequestId);
           }
         };
       }
     } catch (error: any) {
-      console.error("AI TTS flow error:", error);
-      if (currentRequestId === ttsRequestCounter) {
+      console.error("AI TTS flow error, falling back:", error);
+      if (currentRequestId === activeRequestIdRef.current) {
         fallbackToBrowserTTS(text, currentRequestId);
       }
     }

@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'; // Next.js hook for programmatic na
 import { useAuth } from '@/contexts/AuthContext'; // Custom hook to access authentication state
 import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, Sidebar)
 import { Loader2 } from 'lucide-react'; // Loading spinner icon
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface MainAppLayoutProps {
   children: ReactNode; // The content of the specific page being rendered within this layout
@@ -58,8 +57,6 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
 
   // If user is authenticated, render the main application layout with the page content
   return (
-    <SidebarProvider>
-        <AppLayout>{children}</AppLayout>
-    </SidebarProvider>
+    <AppLayout>{children}</AppLayout>
   );
 }

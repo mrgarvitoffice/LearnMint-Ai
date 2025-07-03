@@ -8,7 +8,6 @@ import {
   LayoutDashboard, // Icon for Dashboard
   FileText,        // Icon for Note Generator
   ListChecks,      // Icon for Flashcards
-  Sparkles,        // Icon for AI Tools category and general AI features
   Calculator,      // Icon for Calculator
   Newspaper,       // Icon for Daily News
   Library,         // Generic library icon
@@ -37,37 +36,37 @@ export interface NavItem {
   children?: NavItem[];  // Optional array of sub-navigation items for dropdowns or nested menus.
 }
 
-// --- Main Navigation Items Configuration ---
+// --- Main Navigation Items Configuration (for Desktop Sidebar) ---
 // This array defines the structure and content of the primary navigation menu.
 export const NAV_ITEMS: NavItem[] = [
-  { title: 'Dashboard', href: '/', icon: LayoutDashboard, description: "Return to the main dashboard." },
-  { title: 'AI Chat', href: '/chatbot', icon: Bot, description: "Chat with helpful AI companions.", label: 'AI' },
-  { title: 'Notes', href: '/notes', icon: FileText, description: "Generate comprehensive notes on any topic.", label: 'AI' },
-  { title: 'Quests', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
-  { title: 'Progress', href: '/custom-test', icon: BarChart, description: "Build tailored tests with custom settings." },
-  { title: 'Settings', href: '/profile', icon: Settings, description: "Manage your account and app settings." },
-  {
-    title: 'More Tools',     // Category for AI-powered features
-    href: '#',             // '#' indicates a parent item, not a direct link
-    icon: Sparkles,
-    description: "Harness the power of AI for your studies.",
-    children: [            // Sub-menu items for AI Tools
-      { title: 'Flashcards', href: '/flashcards', icon: ListChecks, description: "Quickly create flashcard sets for review.", label: 'AI' },
-      { title: 'Calculator', href: '/calculator', icon: Calculator, description: "Access a scientific calculator and unit converter." },
-      { title: 'Daily News', href: '/news', icon: Newspaper, description: "Read the latest news from around the world." },
-      { title: 'Library', href: '/library', icon: BookMarked, description: "Explore textbooks, videos, and books." },
-    ],
-  },
+  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { title: 'AI Chat', href: '/chatbot', icon: Bot, label: 'AI' },
+  { title: 'Generate Notes', href: '/notes', icon: FileText, label: 'AI' },
+  { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal },
+  { title: 'Flashcards', href: '/flashcards', icon: ListChecks, label: 'AI' },
+  { title: 'Calculator', href: '/calculator', icon: Calculator },
+  { title: 'Daily News', href: '/news', icon: Newspaper },
+  { title: 'Library', href: '/library', icon: BookMarked },
+  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
+  { title: 'Profile', href: '/profile', icon: UserCircle },
 ];
 
-// --- Quick Access Navigation Items ---
-// A curated list for the mobile bottom nav bar and desktop secondary nav.
-export const QUICK_NAV_ITEMS: NavItem[] = [
-  { title: 'Chatbot', href: '/chatbot', icon: Bot, description: "Chat with helpful AI companions." },
-  { title: 'Calculator', href: '/calculator', icon: Calculator, description: "Access a scientific calculator and unit converter." },
-  { title: 'Newsly', href: '/news', icon: Newspaper, description: "Read the latest news from around the world." },
-  { title: 'Flashcards', href: '/flashcards', icon: ListChecks, description: "Quickly create flashcard sets for review." },
-  { title: 'Arcade', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
+// --- Mobile Top Navigation ---
+export const TOP_NAV_ITEMS: NavItem[] = [
+  { title: 'Chat', href: '/chatbot', icon: Bot },
+  { title: 'Notes', href: '/notes', icon: FileText },
+  { title: 'News', href: '/news', icon: Newspaper }, // Centered Item
+  { title: 'Test', href: '/custom-test', icon: TestTubeDiagonal },
+  { title: 'Cards', href: '/flashcards', icon: ListChecks },
+];
+
+// --- Mobile Bottom Navigation ---
+export const BOTTOM_NAV_ITEMS: NavItem[] = [
+  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { title: 'Library', href: '/library', icon: BookMarked },
+  { title: 'Calculator', href: '/calculator', icon: Calculator },
+  { title: 'Arcade', href: '/arcade', icon: Gamepad2 },
+  { title: 'Profile', href: '/profile', icon: UserCircle },
 ];
 
 

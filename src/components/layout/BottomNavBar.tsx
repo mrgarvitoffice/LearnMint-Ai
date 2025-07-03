@@ -1,24 +1,20 @@
 
 "use client";
 
-// This component is no longer used in the main application layout.
-// It is being kept temporarily for reference but can be safely deleted.
-
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { QUICK_NAV_ITEMS } from '@/lib/constants';
+import { BOTTOM_NAV_ITEMS } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
-import type { NavItem } from '@/lib/constants';
 
-export function BottomNavBar() {
+export function BottomMobileNav() {
   const pathname = usePathname();
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/30 backdrop-blur-lg md:hidden">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/90 backdrop-blur-lg md:hidden">
       <div className="grid h-16 grid-cols-5 items-center justify-around px-2">
-        {QUICK_NAV_ITEMS.map((item) => {
+        {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
 
@@ -32,8 +28,8 @@ export function BottomNavBar() {
               )}
               onClick={playSound}
             >
-              <Icon className="h-6 w-6" />
-              <span className="text-xs font-medium">{item.title}</span>
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium leading-tight text-center">{item.title}</span>
             </Link>
           );
         })}
