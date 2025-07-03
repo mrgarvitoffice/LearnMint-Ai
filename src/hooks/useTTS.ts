@@ -20,6 +20,9 @@ interface TTSHook {
   voicePreference: 'holo' | 'gojo' | null;
 }
 
+// A simple request tracking system to prevent race conditions
+let ttsRequestCounter = 0;
+
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -31,7 +34,6 @@ export function useTTS(): TTSHook {
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Load browser voices
   useEffect(() => {
     const loadVoices = () => {
         const voices = window.speechSynthesis.getVoices();
@@ -55,6 +57,7 @@ export function useTTS(): TTSHook {
 
   const cancelTTS = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
+      ttsRequestCounter++; // Invalidate any pending requests
       window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
@@ -65,21 +68,19 @@ export function useTTS(): TTSHook {
     if (soundMode === 'muted' || !text.trim()) return;
     if (soundMode === 'essential' && options.priority !== 'essential') return;
     if (browserVoices.length === 0) {
-        // console.warn("TTS: Browser voices not loaded yet. Cannot speak.");
         return;
     }
 
-    cancelTTS();
+    cancelTTS(); // Cancel previous speech and invalidate old requests
+    const currentRequestId = ++ttsRequestCounter;
 
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
     
-    // Voice selection logic
     const lang = "en-US";
     const voicesForLang = browserVoices.filter(v => v.lang.startsWith(lang.split('-')[0]));
     let targetVoice: SpeechSynthesisVoice | undefined;
 
-    // Prioritized list of known good voices
     const gojoVoiceNames = ['Google US English', 'Daniel', 'David', 'Alex', 'Fred'];
     const holoVoiceNames = ['Samantha', 'Google UK English Female', 'Fiona', 'Zira', 'Tessa', 'Allison'];
 
@@ -96,14 +97,21 @@ export function useTTS(): TTSHook {
         return;
     }
 
-    utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
-    utterance.onpause = () => setIsPaused(true);
-    utterance.onresume = () => setIsPaused(false);
-    utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); };
+    const onEndOrError = () => {
+      if(currentRequestId === ttsRequestCounter) { // Only update state if this is the most recent request
+        setIsSpeaking(false);
+        setIsPaused(false);
+      }
+    };
+
+    utterance.onstart = () => { if(currentRequestId === ttsRequestCounter) setIsSpeaking(true); setIsPaused(false); };
+    utterance.onpause = () => { if(currentRequestId === ttsRequestCounter) setIsPaused(true); };
+    utterance.onresume = () => { if(currentRequestId === ttsRequestCounter) setIsPaused(false); };
+    utterance.onend = onEndOrError;
     utterance.onerror = (e) => {
       console.error("SpeechSynthesis Error:", e);
       toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
-      setIsSpeaking(false); setIsPaused(false);
+      onEndOrError();
     };
     
     window.speechSynthesis.speak(utterance);
@@ -125,6 +133,9 @@ export function useTTS(): TTSHook {
     cancelTTS();
     setVoicePreference(preference);
   }, [cancelTTS]);
+  
+  // Cleanup on unmount
+  useEffect(() => cancelTTS, [cancelTTS]);
 
   return { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, setVoicePreference: handleSetVoicePreference, voicePreference };
 }

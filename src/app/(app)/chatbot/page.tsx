@@ -60,11 +60,10 @@ export default function ChatbotPage() {
     setMessages([initialGreetingMessage]);
     
     currentSpokenMessageRef.current = greetingText;
-    if (soundMode !== 'muted') {
-      speak(greetingText, { priority: 'essential' });
-    }
+    speak(greetingText, { priority: 'essential' });
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacter, soundMode]); // Rerun if soundMode changes to speak greeting if switching from muted
+  }, [selectedCharacter, soundMode]);
 
 
   useEffect(() => {

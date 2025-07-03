@@ -22,7 +22,7 @@ const PAGE_TITLE = `Welcome to ${APP_NAME}!`;
 const exploreFeaturesCards = [
   { title: "AI Note Generator", href: "/notes", icon: FileText, description: "Craft comprehensive notes on any subject." },
   { title: "Custom Test Creator", href: "/custom-test", icon: TestTubeDiagonal, description: "Design personalized tests." },
-  { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcards." },
+  { title: "AI Flashcards", href: "/flashcards", icon: ListChecks, description: "Quickly create flashcard sets." },
   { title: "AI Chatbot", href: "/chatbot", icon: Bot, description: "Chat with our witty AI companions." },
   { title: "Calculator & Converter", href: "/calculator", icon: CalculatorIcon, description: "Solve equations & convert units." },
   { title: "Daily News Digest", href: "/news", icon: Newspaper, description: "Stay updated with global news." },
@@ -88,7 +88,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE, { priority: 'essential' });
       pageTitleSpokenRef.current = true;
     }
