@@ -133,11 +133,11 @@ export default function DashboardPage() {
         if (isReady) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                if (!pageTitleSpokenRef.current && soundMode === 'essential') {
-                    speak(PAGE_TITLE, { priority: 'essential' });
+                if (!pageTitleSpokenRef.current && soundMode === 'full') {
+                    speak(PAGE_TITLE);
                     pageTitleSpokenRef.current = true;
                 }
-            }, 100);
+            }, 500); // Increased delay
             
             return () => clearTimeout(timer);
         }
