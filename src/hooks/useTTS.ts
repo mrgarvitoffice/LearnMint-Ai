@@ -20,12 +20,71 @@ interface TTSHook {
   voicePreference: 'holo' | 'gojo' | null;
 }
 
+// --- Enhanced Voice Selection Logic ---
+// Prioritized lists of keywords found in higher-quality system voices.
+const PREFERRED_FEMALE_VOICES = ['Samantha', 'Tessa', 'Fiona', 'Moira', 'Karen', 'Susan', 'Zira'];
+const PREFERRED_MALE_VOICES = ['Daniel', 'Alex', 'Oliver', 'Rishi', 'Fred', 'Aaron'];
+
+function findBestVoice(
+  voices: SpeechSynthesisVoice[], 
+  preference: 'holo' | 'gojo' | null
+): SpeechSynthesisVoice | null {
+  if (voices.length === 0) return null;
+
+  const targetGender = preference === 'holo' ? 'female' : 'male';
+  const preferredNames = preference === 'holo' ? PREFERRED_FEMALE_VOICES : PREFERRED_MALE_VOICES;
+
+  const scoredVoices = voices
+    .filter(v => v.lang.startsWith('en')) // Only consider English voices
+    .map(voice => {
+      let score = 0;
+      const name = voice.name.toLowerCase();
+
+      // Highest priority for preferred names
+      if (preferredNames.some(pName => name.includes(pName.toLowerCase()))) {
+        score += 100;
+      }
+      // High priority for being a local system voice
+      if (voice.localService) {
+        score += 50;
+      }
+      // Deprioritize generic cloud voices if better local ones exist
+      if (name.includes('google') || name.includes('microsoft')) {
+        score -= 20;
+      }
+      // Generic gender match
+      if (name.includes(targetGender)) {
+        score += 10;
+      }
+
+      return { voice, score, name };
+    });
+
+  // Filter for the target gender and sort by score
+  const potentialMatches = scoredVoices
+    .filter(v => v.name.includes(targetGender))
+    .sort((a, b) => b.score - a.score);
+
+  // If we have a match for the target gender, return the best one
+  if (potentialMatches.length > 0) {
+    return potentialMatches[0].voice;
+  }
+
+  // Fallback: If no voice of the target gender is found, return the best overall English voice
+  const allEnglishSorted = scoredVoices.sort((a, b) => b.score - a.score);
+  if (allEnglishSorted.length > 0) {
+    return allEnglishSorted[0].voice;
+  }
+  
+  // Final fallback: any available voice
+  return voices[0] || null;
+}
+
 /**
  * `useTTS` Hook
  *
  * A custom React hook for client-side Text-To-Speech (TTS) functionality using the browser's
  * native Web Speech API. This approach avoids server-side API calls to conserve quota.
- * Note: Voice availability and quality will vary based on the user's browser and OS.
  */
 export function useTTS(): TTSHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -45,14 +104,13 @@ export function useTTS(): TTSHook {
       }
     };
 
-    // `getVoices` can be asynchronous, so we listen for the `voiceschanged` event.
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     loadVoices(); // Initial attempt
 
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
       if (window.speechSynthesis) {
-        window.speechSynthesis.cancel(); // Clean up on unmount
+        window.speechSynthesis.cancel();
       }
     };
   }, []);
@@ -72,33 +130,14 @@ export function useTTS(): TTSHook {
       return;
     }
 
-    cancelTTS(); // Stop anything currently speaking
+    cancelTTS();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
     onEndCallbackRef.current = onEndCallback || null;
     
-    // --- Voice Selection Logic ---
-    let selectedVoice: SpeechSynthesisVoice | null = null;
-    const englishVoices = supportedVoices.filter(v => v.lang.startsWith('en'));
-
-    // Find the best match for the preference
-    if (voicePreference === 'holo') { // Prefers Female
-        selectedVoice = englishVoices.find(v => /female/i.test(v.name) && !/google/i.test(v.name) && !/microsoft/i.test(v.name)) // Prioritize system voices
-                     || englishVoices.find(v => /female/i.test(v.name)) 
-                     || null;
-    } else if (voicePreference === 'gojo') { // Prefers Male
-        selectedVoice = englishVoices.find(v => /male/i.test(v.name) && !/google/i.test(v.name) && !/microsoft/i.test(v.name))
-                     || englishVoices.find(v => /male/i.test(v.name))
-                     || null;
-    }
+    utterance.voice = findBestVoice(supportedVoices, voicePreference);
     
-    // Fallback if preferred gender not found
-    if (!selectedVoice) {
-      selectedVoice = englishVoices[0] || supportedVoices[0];
-    }
-    
-    utterance.voice = selectedVoice;
     utterance.volume = 1;
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -109,7 +148,6 @@ export function useTTS(): TTSHook {
     };
 
     utterance.onpause = () => {
-      // This event can fire briefly when `cancel` is called, so check `isSpeaking`
       if(isSpeaking) {
         setIsPaused(true);
       }
@@ -155,7 +193,6 @@ export function useTTS(): TTSHook {
     setVoicePreference(preference);
   }, [cancelTTS]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (window.speechSynthesis) {
@@ -171,7 +208,7 @@ export function useTTS(): TTSHook {
     cancelTTS,
     isSpeaking,
     isPaused,
-    isLoading: false, // isLoading is not relevant for client-side TTS
+    isLoading: supportedVoices.length === 0,
     setVoicePreference: handleSetVoicePreference,
     voicePreference,
   };
