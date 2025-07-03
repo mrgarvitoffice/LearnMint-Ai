@@ -18,7 +18,7 @@ import type { Flashcard } from '@/lib/types';
 
 const GenerateAudioFlashcardsInputSchema = z.object({
   topic: z.string().describe('The academic topic for which to generate flashcards.'),
-  numFlashcards: z.number().min(1).max(25).describe('The number of flashcards to generate (max 25 for audio generation).'),
+  numFlashcards: z.number().min(5).max(15).describe('The number of flashcards to generate (5-15 for audio generation).'),
 });
 export type GenerateAudioFlashcardsInput = z.infer<typeof GenerateAudioFlashcardsInputSchema>;
 

@@ -82,11 +82,12 @@ export default function DashboardPage() {
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
-    const [totalLearners, setTotalLearners] = useState(21); // Default to 21, will be updated by Firestore
+    const [totalLearners, setTotalLearners] = useState(21);
     const pageTitleSpokenRef = useRef(false);
 
-    // Real-time listener for the total user count from Firestore
     useEffect(() => {
+        if (!user) return; // Guard: Don't run if user is not authenticated.
+
         const metadataRef = doc(db, 'metadata', 'userStats');
         const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -102,7 +103,7 @@ export default function DashboardPage() {
 
         // Cleanup the listener when the component unmounts
         return () => unsubscribe();
-    }, []);
+    }, [user]); // Depend on the user object to re-run when auth state is confirmed.
 
     useEffect(() => {
         setVoicePreference('gojo');
@@ -133,11 +134,11 @@ export default function DashboardPage() {
         if (isReady) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                if (!pageTitleSpokenRef.current && soundMode === 'full') {
+                if (soundMode === 'full' && !pageTitleSpokenRef.current) {
                     speak(PAGE_TITLE);
                     pageTitleSpokenRef.current = true;
                 }
-            }, 500); // Increased delay
+            }, 500);
             
             return () => clearTimeout(timer);
         }

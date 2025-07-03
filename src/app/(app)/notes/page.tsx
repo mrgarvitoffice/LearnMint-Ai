@@ -42,7 +42,7 @@ export default function GenerateNotesPage() {
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
-  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { speak, setVoicePreference } = useTTS();
   const { soundMode } = useSettings();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
@@ -58,14 +58,14 @@ export default function GenerateNotesPage() {
   useEffect(() => {
     const PAGE_TITLE = t('generate.title');
     const timer = setTimeout(() => {
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
-        speak(PAGE_TITLE, { priority: 'optional' });
+      if (soundMode === 'full' && !pageTitleSpokenRef.current && !isLoadingAll) {
+        speak(PAGE_TITLE);
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isSpeaking, isPaused, speak, isLoadingAll, soundMode, t]);
+  }, [speak, isLoadingAll, soundMode, t]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
@@ -145,8 +145,8 @@ export default function GenerateNotesPage() {
     pageTitleSpokenRef.current = true; 
     generatingMessageSpokenRef.current = false;
 
-    if (soundMode !== 'muted' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
-      speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.", { priority: 'essential' });
+    if (soundMode !== 'muted') {
+      speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.");
       generatingMessageSpokenRef.current = true;
     }
 
@@ -192,7 +192,7 @@ export default function GenerateNotesPage() {
         toast({ title: t('generate.toast.flashcardsError'), description: fError, variant: 'default' });
       }
       
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Study materials generated and cached!", { priority: 'essential' });
+      if (soundMode !== 'muted') speak("Study materials generated and cached!");
 
       if (navigationSuccess) {
         router.push(`/study?topic=${encodeURIComponent(trimmedTopic)}`);
@@ -203,7 +203,7 @@ export default function GenerateNotesPage() {
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
       toast({ title: t('generate.toast.generationFailed'), description: err.message, variant: 'destructive' });
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.", { priority: 'essential' });
+      if (soundMode !== 'muted') speak("Sorry, failed to generate study materials.");
     } finally {
       setIsLoadingAll(false);
       generatingMessageSpokenRef.current = false;

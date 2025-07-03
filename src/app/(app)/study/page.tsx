@@ -81,7 +81,7 @@ function StudyPageContent() {
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { speak, setVoicePreference } = useTTS();
   const { soundMode } = useSettings();
   const queryClient = useQueryClient();
 
@@ -105,14 +105,14 @@ function StudyPageContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
-        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'optional' });
+      if (soundMode === 'full' && !pageTitleSpokenRef.current && activeTopic) {
+        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isSpeaking, isPaused, speak, activeTopic, soundMode]);
+  }, [speak, activeTopic, soundMode]);
 
 
   const getCacheKey = (type: string, topic: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topic.toLowerCase().replace(/\s+/g, '-')}`;
@@ -159,7 +159,7 @@ function StudyPageContent() {
     queryKey: ["studyNotes", activeTopic],
     queryFn: async () => {
       if (!activeTopic) throw new Error("A valid topic is required.");
-      const data = await fetchStudyNotesAction({ topic: activeTopic });
+      const data = await generateNotesAction({ topic: activeTopic });
       if (typeof window !== 'undefined' && data?.notes) localStorage.setItem(getCacheKey("notes", activeTopic), JSON.stringify(data));
       return data;
     },

@@ -14,7 +14,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 const PAGE_TITLE = "LearnMint Arcade";
 
 export default function ArcadePage() {
-  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { speak, setVoicePreference } = useTTS();
   const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
 
@@ -24,14 +24,14 @@ export default function ArcadePage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE, { priority: 'optional' });
+      if (soundMode === 'full' && !pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE);
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isSpeaking, isPaused, speak, soundMode]);
+  }, [speak, soundMode]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">

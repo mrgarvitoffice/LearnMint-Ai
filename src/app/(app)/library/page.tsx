@@ -35,7 +35,7 @@ export default function LibraryPage() {
   const [googleBooksResults, setGoogleBooksResults] = useState<GoogleBookItem[]>([]);
   const [selectedBook, setSelectedBook] = useState<GoogleBookItem | null>(null);
   
-  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { speak, setVoicePreference } = useTTS();
   const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
   const { toast } = useToast();
@@ -51,14 +51,14 @@ export default function LibraryPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE, { priority: 'optional' });
+      if (soundMode === 'full' && !pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE);
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isSpeaking, isPaused, speak, soundMode]);
+  }, [speak, soundMode]);
 
   useEffect(() => {
     if (transcript && voiceSearchTarget) {
@@ -98,7 +98,7 @@ export default function LibraryPage() {
 
   const handleRefreshMathFact = () => {
     playClickSound(); refetchMathFact();
-    if(soundMode !== 'muted' && !isSpeaking && !isPaused) speak("Fetching new math fact.", { priority: 'essential' });
+    if(soundMode !== 'muted') speak("Fetching new math fact.");
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
@@ -141,7 +141,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
       playActionSound();
-      if(soundMode !== 'muted' && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`, { priority: 'essential' });
+      if(soundMode !== 'muted') speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
       if (isListening && voiceSearchTarget === 'youtube') stopListening();
@@ -153,7 +153,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
       playActionSound();
-      if(soundMode !== 'muted' && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`, { priority: 'essential' });
+      if(soundMode !== 'muted') speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
       if (isListening && voiceSearchTarget === 'books') stopListening();

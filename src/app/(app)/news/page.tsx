@@ -71,14 +71,14 @@ export default function NewsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-        if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-            speak(PAGE_TITLE, { priority: 'optional' });
+        if (soundMode === 'full' && !pageTitleSpokenRef.current) {
+            speak(PAGE_TITLE);
             pageTitleSpokenRef.current = true;
         }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [soundMode, isSpeaking, isPaused, speak]);
+  }, [soundMode, speak]);
 
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
@@ -147,7 +147,7 @@ export default function NewsPage() {
   const readAllHeadlines = useCallback(() => {
     const headlines = articles.map(a => a.title).filter(Boolean).join('. ');
     if (headlines) {
-        speak(headlines, { priority: 'essential' });
+        speak(headlines);
     } else {
         toast({ title: "No Headlines", description: "No news headlines available to read." });
     }

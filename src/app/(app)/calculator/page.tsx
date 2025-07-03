@@ -50,7 +50,7 @@ export default function CalculatorPage() {
   const [justEvaluated, setJustEvaluated] = useState(false);
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
-  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { speak, setVoicePreference } = useTTS();
   const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
 
@@ -60,14 +60,14 @@ export default function CalculatorPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE, { priority: 'optional' });
+      if (soundMode === 'full' && !pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE);
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isSpeaking, isPaused, speak, soundMode]);
+  }, [speak, soundMode]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
