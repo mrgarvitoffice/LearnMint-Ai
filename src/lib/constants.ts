@@ -1,3 +1,4 @@
+
 // This file defines constants used throughout the LearnMint application.
 // It includes navigation items, application name, and static data for features like the library and news.
 
@@ -16,6 +17,8 @@ import {
   TestTubeDiagonal,// Icon for Custom Test
   BookMarked,       // Specific icon used for the Library navigation item
   UserCircle,      // Icon for Profile / "You"
+  Settings,        // Icon for Settings
+  BarChart,        // Icon for Progress
 } from 'lucide-react';
 
 /**
@@ -38,22 +41,23 @@ export interface NavItem {
 // This array defines the structure and content of the primary navigation menu.
 export const NAV_ITEMS: NavItem[] = [
   { title: 'Dashboard', href: '/', icon: LayoutDashboard, description: "Return to the main dashboard." },
+  { title: 'AI Chat', href: '/chatbot', icon: Bot, description: "Chat with helpful AI companions.", label: 'AI' },
+  { title: 'Notes', href: '/notes', icon: FileText, description: "Generate comprehensive notes on any topic.", label: 'AI' },
+  { title: 'Quests', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
+  { title: 'Progress', href: '/custom-test', icon: BarChart, description: "Build tailored tests with custom settings." },
+  { title: 'Settings', href: '/profile', icon: Settings, description: "Manage your account and app settings." },
   {
-    title: 'AI Tools',     // Category for AI-powered features
+    title: 'More Tools',     // Category for AI-powered features
     href: '#',             // '#' indicates a parent item, not a direct link
     icon: Sparkles,
     description: "Harness the power of AI for your studies.",
     children: [            // Sub-menu items for AI Tools
-      { title: 'Note Generator', href: '/notes', icon: FileText, description: "Generate comprehensive notes on any topic.", label: 'AI' },
       { title: 'Flashcards', href: '/flashcards', icon: ListChecks, description: "Quickly create flashcard sets for review.", label: 'AI' },
-      { title: 'AI Chatbot', href: '/chatbot', icon: Bot, description: "Chat with helpful AI companions.", label: 'AI' },
+      { title: 'Calculator', href: '/calculator', icon: Calculator, description: "Access a scientific calculator and unit converter." },
+      { title: 'Daily News', href: '/news', icon: Newspaper, description: "Read the latest news from around the world." },
+      { title: 'Library', href: '/library', icon: BookMarked, description: "Explore textbooks, videos, and books." },
     ],
   },
-  { title: 'Custom Test', href: '/custom-test', icon: TestTubeDiagonal, description: "Build tailored tests with custom settings." },
-  { title: 'Calculator', href: '/calculator', icon: Calculator, description: "Access a scientific calculator and unit converter." },
-  { title: 'Daily News', href: '/news', icon: Newspaper, description: "Read the latest news from around the world." },
-  { title: 'Library', href: '/library', icon: BookMarked, description: "Explore textbooks, videos, and books." },
-  { title: 'Arcade', href: '/arcade', icon: Gamepad2, description: "Sharpen your mind with educational games." },
 ];
 
 // --- Quick Access Navigation Items ---

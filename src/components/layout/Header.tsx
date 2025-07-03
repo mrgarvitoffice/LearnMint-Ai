@@ -12,10 +12,16 @@ import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { Settings, LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive } from 'lucide-react';
+import { Settings, LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Menu, Flame, Bell, ShieldCheck, AudioLines, Search, User, ShieldQuestion, UserCircle } from 'lucide-react';
 import { APP_NAME, TTS_LANGUAGES } from '@/lib/constants';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { MobileSidebarContent } from './MobileSidebarContent';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function Header() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -42,6 +48,16 @@ export function Header() {
     cycleSoundMode();
   };
   
+  const handleFontSizeChange = (value: string) => {
+    playClickSound();
+    setFontSize(value as any);
+  };
+  
+  const handleLanguageChange = (value: string) => {
+    playClickSound();
+    setLanguage(value);
+  };
+  
   const getSoundModeIconAndText = () => {
     switch (soundMode) {
       case 'full': return { icon: <Volume2 className="mr-2 h-4 w-4" />, text: "Sound: Full" };
@@ -50,40 +66,119 @@ export function Header() {
     }
   };
 
+  const getUserFirstName = () => {
+    if (!user) return "User";
+    if (user.isAnonymous) return "Guest";
+    if (user.displayName) return user.displayName.split(' ')[0];
+    if (user.email) {
+      const emailName = user.email.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    }
+    return "User";
+  };
+  const firstName = getUserFirstName();
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-      <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={() => playClickSound()}>
-        <Logo size={32} />
-        <span className="font-bold text-xl text-foreground">{APP_NAME}</span>
-      </Link>
+      {/* Mobile Header */}
+       <div className="flex items-center gap-4 md:hidden">
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="outline" size="icon">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle navigation menu</span>
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="flex flex-col p-0 w-64">
+                    <MobileSidebarContent />
+                </SheetContent>
+            </Sheet>
+            <Link href="/" className="flex items-center gap-2 font-semibold text-lg" onClick={() => playClickSound()}>
+                <Logo size={28} />
+                <span>{APP_NAME}</span>
+            </Link>
+        </div>
 
-      <div className="flex items-center gap-2">
+
+      {/* Desktop Header */}
+      <div className="hidden md:flex items-center gap-6 flex-1">
+        <div className="relative flex-1">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+           <Input placeholder="Search features..." className="pl-9 w-full max-w-xs" />
+        </div>
+
+        <Select defaultValue="all">
+          <SelectTrigger className="w-[180px] hidden lg:flex">
+            <SelectValue placeholder="All Subjects" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Subjects</SelectItem>
+            <SelectItem value="physics">Physics</SelectItem>
+            <SelectItem value="math">Mathematics</SelectItem>
+            <SelectItem value="biology">Biology</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-1.5 sm:gap-2">
+         <TooltipProvider>
+            <div className="hidden md:flex items-center gap-1.5">
+               <Tooltip>
+                    <TooltipTrigger asChild><Button variant="ghost" size="icon"><Flame className="h-5 w-5"/></Button></TooltipTrigger>
+                    <TooltipContent><p>Streak: 7 Days</p></TooltipContent>
+                </Tooltip>
+                 <Tooltip>
+                    <TooltipTrigger asChild><Button variant="ghost" size="icon"><ShieldCheck className="h-5 w-5"/></Button></TooltipTrigger>
+                    <TooltipContent><p>Daily Quests</p></TooltipContent>
+                </Tooltip>
+                 <Tooltip>
+                    <TooltipTrigger asChild><Button variant="ghost" size="icon"><Bell className="h-5 w-5"/></Button></TooltipTrigger>
+                    <TooltipContent><p>Notifications</p></TooltipContent>
+                </Tooltip>
+                 <Tooltip>
+                    <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={handleCycleSoundMode}><Volume2 className="h-5 w-5"/></Button></TooltipTrigger>
+                    <TooltipContent><p>Cycle Sound Mode</p></TooltipContent>
+                </Tooltip>
+            </div>
+        </TooltipProvider>
+
         {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Open Settings</span>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-9 w-9">
+                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
+                        <AvatarFallback className="bg-muted">
+                        {user.isAnonymous ? <ShieldQuestion className="h-5 w-5" /> :
+                            firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-5 w-5" />}
+                        </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Settings</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                    <p className="font-semibold">{firstName}</p>
+                    {!user.isAnonymous && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 
+                <DropdownMenuItem onClick={() => router.push('/profile')} className="md:hidden">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile & Features</span>
+                </DropdownMenuItem>
+
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <CaseSensitive className="mr-2 h-4 w-4" />
                     <span>Font Size</span>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={fontSize} onValueChange={(value) => setFontSize(value as any)}>
+                  <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
                         <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
                         <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
                         <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
                       </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
+                  </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
                 <DropdownMenuSub>
@@ -91,15 +186,13 @@ export function Header() {
                     <Languages className="mr-2 h-4 w-4" />
                     <span>Language</span>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={language} onValueChange={setLanguage}>
+                  <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
                          {TTS_LANGUAGES.map(lang => (
                            <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
                          ))}
                       </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
+                  </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
                 <DropdownMenuItem onClick={handleCycleSoundMode}>
@@ -109,15 +202,24 @@ export function Header() {
                 
                 <DropdownMenuSeparator />
                 
-                <DropdownMenuLabel className="font-normal text-xs text-muted-foreground pt-0">Theme</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                    <Sun className="mr-2 h-4 w-4" />
-                    <span>Light</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    <Moon className="mr-2 h-4 w-4" />
-                    <span>Dark</span>
-                </DropdownMenuItem>
+                <DropdownMenuSub>
+                   <DropdownMenuSubTrigger>
+                     {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                     <span>Theme</span>
+                   </DropdownMenuSubTrigger>
+                   <DropdownMenuSubContent>
+                         <DropdownMenuItem onClick={() => setTheme("light")}>
+                             Light
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => setTheme("dark")}>
+                             Dark
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => setTheme("system")}>
+                             System
+                         </DropdownMenuItem>
+                   </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />

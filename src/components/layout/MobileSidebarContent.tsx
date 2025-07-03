@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
@@ -18,7 +18,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { SidebarNav } from './SidebarNav';
 
 export function MobileSidebarContent() {
-  const pathname = usePathname();
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -38,7 +37,7 @@ export function MobileSidebarContent() {
   
   const getUserFirstName = () => {
     if (!user) return "User";
-    if (user.isAnonymous) return "Guest User";
+    if (user.isAnonymous) return "Guest";
     if (user.displayName) return user.displayName;
     if (user.email) return user.email.split('@')[0];
     return "User";

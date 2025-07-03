@@ -1,12 +1,12 @@
 
 # 🌱 LearnMint: Your AI-Powered Study Revolution! 🚀
-## Crafted with Passion & Innovation by **MrGarvit**!
+## Made by **MrGarvit**!
 
 <p align="center">
   <img src="https://placehold.co/600x300.png?text=LearnMint+by+MrGarvit&font=raleway&bg=220_30_10&fc=190_80_85" alt="LearnMint Banner by MrGarvit" data-ai-hint="modern abstract">
 </p>
 
-**Welcome to LearnMint!** The ultimate Next.js application meticulously engineered by the visionary **MrGarvit** to transform your study sessions into a dynamic, productive, and engaging experience. Wave goodbye to tedious material preparation and say hello to AI-driven learning that's tailored, insightful, and lightning-fast.
+**Welcome to LearnMint!** The ultimate Next.js application meticulously engineered by **MrGarvit** to transform your study sessions into a dynamic, productive, and engaging experience. Wave goodbye to tedious material preparation and say hello to AI-driven learning that's tailored, insightful, and lightning-fast.
 
 With **LearnMint**, you're not just studying; you're minting knowledge with cutting-edge AI, all under the creative genius of **MrGarvit**.
 
@@ -149,8 +149,9 @@ GOOGLE_API_KEY_CHATBOT=AIzaSyC3ZI8F99RYeMxkE5OYewSsE0o5GLHvMRs
 # Suggestion from MrGarvit: AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
 GOOGLE_API_KEY_IMAGES=AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc
 
-# Optional: Key for Text-to-Speech (TTS) voice generation
+# CRITICAL: Key for Text-to-Speech (TTS) voice generation
 # Uses GOOGLE_API_KEY if blank.
+# Use this key: AIzaSyD_8o9PtlwoqUbuV8Z2IZfe2m9B9UfckuE
 GOOGLE_API_KEY_TTS=AIzaSyD_8o9PtlwoqUbuV8Z2IZfe2m9B9UfckuE
 
 # === Other Service API Keys ===
@@ -300,4 +301,4 @@ Click Deploy to apply changes
 Enjoy the LearnMint-Ai !!!
 
 ---
-Made with 🧠, ✨, and a lot of ☕ by **MrGarvit**!
+Made by **MrGarvit**!

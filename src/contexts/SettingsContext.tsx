@@ -27,8 +27,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const savedSoundMode = localStorage.getItem('learnmint-soundMode') as SoundMode;
     const savedFontSize = localStorage.getItem('learnmint-fontSize') as FontSize;
     const savedLanguage = localStorage.getItem('learnmint-language');
-    if (savedSoundMode) setSoundMode(savedSoundMode);
-    if (savedFontSize) setFontSize(savedFontSize);
+    if (savedSoundMode && ['full', 'essential', 'muted'].includes(savedSoundMode)) {
+      setSoundMode(savedSoundMode);
+    }
+    if (savedFontSize && ['small', 'normal', 'large'].includes(savedFontSize)) {
+      setFontSize(savedFontSize);
+    }
     if (savedLanguage) setLanguage(savedLanguage);
   }, []);
 
