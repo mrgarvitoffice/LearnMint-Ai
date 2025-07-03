@@ -51,14 +51,15 @@ const ActionCard = ({ title, description, buttonText, href, icon: Icon }: { titl
 
 const FeatureIcon = ({ item }: { item: NavItem }) => (
     <Link href={item.href} passHref>
-        <motion.div 
-            whileHover={{ scale: 1.1, y: -3 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer text-center group"
+        <motion.div
+            whileHover={{ scale: 1.05, y: -5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-primary/10 border border-transparent hover:border-primary/30 transition-all duration-300 cursor-pointer text-center group"
         >
-            <div className="p-3 bg-muted rounded-full">
-                <item.icon className="w-6 h-6 text-primary transition-transform duration-200 group-hover:scale-110" />
+            <div className="p-4 bg-muted rounded-full transition-colors duration-300 group-hover:bg-primary/20">
+                <item.icon className="w-8 h-8 text-primary transition-transform duration-300 group-hover:scale-110" />
             </div>
-            <p className="text-xs font-medium text-muted-foreground">{item.title}</p>
+            <p className="text-sm font-semibold text-muted-foreground group-hover:text-primary transition-colors duration-300">{item.title}</p>
         </motion.div>
     </Link>
 );
@@ -209,7 +210,7 @@ export default function DashboardPage() {
                             <BookHeart className="text-primary transition-transform duration-300 group-hover:scale-110"/>Explore All Features
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <CardContent className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                         {NAV_ITEMS.map(item => (
                            <FeatureIcon key={item.href} item={item} />
                         ))}

@@ -74,16 +74,33 @@ export function useTTS(): TTSHook {
     const voices = window.speechSynthesis.getVoices();
     utterance.lang = language;
     
-    const gojoVoiceNames = ['Google US English', 'Daniel', 'David', 'Alex', 'Fred'];
-    const holoVoiceNames = ['Samantha', 'Google UK English Female', 'Fiona', 'Tessa', 'Allison'];
-    
-    let targetVoices = (voicePreference === 'gojo' ? gojoVoiceNames : holoVoiceNames);
-    const voicesForLang = voices.filter(v => v.lang.startsWith(language.split('-')[0]));
-    
-    let selectedVoice = voicesForLang.find(v => targetVoices.some(name => v.name.includes(name))) ||
-                        voicesForLang.find(v => v.localService) ||
-                        voicesForLang[0];
+    // --- NEW, ROBUST VOICE SELECTION LOGIC ---
+    let suitableVoices = voices.filter(v => v.lang === language);
+    if (suitableVoices.length === 0 && language.includes('-')) {
+      // Fallback to base language (e.g., 'en' from 'en-US')
+      suitableVoices = voices.filter(v => v.lang.startsWith(language.split('-')[0]));
+    }
 
+    let selectedVoice: SpeechSynthesisVoice | undefined;
+    if (suitableVoices.length > 0) {
+      const isMale = voicePreference === 'gojo';
+      // Try to find a voice matching the gender preference by checking for keywords in the voice name
+      selectedVoice = suitableVoices.find(v => {
+        const name = v.name.toLowerCase();
+        // More comprehensive checks for gendered voice names
+        if (isMale) {
+          return name.includes('male') || ['david', 'mark', 'james', 'tom', 'daniel', 'fred'].some(maleName => name.includes(maleName));
+        } else {
+          return name.includes('female') || ['zira', 'susan', 'hazel', 'heather', 'samantha', 'fiona'].some(femaleName => name.includes(femaleName));
+        }
+      });
+      // If no gender-specific voice is found, just pick the first available one for the language
+      if (!selectedVoice) {
+        selectedVoice = suitableVoices[0];
+      }
+    }
+    
+    // Final fallback to browser default if no suitable voice was found at all
     utterance.voice = selectedVoice || voices.find(v => v.default) || null;
     
     utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
