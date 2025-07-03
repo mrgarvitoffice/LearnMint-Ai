@@ -82,7 +82,7 @@ export default function DashboardPage() {
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
-    const [totalLearners, setTotalLearners] = useState(0); // Default to 0, will be updated by Firestore
+    const [totalLearners, setTotalLearners] = useState(21); // Default to 21, will be updated by Firestore
     const pageTitleSpokenRef = useRef(false);
 
     // Real-time listener for the total user count from Firestore
@@ -90,14 +90,14 @@ export default function DashboardPage() {
         const metadataRef = doc(db, 'metadata', 'userStats');
         const unsubscribe = onSnapshot(metadataRef, (docSnap) => {
             if (docSnap.exists()) {
-                setTotalLearners(docSnap.data().totalUsers || 0);
+                setTotalLearners(docSnap.data().totalUsers || 21);
             } else {
                 console.log("User statistics document does not exist yet.");
-                setTotalLearners(0);
+                setTotalLearners(21);
             }
         }, (error) => {
             console.error("Error fetching real-time user count:", error);
-            // Optionally set a fallback or show an error state
+            setTotalLearners(21); // Fallback on error
         });
 
         // Cleanup the listener when the component unmounts

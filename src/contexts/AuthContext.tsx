@@ -52,7 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // User does not exist, so this is their first registration.
           // Get the current total user count.
           const metadataDoc = await transaction.get(metadataRef);
-          const newTotal = (metadataDoc.data()?.totalUsers || 0) + 1;
+          // If the count is 0 or doesn't exist, start from 21. Otherwise, increment.
+          const newTotal = (metadataDoc.data()?.totalUsers || 21) + 1;
 
           // Create the new user's document in Firestore.
           transaction.set(userRef, {
