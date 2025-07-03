@@ -1,4 +1,8 @@
+
 "use client";
+
+// This component is no longer used in the main application layout.
+// It is being kept temporarily for reference but can be safely deleted.
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
