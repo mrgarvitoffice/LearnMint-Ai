@@ -107,51 +107,40 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
   };
 
   const customRenderers = {
-    p: (props: any) => {
-      const childrenArray = React.Children.toArray(props.children);
-      let visualPromptFoundInParagraph = false;
-      const processedChildren = childrenArray.map((child, index) => {
-        if (typeof child === 'string' && child.startsWith('[VISUAL_PROMPT:')) {
-          const promptText = child.substring('[VISUAL_PROMPT:'.length, child.length - 1).trim();
-          visualPromptFoundInParagraph = true;
-          return <AiGeneratedImage key={`vis-prompt-${index}`} promptText={promptText} />;
-        }
-        return child;
-      }).flat();
-
-      if (processedChildren.length === 1 && processedChildren[0] && 
-          typeof processedChildren[0] === 'object' && 'type' in processedChildren[0] && 
-          (processedChildren[0] as React.ReactElement).type === AiGeneratedImage) {
-        return <>{processedChildren}</>;
+    p: ({ node, ...props }: any) => {
+      const firstChild = node.children[0];
+      if (
+        node.children.length === 1 &&
+        firstChild.type === 'text' &&
+        (firstChild.value as string).startsWith('[VISUAL_PROMPT:')
+      ) {
+        const promptText = (firstChild.value as string)
+          .substring('[VISUAL_PROMPT:'.length, firstChild.value.length - 1)
+          .trim();
+        return <AiGeneratedImage promptText={promptText} />;
       }
-
-      if (visualPromptFoundInParagraph) {
-        return <div className="my-2 leading-relaxed">{processedChildren}</div>;
-      }
-      
-      return <p {...props} className="my-2 leading-relaxed">{processedChildren}</p>;
+      return <p className="my-2 leading-relaxed" {...props} />;
     },
-    h1: (props: any) => <h1 className="text-3xl font-bold mt-6 mb-3 pb-2 border-b border-primary/30 text-primary">{props.children}</h1>,
-    h2: (props: any) => <h2 className="text-2xl font-semibold mt-5 mb-2.5 pb-1 border-b border-primary/20 text-primary/90">{props.children}</h2>,
-    h3: (props: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80">{props.children}</h3>,
-    h4: (props: any) => <h4 className="text-lg font-semibold mt-3 mb-1.5 text-primary/70">{props.children}</h4>,
-    ul: (props: any) => <ul className="list-disc pl-5 my-2 space-y-1">{props.children}</ul>,
-    ol: (props: any) => <ol className="list-decimal pl-5 my-2 space-y-1">{props.children}</ul>,
-    li: (props: any) => <li className="mb-1">{props.children}</li>,
-    blockquote: (props: any) => <blockquote className="border-l-4 border-accent pl-4 py-2 my-3 italic bg-accent/10 text-accent-foreground/90 rounded-r-md">{props.children}</blockquote>,
-    code: (props: any) => {
-        const { className, children, ...rest } = props;
+    h1: ({node, ...props}: any) => <h1 className="text-3xl font-bold mt-6 mb-3 pb-2 border-b border-primary/30 text-primary" {...props} />,
+    h2: ({node, ...props}: any) => <h2 className="text-2xl font-semibold mt-5 mb-2.5 pb-1 border-b border-primary/20 text-primary/90" {...props} />,
+    h3: ({node, ...props}: any) => <h3 className="text-xl font-semibold mt-4 mb-2 text-primary/80" {...props} />,
+    h4: ({node, ...props}: any) => <h4 className="text-lg font-semibold mt-3 mb-1.5 text-primary/70" {...props} />,
+    ul: ({node, ...props}: any) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+    ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+    li: ({node, ...props}: any) => <li className="mb-1" {...props} />,
+    blockquote: ({node, ...props}: any) => <blockquote className="border-l-4 border-accent pl-4 py-2 my-3 italic bg-accent/10 text-accent-foreground/90 rounded-r-md" {...props} />,
+    code: ({ node, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');
         return match ? (
-          <pre className="bg-muted/50 p-3 rounded-md overflow-x-auto text-sm my-2"><code className={className} {...rest}>{children}</code></pre>
+          <pre className="bg-muted/50 p-3 rounded-md overflow-x-auto text-sm my-2"><code className={className} {...props}>{children}</code></pre>
         ) : (
-          <code className="bg-muted/50 px-1 py-0.5 rounded-sm text-sm text-primary" {...rest}>{children}</code>
+          <code className="bg-muted/50 px-1 py-0.5 rounded-sm text-sm text-primary" {...props}>{children}</code>
         );
     },
-    table: (props: any) => <div className="overflow-x-auto my-3"><table className="table-auto w-full border-collapse border border-border">{props.children}</table></div>,
-    th: (props: any) => <th className="border border-border px-3 py-1.5 bg-muted/40 font-medium text-left">{props.children}</th>,
-    td: (props: any) => <td className="border border-border px-3 py-1.5 text-left">{props.children}</td>,
-    img: ({ node, ...props }) => {
+    table: ({node, ...props}: any) => <div className="overflow-x-auto my-3"><table className="table-auto w-full border-collapse border border-border" {...props} /></div>,
+    th: ({node, ...props}: any) => <th className="border border-border px-3 py-1.5 bg-muted/40 font-medium text-left" {...props} />,
+    td: ({node, ...props}: any) => <td className="border border-border px-3 py-1.5 text-left" {...props} />,
+    img: ({ node, ...props }: any) => {
       return <img {...props} className="max-w-full h-auto rounded-lg shadow-md my-4 mx-auto" alt={props.alt || 'AI generated image'} />;
     },
   };
