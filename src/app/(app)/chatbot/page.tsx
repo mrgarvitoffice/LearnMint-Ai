@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
-import { kazumaChatbot, type KazumaChatbotInput } from '@/ai/flows/ai-chatbot';
+import { gojoChatbot, type GojoChatbotInput } from '@/ai/flows/ai-chatbot'; // Changed import
 import { meguminChatbot, type MeguminChatbotInput } from '@/ai/flows/megumin-chatbot';
 import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -20,12 +20,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const PAGE_TITLE_CHATBOT = "AI Chat Central";
 const TYPING_INDICATOR_ID = 'typing-indicator';
 
-type ChatbotCharacter = 'kazuma' | 'megumin';
+type ChatbotCharacter = 'gojo' | 'megumin'; // Changed 'kazuma' to 'gojo'
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<ChatbotCharacter>('kazuma');
+  const [selectedCharacter, setSelectedCharacter] = useState<ChatbotCharacter>('gojo'); // Changed default
   const [currentCharacterGreeting, setCurrentCharacterGreeting] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -58,7 +58,7 @@ export default function ChatbotPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+      const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed 'kazuma' to 'gojo'
       if (voicePreference !== characterExpectedVoicePref || !currentCharacterGreeting) {
          speak(PAGE_TITLE_CHATBOT);
       }
@@ -74,8 +74,8 @@ export default function ChatbotPage() {
     let greetingText = "";
     let characterVoicePref: 'kai' | 'luma' | null = null;
 
-    if (selectedCharacter === 'kazuma') {
-      greetingText = "Yo, Kazuma here. Ask your questions, I guess.";
+    if (selectedCharacter === 'gojo') { // Changed 'kazuma' to 'gojo'
+      greetingText = "Yo! Took you long enough. Thought I’d have to go fight boredom without you.";
       characterVoicePref = 'kai';
     } else if (selectedCharacter === 'megumin') {
       greetingText = "It is I, Megumin! Master of EXPLOSION magic! Ask away!";
@@ -94,14 +94,14 @@ export default function ChatbotPage() {
   }, [selectedCharacter, cancelTTS, setVoicePreference]);
 
   useEffect(() => {
-    const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed
     if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
       currentSpokenMessageRef.current = currentCharacterGreeting;
       
       setTimeout(() => {
-        if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'kazuma' : 'megumin') && !isSpeaking && !isPaused) {
+        if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'gojo' : 'megumin') && !isSpeaking && !isPaused) { // Changed
             speak(currentCharacterGreeting);
         }
       }, 150); 
@@ -121,8 +121,8 @@ export default function ChatbotPage() {
     cancelTTS(); 
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
-    const typingIndicatorMessage = selectedCharacter === 'kazuma'
-      ? "Kazuma is thinking..."
+    const typingIndicatorMessage = selectedCharacter === 'gojo' // Changed
+      ? "Gojo is contemplating..."
       : "Megumin is chanting...";
     const typingIndicator: ChatMessageType = { id: TYPING_INDICATOR_ID, role: 'assistant', content: typingIndicatorMessage, timestamp: new Date(), type: 'typing_indicator' };
 
@@ -130,11 +130,11 @@ export default function ChatbotPage() {
     setIsLoading(true);
 
     try {
-      const input: KazumaChatbotInput | MeguminChatbotInput = { message: messageText };
+      const input: GojoChatbotInput | MeguminChatbotInput = { message: messageText };
       if (image) input.image = image;
 
-      const response = selectedCharacter === 'kazuma'
-        ? await kazumaChatbot(input as KazumaChatbotInput)
+      const response = selectedCharacter === 'gojo' // Changed
+        ? await gojoChatbot(input as GojoChatbotInput) // Changed
         : await meguminChatbot(input as MeguminChatbotInput);
 
       const assistantMessage: ChatMessageType = { id: Date.now().toString() + '-assistant', role: 'assistant', content: response.response, timestamp: new Date() };
@@ -142,16 +142,16 @@ export default function ChatbotPage() {
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      const characterVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+      const characterVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed
       if (selectedVoice && voicePreference === characterVoicePref && !isSpeaking && !isPaused) {
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
     } catch (error) {
       console.error('Error sending message to chatbot:', error);
-      const errorText = selectedCharacter === 'kazuma' ? "Kazuma's probably slacking off. Try again later." : "Megumin's spell backfired! Try again.";
+      const errorText = selectedCharacter === 'gojo' ? "Hoh? Something went wrong. Let's try that again." : "Megumin's spell backfired! Try again."; // Changed
       toast({ title: "Chatbot Error", description: errorText, variant: "destructive" });
-      const errorMessageContent = selectedCharacter === 'kazuma' ? "Oi, something went wrong. Not my fault, probably." : "My EXPLOSION magic... it failed! This is unheard of!";
+      const errorMessageContent = selectedCharacter === 'gojo' ? "My technique must've fizzled. Ask again, I wasn't paying attention." : "My EXPLOSION magic... it failed! This is unheard of!"; // Changed
       const errorMessage: ChatMessageType = { id: Date.now().toString() + '-error', role: 'system', content: errorMessageContent, timestamp: new Date() };
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, errorMessage]);
@@ -170,7 +170,7 @@ export default function ChatbotPage() {
     }
     if (!textToPlay) return;
 
-    const characterExpectedVoicePref = selectedCharacter === 'kazuma' ? 'kai' : 'luma';
+    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed
     if (voicePreference !== characterExpectedVoicePref) {
         setVoicePreference(characterExpectedVoicePref);
         setTimeout(() => {
@@ -194,13 +194,13 @@ export default function ChatbotPage() {
   };
 
   const getCurrentCharacterAvatar = () => {
-    if (selectedCharacter === 'kazuma') return "/images/kazuma-dp.jpg";
+    if (selectedCharacter === 'gojo') return "/images/gojo-dp.jpg"; // Changed
     return "/images/megumin-dp.jpg"; 
   };
   
-  const getCurrentCharacterAIName = () => selectedCharacter === 'kazuma' ? 'Kazuma AI' : 'Megumin AI';
-  const getCurrentCharacterAIDescription = () => selectedCharacter === 'kazuma' ? 'Your pragmatic AI companion.' : 'The Arch Wizard of EXPLOSION!';
-  const getCurrentCharacterAvatarHint = () => selectedCharacter === 'kazuma' ? 'Kazuma Satou' : 'Megumin crimson demon';
+  const getCurrentCharacterAIName = () => selectedCharacter === 'gojo' ? 'Gojo AI' : 'Megumin AI'; // Changed
+  const getCurrentCharacterAIDescription = () => selectedCharacter === 'gojo' ? 'The Honored One is here to help.' : 'The Arch Wizard of EXPLOSION!'; // Changed
+  const getCurrentCharacterAvatarHint = () => selectedCharacter === 'gojo' ? 'Gojo Satoru' : 'Megumin crimson demon'; // Changed
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8 h-full flex flex-col">
@@ -211,7 +211,7 @@ export default function ChatbotPage() {
                 <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary/30">
                   <AvatarImage src={getCurrentCharacterAvatar()} alt={`${selectedCharacter} avatar`} data-ai-hint={getCurrentCharacterAvatarHint()} />
                   <AvatarFallback>
-                    {selectedCharacter === 'kazuma' ? <Bot /> : <Wand2 />}
+                    {selectedCharacter === 'gojo' ? <Bot /> : <Wand2 />}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -226,7 +226,7 @@ export default function ChatbotPage() {
                   <SelectValue placeholder="Character" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="kazuma">Kazuma</SelectItem>
+                  <SelectItem value="gojo">Gojo</SelectItem>
                   <SelectItem value="megumin">Megumin</SelectItem>
                 </SelectContent>
               </Select>

@@ -8,7 +8,7 @@ import './genkit'; // Ensures genkit is configured via genkit() call
 import '@/ai/flows/generate-study-notes';
 import '@/ai/flows/generate-quiz-questions';
 import '@/ai/flows/generate-flashcards';
-import '@/ai/flows/ai-chatbot'; // This now exports kazumaChatbot
+import '@/ai/flows/ai-chatbot'; // This now exports gojoChatbot
 import '@/ai/flows/megumin-chatbot'; // Added Megumin's chatbot flow
 import '@/ai/flows/generate-quiz-from-notes';
 import '@/ai/flows/generate-flashcards-from-notes';

@@ -8,32 +8,32 @@ import Image from 'next/image';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  character?: 'kazuma' | 'megumin';
+  character?: 'gojo' | 'megumin';
 }
 
-export function ChatMessage({ message, character = 'kazuma' }: ChatMessageProps) {
+export function ChatMessage({ message, character = 'gojo' }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const alignment = isUser ? 'items-end' : 'items-start';
   const bubbleColor = isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground';
 
   const getAvatarSrc = () => {
     if (isUser) return undefined;
-    return character === 'kazuma' ? "/images/kazuma-dp.jpg" : "/images/megumin-dp.jpg";
+    return character === 'gojo' ? "/images/gojo-dp.jpg" : "/images/megumin-dp.jpg";
   };
 
   const getAvatarFallback = () => {
     if (isUser) return <User />;
-    return character === 'kazuma' ? <Bot /> : <Wand2 />;
+    return character === 'gojo' ? <Bot /> : <Wand2 />;
   };
   
   const getAvatarAlt = () => {
     if (isUser) return "User Avatar";
-    return character === 'kazuma' ? "Kazuma AI Avatar" : "Megumin AI Avatar";
+    return character === 'gojo' ? "Gojo AI Avatar" : "Megumin AI Avatar";
   };
 
   const getAvatarDataAiHint = () => {
     if (isUser) return "user";
-    return character === 'kazuma' ? "Kazuma Satou" : "Megumin crimson demon";
+    return character === 'gojo' ? "Gojo Satoru" : "Megumin crimson demon";
   }
 
   if (message.type === 'typing_indicator') {
