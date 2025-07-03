@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
@@ -429,25 +428,28 @@ export default function AudioFactoryPage() {
         </CardHeader>
       </Card>
       
-      <Tabs defaultValue="flashcards" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="flashcards" orientation="vertical" className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6">
+        <TabsList className="grid w-full grid-cols-2 gap-2 md:grid-cols-1 md:justify-start md:h-auto">
           <TabsTrigger value="flashcards">{t('audioFactory.tabs.flashcards')}</TabsTrigger>
           <TabsTrigger value="text-summary">Text Summary</TabsTrigger>
           <TabsTrigger value="image-summary">{t('audioFactory.tabs.image')}</TabsTrigger>
           <TabsTrigger value="pdf-summary">{t('audioFactory.tabs.pdf')}</TabsTrigger>
         </TabsList>
-        <TabsContent value="flashcards">
-          <AudioFlashcardsGenerator />
-        </TabsContent>
-        <TabsContent value="text-summary">
-          <TextAudioSummarizer />
-        </TabsContent>
-        <TabsContent value="image-summary">
-          <ImageAudioSummarizer />
-        </TabsContent>
-        <TabsContent value="pdf-summary">
-          <PdfAudioSummarizer />
-        </TabsContent>
+        
+        <div className="flex-1">
+            <TabsContent value="flashcards" className="mt-0">
+              <AudioFlashcardsGenerator />
+            </TabsContent>
+            <TabsContent value="text-summary" className="mt-0">
+              <TextAudioSummarizer />
+            </TabsContent>
+            <TabsContent value="image-summary" className="mt-0">
+              <ImageAudioSummarizer />
+            </TabsContent>
+            <TabsContent value="pdf-summary" className="mt-0">
+              <PdfAudioSummarizer />
+            </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
