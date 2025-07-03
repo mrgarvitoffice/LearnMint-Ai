@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { useSound } from '@/hooks/useSound';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const PAGE_TITLE = "LearnMint Knowledge Hub";
 
@@ -35,8 +36,8 @@ export default function LibraryPage() {
   const [selectedBook, setSelectedBook] = useState<GoogleBookItem | null>(null);
   
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
@@ -45,20 +46,17 @@ export default function LibraryPage() {
   const [voiceSearchTarget, setVoiceSearchTarget] = useState<'youtube' | 'books' | null>(null);
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo');
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo');
   }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak, soundMode]);
 
   useEffect(() => {
     if (transcript && voiceSearchTarget) {
@@ -98,7 +96,7 @@ export default function LibraryPage() {
 
   const handleRefreshMathFact = () => {
     playClickSound(); refetchMathFact();
-    if(!isSpeaking && !isPaused) speak("Fetching new math fact.");
+    if(soundMode === 'full' && !isSpeaking && !isPaused) speak("Fetching new math fact.");
   };
 
   const youtubeSearchMutation = useMutation<YoutubeSearchOutput, QueryError, YoutubeSearchInput>({
@@ -141,7 +139,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (youtubeSearchTerm.trim()) {
       playActionSound();
-      if(!isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
+      if(soundMode === 'full' && !isSpeaking && !isPaused) speak(`Searching YouTube for ${youtubeSearchTerm.trim()}`);
       setYoutubeResults([]); 
       youtubeSearchMutation.mutate({ query: youtubeSearchTerm.trim(), maxResults: 8 });
       if (isListening && voiceSearchTarget === 'youtube') stopListening();
@@ -153,7 +151,7 @@ export default function LibraryPage() {
     e.preventDefault();
     if (googleBooksSearchTerm.trim()) {
       playActionSound();
-      if(!isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
+      if(soundMode === 'full' && !isSpeaking && !isPaused) speak(`Searching Google Books for ${googleBooksSearchTerm.trim()}`);
       setGoogleBooksResults([]); 
       googleBooksSearchMutation.mutate({ query: googleBooksSearchTerm.trim(), maxResults: 9 });
       if (isListening && voiceSearchTarget === 'books') stopListening();

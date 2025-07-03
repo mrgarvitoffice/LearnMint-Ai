@@ -7,9 +7,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false); 
-  const { isMuted } = useSettings();
+  const { soundMode } = useSettings();
 
   useEffect(() => {
     let currentAudio: HTMLAudioElement | null = null;
@@ -30,9 +29,8 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
         currentAudio = new Audio(soundPathOrType);
         currentAudio.volume = defaultVolume;
         currentAudio.addEventListener('error', specificErrorHandler);
-        // Preload attempt
         currentAudio.preload = 'auto'; 
-        currentAudio.load(); // Some browsers need load() to be called explicitly for preload=auto
+        currentAudio.load();
         setAudioElement(currentAudio);
 
       } else if (!audioContextRef.current && (soundPathOrType === 'correct' || soundPathOrType === 'incorrect')) {
@@ -48,14 +46,14 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
       if (currentAudio) { 
         currentAudio.removeEventListener('error', specificErrorHandler);
         currentAudio.pause();
-        currentAudio.removeAttribute('src'); // Try to release file lock
-        currentAudio.load(); // Required by some browsers after src removal
+        currentAudio.removeAttribute('src');
+        currentAudio.load();
       }
     };
   }, [soundPathOrType, defaultVolume]);
 
   const playSound = useCallback(() => {
-    if (isMuted || !isSoundEnabled) return;
+    if (soundMode === 'muted') return;
 
     if (soundPathOrType.startsWith('/')) { 
       if (hasLoadError || !audioElement) {
@@ -70,13 +68,11 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
               `This indicates the browser could not play the file, possibly due to format issues or it was blocked.\n`+
               `Ensure sound files are in a widely supported format (like MP3).`
              );
-             setHasLoadError(true); // Prevent further attempts for this specific sound
+             setHasLoadError(true);
           } else if (!hasLoadError) {
-            console.error(`Runtime error playing sound ${soundPathOrType}:`, playError);
+            // console.error(`Runtime error playing sound ${soundPathOrType}:`, playError);
           }
         });
-      } else if (!audioElement.src && !hasLoadError) {
-        console.warn(`Sound Warning: Cannot play "${soundPathOrType}". Audio source is not set, likely due to a previous load error not caught, or src was cleared.`);
       }
 
     } else { 
@@ -101,25 +97,11 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
           oscillator.start(audioCtx.currentTime);
           oscillator.stop(audioCtx.currentTime + 0.4);
         }
-      } else if (!audioCtx && (soundPathOrType === 'correct' || soundPathOrType === 'incorrect')) {
-        // console.warn(`Cannot play web audio: AudioContext for ${soundPathOrType} not ready yet.`);
       }
     }
-  }, [audioElement, isSoundEnabled, soundPathOrType, defaultVolume, hasLoadError, isMuted]);
-
-  const toggleSound = useCallback(() => {
-    setIsSoundEnabled(prev => !prev);
-  }, []);
+  }, [audioElement, soundMode, soundPathOrType, defaultVolume, hasLoadError]);
   
-  const audio = audioElement; 
-
   return { 
-    playSound, 
-    isSoundEnabled, 
-    toggleSound, 
-    setVolume: (vol: number) => {
-      if (audioElement && soundPathOrType.startsWith('/')) audioElement.volume = vol;
-    }, 
-    audio 
+    playSound
   };
 }

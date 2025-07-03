@@ -1,31 +1,29 @@
 
-"use client"; // This page uses client-side hooks for state, effects, and user interactions.
+"use client";
 
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation'; // For navigation
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast"; // For displaying notifications
-// Icons from lucide-react
+import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, Mic, FileSignature, Loader2, AlertTriangle, ImageIcon, XCircle, FileText, AudioLines, Video } from "lucide-react"; 
 import Image from 'next/image';
 
-// Hooks for enhanced user experience
-import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'; // For voice input
-import { useTTS } from '@/hooks/useTTS'; // For text-to-speech
-import { useSound } from '@/hooks/useSound'; // For sound effects
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { useTTS } from '@/hooks/useTTS';
+import { useSound } from '@/hooks/useSound';
+import { useSettings } from '@/contexts/SettingsContext';
 
-// Server actions and types
-import { generateNotesAction } from "@/lib/actions"; // Combined server action for all materials
+import { generateNotesAction } from "@/lib/actions";
 import type { CombinedStudyMaterialsOutput } from '@/lib/types'; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
-const PAGE_TITLE = "Generate Study Materials"; // Title for TTS and UI
-const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics"; // Key for storing recent topics in localStorage
-const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-"; // For caching study materials
+const PAGE_TITLE = "Generate Study Materials";
+const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
+const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-";
 
 export default function GenerateNotesPage() {
   const router = useRouter(); 
@@ -42,29 +40,26 @@ export default function GenerateNotesPage() {
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
 
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
   
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo'); 
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo'); 
   }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoadingAll) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak, isLoadingAll]);
+  }, [isSpeaking, isPaused, speak, isLoadingAll, soundMode]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
@@ -122,7 +117,7 @@ export default function GenerateNotesPage() {
     pageTitleSpokenRef.current = true; 
     generatingMessageSpokenRef.current = false;
 
-    if (!isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.");
       generatingMessageSpokenRef.current = true;
     }
@@ -142,7 +137,6 @@ export default function GenerateNotesPage() {
       const combinedResult: CombinedStudyMaterialsOutput = await generateNotesAction({ topic: trimmedTopic, image: imageData || undefined });
       let navigationSuccess = false;
 
-      // Cache notes
       if (combinedResult.notesOutput?.notes) {
         localStorage.setItem(getCacheKey("notes", trimmedTopic), JSON.stringify(combinedResult.notesOutput));
         toast({ title: 'Notes Generated & Cached!', description: `Study notes for "${trimmedTopic}" are ready.` });
@@ -152,7 +146,6 @@ export default function GenerateNotesPage() {
         toast({ title: 'Notes Generation Failed', description: "Primary notes generation failed.", variant: 'destructive' });
       }
 
-      // Cache quiz
       if (combinedResult.quizOutput?.questions && combinedResult.quizOutput.questions.length > 0) {
         localStorage.setItem(getCacheKey("quiz", trimmedTopic), JSON.stringify(combinedResult.quizOutput));
         toast({ title: 'Quiz Generated & Cached!', description: `Quiz for "${trimmedTopic}" is ready.` });
@@ -162,7 +155,6 @@ export default function GenerateNotesPage() {
         toast({ title: 'Quiz Generation Info', description: qError, variant: 'default' });
       }
 
-      // Cache flashcards
       if (combinedResult.flashcardsOutput?.flashcards && combinedResult.flashcardsOutput.flashcards.length > 0) {
         localStorage.setItem(getCacheKey("flashcards", trimmedTopic), JSON.stringify(combinedResult.flashcardsOutput));
         toast({ title: 'Flashcards Generated & Cached!', description: `Flashcards for "${trimmedTopic}" are ready.` });
@@ -172,7 +164,7 @@ export default function GenerateNotesPage() {
         toast({ title: 'Flashcards Generation Info', description: fError, variant: 'default' });
       }
       
-      if (!isSpeaking && !isPaused) speak("Study materials generated and cached!");
+      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Study materials generated and cached!");
 
       if (navigationSuccess) {
         router.push(`/study?topic=${encodeURIComponent(trimmedTopic)}`);
@@ -183,7 +175,7 @@ export default function GenerateNotesPage() {
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
       toast({ title: 'Study Material Generation Failed', description: err.message, variant: 'destructive' });
-      if (!isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.");
+      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, failed to generate study materials.");
     } finally {
       setIsLoadingAll(false);
       generatingMessageSpokenRef.current = false;

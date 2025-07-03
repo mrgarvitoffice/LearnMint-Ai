@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/icons/Logo';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -45,6 +46,7 @@ export default function DashboardPage() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
   const { user } = useAuth();
+  const { soundMode } = useSettings();
 
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
@@ -53,7 +55,6 @@ export default function DashboardPage() {
   const pageTitleSpokenRef = useRef(false);
 
   useEffect(() => {
-    // Set a default voice on page load if not already set by user action
     setVoicePreference('holo');
   }, [setVoicePreference]);
 
@@ -87,14 +88,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      speak(PAGE_TITLE);
+    if (isMounted && soundMode !== 'muted' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+      speak(PAGE_TITLE, { priority: 'essential' });
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak, soundMode]);
 
   const handleRemoveTopic = (topicToRemove: string) => {
     playClickSound();

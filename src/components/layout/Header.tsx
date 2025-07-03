@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { APP_NAME } from '@/lib/constants';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, Sun, Moon, Newspaper, Bot, Calculator, Gamepad2, Volume2, VolumeX } from 'lucide-react';
+import { Settings, LogOut, Sun, Moon, Newspaper, Bot, Calculator, Gamepad2, Volume2, Volume1, VolumeX } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import {
   DropdownMenu,
@@ -31,7 +31,7 @@ export function Header() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { setTheme } = useTheme();
-  const { isMuted, toggleMute } = useSettings();
+  const { soundMode, cycleSoundMode } = useSettings();
 
 
   const handleSignOut = async () => {
@@ -46,9 +46,20 @@ export function Header() {
     }
   };
 
-  const handleToggleMute = () => {
+  const handleCycleSoundMode = () => {
     playClickSound();
-    toggleMute();
+    cycleSoundMode();
+  };
+  
+  const getSoundModeIconAndText = () => {
+    switch (soundMode) {
+      case 'full':
+        return { icon: <Volume2 className="mr-2 h-4 w-4" />, text: "Sound: Full" };
+      case 'essential':
+        return { icon: <Volume1 className="mr-2 h-4 w-4" />, text: "Sound: Essential" };
+      case 'muted':
+        return { icon: <VolumeX className="mr-2 h-4 w-4" />, text: "Sound: Muted" };
+    }
   };
 
 
@@ -118,6 +129,11 @@ export function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Settings</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleCycleSoundMode}>
+                  {getSoundModeIconAndText().icon}
+                  <span>{getSoundModeIconAndText().text}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel className="font-normal text-xs text-muted-foreground pt-0">Theme</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => setTheme("light")}>
                     <Sun className="mr-2 h-4 w-4" />
@@ -126,11 +142,6 @@ export function Header() {
                 <DropdownMenuItem onClick={() => setTheme("dark")}>
                     <Moon className="mr-2 h-4 w-4" />
                     <span>Dark</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleToggleMute}>
-                  {isMuted ? <VolumeX className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
-                  <span>{isMuted ? "Unmute App Sounds" : "Mute App Sounds"}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">

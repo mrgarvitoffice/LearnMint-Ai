@@ -1,17 +1,18 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, PlayCircle, PauseCircle, StopCircle, Loader2 } from 'lucide-react';
+import { Download, PlayCircle, PauseCircle, StopCircle, VolumeX } from 'lucide-react';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
 import AiGeneratedImage from './AiGeneratedImage';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface NotesViewProps {
   notesContent: string | null;
@@ -26,12 +27,11 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     cancelTTS,
     isSpeaking,
     isPaused,
-    isLoading: isTTSLoading,
     setVoicePreference,
-    voicePreference,
   } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { toast } = useToast();
+  const { soundMode } = useSettings();
 
   const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
 
@@ -52,9 +52,20 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       setCleanedNotesForTTS("");
     }
   }, [notesContent]);
+  
+  // Cleanup TTS on component unmount
+  useEffect(() => {
+    return () => {
+      cancelTTS();
+    }
+  }, [cancelTTS]);
 
   const handlePlaybackControl = useCallback(() => {
     playClickSound();
+    if (soundMode !== 'full') {
+        toast({ title: "Sound Mode", description: "Set sound mode to 'Full' in settings to enable this feature." });
+        return;
+    }
     if (!cleanedNotesForTTS) {
         toast({title: "No Content", description: "Nothing to speak.", variant: "destructive"});
         return;
@@ -62,7 +73,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
     else speak(cleanedNotesForTTS);
-  }, [playClickSound, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
+  }, [playClickSound, soundMode, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
   const handleStopTTS = useCallback(() => {
     playClickSound();
@@ -98,7 +109,6 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast({ title: "Notes Downloaded", description: "Notes saved as a .txt file." });
-    if (!isSpeaking && !isPaused) speak("Notes downloaded!");
   };
 
   const customRenderers = {
@@ -159,28 +169,10 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
             Notes: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-             <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
-                <Button
-                  onClick={() => { playClickSound(); setVoicePreference('gojo'); }}
-                  variant={voicePreference === 'gojo' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="text-xs h-8 px-3"
-                >
-                  Gojo
-                </Button>
-                <Button
-                  onClick={() => { playClickSound(); setVoicePreference('holo'); }}
-                  variant={voicePreference === 'holo' || !voicePreference ? 'default' : 'ghost'}
-                  size="sm"
-                  className="text-xs h-8 px-3"
-                >
-                  Holo
-                </Button>
-              </div>
-            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
-              {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
+            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"} disabled={soundMode !== 'full'}>
+              {soundMode !== 'full' ? <VolumeX className="h-4 w-4" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
             </Button>
-            <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused && !isTTSLoading}>
+            <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
               <StopCircle className="h-4 w-4" />
             </Button>
             <Button onClick={handleDownloadNotes} variant="outline" size="sm" className="h-8 text-xs"><Download className="mr-1.5 h-3.5 w-3.5"/>Download</Button>

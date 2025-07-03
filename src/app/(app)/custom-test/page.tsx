@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -88,7 +89,8 @@ export default function CustomTestPage() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
-  const { speak, pauseTTS, resumeTTS, cancelTTS, isSpeaking, isPaused, isLoading: isTTSLoading, setVoicePreference, voicePreference } = useTTS();
+  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
 
   const pageTitleSpokenRef = useRef(false);
@@ -154,22 +156,6 @@ export default function CustomTestPage() {
     overallTestTimerIdRef.current = null;
   }, []);
 
-  const handleNextQuestion = useCallback(() => {
-      playClickSound();
-      if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) {
-          if (!testState?.isAutoSubmitting) handleSubmitTest(false);
-          return;
-      }
-      clearCurrentQuestionTimer();
-      setTestState(prev => {
-          if (!prev) return null;
-          const nextIndex = prev.currentQuestionIndex + 1;
-          const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
-          return { ...prev, currentQuestionIndex: nextIndex, currentQuestionTimeLeft: nextQuestionTime };
-      });
-  }, [testState, playClickSound, clearCurrentQuestionTimer]);
-
-
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     if (!autoSubmitted) playClickSound();
     clearCurrentQuestionTimer();
@@ -195,7 +181,7 @@ export default function CustomTestPage() {
       const percentage = totalPossibleScore > 0 ? Math.max(0, (currentScore / totalPossibleScore) * 100) : 0;
       const calculatedPerformanceTag = getPerformanceTag(percentage);
 
-      if (!resultAnnouncementSpokenRef.current && !isSpeaking && !isPaused) {
+      if (!resultAnnouncementSpokenRef.current && soundMode === 'full' && !isSpeaking && !isPaused) {
         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
         speak(ttsMessage);
         resultAnnouncementSpokenRef.current = true;
@@ -210,24 +196,40 @@ export default function CustomTestPage() {
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, isSpeaking, isPaused, speak, toast]);
+  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, soundMode, isSpeaking, isPaused, speak, toast]);
+
+  const handleNextQuestion = useCallback(() => {
+      playClickSound();
+      if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) {
+          if (!testState?.isAutoSubmitting) handleSubmitTest(false);
+          return;
+      }
+      clearCurrentQuestionTimer();
+      setTestState(prev => {
+          if (!prev) return null;
+          const nextIndex = prev.currentQuestionIndex + 1;
+          const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
+          return { ...prev, currentQuestionIndex: nextIndex, currentQuestionTimeLeft: nextQuestionTime };
+      });
+  }, [testState, playClickSound, clearCurrentQuestionTimer, handleSubmitTest]);
+
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !testState && !isLoading) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak, testState, isLoading]);
+  }, [isSpeaking, isPaused, speak, testState, isLoading, soundMode]);
 
   useEffect(() => {
-    if (isLoading && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
+    if (isLoading && soundMode === 'full' && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
       speak("Creating custom test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading && generatingMessageSpokenRef.current) generatingMessageSpokenRef.current = false;
-  }, [isLoading, isSpeaking, isPaused, speak]);
+  }, [isLoading, isSpeaking, isPaused, speak, soundMode]);
 
   useEffect(() => {
     if (transcript && sourceType === 'topic') setValue('topics', transcript);
@@ -300,7 +302,7 @@ export default function CustomTestPage() {
     pageTitleSpokenRef.current = true;
     generatingMessageSpokenRef.current = false;
 
-    if (!isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Creating custom test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
@@ -334,16 +336,16 @@ export default function CustomTestPage() {
           currentQuestionTimeLeft: settings.perQuestionTimer && settings.perQuestionTimer > 0 ? settings.perQuestionTimer : undefined,
         });
         toast({ title: 'Test Generated!', description: 'Your custom test is ready to start.' });
-        if (!isSpeaking && !isPaused) speak("Test Generated!");
+        if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Test Generated!");
       } else {
         toast({ title: 'No Questions', description: 'The AI returned no questions for this configuration.', variant: 'destructive' });
-        if (!isSpeaking && !isPaused) speak("Sorry, no questions were returned.");
+        if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, no questions were returned.");
       }
     } catch (error) {
       console.error('Error generating custom test:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate test. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      if (!isSpeaking && !isPaused) speak("Sorry, there was an error generating the test.");
+      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, there was an error generating the test.");
     } finally { setIsLoading(false); generatingMessageSpokenRef.current = false; }
   };
 
@@ -382,7 +384,7 @@ export default function CustomTestPage() {
     pageTitleSpokenRef.current = true;
     generatingMessageSpokenRef.current = false;
 
-    if (!isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Recreating test. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
@@ -400,10 +402,10 @@ export default function CustomTestPage() {
             timeLeft: originalSettings.timer && originalSettings.timer > 0 ? originalSettings.timer * 60 : undefined,
             currentQuestionTimeLeft: originalSettings.perQuestionTimer && originalSettings.perQuestionTimer > 0 ? originalSettings.perQuestionTimer : undefined,
           });
-          if (!isSpeaking && !isPaused) speak("Test ready for retake!");
+          if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Test ready for retake!");
         } else {
           toast({ title: 'Retake Error', description: 'Could not regenerate questions for retake.', variant: 'destructive' });
-          if (!isSpeaking && !isPaused) speak("Sorry, could not regenerate the test.");
+          if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, could not regenerate the test.");
         }
       })
       .catch(error => { console.error('Error retaking test:', error); const errorMessage = error instanceof Error ? error.message : 'Failed to retake test.'; toast({ title: 'Error', description: errorMessage, variant: 'destructive' }); })
@@ -441,33 +443,6 @@ export default function CustomTestPage() {
     setValue('selectedRecentTopics', newSelected, { shouldValidate: true });
   };
 
-  const handlePlaybackControl = () => {
-    playClickSound();
-    if (isSpeaking && !isPaused) {
-        pauseTTS();
-        return;
-    }
-    if (isPaused) {
-        resumeTTS();
-        return;
-    }
-
-    let textToPlay = "";
-    if (!pageTitleSpokenRef.current && !testState && !isLoading) textToPlay = PAGE_TITLE;
-    else if (testState?.showResults && !resultAnnouncementSpokenRef.current && testState.score !== undefined && testState.questions.length > 0 && testState.performanceTag) {
-      textToPlay = `Test submitted! Your score is ${testState.score} out of ${testState.questions.length * 4}. Your performance is ${testState.performanceTag}!`;
-    } else if (isLoading && !generatingMessageSpokenRef.current) {
-      textToPlay = "Creating custom test. Please wait.";
-    }
-    if (textToPlay) {
-        speak(textToPlay);
-        if (textToPlay === PAGE_TITLE) pageTitleSpokenRef.current = true;
-        else if (textToPlay.startsWith("Test submitted")) resultAnnouncementSpokenRef.current = true;
-        else if (textToPlay.startsWith("Creating custom test")) generatingMessageSpokenRef.current = true;
-    }
-  };
-  const handleStopTTS = () => { playClickSound(); cancelTTS(); };
-
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
     const file = e.target.files?.[0];
@@ -502,30 +477,6 @@ export default function CustomTestPage() {
             <div className="flex items-center justify-center mb-4"><TestTubeDiagonal className="h-12 w-12 text-primary" /></div>
             <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
               <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
-              <div className="flex items-center gap-2 self-center sm:self-end mt-2 sm:mt-0">
-                <div className="flex items-center gap-1 p-0.5 bg-muted rounded-lg">
-                    <Button
-                      onClick={() => { playClickSound(); setVoicePreference('gojo'); }}
-                      variant={voicePreference === 'gojo' ? 'default' : 'ghost'}
-                      size="sm"
-                      className="text-xs h-7 px-3"
-                    >
-                      Gojo
-                    </Button>
-                    <Button
-                      onClick={() => { playClickSound(); setVoicePreference('holo'); }}
-                      variant={voicePreference === 'holo' || !voicePreference ? 'default' : 'ghost'}
-                      size="sm"
-                      className="text-xs h-7 px-3"
-                    >
-                      Holo
-                    </Button>
-                </div>
-                <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
-                  {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
-                </Button>
-                <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-7 w-7" title="Stop" disabled={!isSpeaking && !isPaused && !isTTSLoading}><StopCircle className="h-4 w-4" /></Button>
-              </div>
             </div>
             <CardDescription className="text-sm sm:text-base text-muted-foreground px-2">Configure your test parameters. Generate questions from topics, notes, or recent studies.</CardDescription>
           </CardHeader>

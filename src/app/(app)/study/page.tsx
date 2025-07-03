@@ -15,8 +15,9 @@ import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2, Home } 
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
+import { useSettings } from '@/contexts/SettingsContext';
 
-import { fetchStudyNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
+import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from '@/lib/actions';
 import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QueryError } from '@/lib/types';
 
 import NotesView from '@/components/study/NotesView';
@@ -81,10 +82,10 @@ function StudyPageContent() {
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const queryClient = useQueryClient();
 
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   
   useEffect(() => {
     const decodedTopic = topicParam ? decodeURIComponent(topicParam).trim() : "";
@@ -99,31 +100,25 @@ function StudyPageContent() {
 
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo');
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo');
   }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && activeTopic) {
         speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`);
         pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [isSpeaking, isPaused, speak, activeTopic]);
+  }, [isSpeaking, isPaused, speak, activeTopic, soundMode]);
 
 
   const getCacheKey = (type: string, topic: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topic.toLowerCase().replace(/\s+/g, '-')}`;
 
-  // Hydration effect from localStorage
   useEffect(() => {
     if (activeTopic && typeof window !== 'undefined') {
-      // Manually set initial data from localStorage if it exists.
-      // This avoids server-client hydration mismatches.
       const cachedNotes = localStorage.getItem(getCacheKey("notes", activeTopic));
       if (cachedNotes) {
         try {

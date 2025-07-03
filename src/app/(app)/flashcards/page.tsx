@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const formSchema = z.object({
   topic: z.string().min(3, { message: 'Topic must be at least 3 characters.' }),
@@ -41,8 +42,8 @@ export default function FlashcardsPage() {
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
 
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
-  const voicePreferenceWasSetRef = useRef(false);
   const generatingMessageSpokenRef = useRef(false);
 
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
@@ -75,30 +76,27 @@ export default function FlashcardsPage() {
 
 
   useEffect(() => {
-    if (!voicePreferenceWasSetRef.current) {
-      setVoicePreference('holo'); 
-      voicePreferenceWasSetRef.current = true;
-    }
+    setVoicePreference('holo'); 
   }, [setVoicePreference]);
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !generatedFlashcardsData) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current && !isLoading && !generatedFlashcardsData) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData]);
+  }, [isSpeaking, isPaused, speak, isLoading, generatedFlashcardsData, soundMode]);
 
   useEffect(() => {
-    if (isLoading && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
+    if (isLoading && soundMode === 'full' && !generatingMessageSpokenRef.current && !isSpeaking && !isPaused) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
     if (!isLoading && generatingMessageSpokenRef.current) { 
       generatingMessageSpokenRef.current = false; 
     }
-  }, [isLoading, isSpeaking, isPaused, speak]);
+  }, [isLoading, isSpeaking, isPaused, speak, soundMode]);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     playClickSound();
@@ -134,7 +132,7 @@ export default function FlashcardsPage() {
     pageTitleSpokenRef.current = true; 
     generatingMessageSpokenRef.current = false;
 
-    if (!isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
+    if (soundMode === 'full' && !isSpeaking && !isPaused && !generatingMessageSpokenRef.current) {
       speak("Generating flashcards. Please wait.");
       generatingMessageSpokenRef.current = true;
     }
@@ -149,16 +147,16 @@ export default function FlashcardsPage() {
       if (result.flashcards && result.flashcards.length > 0) {
         setGeneratedFlashcardsData(result);
         toast({ title: 'Flashcards Generated!', description: `Your flashcards for "${data.topic}" are ready.` });
-        if (!isSpeaking && !isPaused) speak("Flashcards ready!");
+        if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Flashcards ready!");
       } else {
         toast({ title: 'No Flashcards', description: 'The AI returned no flashcards for this topic.', variant: 'destructive' });
-        if (!isSpeaking && !isPaused) speak("Sorry, no flashcards were returned.");
+        if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, no flashcards were returned.");
       }
     } catch (error) {
       console.error('Error generating flashcards:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate flashcards. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      if (!isSpeaking && !isPaused) speak("Sorry, there was an error generating flashcards.");
+      if (soundMode === 'full' && !isSpeaking && !isPaused) speak("Sorry, there was an error generating flashcards.");
     } finally {
       setIsLoading(false);
       generatingMessageSpokenRef.current = false;

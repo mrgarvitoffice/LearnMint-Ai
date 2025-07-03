@@ -16,6 +16,7 @@ import { useTTS } from '@/hooks/useTTS';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const PAGE_TITLE_CHATBOT = "AI Chat Central";
 const TYPING_INDICATOR_ID = 'typing-indicator';
@@ -37,14 +38,12 @@ export default function ChatbotPage() {
     cancelTTS,
     isSpeaking,
     isPaused,
-    isLoading: isTTSLoading,
     setVoicePreference,
   } = useTTS();
+  const { soundMode } = useSettings();
 
   const currentSpokenMessageRef = useRef<string | null>(null);
 
-  // This effect ONLY runs when the selected character changes.
-  // It is the definitive source for the welcome message.
   useEffect(() => {
     cancelTTS();
     setVoicePreference(selectedCharacter);
@@ -61,13 +60,13 @@ export default function ChatbotPage() {
     setMessages([initialGreetingMessage]);
     
     currentSpokenMessageRef.current = greetingText;
-    speak(greetingText);
+    if (soundMode !== 'muted') {
+      speak(greetingText, { priority: 'essential' });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacter]);
+  }, [selectedCharacter, soundMode]); // Rerun if soundMode changes to speak greeting if switching from muted
 
 
-  // This is the CRITICAL cleanup effect. It runs ONLY when the component unmounts.
-  // This prevents any lingering TTS from playing after the user navigates away.
   useEffect(() => {
     return () => {
       cancelTTS();
@@ -76,7 +75,6 @@ export default function ChatbotPage() {
 
 
   useEffect(() => {
-    // Auto-scroll to the bottom of the chat view when new messages are added.
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (viewport) viewport.scrollTop = viewport.scrollHeight;
@@ -86,7 +84,7 @@ export default function ChatbotPage() {
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
     
-    cancelTTS(); // Stop any current speech before sending a new message.
+    cancelTTS();
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicatorMessage = selectedCharacter === 'gojo'
@@ -111,7 +109,7 @@ export default function ChatbotPage() {
       setMessages(prev => [...prev, assistantMessage]);
 
       currentSpokenMessageRef.current = assistantMessage.content;
-      speak(assistantMessage.content);
+      speak(assistantMessage.content, { priority: 'essential' });
       
     } catch (error) {
       console.error('Error sending message to chatbot:', error);
@@ -137,7 +135,6 @@ export default function ChatbotPage() {
         return;
     }
     
-    // If not speaking, play the last assistant message
     let textToPlay = currentSpokenMessageRef.current;
     if (!textToPlay) {
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
@@ -145,7 +142,7 @@ export default function ChatbotPage() {
     }
     
     if (textToPlay) {
-        speak(textToPlay);
+        speak(textToPlay, { priority: 'essential' });
     }
   };
 
@@ -154,7 +151,7 @@ export default function ChatbotPage() {
   const handleCharacterChange = (newCharacter: ChatbotCharacter) => {
     if (newCharacter === selectedCharacter) return;
     playClickSound();
-    setSelectedCharacter(newCharacter); // This will trigger the useEffect for character change
+    setSelectedCharacter(newCharacter);
   };
 
   const getCurrentCharacterAvatar = () => {
@@ -203,10 +200,10 @@ export default function ChatbotPage() {
                 </Button>
               </div>
 
-              <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
-                {isTTSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
+              <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"} disabled={soundMode === 'muted'}>
+                {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
               </Button>
-              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused && !isTTSLoading}>
+              <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused}>
                 <StopCircle className="h-4 w-4" />
               </Button>
             </div>

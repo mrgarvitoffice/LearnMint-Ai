@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, RotateCcw, Calculator as CalculatorIcon } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const LOCAL_STORAGE_HISTORY_KEY = 'learnmint-calculator-history';
 const PAGE_TITLE = "Precision Toolkit: Calculator & Converter";
@@ -50,6 +51,7 @@ export default function CalculatorPage() {
 
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
 
   useEffect(() => {
@@ -58,12 +60,12 @@ export default function CalculatorPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak, soundMode]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

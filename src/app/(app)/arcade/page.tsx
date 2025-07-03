@@ -9,11 +9,13 @@ import { useTTS } from '@/hooks/useTTS';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const PAGE_TITLE = "LearnMint Arcade";
 
 export default function ArcadePage() {
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { soundMode } = useSettings();
   const pageTitleSpokenRef = useRef(false);
 
   useEffect(() => {
@@ -22,14 +24,14 @@ export default function ArcadePage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
+    if (isMounted && soundMode === 'full' && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
       speak(PAGE_TITLE);
       pageTitleSpokenRef.current = true;
     }
     return () => {
       isMounted = false;
     };
-  }, [isSpeaking, isPaused, speak]);
+  }, [isSpeaking, isPaused, speak, soundMode]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
