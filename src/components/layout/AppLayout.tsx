@@ -18,13 +18,16 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="flex flex-1">
-          {!isMobile && <DesktopSidebar />}
-          <main className={cn("flex-1 overflow-y-auto", isMobile ? "pb-32" : "pb-4")}>
-            {children}
-          </main>
+      <div className="flex min-h-screen w-full bg-muted/40">
+        {!isMobile && <DesktopSidebar />}
+        <div className="flex flex-1 flex-col">
+           <Header />
+           <main className={cn(
+               "flex-1 gap-4 p-4 sm:px-6 sm:py-4 overflow-y-auto", 
+               isMobile ? "pb-32" : "pb-4"
+            )}>
+                {children}
+            </main>
         </div>
         {isMobile && <BottomNavBar />}
       </div>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchNews } from '@/lib/news-api';
 import type { NewsArticle } from '@/lib/types';
@@ -13,8 +13,8 @@ import { NewsFilters } from '@/components/features/news/NewsFilters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
-import { NEWS_LANGUAGES } from '@/lib/constants';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTTS } from '@/hooks/useTTS';
 
 const PAGE_TITLE = "Global News Terminal";
 
@@ -33,25 +33,19 @@ export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
   
-  const { soundMode, language } = useSettings();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
   const { toast } = useToast();
-
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   
-  const headlinesArrayForTTS = useRef<string[]>([]);
-  const currentSpokenHeadlineIndexRef = useRef(0);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  const cancelLocalTTS = useCallback(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setIsSpeaking(false);
-    setIsPaused(false);
-    currentSpokenHeadlineIndexRef.current = 0;
-  }, []);
+  const {
+    speak,
+    pauseTTS,
+    resumeTTS,
+    cancelTTS,
+    isSpeaking,
+    isPaused,
+    setVoicePreference
+  } = useTTS();
+  const { soundMode } = useSettings();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } = useInfiniteQuery({
     queryKey: ['news', appliedFilters],
@@ -65,28 +59,14 @@ export default function NewsPage() {
     refetchOnWindowFocus: false,
   });
 
-  const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
-    setFilters(prev => {
-      const newFilters = { ...prev, [name]: value };
-      if (name === 'country') {
-        newFilters.stateOrRegion = '';
-        newFilters.city = '';
-      }
-      return newFilters;
-    });
-  };
-
-  const handleApplyFilters = () => {
-    playActionSound();
-    cancelLocalTTS();
-    setAppliedFilters(filters);
-  };
-  const handleResetFilters = () => {
-    playActionSound();
-    cancelLocalTTS();
-    setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
-  };
+  useEffect(() => {
+    // Set voice preference for this page
+    setVoicePreference('gojo');
+    // Cleanup function to cancel any speech when the component unmounts
+    return () => {
+      cancelTTS();
+    };
+  }, [setVoicePreference, cancelTTS]);
 
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
@@ -128,49 +108,38 @@ export default function NewsPage() {
     });
     return Array.from(uniqueArticlesMap.values());
   }, [data]);
+  
+  const handleFilterChange = (name: keyof NewsPageFilters, value: string) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, [name]: value };
+      if (name === 'country') {
+        newFilters.stateOrRegion = '';
+        newFilters.city = '';
+      }
+      return newFilters;
+    });
+  };
 
-  useEffect(() => {
-    headlinesArrayForTTS.current = articles.map(article => article.title).filter((title): title is string => !!title);
-  }, [articles]);
+  const handleApplyFilters = () => {
+    playActionSound();
+    cancelTTS();
+    setAppliedFilters(filters);
+  };
+  const handleResetFilters = () => {
+    playActionSound();
+    cancelTTS();
+    setFilters(initialFilters);
+    setAppliedFilters(initialFilters);
+  };
 
-  const speakNextHeadline = useCallback(() => {
-    if (currentSpokenHeadlineIndexRef.current >= headlinesArrayForTTS.current.length) {
-      setIsSpeaking(false);
-      setIsPaused(false);
-      currentSpokenHeadlineIndexRef.current = 0;
-      toast({ title: "Finished Reading Headlines", description: "All loaded headlines have been read." });
-      return;
+  const readAllHeadlines = useCallback(() => {
+    const headlines = articles.map(a => a.title).filter(Boolean).join('. ');
+    if (headlines) {
+        speak(headlines, { useBrowserTTS: true }); // Use quota-free browser TTS for this feature
+    } else {
+        toast({ title: "No Headlines", description: "No news headlines available to read." });
     }
-    const text = headlinesArrayForTTS.current[currentSpokenHeadlineIndexRef.current];
-
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      return;
-    }
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const langForTTS = NEWS_LANGUAGES.find(l => l.value === appliedFilters.language)?.bcp47 || language;
-    utterance.lang = langForTTS;
-    
-    utterance.voice = voices.find(v => v.lang === langForTTS && v.localService) || voices.find(v => v.lang.startsWith(langForTTS.split('-')[0]) && v.localService) || voices.find(v => v.lang === langForTTS) || voices.find(v => v.lang.startsWith(langForTTS.split('-')[0])) || null;
-
-    utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
-    utterance.onpause = () => { setIsSpeaking(true); setIsPaused(true); };
-    utterance.onresume = () => { setIsSpeaking(true); setIsPaused(false); };
-    utterance.onend = () => {
-        currentSpokenHeadlineIndexRef.current++;
-        speakNextHeadline(); // Automatically speak the next one
-    };
-    utterance.onerror = (e) => {
-        console.error("SpeechSynthesis Error:", e);
-        toast({ title: "Voice Error", description: `Could not play audio. (${e.error})`, variant: "destructive" });
-        setIsSpeaking(false); setIsPaused(false);
-    };
-    
-    window.speechSynthesis.speak(utterance);
-  }, [language, appliedFilters.language, toast]);
+  }, [articles, speak, toast]);
 
   const handlePlaybackControl = () => {
     playActionSound();
@@ -179,22 +148,21 @@ export default function NewsPage() {
         return;
     }
     if (isSpeaking && !isPaused) {
-        window.speechSynthesis.pause();
+        pauseTTS();
     } else if (isPaused) {
-        window.speechSynthesis.resume();
+        resumeTTS();
     } else {
-        if (headlinesArrayForTTS.current.length === 0) {
+        if (articles.length === 0) {
             toast({ title: "No Headlines", description: "No news headlines available to read." });
             return;
         }
-        currentSpokenHeadlineIndexRef.current = 0;
-        speakNextHeadline();
+        readAllHeadlines();
     }
   };
 
   const handleStopTTS = () => {
     playActionSound();
-    cancelLocalTTS();
+    cancelTTS();
   };
 
   const getPlaybackButtonTextAndIcon = () => {

@@ -13,7 +13,6 @@ import { signOut } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Logo } from '@/components/icons/Logo';
 import { Settings, LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Menu, Languages, CaseSensitive } from 'lucide-react';
 import { APP_NAME, TTS_LANGUAGES } from '@/lib/constants';
@@ -21,8 +20,6 @@ import { APP_NAME, TTS_LANGUAGES } from '@/lib/constants';
 import { useSidebar } from '../ui/sidebar';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { DesktopSidebar } from './DesktopSidebar';
-import { SidebarNav } from './SidebarNav';
-import { NAV_ITEMS } from '@/lib/constants';
 
 export function Header() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -69,7 +66,7 @@ export function Header() {
                         <span className="sr-only">Toggle navigation menu</span>
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="flex flex-col p-0">
+                <SheetContent side="left" className="flex flex-col p-0 w-64">
                    <DesktopSidebar />
                 </SheetContent>
             </Sheet>

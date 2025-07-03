@@ -59,7 +59,7 @@ const textToSpeechFlow = aiForTTS.defineFlow(
     const { text, voice } = input;
     
     // Choose the voice based on the input preference.
-    // 'Algenib' is a male voice for Gojo, 'Achernar' is a female voice for Holo.
+    // 'Algenib' is a consistent male voice, 'Achernar' is a consistent female voice.
     const voiceName = voice === 'gojo' ? 'Algenib' : 'Achernar';
 
     try {

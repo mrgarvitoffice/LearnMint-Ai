@@ -23,16 +23,26 @@ import {
 } from "@/components/ui/accordion";
 import { LogOut, UserCircle, ShieldQuestion } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { useSidebar } from '../ui/sidebar';
 
 function SidebarNavItem({ item, pathname }: { item: NavItem, pathname: string }) {
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
+    const { setOpenMobile, isMobile } = useSidebar();
+    
+    const handleItemClick = () => {
+      playClickSound();
+      if (isMobile) {
+        setOpenMobile(false);
+      }
+    };
+
     const Icon = item.icon;
     const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
 
     return (
         <Link
             href={item.href}
-            onClick={playClickSound}
+            onClick={handleItemClick}
             className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50",
                 isActive && "bg-muted text-primary"
@@ -47,7 +57,7 @@ function SidebarNavItem({ item, pathname }: { item: NavItem, pathname: string })
 function SidebarNavGroup({ item, pathname }: { item: NavItem, pathname: string }) {
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
     const Icon = item.icon;
-    const isGroupActive = item.children?.some(child => pathname === child.href) ?? false;
+    const isGroupActive = item.children?.some(child => pathname.startsWith(child.href)) ?? false;
 
     return (
         <Accordion type="single" collapsible className="w-full" defaultValue={isGroupActive ? item.title : undefined}>
@@ -102,7 +112,7 @@ export function DesktopSidebar() {
   const userName = getUserFirstName();
 
   return (
-    <aside className="hidden md:flex flex-col h-screen w-64 border-r bg-background/90 backdrop-blur-sm sticky top-0">
+    <aside className="w-64 border-r bg-background/95 flex-col h-screen sticky top-0 hidden md:flex">
         <div className="flex h-16 items-center border-b px-4">
             <Link href="/" className="flex items-center gap-2.5 font-semibold">
                 <Logo size={32} />

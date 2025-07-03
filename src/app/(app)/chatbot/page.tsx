@@ -9,14 +9,12 @@ import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { gojoChatbot, type GojoChatbotInput } from '@/ai/flows/ai-chatbot';
 import { holoChatbot, type HoloChatbotInput } from '@/ai/flows/holo-chatbot';
-import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users, Loader2 } from 'lucide-react';
+import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { useSettings } from '@/contexts/SettingsContext';
 
 const TYPING_INDICATOR_ID = 'typing-indicator';
 
@@ -38,13 +36,14 @@ export default function ChatbotPage() {
     isSpeaking,
     isPaused,
     setVoicePreference,
-    voicePreference
   } = useTTS();
-  const { soundMode } = useSettings();
 
   const currentSpokenMessageRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // This effect runs when the selected character changes.
+    // It cancels any ongoing speech, sets the new voice preference,
+    // and sends the character's initial greeting message.
     cancelTTS();
     setVoicePreference(selectedCharacter);
 
@@ -59,6 +58,7 @@ export default function ChatbotPage() {
     
     setMessages([initialGreetingMessage]);
     
+    // Speak the greeting automatically
     currentSpokenMessageRef.current = greetingText;
     speak(greetingText, { priority: 'essential' });
 
@@ -67,6 +67,7 @@ export default function ChatbotPage() {
 
 
   useEffect(() => {
+    // Cleanup function to cancel TTS when the component unmounts.
     return () => {
       cancelTTS();
     };
@@ -74,6 +75,7 @@ export default function ChatbotPage() {
 
 
   useEffect(() => {
+    // Automatically scroll to the bottom of the chat messages when a new message is added.
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (viewport) viewport.scrollTop = viewport.scrollHeight;
@@ -83,7 +85,7 @@ export default function ChatbotPage() {
   const handleSendMessage = async (messageText: string, image?: string) => {
     if (!messageText.trim() && !image) return;
     
-    cancelTTS();
+    cancelTTS(); // Stop any currently playing speech before sending a new message.
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
     const typingIndicatorMessage = selectedCharacter === 'gojo'
@@ -134,6 +136,7 @@ export default function ChatbotPage() {
         return;
     }
     
+    // If not speaking, play the last assistant message
     let textToPlay = currentSpokenMessageRef.current;
     if (!textToPlay) {
       const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant' && m.type !== 'typing_indicator');
@@ -199,7 +202,7 @@ export default function ChatbotPage() {
                 </Button>
               </div>
 
-              <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"} disabled={soundMode === 'muted'}>
+              <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
                 {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
               </Button>
               <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speech" disabled={!isSpeaking && !isPaused}>

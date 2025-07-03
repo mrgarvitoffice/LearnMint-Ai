@@ -5,14 +5,13 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
-import { ArrowRight, Brain, TestTubeDiagonal, FileText, ListChecks, Calculator as CalculatorIcon, Bot, Newspaper, BookMarked, Gamepad2, Trash2, Sparkles, Quote } from "lucide-react";
+import { ArrowRight, Sparkles, Quote, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/icons/Logo';
-import { cn } from '@/lib/utils';
 import { useSettings } from '@/contexts/SettingsContext';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
@@ -31,12 +30,11 @@ const motivationalQuotes = [
 ];
 
 export default function DashboardPage() {
-  const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { speak, setVoicePreference } = useTTS();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const router = useRouter();
   const { user } = useAuth();
-  const { soundMode } = useSettings();
-
+  
   const [recentTopics, setRecentTopics] = useState<string[]>([]);
   const [dailyQuote, setDailyQuote] = useState<{ quote: string; author: string } | null>(null);
   const [liveUserCount, setLiveUserCount] = useState(137);
@@ -63,6 +61,20 @@ export default function DashboardPage() {
       }
     }
   }, []);
+  
+  useEffect(() => {
+    // This effect runs once on mount to speak the welcome message if sound is enabled.
+    // It's set in a timeout to allow other components to mount and to avoid interrupting initial rendering.
+    const timer = setTimeout(() => {
+      if (!pageTitleSpokenRef.current) {
+        speak(PAGE_TITLE, { priority: 'essential' });
+        pageTitleSpokenRef.current = true;
+      }
+    }, 100); // A small delay
+    
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speak]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -74,15 +86,6 @@ export default function DashboardPage() {
     }, 2500);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (isMounted && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE, { priority: 'essential' });
-        pageTitleSpokenRef.current = true;
-    }
-    return () => { isMounted = false; };
-  }, [isSpeaking, isPaused, speak, soundMode]);
 
   const handleRemoveTopic = (topicToRemove: string) => {
     playClickSound();
