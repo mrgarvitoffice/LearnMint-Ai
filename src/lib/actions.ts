@@ -6,6 +6,7 @@
 import { generateStudyNotes, type GenerateStudyNotesInput, type GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
+import { generateSpeech, type GenerateSpeechInput, type GenerateSpeechOutput } from "@/ai/flows/text-to-speech";
 
 import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
@@ -380,5 +381,26 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   } catch (error: any) {
     console.error(`[Server Action Error - ${actionName}] Error fetching from Google Books API:`, error);
     throw new Error(error.message || "Failed to fetch Google Books directly.");
+  }
+}
+
+/**
+ * generateSpeechAction (Server-Side TTS)
+ *
+ * This action calls the Genkit flow to convert text to speech.
+ *
+ * @param input - Contains the text and voice preference ('gojo' or 'holo').
+ * @returns A promise that resolves to the generated speech audio data.
+ * @throws Error if the TTS generation fails.
+ */
+export async function generateSpeechAction(input: GenerateSpeechInput): Promise<GenerateSpeechOutput> {
+  const actionName = "generateSpeechAction";
+  console.log(`[Server Action] ${actionName} called for voice: ${input.voice}`);
+
+  try {
+    return await generateSpeech(input);
+  } catch (error: any) {
+    console.error(`[Server Action Error - ${actionName}] Error generating speech:`, error);
+    throw new Error(error.message || 'Failed to generate speech.');
   }
 }

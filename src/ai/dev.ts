@@ -8,13 +8,14 @@ import './genkit'; // Ensures genkit is configured via genkit() call
 import '@/ai/flows/generate-study-notes';
 import '@/ai/flows/generate-quiz-questions';
 import '@/ai/flows/generate-flashcards';
-import '@/ai/flows/ai-chatbot'; // This exports gojoChatbot
-import '@/ai/flows/megumin-chatbot'; // This now exports holoChatbot
+import '@/ai/flows/ai-chatbot'; 
+import '@/ai/flows/holo-chatbot';
 import '@/ai/flows/generate-quiz-from-notes';
 import '@/ai/flows/generate-flashcards-from-notes';
 import '@/ai/flows/search-youtube-videos';
 import '@/ai/flows/search-google-books';
 import '@/ai/flows/generate-image-from-prompt';
+import '@/ai/flows/text-to-speech';
 
 // The Genkit dev server will pick up flows defined with ai.defineFlow(...)
 // Just importing the files that contain ai.defineFlow is sufficient for the dev UI.
