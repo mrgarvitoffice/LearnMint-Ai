@@ -14,11 +14,10 @@ import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
-import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, ShieldQuestion, Settings, Menu } from 'lucide-react';
+import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, ShieldQuestion, Settings } from 'lucide-react';
 import { APP_NAME } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useSidebar } from '../ui/sidebar';
 
 export function Header() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -27,7 +26,6 @@ export function Header() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { soundMode, setSoundMode, fontSize, setFontSize, language, setLanguage } = useSettings();
-  const { toggleSidebar } = useSidebar();
 
   const handleSignOut = async () => {
     playClickSound();
@@ -54,11 +52,6 @@ export function Header() {
   const handleThemeChange = (value: string) => {
     playClickSound();
     setTheme(value);
-  }
-
-  const handleToggleSidebar = () => {
-    playClickSound();
-    toggleSidebar();
   }
 
   const getUserFirstName = () => {
@@ -127,11 +120,6 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       <div className="flex items-center gap-4">
-        {/* Hamburger menu for desktop */}
-        <Button variant="ghost" size="icon" onClick={handleToggleSidebar} className="hidden md:flex">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle Sidebar</span>
-        </Button>
         {/* Mobile Logo/Brand link */}
          <Link href="/" className="flex items-center gap-2 font-semibold text-lg md:hidden" onClick={() => playClickSound()}>
           <Logo size={28} />

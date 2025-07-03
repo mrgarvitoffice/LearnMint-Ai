@@ -66,7 +66,7 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
 }
 
 export function DesktopSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -75,6 +75,8 @@ export function DesktopSidebar() {
     <motion.aside
       initial={false}
       animate={{ width: isExpanded ? 256 : 80 }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
       className="fixed top-0 left-0 z-50 h-screen border-r bg-background flex-col hidden md:flex"
     >
       <div className="flex h-16 items-center border-b px-4 shrink-0 overflow-hidden">
