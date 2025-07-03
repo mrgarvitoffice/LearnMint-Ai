@@ -13,9 +13,9 @@ import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users } from 'lucide-r
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 const PAGE_TITLE_CHATBOT = "AI Chat Central";
 const TYPING_INDICATOR_ID = 'typing-indicator';
@@ -68,7 +68,6 @@ export default function ChatbotPage() {
   }, [selectedVoice, voicePreference, isSpeaking, isPaused, speak, currentCharacterGreeting, selectedCharacter]);
 
   useEffect(() => {
-    cancelTTS();
     initialGreetingSpokenRef.current = false;
     pageTitleSpokenRef.current = true; 
     let greetingText = "";
@@ -91,7 +90,7 @@ export default function ChatbotPage() {
     };
     setMessages([initialGreetingMessage]);
 
-  }, [selectedCharacter, cancelTTS, setVoicePreference]);
+  }, [selectedCharacter, setVoicePreference]);
 
   useEffect(() => {
     const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
@@ -99,12 +98,7 @@ export default function ChatbotPage() {
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
       currentSpokenMessageRef.current = currentCharacterGreeting;
-      
-      setTimeout(() => {
-        if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'gojo' : 'holo') && !isSpeaking && !isPaused) {
-            speak(currentCharacterGreeting);
-        }
-      }, 150); 
+      speak(currentCharacterGreeting);
       initialGreetingSpokenRef.current = true;
     }
   }, [currentCharacterGreeting, selectedVoice, voicePreference, isSpeaking, isPaused, speak, selectedCharacter]);
@@ -188,9 +182,11 @@ export default function ChatbotPage() {
 
   const handleStopTTS = () => { playClickSound(); cancelTTS(); };
 
-  const handleCharacterChange = (value: ChatbotCharacter) => {
+  const handleCharacterChange = (newCharacter: ChatbotCharacter) => {
+    if (newCharacter === selectedCharacter) return;
     playClickSound();
-    setSelectedCharacter(value);
+    cancelTTS(); // Immediately stop any speech before changing state
+    setSelectedCharacter(newCharacter);
   };
 
   const getCurrentCharacterAvatar = () => {
@@ -220,16 +216,24 @@ export default function ChatbotPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
-              <Select value={selectedCharacter} onValueChange={(val: ChatbotCharacter) => handleCharacterChange(val)}>
-                <SelectTrigger className="w-auto text-xs h-8 min-w-[100px]">
-                  <Users className="h-3.5 w-3.5 mr-1.5 opacity-70"/>
-                  <SelectValue placeholder="Character" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gojo">Gojo</SelectItem>
-                  <SelectItem value="holo">Holo</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
+                <Button 
+                  onClick={() => handleCharacterChange('gojo')} 
+                  variant={selectedCharacter === 'gojo' ? 'default' : 'ghost'} 
+                  size="sm"
+                  className="text-xs h-7 px-3"
+                >
+                  Gojo
+                </Button>
+                <Button 
+                  onClick={() => handleCharacterChange('holo')} 
+                  variant={selectedCharacter === 'holo' ? 'default' : 'ghost'} 
+                  size="sm"
+                  className="text-xs h-7 px-3"
+                >
+                  Holo
+                </Button>
+              </div>
 
               <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Speech" : isPaused ? "Resume Speech" : "Play Last Message"}>
                 {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
@@ -252,3 +256,5 @@ export default function ChatbotPage() {
     </div>
   );
 }
+
+    
