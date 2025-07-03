@@ -25,13 +25,13 @@ export function TopMobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors",
+                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors group",
                 isActive ? "text-primary" : "hover:text-primary"
               )}
               onClick={playSound}
             >
               <div className="flex flex-col items-center justify-center -mt-1">
-                <NewslyIcon className="h-7 w-7" />
+                <NewslyIcon className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
                 <span className="text-[10px] font-bold leading-tight mt-0.5">{item.title}</span>
               </div>
             </Link>
@@ -43,12 +43,12 @@ export function TopMobileNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary",
+              "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary group",
               isActive && "text-primary [text-shadow:0_0_8px_hsl(var(--primary))]"
             )}
             onClick={playSound}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
             <span className="text-[10px] font-medium leading-tight">{item.title}</span>
           </Link>
         );

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -31,11 +32,11 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
               href={item.href}
               onClick={playClickSound}
               className={cn(
-                "flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground transition-colors hover:text-primary hover:bg-muted",
+                "flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground transition-colors hover:text-primary hover:bg-muted group",
                 isActive && "bg-muted text-primary"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
               <span className="sr-only">{item.title}</span>
             </Link>
           </TooltipTrigger>
@@ -52,11 +53,11 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
       href={item.href}
       onClick={playClickSound}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary group",
         isActive && "bg-muted text-primary"
       )}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
       <motion.span variants={navItemVariants}>
         {item.title}
       </motion.span>
@@ -65,20 +66,15 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
 }
 
 export function DesktopSidebar() {
-  const { open, setOpen, state } = useSidebar();
+  const { state } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
-
-  const handleMouseEnter = () => setOpen(true);
-  const handleMouseLeave = () => setOpen(false);
 
   return (
     <motion.aside
       initial={false}
       animate={{ width: isExpanded ? 256 : 80 }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       className="fixed top-0 left-0 z-50 h-screen border-r bg-background flex-col hidden md:flex"
     >
       <div className="flex h-16 items-center border-b px-4 shrink-0 overflow-hidden">

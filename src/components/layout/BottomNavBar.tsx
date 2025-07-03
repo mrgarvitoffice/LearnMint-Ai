@@ -23,12 +23,12 @@ export function BottomMobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary",
+                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary group",
                 isActive && "text-primary [text-shadow:0_0_8px_hsl(var(--primary))]"
               )}
               onClick={playSound}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
               <span className="text-[10px] font-medium leading-tight text-center">{item.title}</span>
             </Link>
           );

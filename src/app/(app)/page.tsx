@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -31,8 +32,8 @@ const ActionCard = ({ title, description, buttonText, href, icon: Icon }: { titl
     <motion.div whileHover={{ y: -5, scale: 1.02 }} className="w-full">
         <Card className="bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-primary/20 transition-all duration-300 h-full flex flex-col">
             <CardHeader>
-                <div className="flex items-center gap-3">
-                    <Icon className="w-8 h-8 text-primary" />
+                <div className="flex items-center gap-3 group">
+                    <Icon className="w-8 h-8 text-primary transition-transform duration-300 group-hover:scale-110" />
                     <CardTitle className="text-xl font-bold">{title}</CardTitle>
                 </div>
             </CardHeader>
@@ -52,10 +53,10 @@ const FeatureIcon = ({ item }: { item: NavItem }) => (
     <Link href={item.href} passHref>
         <motion.div 
             whileHover={{ scale: 1.1, y: -3 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer text-center"
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer text-center group"
         >
             <div className="p-3 bg-muted rounded-full">
-                <item.icon className="w-6 h-6 text-primary" />
+                <item.icon className="w-6 h-6 text-primary transition-transform duration-200 group-hover:scale-110" />
             </div>
             <p className="text-xs font-medium text-muted-foreground">{item.title}</p>
         </motion.div>
@@ -176,7 +177,9 @@ export default function DashboardPage() {
             <motion.div custom={2} variants={cardVariants}>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Sparkles className="text-primary"/>Daily Motivation</CardTitle>
+                        <CardTitle className="flex items-center gap-3 group">
+                            <Sparkles className="text-primary transition-transform duration-300 group-hover:scale-110"/>Daily Motivation
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-lg italic text-muted-foreground text-center">"{dailyQuote}"</p>
@@ -187,7 +190,9 @@ export default function DashboardPage() {
             <motion.div custom={3} variants={cardVariants}>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Brain className="text-primary"/>Daily Quests</CardTitle>
+                        <CardTitle className="flex items-center gap-3 group">
+                            <Brain className="text-primary transition-transform duration-300 group-hover:scale-110"/>Daily Quests
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center gap-2"><CheckCircle className="text-green-500 h-4 w-4"/> Generate 1 new note set.</div>
@@ -200,7 +205,9 @@ export default function DashboardPage() {
             <motion.div custom={4} variants={cardVariants}>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><BookHeart className="text-primary"/>Explore All Features</CardTitle>
+                        <CardTitle className="flex items-center gap-3 group">
+                            <BookHeart className="text-primary transition-transform duration-300 group-hover:scale-110"/>Explore All Features
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {NAV_ITEMS.map(item => (
@@ -213,7 +220,9 @@ export default function DashboardPage() {
             <motion.div custom={5} variants={cardVariants}>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><History className="text-primary"/>Recent Topics</CardTitle>
+                        <CardTitle className="flex items-center gap-3 group">
+                            <History className="text-primary transition-transform duration-300 group-hover:scale-110"/>Recent Topics
+                        </CardTitle>
                         <CardDescription>Quickly jump back into your recent study sessions.</CardDescription>
                     </CardHeader>
                     <CardContent>
