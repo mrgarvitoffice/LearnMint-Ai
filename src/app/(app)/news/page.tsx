@@ -126,7 +126,7 @@ export default function NewsPage() {
   };
 
   const articles = useMemo(() => {
-    const allArticlesFlat = data?.pages.flatMap(page => page.results) ?? [];
+    const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
     const uniqueArticlesMap = new Map<string, NewsArticle>();
     const seenNormalizedTitles = new Set<string>();
 
@@ -302,7 +302,7 @@ export default function NewsPage() {
           </div>
         </CardContent>
         <CardContent>
-          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={onApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
+          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
         </CardContent>
       </Card>
 

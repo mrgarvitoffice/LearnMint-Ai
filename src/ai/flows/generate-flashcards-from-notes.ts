@@ -63,6 +63,10 @@ const generateFlashcardsFromNotesFlow = aiForQuizzes.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output || !output.flashcards || !Array.isArray(output.flashcards)) {
+      console.error("[AI Flow Error - Flashcards From Notes] AI returned empty or invalid data:", output);
+      return { flashcards: [] };
+    }
+    return output;
   }
 );

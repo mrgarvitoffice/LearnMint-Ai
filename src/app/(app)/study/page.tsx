@@ -91,16 +91,11 @@ function StudyPageContent() {
     if (decodedTopic && decodedTopic !== activeTopic) {
       setActiveTopic(decodedTopic);
       pageTitleSpokenRef.current = false; 
-      queryClient.invalidateQueries({ queryKey: ["studyNotes", decodedTopic] });
-      queryClient.invalidateQueries({ queryKey: ["quizQuestions", decodedTopic] });
-      queryClient.invalidateQueries({ queryKey: ["flashcards", decodedTopic] });
     } else if (!decodedTopic && activeTopic) { 
       setActiveTopic("");
       pageTitleSpokenRef.current = false;
-    } else if (!decodedTopic && !activeTopic) {
-      // Handled by renderContent's check for activeTopic
     }
-  }, [topicParam, activeTopic, queryClient]);
+  }, [topicParam, activeTopic]);
 
 
   useEffect(() => {
@@ -124,22 +119,39 @@ function StudyPageContent() {
 
   const getCacheKey = (type: string, topic: string) => `${LOCALSTORAGE_KEY_PREFIX}${type}-${topic.toLowerCase().replace(/\s+/g, '-')}`;
 
-  const commonQueryOptions = (type: string) => ({
+  // Hydration effect from localStorage
+  useEffect(() => {
+    if (activeTopic && typeof window !== 'undefined') {
+      // Manually set initial data from localStorage if it exists.
+      // This avoids server-client hydration mismatches.
+      const cachedNotes = localStorage.getItem(getCacheKey("notes", activeTopic));
+      if (cachedNotes) {
+        try {
+          queryClient.setQueryData(["studyNotes", activeTopic], JSON.parse(cachedNotes));
+        } catch (e) { console.error("Failed to parse cached notes", e); }
+      }
+      const cachedQuiz = localStorage.getItem(getCacheKey("quiz", activeTopic));
+      if (cachedQuiz) {
+        try {
+          queryClient.setQueryData(["quizQuestions", activeTopic], JSON.parse(cachedQuiz));
+        } catch (e) { console.error("Failed to parse cached quiz", e); }
+      }
+      const cachedFlashcards = localStorage.getItem(getCacheKey("flashcards", activeTopic));
+      if (cachedFlashcards) {
+        try {
+          queryClient.setQueryData(["flashcards", activeTopic], JSON.parse(cachedFlashcards));
+        } catch (e) { console.error("Failed to parse cached flashcards", e); }
+      }
+    }
+  }, [activeTopic, queryClient]);
+
+
+  const commonQueryOptions = {
     enabled: !!activeTopic,
     staleTime: 1000 * 60 * 5, 
     gcTime: 1000 * 60 * 10,    
     retry: 1,
-    initialData: () => {
-      if (typeof window !== 'undefined' && activeTopic) {
-        const cached = localStorage.getItem(getCacheKey(type, activeTopic));
-        if (cached) {
-          try { return JSON.parse(cached); } 
-          catch (e) { console.error("Failed to parse cached data for", type, e); return undefined; }
-        }
-      }
-      return undefined;
-    },
-  });
+  };
 
   const {
     data: notesData,
@@ -156,7 +168,7 @@ function StudyPageContent() {
       if (typeof window !== 'undefined' && data?.notes) localStorage.setItem(getCacheKey("notes", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("notes"),
+    ...commonQueryOptions,
   });
 
   const {
@@ -174,7 +186,7 @@ function StudyPageContent() {
       if (typeof window !== 'undefined' && data?.questions) localStorage.setItem(getCacheKey("quiz", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("quiz"),
+    ...commonQueryOptions,
   });
 
   const {
@@ -192,7 +204,7 @@ function StudyPageContent() {
       if (typeof window !== 'undefined' && data?.flashcards) localStorage.setItem(getCacheKey("flashcards", activeTopic), JSON.stringify(data));
       return data;
     },
-    ...commonQueryOptions("flashcards"),
+    ...commonQueryOptions,
   });
 
 

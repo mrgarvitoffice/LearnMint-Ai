@@ -61,6 +61,11 @@ const generateQuizFromNotesFlow = aiForQuizzes.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output || !output.quiz || !Array.isArray(output.quiz)) {
+      console.error("[AI Flow Error - Quiz From Notes] AI returned empty or invalid data:", output);
+      // Return a valid empty structure to prevent downstream errors
+      return { quiz: [] }; 
+    }
+    return output;
   }
 );
