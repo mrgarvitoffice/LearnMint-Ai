@@ -1,3 +1,4 @@
+
 // This file defines constants used throughout the LearnMint application.
 // It includes navigation items, application name, and static data for features like the library and news.
 
@@ -75,29 +76,29 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
 // --- Application Name ---
 export const APP_NAME = "LearnMint";
 
-// --- App Languages (for Settings) ---
-export const APP_LANGUAGES: { value: string; label: string; }[] = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Español (Spanish)" },
-  { value: "hi", label: "हिन्दी (Hindi)" },
-  { value: "ja", label: "日本語 (Japanese)" },
-  { value: "fr", label: "Français (French)" },
-  { value: "de", label: "Deutsch (German)" },
-  { value: "ru", label: "Русский (Russian)" },
-  { value: "pt", label: "Português (Portuguese)" },
-  { value: "it", label: "Italiano (Italian)" },
-  { value: "zh", label: "中文 (Chinese)" },
-  { value: "ar", label: "العربية (Arabic)" },
-  { value: "ko", label: "한국어 (Korean)" },
-  { value: "tr", label: "Türkçe (Turkish)" },
-  { value: "nl", label: "Nederlands (Dutch)" },
-  { value: "sv", label: "Svenska (Swedish)" },
-  { value: "pl", label: "Polski (Polish)" },
-  { value: "id", label: "Bahasa Indonesia" },
-  { value: "vi", label: "Tiếng Việt (Vietnamese)" },
-  { value: "th", label: "ไทย (Thai)" },
-  { value: "el", label: "Ελληνικά (Greek)" },
-  { value: "he", label: "עברית (Hebrew)" },
+// --- App Languages (for Settings & News) ---
+export const APP_LANGUAGES: { value: string; label: string; bcp47: string; }[] = [
+  { value: "en", label: "English", bcp47: "en-US" },
+  { value: "es", label: "Español (Spanish)", bcp47: "es-ES" },
+  { value: "hi", label: "हिन्दी (Hindi)", bcp47: "hi-IN" },
+  { value: "ja", label: "日本語 (Japanese)", bcp47: "ja-JP" },
+  { value: "fr", label: "Français (French)", bcp47: "fr-FR" },
+  { value: "de", label: "Deutsch (German)", bcp47: "de-DE" },
+  { value: "ru", label: "Русский (Russian)", bcp47: "ru-RU" },
+  { value: "pt", label: "Português (Portuguese)", bcp47: "pt-BR" },
+  { value: "it", label: "Italiano (Italian)", bcp47: "it-IT" },
+  { value: "zh", label: "中文 (Chinese)", bcp47: "zh-CN" },
+  { value: "ar", label: "العربية (Arabic)", bcp47: "ar-SA" },
+  { value: "ko", label: "한국어 (Korean)", bcp47: "ko-KR" },
+  { value: "tr", label: "Türkçe (Turkish)", bcp47: "tr-TR" },
+  { value: "nl", label: "Nederlands (Dutch)", bcp47: "nl-NL" },
+  { value: "sv", label: "Svenska (Swedish)", bcp47: "sv-SE" },
+  { value: "pl", label: "Polski (Polish)", bcp47: "pl-PL" },
+  { value: "id", label: "Bahasa Indonesia", bcp47: "id-ID" },
+  { value: "vi", label: "Tiếng Việt (Vietnamese)", bcp47: "vi-VN" },
+  { value: "th", label: "ไทย (Thai)", bcp47: "th-TH" },
+  { value: "el", label: "Ελληνικά (Greek)", bcp47: "el-GR" },
+  { value: "he", label: "עברית (Hebrew)", bcp47: "he-IL" },
 ];
 
 
@@ -157,25 +158,6 @@ export const NEWS_COUNTRIES: { value: string; label: string }[] = [
   { value: "ru", label: "Russia" },
   { value: "ae", label: "United Arab Emirates" },
 ];
-
-// --- News API Languages (for News page filters) ---
-// A selection of languages with their ISO 639-1 codes and BCP 47 tags for TTS.
-export const NEWS_LANGUAGES: { value: string; label: string; bcp47: string; }[] = [
-  { value: "en", label: "English", bcp47: "en-US" },
-  { value: "hi", label: "Hindi (हिन्दी)", bcp47: "hi-IN" },
-  { value: "es", label: "Spanish (Español)", bcp47: "es-ES" },
-  { value: "fr", label: "French (Français)", bcp47: "fr-FR" },
-  { value: "de", label: "German (Deutsch)", bcp47: "de-DE" },
-  { value: "ja", label: "Japanese (日本語)", bcp47: "ja-JP" },
-  { value: "ru", label: "Russian (Русский)", bcp47: "ru-RU" },
-  { value: "pt", label: "Portuguese (Português)", bcp47: "pt-PT" }, // Or pt-BR
-  { value: "it", label: "Italian (Italiano)", bcp47: "it-IT" },
-  { value: "zh", label: "Chinese (中文)", bcp47: "zh-CN" }, // Or zh-TW, zh-HK
-  { value: "ar", label: "Arabic (العربية)", bcp47: "ar-SA" }, // Or other Arabic locale
-  { value: "ko", label: "Korean (한국어)", bcp47: "ko-KR" },
-  { value: "sa", label: "Sanskrit (संस्कृतम्)", bcp47: "sa-IN" },
-];
-
 
 // --- US States (for News page, State/Region filter when US is selected) ---
 export const US_STATES: { value: string; label: string }[] = [

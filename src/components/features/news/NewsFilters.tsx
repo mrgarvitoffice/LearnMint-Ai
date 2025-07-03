@@ -4,7 +4,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NEWS_CATEGORIES, NEWS_COUNTRIES, COUNTRY_SPECIFIC_REGIONS, NEWS_LANGUAGES } from "@/lib/constants";
+import { NEWS_CATEGORIES, NEWS_COUNTRIES, COUNTRY_SPECIFIC_REGIONS, APP_LANGUAGES } from "@/lib/constants";
 import { Label } from "@/components/ui/label";
 import { RotateCcw } from "lucide-react";
 
@@ -58,7 +58,7 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
             <SelectContent>
-              {NEWS_LANGUAGES.map(lang => (
+              {APP_LANGUAGES.map(lang => (
                 <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
               ))}
             </SelectContent>
@@ -163,5 +163,3 @@ export function NewsFilters({ filters, onFilterChange, onApplyFilters, onResetFi
     </div>
   );
 }
-
-    

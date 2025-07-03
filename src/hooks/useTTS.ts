@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from './use-toast';
+import { APP_LANGUAGES } from '@/lib/constants';
 
 interface SpeakOptions {
   priority?: 'essential' | 'optional';
@@ -86,8 +87,11 @@ export function useTTS(): TTSHook {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    const targetLang = appLanguage.split('-')[0];
-    const langMatchingVoices = voices.filter(v => v.lang.replace('_', '-').startsWith(targetLang));
+    const targetLangInfo = APP_LANGUAGES.find(l => l.value === appLanguage) || APP_LANGUAGES[0];
+    const targetBcp47 = targetLangInfo.bcp47;
+    
+    // Find voices that exactly match the BCP 47 tag (e.g., "en-US")
+    const langMatchingVoices = voices.filter(v => v.lang.replace('_', '-') === targetBcp47);
 
     let selectedVoice: SpeechSynthesisVoice | undefined;
 
@@ -98,6 +102,7 @@ export function useTTS(): TTSHook {
           isMaleRequired ? isMaleVoice(v.name) : isFemaleVoice(v.name)
       );
 
+      // Find voices for the language that are not the opposite gender (a less strict fallback)
       const nonConflictingVoices = langMatchingVoices.filter(v =>
           isMaleRequired ? !isFemaleVoice(v.name) : !isMaleVoice(v.name)
       );
@@ -112,10 +117,10 @@ export function useTTS(): TTSHook {
     }
     
     utterance.voice = selectedVoice || null;
-    utterance.lang = selectedVoice?.lang || appLanguage;
+    utterance.lang = selectedVoice?.lang || targetBcp47; // Use the specific BCP47 tag
     
     if (!selectedVoice && voices.length > 0) {
-      console.warn(`Browser TTS: No specific voice found for language '${appLanguage}' and preference '${voicePreference}'. Using browser default.`);
+      console.warn(`Browser TTS: No specific voice found for language '${targetBcp47}' and preference '${voicePreference}'. Using browser default.`);
     }
 
     utterance.onstart = () => { if (requestId === activeRequestIdRef.current) { setIsSpeaking(true); setIsPaused(false); }};
@@ -137,9 +142,15 @@ export function useTTS(): TTSHook {
 
     if (!text.trim()) return;
     
-    if (priority === 'optional' && soundMode !== 'full') {
-      return;
+    // New, more robust sound mode check
+    if (soundMode === 'muted') {
+      return; // Never speak if muted.
     }
+    if (soundMode === 'essential' && priority === 'optional') {
+      return; // Don't speak optional announcements in essential mode.
+    }
+    // In 'full' mode, everything passes.
+    // In 'essential' mode, 'essential' priority sounds pass.
     
     cancelTTS();
     const currentRequestId = activeRequestIdRef.current += 1;
