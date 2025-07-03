@@ -43,9 +43,9 @@ export default function ChatbotPage() {
 
   const currentSpokenMessageRef = useRef<string | null>(null);
 
+  // This effect ONLY runs when the selected character changes.
+  // It is the definitive source for the welcome message.
   useEffect(() => {
-    // This effect runs when the character changes.
-    // It cancels any ongoing speech and sets the new voice preference.
     cancelTTS();
     setVoicePreference(selectedCharacter);
 
@@ -60,11 +60,19 @@ export default function ChatbotPage() {
     
     setMessages([initialGreetingMessage]);
     
-    // Speak the greeting immediately without delay
     currentSpokenMessageRef.current = greetingText;
     speak(greetingText);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCharacter]);
 
-  }, [selectedCharacter, setVoicePreference, cancelTTS, speak]);
+
+  // This is the CRITICAL cleanup effect. It runs ONLY when the component unmounts.
+  // This prevents any lingering TTS from playing after the user navigates away.
+  useEffect(() => {
+    return () => {
+      cancelTTS();
+    };
+  }, [cancelTTS]);
 
 
   useEffect(() => {
