@@ -59,24 +59,19 @@ const textToSpeechFlow = aiForTTS.defineFlow(
     const { text, voice } = input;
     
     // Choose the voice based on the input preference.
-    // These names correspond to Google's prebuilt voices.
-    // 'Algenib' is a male voice, 'Achernar' is a female voice.
-    const speakerId = voice === 'gojo' ? 'Speaker1' : 'Speaker2';
+    // 'Algenib' is a male voice for Gojo, 'Achernar' is a female voice for Holo.
     const voiceName = voice === 'gojo' ? 'Algenib' : 'Achernar';
 
     try {
       const { media } = await aiForTTS.generate({
         model: 'googleai/gemini-2.5-flash-preview-tts',
-        prompt: `${speakerId}: ${text}`, // Format prompt for multi-speaker model
+        prompt: text, // Simplified prompt for a single voice
         config: {
           responseModalities: ['AUDIO'],
-          speechConfig: {
-            multiSpeakerVoiceConfig: {
-                speakerVoiceConfigs: [
-                    { speaker: 'Speaker1', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Algenib' } } },
-                    { speaker: 'Speaker2', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Achernar' } } },
-                ]
-            }
+          speechConfig: { // Simplified to use a single voice config, which is more efficient.
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: voiceName },
+            },
           },
         },
       });
