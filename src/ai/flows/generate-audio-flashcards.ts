@@ -8,7 +8,7 @@
  * - GenerateAudioFlashcardsOutput - The return type for this function.
  */
 
-import { aiForTTS } from '@/ai/genkit';
+import { aiForTTS, aiForQuizzes } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import wav from 'wav';

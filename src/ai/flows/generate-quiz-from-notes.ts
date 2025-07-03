@@ -10,15 +10,16 @@
 
 import {aiForQuizzes} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { GenerateQuizOutput } from './generate-quiz'; // Reuse existing output type
+import type { GenerateQuizOutput } from './generate-quiz-questions'; // Reuse existing output type
 
 // Define GenerateQuizOutputSchema locally for this flow's prompt
 const GenerateQuizOutputSchema = z.object({
-  quiz: z.array(
+  questions: z.array(
     z.object({
       question: z.string().describe('The quiz question.'),
-      options: z.array(z.string()).describe('The possible answers.'),
+      options: z.array(z.string()).optional().describe('An array of 3-4 multiple-choice options. Required for "multiple-choice" type.'),
       answer: z.string().describe('The correct answer.'),
+      type: z.enum(['multiple-choice', 'short-answer']).describe("The type of question."),
       explanation: z.string().optional().describe('A brief explanation for why the answer is correct.'),
     })
   ).describe('The generated quiz, including explanations for answers.'),
@@ -39,7 +40,7 @@ const prompt = aiForQuizzes.definePrompt({
   model: 'googleai/gemini-2.5-flash-lite-preview-06-17',
   input: {schema: GenerateQuizFromNotesInputSchema},
   output: {schema: GenerateQuizOutputSchema}, // Use the locally defined output schema
-  prompt: `You are an expert quiz generator. Your task is to create a quiz with {{numQuestions}} multiple-choice questions based *solely* on the provided study notes. Each question must have several options, one correct answer, and a brief explanation for why the answer is correct.
+  prompt: `You are an expert quiz generator. Your task is to create a quiz with {{numQuestions}} questions based *solely* on the provided study notes. Include a mix of 'multiple-choice' and 'short-answer' questions. Each question must have one correct answer and a brief explanation for why the answer is correct. For multiple-choice, provide 4 options.
 
 Study Notes Content:
 ---
@@ -61,10 +62,10 @@ const generateQuizFromNotesFlow = aiForQuizzes.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    if (!output || !output.quiz || !Array.isArray(output.quiz)) {
+    if (!output || !output.questions || !Array.isArray(output.questions)) {
       console.error("[AI Flow Error - Quiz From Notes] AI returned empty or invalid data:", output);
       // Return a valid empty structure to prevent downstream errors
-      return { quiz: [] }; 
+      return { questions: [] }; 
     }
     return output;
   }
