@@ -133,7 +133,7 @@ export default function DashboardPage() {
         if (isReady) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                if (!pageTitleSpokenRef.current) {
+                if (!pageTitleSpokenRef.current && soundMode === 'full') {
                     speak(PAGE_TITLE, { priority: 'optional' });
                     pageTitleSpokenRef.current = true;
                 }

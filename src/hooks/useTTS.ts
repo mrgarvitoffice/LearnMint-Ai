@@ -82,10 +82,6 @@ export function useTTS(): TTSHook {
         toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
         return;
     }
-     if (voices.length === 0) {
-        toast({ title: "TTS Voices Not Ready", description: "Speech synthesis voices are not yet loaded. Please try again in a moment.", variant: "default" });
-        return;
-    }
     
     window.speechSynthesis.cancel();
 
@@ -118,7 +114,7 @@ export function useTTS(): TTSHook {
     utterance.voice = selectedVoice || null;
     utterance.lang = selectedVoice?.lang || appLanguage;
     
-    if (!selectedVoice) {
+    if (!selectedVoice && voices.length > 0) {
       console.warn(`Browser TTS: No specific voice found for language '${appLanguage}' and preference '${voicePreference}'. Using browser default.`);
     }
 
@@ -141,10 +137,7 @@ export function useTTS(): TTSHook {
 
     if (!text.trim()) return;
     
-    // In 'Full' mode, all sounds play.
-    // In 'Essential' mode, only essential (manual) sounds play.
-    // In 'Muted' mode, only essential (manual) sounds play.
-    if (priority === 'optional' && (soundMode === 'essential' || soundMode === 'muted')) {
+    if (priority === 'optional' && soundMode !== 'full') {
       return;
     }
     
