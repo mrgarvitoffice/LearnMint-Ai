@@ -7,8 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/components/features/chatbot/ChatMessage';
 import { ChatInput } from '@/components/features/chatbot/ChatInput';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
-import { gojoChatbot, type GojoChatbotInput } from '@/ai/flows/ai-chatbot'; // Changed import
-import { meguminChatbot, type MeguminChatbotInput } from '@/ai/flows/megumin-chatbot';
+import { gojoChatbot, type GojoChatbotInput } from '@/ai/flows/ai-chatbot';
+import { holoChatbot, type HoloChatbotInput } from '@/ai/flows/megumin-chatbot'; // This file now exports Holo's logic
 import { Bot, PlayCircle, PauseCircle, StopCircle, Wand2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -20,12 +20,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const PAGE_TITLE_CHATBOT = "AI Chat Central";
 const TYPING_INDICATOR_ID = 'typing-indicator';
 
-type ChatbotCharacter = 'gojo' | 'megumin'; // Changed 'kazuma' to 'gojo'
+type ChatbotCharacter = 'gojo' | 'holo';
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<ChatbotCharacter>('gojo'); // Changed default
+  const [selectedCharacter, setSelectedCharacter] = useState<ChatbotCharacter>('gojo');
   const [currentCharacterGreeting, setCurrentCharacterGreeting] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -58,7 +58,7 @@ export default function ChatbotPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed 'kazuma' to 'gojo'
+      const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
       if (voicePreference !== characterExpectedVoicePref || !currentCharacterGreeting) {
          speak(PAGE_TITLE_CHATBOT);
       }
@@ -72,14 +72,14 @@ export default function ChatbotPage() {
     initialGreetingSpokenRef.current = false;
     pageTitleSpokenRef.current = true; 
     let greetingText = "";
-    let characterVoicePref: 'kai' | 'luma' | null = null;
+    let characterVoicePref: 'kai' | 'zia' | null = null;
 
-    if (selectedCharacter === 'gojo') { // Changed 'kazuma' to 'gojo'
+    if (selectedCharacter === 'gojo') {
       greetingText = "Yo! Took you long enough. Thought I’d have to go fight boredom without you.";
       characterVoicePref = 'kai';
-    } else if (selectedCharacter === 'megumin') {
-      greetingText = "It is I, Megumin! Master of EXPLOSION magic! Ask away!";
-      characterVoicePref = 'luma';
+    } else if (selectedCharacter === 'holo') {
+      greetingText = "Ah, the little one returns. Have you come to bask in my brilliance again?";
+      characterVoicePref = 'zia';
     }
     
     setVoicePreference(characterVoicePref);
@@ -94,14 +94,14 @@ export default function ChatbotPage() {
   }, [selectedCharacter, cancelTTS, setVoicePreference]);
 
   useEffect(() => {
-    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed
+    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
     if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
       currentSpokenMessageRef.current = currentCharacterGreeting;
       
       setTimeout(() => {
-        if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'gojo' : 'megumin') && !isSpeaking && !isPaused) { // Changed
+        if (currentCharacterGreeting && selectedCharacter === (voicePreference === 'kai' ? 'gojo' : 'holo') && !isSpeaking && !isPaused) {
             speak(currentCharacterGreeting);
         }
       }, 150); 
@@ -121,37 +121,37 @@ export default function ChatbotPage() {
     cancelTTS(); 
 
     const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
-    const typingIndicatorMessage = selectedCharacter === 'gojo' // Changed
+    const typingIndicatorMessage = selectedCharacter === 'gojo'
       ? "Gojo is contemplating..."
-      : "Megumin is chanting...";
+      : "Holo is contemplating her wisdom...";
     const typingIndicator: ChatMessageType = { id: TYPING_INDICATOR_ID, role: 'assistant', content: typingIndicatorMessage, timestamp: new Date(), type: 'typing_indicator' };
 
     setMessages(prev => [...prev, userMessage, typingIndicator]);
     setIsLoading(true);
 
     try {
-      const input: GojoChatbotInput | MeguminChatbotInput = { message: messageText };
+      const input: GojoChatbotInput | HoloChatbotInput = { message: messageText };
       if (image) input.image = image;
 
-      const response = selectedCharacter === 'gojo' // Changed
-        ? await gojoChatbot(input as GojoChatbotInput) // Changed
-        : await meguminChatbot(input as MeguminChatbotInput);
+      const response = selectedCharacter === 'gojo'
+        ? await gojoChatbot(input as GojoChatbotInput)
+        : await holoChatbot(input as HoloChatbotInput);
 
       const assistantMessage: ChatMessageType = { id: Date.now().toString() + '-assistant', role: 'assistant', content: response.response, timestamp: new Date() };
 
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      const characterVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed
+      const characterVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
       if (selectedVoice && voicePreference === characterVoicePref && !isSpeaking && !isPaused) {
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
       }
     } catch (error) {
       console.error('Error sending message to chatbot:', error);
-      const errorText = selectedCharacter === 'gojo' ? "Hoh? Something went wrong. Let's try that again." : "Megumin's spell backfired! Try again."; // Changed
+      const errorText = selectedCharacter === 'gojo' ? "Hoh? Something went wrong. Let's try that again." : "Hmph. My wisdom must have been too much for this device. Try again.";
       toast({ title: "Chatbot Error", description: errorText, variant: "destructive" });
-      const errorMessageContent = selectedCharacter === 'gojo' ? "My technique must've fizzled. Ask again, I wasn't paying attention." : "My EXPLOSION magic... it failed! This is unheard of!"; // Changed
+      const errorMessageContent = selectedCharacter === 'gojo' ? "My technique must've fizzled. Ask again, I wasn't paying attention." : "My thoughts must have wandered to a distant harvest. Ask again.";
       const errorMessage: ChatMessageType = { id: Date.now().toString() + '-error', role: 'system', content: errorMessageContent, timestamp: new Date() };
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, errorMessage]);
@@ -170,7 +170,7 @@ export default function ChatbotPage() {
     }
     if (!textToPlay) return;
 
-    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'luma'; // Changed
+    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
     if (voicePreference !== characterExpectedVoicePref) {
         setVoicePreference(characterExpectedVoicePref);
         setTimeout(() => {
@@ -194,13 +194,13 @@ export default function ChatbotPage() {
   };
 
   const getCurrentCharacterAvatar = () => {
-    if (selectedCharacter === 'gojo') return "/images/gojo-dp.jpg"; // Changed
-    return "/images/megumin-dp.jpg"; 
+    if (selectedCharacter === 'gojo') return "/images/gojo-dp.jpg";
+    return "/images/holo-dp.jpg"; 
   };
   
-  const getCurrentCharacterAIName = () => selectedCharacter === 'gojo' ? 'Gojo AI' : 'Megumin AI'; // Changed
-  const getCurrentCharacterAIDescription = () => selectedCharacter === 'gojo' ? 'The Honored One is here to help.' : 'The Arch Wizard of EXPLOSION!'; // Changed
-  const getCurrentCharacterAvatarHint = () => selectedCharacter === 'gojo' ? 'Gojo Satoru' : 'Megumin crimson demon'; // Changed
+  const getCurrentCharacterAIName = () => selectedCharacter === 'gojo' ? 'Gojo AI' : 'Holo AI';
+  const getCurrentCharacterAIDescription = () => selectedCharacter === 'gojo' ? 'The Honored One is here to help.' : 'The Wise Wolf of Yoitsu.';
+  const getCurrentCharacterAvatarHint = () => selectedCharacter === 'gojo' ? 'Gojo Satoru' : 'Holo wise wolf';
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8 h-full flex flex-col">
@@ -227,7 +227,7 @@ export default function ChatbotPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="gojo">Gojo</SelectItem>
-                  <SelectItem value="megumin">Megumin</SelectItem>
+                  <SelectItem value="holo">Holo</SelectItem>
                 </SelectContent>
               </Select>
 

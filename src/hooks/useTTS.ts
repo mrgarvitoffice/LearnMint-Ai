@@ -1,4 +1,3 @@
-
 "use client"; // This hook is client-side only due to browser's SpeechSynthesis API.
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -24,8 +23,8 @@ interface TTSHook {
 }
 
 // Keywords to help identify voice gender and quality.
-const FEMALE_INDICATOR_KEYWORDS = ["female", "samantha", "zira", "ava", "allison", "susan", "joanna", "stephanie", "eva", "google us english", "microsoft zira", "google uk english female", "microsoft hazel", "kate", "serena", "moira", "fiona", "emily", "microsoft catherine", "microsoft linda"];
-const MALE_INDICATOR_KEYWORDS = ["male", "david", "mark", "tom", "alex", "daniel", "oliver", "google us english male", "microsoft david"];
+const FEMALE_INDICATOR_KEYWORDS = ["female", "samantha", "zira", "ava", "allison", "susan", "joanna", "stephanie", "eva", "google us english", "microsoft zira", "google uk english female", "microsoft hazel", "kate", "serena", "moira", "fiona", "emily", "microsoft catherine", "microsoft linda", "alicia"];
+const MALE_INDICATOR_KEYWORDS = ["male", "david", "mark", "tom", "alex", "daniel", "oliver", "google us english male", "microsoft david", "john", "matthew"];
 
 // Preferences mapped to specific keyword lists (used for UI selections like "Zia", "Kai")
 const ziaKeywords = ["zia", ...FEMALE_INDICATOR_KEYWORDS];
@@ -134,19 +133,25 @@ export function useTTS(): TTSHook {
     
     newUtterance.volume = 1.0;
     
-    // Custom voice profiles
+    // Custom voice profiles for pitch
     if (voicePreference === 'kai') { // Gojo's voice profile
-        newUtterance.pitch = 0.95; // Slightly lower for a calmer, more confident tone
+      newUtterance.pitch = 0.95; // Slightly lower for a calmer, more confident tone
+    } else if (voicePreference === 'zia') { // Holo's voice profile
+      newUtterance.pitch = 1.05; // +5% pitch for a lighter, graceful femininity
     } else {
-        newUtterance.pitch = 1.0; // Default pitch
+      newUtterance.pitch = 1.0; // Default pitch
     }
 
-    // Adjust rate based on mobile/desktop and language
-    const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
-    if (isMobile) {
-      newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9;
-    } else {
-      newUtterance.rate = isCurrentUtteranceEnglish ? 1.1 : 1.0;
+    // Custom voice profiles for rate
+    if (voicePreference === 'zia') { // Holo's rate
+      newUtterance.rate = 0.9; // Slower, thoughtful pace
+    } else { // Default rate logic (for Gojo and others)
+      const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
+      if (isMobile) {
+        newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9;
+      } else {
+        newUtterance.rate = isCurrentUtteranceEnglish ? 1.1 : 1.0;
+      }
     }
 
     newUtterance.onstart = () => { if (utteranceRef.current === newUtterance) { setIsSpeaking(true); setIsPaused(false); }};

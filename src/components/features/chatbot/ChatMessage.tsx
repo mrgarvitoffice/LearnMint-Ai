@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  character?: 'gojo' | 'megumin';
+  character?: 'gojo' | 'holo';
 }
 
 export function ChatMessage({ message, character = 'gojo' }: ChatMessageProps) {
@@ -18,7 +18,7 @@ export function ChatMessage({ message, character = 'gojo' }: ChatMessageProps) {
 
   const getAvatarSrc = () => {
     if (isUser) return undefined;
-    return character === 'gojo' ? "/images/gojo-dp.jpg" : "/images/megumin-dp.jpg";
+    return character === 'gojo' ? "/images/gojo-dp.jpg" : "/images/holo-dp.jpg";
   };
 
   const getAvatarFallback = () => {
@@ -28,12 +28,12 @@ export function ChatMessage({ message, character = 'gojo' }: ChatMessageProps) {
   
   const getAvatarAlt = () => {
     if (isUser) return "User Avatar";
-    return character === 'gojo' ? "Gojo AI Avatar" : "Megumin AI Avatar";
+    return character === 'gojo' ? "Gojo AI Avatar" : "Holo AI Avatar";
   };
 
   const getAvatarDataAiHint = () => {
     if (isUser) return "user";
-    return character === 'gojo' ? "Gojo Satoru" : "Megumin crimson demon";
+    return character === 'gojo' ? "Gojo Satoru" : "Holo wise wolf";
   }
 
   if (message.type === 'typing_indicator') {
