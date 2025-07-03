@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NAV_ITEMS } from "@/lib/constants";
-import { ArrowRight, Sparkles, Quote, Trash2, Flame, ShieldCheck, Bell, Bot } from "lucide-react";
+import { ArrowRight, Sparkles, Quote, Trash2, Flame, ShieldCheck, Bell, Bot, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
