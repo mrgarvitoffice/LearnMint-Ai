@@ -206,7 +206,7 @@ export default function CustomTestPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('holo');
       voicePreferenceWasSetRef.current = true;
     }
     return () => { isMounted = false; };
@@ -462,9 +462,9 @@ export default function CustomTestPage() {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
-    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'zia';
+    if (selectedVoice?.name.toLowerCase().includes('holo')) return 'holo';
+    if (selectedVoice?.name.toLowerCase().includes('gojo')) return 'gojo';
+    return 'holo';
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -502,9 +502,9 @@ export default function CustomTestPage() {
             <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
               <CardTitle className="text-2xl sm:text-3xl font-bold text-primary flex-1 text-center">{PAGE_TITLE}</CardTitle>
               <div className="flex items-center gap-1 self-center sm:self-end mt-2 sm:mt-0">
-                <Select value={getSelectedDropdownValue()} onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'zia' | 'kai' | null); }}>
+                <Select value={getSelectedDropdownValue()} onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'holo' | 'gojo' | null); }}>
                   <SelectTrigger className="w-auto text-xs h-7 px-2 py-1"> <SelectValue placeholder="Voice" /> </SelectTrigger>
-                  <SelectContent><SelectItem value="zia">Zia</SelectItem><SelectItem value="kai">Kai</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="holo">Holo</SelectItem><SelectItem value="gojo">Gojo</SelectItem></SelectContent>
                 </Select>
                 <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-7 w-7" title={isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Play Title"}>
                   {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}

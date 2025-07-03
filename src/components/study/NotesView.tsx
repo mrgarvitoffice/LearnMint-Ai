@@ -40,7 +40,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-        setVoicePreference('zia'); // Default to Zia for notes reading
+        setVoicePreference('holo'); // Default to Holo for notes reading
         voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -162,9 +162,9 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
-    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'zia'; // Default UI selection
+    if (selectedVoice?.name.toLowerCase().includes('holo')) return 'holo';
+    if (selectedVoice?.name.toLowerCase().includes('gojo')) return 'gojo';
+    return 'holo'; // Default UI selection
   };
 
   return (
@@ -177,12 +177,12 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
           <div className="flex items-center gap-2 flex-wrap">
             <Select
               value={getSelectedDropdownValue()}
-              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'zia' | 'kai' | null);}}
+              onValueChange={(value) => { playClickSound(); setVoicePreference(value as 'holo' | 'gojo' | null);}}
             >
               <SelectTrigger className="w-auto text-xs h-8"> <SelectValue placeholder="Voice" /> </SelectTrigger>
               <SelectContent>
-                <SelectItem value="zia">Zia</SelectItem>
-                <SelectItem value="kai">Kai</SelectItem>
+                <SelectItem value="holo">Holo</SelectItem>
+                <SelectItem value="gojo">Gojo</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>

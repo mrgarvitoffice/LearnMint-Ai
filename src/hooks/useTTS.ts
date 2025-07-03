@@ -19,17 +19,17 @@ interface TTSHook {
   supportedVoices: SpeechSynthesisVoice[];
   selectedVoice: SpeechSynthesisVoice | null;
   setSelectedVoiceURI: (uri: string) => void;
-  setVoicePreference: (preference: 'zia' | 'kai' | null) => void;
-  voicePreference: 'zia' | 'kai' | null;
+  setVoicePreference: (preference: 'holo' | 'gojo' | null) => void;
+  voicePreference: 'holo' | 'gojo' | null;
 }
 
 // Keywords to help identify voice gender and quality.
 const FEMALE_INDICATOR_KEYWORDS = ["female", "samantha", "zira", "ava", "allison", "susan", "joanna", "stephanie", "eva", "google us english", "microsoft zira", "google uk english female", "microsoft hazel", "kate", "serena", "moira", "fiona", "emily", "microsoft catherine", "microsoft linda", "alicia"];
 const MALE_INDICATOR_KEYWORDS = ["male", "david", "mark", "tom", "alex", "daniel", "oliver", "google us english male", "microsoft david", "john", "matthew"];
 
-// Preferences mapped to specific keyword lists (used for UI selections like "Zia", "Kai")
-const ziaKeywords = ["zia", ...FEMALE_INDICATOR_KEYWORDS];
-const kaiKeywords = ["kai", ...MALE_INDICATOR_KEYWORDS];
+// Preferences mapped to specific keyword lists (used for UI selections like "Holo", "Gojo")
+const holoKeywords = ["holo", ...FEMALE_INDICATOR_KEYWORDS];
+const gojoKeywords = ["gojo", ...MALE_INDICATOR_KEYWORDS];
 
 
 /**
@@ -43,7 +43,7 @@ export function useTTS(): TTSHook {
   const [isPaused, setIsPaused] = useState(false);
   const [supportedVoices, setSupportedVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const [voicePreference, setVoicePreference] = useState<'zia' | 'kai' | null>(null);
+  const [voicePreference, setVoicePreference] = useState<'holo' | 'gojo' | null>(null);
   const isMobile = useIsMobile();
   const { isMuted } = useSettings();
 
@@ -104,13 +104,13 @@ export function useTTS(): TTSHook {
         
         // 2. From the potential voices (either all or language-filtered), try to match gender preference
         let preferredVoices: SpeechSynthesisVoice[] = [];
-        if (voicePreference === 'kai') { // Male preference
+        if (voicePreference === 'gojo') { // Male preference
             preferredVoices = potentialVoices.filter(v => 
-                MALE_INDICATOR_KEYWORDS.some(kw => v.name.toLowerCase().includes(kw))
+                gojoKeywords.some(kw => v.name.toLowerCase().includes(kw))
             );
-        } else if (voicePreference === 'zia') { // Female preference
+        } else if (voicePreference === 'holo') { // Female preference
             preferredVoices = potentialVoices.filter(v => 
-                FEMALE_INDICATOR_KEYWORDS.some(kw => v.name.toLowerCase().includes(kw))
+                holoKeywords.some(kw => v.name.toLowerCase().includes(kw))
             );
         }
 
@@ -140,16 +140,16 @@ export function useTTS(): TTSHook {
     newUtterance.volume = 1.0;
     
     // Custom voice profiles for pitch
-    if (voicePreference === 'kai') {
+    if (voicePreference === 'gojo') {
       newUtterance.pitch = 0.95;
-    } else if (voicePreference === 'zia') {
+    } else if (voicePreference === 'holo') {
       newUtterance.pitch = 1.05;
     } else {
       newUtterance.pitch = 1.0;
     }
 
     // Custom voice profiles for rate
-    if (voicePreference === 'zia') {
+    if (voicePreference === 'holo') {
       newUtterance.rate = 0.9;
     } else {
       const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
@@ -277,10 +277,10 @@ export function useTTS(): TTSHook {
       return candidateVoices[0] || undefined; 
     };
 
-    if (voicePreference === 'zia') {
-        chosenVoice = findVoice(enVoices, ziaKeywords, MALE_INDICATOR_KEYWORDS);
-    } else if (voicePreference === 'kai') {
-        chosenVoice = findVoice(enVoices, kaiKeywords, FEMALE_INDICATOR_KEYWORDS);
+    if (voicePreference === 'holo') {
+        chosenVoice = findVoice(enVoices, holoKeywords, MALE_INDICATOR_KEYWORDS);
+    } else if (voicePreference === 'gojo') {
+        chosenVoice = findVoice(enVoices, gojoKeywords, FEMALE_INDICATOR_KEYWORDS);
     }
 
 
@@ -315,7 +315,7 @@ export function useTTS(): TTSHook {
   }, [updateSelectedVoiceLogic]);
 
 
-  const handleSetVoicePreference = useCallback((preference: 'zia' | 'kai' | null) => {
+  const handleSetVoicePreference = useCallback((preference: 'holo' | 'gojo' | null) => {
     setVoicePreference(oldPref => {
         if (oldPref !== preference) return preference;
         return oldPref;

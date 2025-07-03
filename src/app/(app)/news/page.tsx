@@ -62,7 +62,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (supportedVoices.length > 0 && !voicePreferenceWasSetRef.current) {
-      setVoicePreference('zia');
+      setVoicePreference('holo');
       voicePreferenceWasSetRef.current = true;
     }
   }, [supportedVoices, setVoicePreference]);
@@ -263,9 +263,9 @@ export default function NewsPage() {
   
   const getSelectedDropdownValue = () => {
     if (voicePreference) return voicePreference;
-    if (selectedVoice?.name.toLowerCase().includes('zia')) return 'zia';
-    if (selectedVoice?.name.toLowerCase().includes('kai')) return 'kai';
-    return 'zia';
+    if (selectedVoice?.name.toLowerCase().includes('holo')) return 'holo';
+    if (selectedVoice?.name.toLowerCase().includes('gojo')) return 'gojo';
+    return 'holo';
   };
 
   const getPlaybackButtonTextAndIcon = () => {
@@ -299,7 +299,7 @@ export default function NewsPage() {
                 value={getSelectedDropdownValue()}
                 onValueChange={(value) => {
                     playActionSound();
-                    setVoicePreference(value as 'zia' | 'kai' | null);
+                    setVoicePreference(value as 'holo' | 'gojo' | null);
                 }}
               >
                   <SelectTrigger className="w-full sm:w-auto text-xs h-9 min-w-[120px]">
@@ -307,8 +307,8 @@ export default function NewsPage() {
                       <SelectValue placeholder="Voice" />
                   </SelectTrigger>
                   <SelectContent>
-                      <SelectItem value="zia">Zia (Female)</SelectItem>
-                      <SelectItem value="kai">Kai (Male)</SelectItem>
+                      <SelectItem value="holo">Holo (Female)</SelectItem>
+                      <SelectItem value="gojo">Gojo (Male)</SelectItem>
                   </SelectContent>
               </Select>
               <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText}>

@@ -58,7 +58,7 @@ export default function ChatbotPage() {
   useEffect(() => {
     let isMounted = true;
     if (isMounted && selectedVoice && !isSpeaking && !isPaused && !pageTitleSpokenRef.current) {
-      const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
+      const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
       if (voicePreference !== characterExpectedVoicePref || !currentCharacterGreeting) {
          speak(PAGE_TITLE_CHATBOT);
       }
@@ -71,14 +71,14 @@ export default function ChatbotPage() {
     initialGreetingSpokenRef.current = false;
     pageTitleSpokenRef.current = true; 
     let greetingText = "";
-    let characterVoicePref: 'kai' | 'zia' | null = null;
+    let characterVoicePref: 'gojo' | 'holo' | null = null;
 
     if (selectedCharacter === 'gojo') {
       greetingText = "Yo! Took you long enough. Thought I’d have to go fight boredom without you.";
-      characterVoicePref = 'kai';
+      characterVoicePref = 'gojo';
     } else if (selectedCharacter === 'holo') {
       greetingText = "Ah, the little one returns. Have you come to bask in my brilliance again?";
-      characterVoicePref = 'zia';
+      characterVoicePref = 'holo';
     }
     
     setVoicePreference(characterVoicePref);
@@ -93,7 +93,7 @@ export default function ChatbotPage() {
   }, [selectedCharacter, setVoicePreference]);
 
   useEffect(() => {
-    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
+    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
     if (currentCharacterGreeting && !initialGreetingSpokenRef.current && selectedVoice && 
         voicePreference === characterExpectedVoicePref && !isSpeaking && !isPaused) {
       
@@ -143,7 +143,7 @@ export default function ChatbotPage() {
       setMessages(prev => prev.filter(msg => msg.id !== TYPING_INDICATOR_ID));
       setMessages(prev => [...prev, assistantMessage]);
 
-      const characterVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
+      const characterVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
       if (selectedVoice && voicePreference === characterVoicePref && !isSpeaking && !isPaused) {
         currentSpokenMessageRef.current = assistantMessage.content;
         speak(assistantMessage.content);
@@ -171,14 +171,14 @@ export default function ChatbotPage() {
     }
     if (!textToPlay) return;
 
-    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'kai' : 'zia';
+    const characterExpectedVoicePref = selectedCharacter === 'gojo' ? 'gojo' : 'holo';
     if (voicePreference !== characterExpectedVoicePref) {
         setVoicePreference(characterExpectedVoicePref);
         setTimeout(() => {
             if (selectedVoice && !isSpeaking && !isPaused) speak(textToPlay!);
             else if (isSpeaking && !isPaused) pauseTTS();
             else if (isPaused) resumeTTS();
-        }, 100);
+        }, 150); // Add delay to ensure voice switch
         return;
     }
 
