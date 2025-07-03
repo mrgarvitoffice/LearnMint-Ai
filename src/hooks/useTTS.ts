@@ -1,7 +1,8 @@
+
 "use client"; // This hook is client-side only due to browser's SpeechSynthesis API.
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useSettings } from '@/contexts/SettingsContext';
 
 /**
@@ -43,7 +44,7 @@ export function useTTS(): TTSHook {
   const [supportedVoices, setSupportedVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [voicePreference, setVoicePreference] = useState<'zia' | 'kai' | null>(null);
-  const isMobile = useIsMobile(); // Detect mobile environment
+  const isMobile = useIsMobile();
   const { isMuted } = useSettings();
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -85,67 +86,72 @@ export function useTTS(): TTSHook {
     utteranceRef.current = newUtterance;
 
     let voiceForUtterance: SpeechSynthesisVoice | null = null;
-    let langForUtterance: string | undefined = lang;
-
-    if (langForUtterance && supportedVoices.length > 0) {
-        const langBase = langForUtterance.split('-')[0].toLowerCase();
-        const langFull = langForUtterance.toLowerCase();
-
-        const findBestMatchForLang = (targetLang: string, baseLang: string) => {
-          return (
-            supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.localService && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.localService) ||
-            supportedVoices.find(v => v.lang.toLowerCase() === targetLang && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase() === targetLang) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.localService && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.localService) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-") && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith(baseLang + "-"))
-          );
-        };
+    
+    // --- Start of New Voice Selection Logic ---
+    if (supportedVoices.length > 0) {
+        let potentialVoices = supportedVoices;
+        // 1. Filter by language if provided
+        if (lang) {
+            const langBase = lang.split('-')[0].toLowerCase();
+            const langFull = lang.toLowerCase();
+            const langFiltered = supportedVoices.filter(v => 
+                v.lang.toLowerCase() === langFull || v.lang.toLowerCase().startsWith(langBase + '-')
+            );
+            if (langFiltered.length > 0) {
+                potentialVoices = langFiltered;
+            }
+        }
         
-        const specificLangVoice = findBestMatchForLang(langFull, langBase);
-        
-        if (specificLangVoice) {
-            voiceForUtterance = specificLangVoice;
-            langForUtterance = specificLangVoice.lang; 
-        } else if (selectedVoice && selectedVoice.lang.toLowerCase().startsWith(langBase)) {
-            voiceForUtterance = selectedVoice;
-            langForUtterance = selectedVoice.lang;
-        } else {
-            // Content lang specified, but no matching voice AND UI selected voice is for a different base lang.
-            // Let browser pick default for langForUtterance.
+        // 2. From the potential voices (either all or language-filtered), try to match gender preference
+        let preferredVoices: SpeechSynthesisVoice[] = [];
+        if (voicePreference === 'kai') { // Male preference
+            preferredVoices = potentialVoices.filter(v => 
+                MALE_INDICATOR_KEYWORDS.some(kw => v.name.toLowerCase().includes(kw))
+            );
+        } else if (voicePreference === 'zia') { // Female preference
+            preferredVoices = potentialVoices.filter(v => 
+                FEMALE_INDICATOR_KEYWORDS.some(kw => v.name.toLowerCase().includes(kw))
+            );
         }
 
-    } else if (selectedVoice) { // No specific lang for content, use UI preference
-        voiceForUtterance = selectedVoice;
-        langForUtterance = selectedVoice.lang;
-    } else { // No content lang, no UI preference, try general fallback for English
-        langForUtterance = langForUtterance || 'en-US'; // Default to en-US if no lang at all
-        voiceForUtterance =
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith('en-us') && v.localService && v.default) ||
-            supportedVoices.find(v => v.lang.toLowerCase().startsWith('en') && v.localService && v.default) ||
-            supportedVoices.find(v => v.default && v.lang.toLowerCase().startsWith('en'));
+        // 3. Select the best voice from the preferred list, or fallback to the potential list
+        const findBest = (voices: SpeechSynthesisVoice[]) => 
+            voices.find(v => v.localService && v.default) ||
+            voices.find(v => v.localService) ||
+            voices.find(v => v.default) ||
+            voices[0];
+
+        voiceForUtterance = findBest(preferredVoices) || findBest(potentialVoices);
     }
 
-    if (voiceForUtterance) newUtterance.voice = voiceForUtterance;
-    if (langForUtterance) newUtterance.lang = langForUtterance;
+    // 4. Fallback to the globally selected voice if no specific match was found
+    if (!voiceForUtterance) {
+        voiceForUtterance = selectedVoice;
+    }
+    // --- End of New Voice Selection Logic ---
+
+    if (voiceForUtterance) {
+        newUtterance.voice = voiceForUtterance;
+        newUtterance.lang = voiceForUtterance.lang;
+    } else if (lang) {
+        newUtterance.lang = lang; // Let browser pick if no voice object found
+    }
     
     newUtterance.volume = 1.0;
     
     // Custom voice profiles for pitch
-    if (voicePreference === 'kai') { // Gojo's voice profile
-      newUtterance.pitch = 0.95; // Slightly lower for a calmer, more confident tone
-    } else if (voicePreference === 'zia') { // Holo's voice profile
-      newUtterance.pitch = 1.05; // +5% pitch for a lighter, graceful femininity
+    if (voicePreference === 'kai') {
+      newUtterance.pitch = 0.95;
+    } else if (voicePreference === 'zia') {
+      newUtterance.pitch = 1.05;
     } else {
-      newUtterance.pitch = 1.0; // Default pitch
+      newUtterance.pitch = 1.0;
     }
 
     // Custom voice profiles for rate
-    if (voicePreference === 'zia') { // Holo's rate
-      newUtterance.rate = 0.9; // Slower, thoughtful pace
-    } else { // Default rate logic (for Gojo and others)
+    if (voicePreference === 'zia') {
+      newUtterance.rate = 0.9;
+    } else {
       const isCurrentUtteranceEnglish = newUtterance.lang && newUtterance.lang.toLowerCase().startsWith('en');
       if (isMobile) {
         newUtterance.rate = isCurrentUtteranceEnglish ? 1.0 : 0.9;
@@ -176,7 +182,7 @@ export function useTTS(): TTSHook {
     newUtterance.onresume = () => { if (utteranceRef.current === newUtterance) setIsPaused(false); };
 
     window.speechSynthesis.speak(newUtterance);
-  }, [selectedVoice, supportedVoices, cancelTTS, isMobile, isMuted, voicePreference]); // Added voicePreference
+  }, [selectedVoice, supportedVoices, cancelTTS, isMobile, isMuted, voicePreference]);
 
 
   const speak = useCallback((text: string, lang?: string, onEndCallback?: () => void) => {
