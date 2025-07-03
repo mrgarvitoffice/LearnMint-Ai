@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/icons/Logo';
 import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, ShieldQuestion, Settings, LogIn, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
-import { APP_NAME, TTS_LANGUAGES } from '@/lib/constants';
+import { APP_NAME, VOICE_LANGUAGES } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '../ui/sidebar';
@@ -26,10 +26,8 @@ export function Header() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { soundMode, setSoundMode, fontSize, setFontSize, language, setLanguage } = useSettings();
-  const { state: sidebarState, toggleSidebar } = useSidebar();
-  const isExpanded = sidebarState === 'expanded';
-
+  const { soundMode, setSoundMode, fontSize, setFontSize, voiceLanguage, setVoiceLanguage } = useSettings();
+  
   const handleSignOut = async () => {
     playClickSound();
     try {
@@ -64,7 +62,7 @@ export function Header() {
 
   const handleLanguageChange = (value: string) => {
     playClickSound();
-    setLanguage(value);
+    setVoiceLanguage(value);
   };
 
   const getUserFirstName = () => {
@@ -117,11 +115,11 @@ export function Header() {
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           <Languages className="mr-2 h-4 w-4" />
-          <span>Language</span>
+          <span>Voice Language</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
-            {TTS_LANGUAGES.map(lang => (
+          <DropdownMenuRadioGroup value={voiceLanguage} onValueChange={handleLanguageChange}>
+            {VOICE_LANGUAGES.map(lang => (
               <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -146,25 +144,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-      <div className="flex items-center gap-4">
-        {/* Sidebar Toggle for Desktop */}
-        <div className="hidden md:block">
-           <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-              {isExpanded ? <PanelLeftClose className="h-5 w-5"/> : <PanelLeftOpen className="h-5 w-5"/>}
-              <span className="sr-only">Toggle Sidebar</span>
-           </Button>
-        </div>
-        
-        {/* Mobile Logo/Brand link */}
-         <Link href="/" className="flex items-center gap-2 font-semibold text-lg md:hidden" onClick={() => playClickSound()}>
-          <Logo size={28} />
-          <span className="hidden sm:inline-block">{APP_NAME}</span>
+      <div className="hidden md:flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={() => playClickSound()}>
+            <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Logo size={32} />
+            </motion.div>
+            <span className="font-bold text-xl text-foreground whitespace-nowrap">
+              {APP_NAME}
+            </span>
         </Link>
       </div>
 
+      {/* This div pushes the other items to the right */}
       <div className="flex-1" />
 
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Desktop Settings Button */}
         <div className="hidden md:flex items-center gap-1.5">
             <TooltipProvider>
               <Tooltip>
@@ -185,7 +180,7 @@ export function Header() {
             </TooltipProvider>
         </div>
         
-        {/* Settings button on mobile */}
+        {/* Mobile Settings Button */}
         <div className="md:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

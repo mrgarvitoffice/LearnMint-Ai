@@ -22,8 +22,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (isMobile) {
     return (
       <div className="flex min-h-screen w-full flex-col">
-        <Header />
-        <TopMobileNav />
+        {/* Header is rendered inside TopMobileNav for mobile */}
+        <TopMobileNav /> 
         <main className="flex-1 overflow-y-auto p-4 pt-20 pb-20">
           {children}
         </main>

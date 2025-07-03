@@ -76,7 +76,7 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
 export const APP_NAME = "LearnMint";
 
 // --- TTS Languages (for Settings) ---
-export const TTS_LANGUAGES: { value: string; label: string; }[] = [
+export const VOICE_LANGUAGES: { value: string; label: string; }[] = [
   { value: "en-US", label: "English (US)" },
   { value: "en-GB", label: "English (UK)" },
   { value: "es-ES", label: "Spanish (Spain)" },
