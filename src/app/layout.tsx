@@ -4,7 +4,7 @@
 // It sets up global styles, fonts, theme provider, query provider, authentication provider, and toaster.
 
 import type { Metadata, Viewport } from 'next'; // Type for page metadata
-import { Space_Grotesk } from 'next/font/google'; // Switched to Space Grotesk font
+import { Orbitron } from 'next/font/google'; // Switched to Orbitron font
 import './globals.css'; // Global stylesheet
 import { AppProviders } from '@/components/providers/AppProviders'; // Context providers (Theme, Query)
 import { Toaster } from "@/components/ui/toaster"; // Component for displaying toast notifications
@@ -12,9 +12,9 @@ import { TopProgressBar } from '@/components/layout/TopProgressBar'; // Visual l
 import { Suspense } from 'react'; // React Suspense for handling loading states
 import { AuthProvider } from '@/contexts/AuthContext'; // Authentication context provider
 
-// Initialize Space Grotesk font with variable for Tailwind CSS
-const spaceGrotesk = Space_Grotesk({
-  variable: '--font-space-grotesk',
+// Initialize Orbitron font with variable for Tailwind CSS
+const orbitron = Orbitron({
+  variable: '--font-orbitron',
   subsets: ['latin'],
   weight: ['400', '600', '700'],
 });
@@ -64,7 +64,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       {/* No explicit <head> tag here; Next.js manages it via the metadata object. */}
-      <body className={`${spaceGrotesk.variable} font-sans antialiased`}>
+      <body className={`${orbitron.variable} font-sans antialiased`}>
         {/* AppProviders wraps children with ThemeProvider and QueryClientProvider */}
         <AppProviders>
           {/* AuthProvider manages user authentication state */}

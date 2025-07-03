@@ -2,6 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useSound } from '@/hooks/useSound';
 
 export type SoundMode = 'full' | 'essential' | 'muted';
 export type FontSize = 'small' | 'normal' | 'large';
@@ -9,16 +10,16 @@ export type FontSize = 'small' | 'normal' | 'large';
 interface SettingsContextType {
   soundMode: SoundMode;
   cycleSoundMode: () => void;
-  fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
-  language: string;
   setLanguage: (lang: string) => void;
+  fontSize: FontSize;
+  language: string;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [soundMode, setSoundMode] = useState<SoundMode>('essential');
+  const [soundMode, setSoundMode] = useState<SoundMode>('essential'); // Default to essential
   const [fontSize, setFontSize] = useState<FontSize>('normal');
   const [language, setLanguage] = useState<string>('en-US');
 
@@ -59,8 +60,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setLanguage(lang);
   }, []);
 
+  const providerValue = {
+    soundMode,
+    cycleSoundMode,
+    fontSize,
+    setFontSize: handleSetFontSize,
+    language,
+    setLanguage: handleSetLanguage,
+  };
+
   return (
-    <SettingsContext.Provider value={{ soundMode, cycleSoundMode, fontSize, setFontSize: handleSetFontSize, language, setLanguage: handleSetLanguage }}>
+    <SettingsContext.Provider value={providerValue}>
       {children}
     </SettingsContext.Provider>
   );

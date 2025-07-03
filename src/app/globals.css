@@ -137,7 +137,7 @@
   body {
     @apply text-foreground;
     @apply min-h-screen flex flex-col;
-    font-family: var(--font-space-grotesk), sans-serif;
+    font-family: var(--font-orbitron), sans-serif;
     font-weight: 400;
     letter-spacing: 0.3px;
 

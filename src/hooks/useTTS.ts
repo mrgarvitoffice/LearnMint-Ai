@@ -106,7 +106,7 @@ export function useTTS(): TTSHook {
     if (soundMode === 'essential' && priority !== 'essential') return;
     
     cancelTTS(); // Cancel any ongoing speech before starting a new one
-    const currentRequestId = activeRequestIdRef.current;
+    const currentRequestId = activeRequestIdRef.current += 1;
     
     setIsSpeaking(true);
     setIsPaused(false);
