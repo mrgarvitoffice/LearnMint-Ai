@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -61,9 +62,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
 
   const handlePlaybackControl = useCallback(() => {
     playClickSound();
-    if (soundMode !== 'full') {
-        toast({ title: "Sound Mode", description: "Set sound mode to 'Full' in settings to enable this feature." });
-        return;
+    if (soundMode === 'full') {
+        toast({ title: "Sound Mode Info", description: "This is a manual action, so it works in Essential and Muted modes too." });
     }
     if (!cleanedNotesForTTS) {
         toast({title: "No Content", description: "Nothing to speak.", variant: "destructive"});
@@ -71,7 +71,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     }
     if (isSpeaking && !isPaused) pauseTTS();
     else if (isPaused) resumeTTS();
-    else speak(cleanedNotesForTTS);
+    else speak(cleanedNotesForTTS, { priority: 'essential' });
   }, [playClickSound, soundMode, cleanedNotesForTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, speak, toast]);
 
   const handleStopTTS = useCallback(() => {
@@ -168,8 +168,8 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
             Notes: {topic}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"} disabled={soundMode !== 'full'}>
-              {soundMode !== 'full' ? <VolumeX className="h-4 w-4" /> : (isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />)}
+            <Button onClick={handlePlaybackControl} variant="outline" size="icon" className="h-8 w-8" title={isSpeaking && !isPaused ? "Pause Notes" : isPaused ? "Resume Notes" : "Speak Notes"}>
+              {isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
             </Button>
             <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-8 w-8" title="Stop Speaking" disabled={!isSpeaking && !isPaused}>
               <StopCircle className="h-4 w-4" />

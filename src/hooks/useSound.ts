@@ -51,10 +51,12 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
   }, [soundPathOrType, defaultVolume]);
 
   const playSound = useCallback(() => {
-    if (soundMode === 'muted' || (soundMode === 'essential' && soundPathOrType !== '/sounds/ting.mp3')) {
+    // In muted mode, no incidental sounds should play.
+    if (soundMode === 'muted') {
         return;
     }
-
+    
+    // In 'full' or 'essential' mode, sounds are allowed.
     if (hasLoadError || !audioRef.current) {
       return;
     }

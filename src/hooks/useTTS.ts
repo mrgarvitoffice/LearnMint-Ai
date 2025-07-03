@@ -139,8 +139,14 @@ export function useTTS(): TTSHook {
   const speak = useCallback((text: string, options: SpeakOptions = {}) => {
     const { priority = 'optional' } = options;
 
-    if (soundMode === 'muted' || !text.trim()) return;
-    if (soundMode === 'essential' && priority !== 'essential') return;
+    if (!text.trim()) return;
+    
+    // In 'Full' mode, all sounds play.
+    // In 'Essential' mode, only essential (manual) sounds play.
+    // In 'Muted' mode, only essential (manual) sounds play.
+    if (priority === 'optional' && (soundMode === 'essential' || soundMode === 'muted')) {
+      return;
+    }
     
     cancelTTS();
     const currentRequestId = activeRequestIdRef.current += 1;

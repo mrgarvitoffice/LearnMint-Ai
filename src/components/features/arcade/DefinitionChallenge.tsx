@@ -84,9 +84,9 @@ export function DefinitionChallenge() {
       setGameOver(true);
       const finalMessage = `Game Over! You completed all words. Your final streak: ${streak}. High Score: ${highScore}`;
       setFeedback(finalMessage);
-      if (!isSpeaking && !isPaused) speak(finalMessage);
+      speak(finalMessage, { priority: 'essential' });
     }
-  }, [currentWordIndex, words.length, streak, highScore, isSpeaking, isPaused, speak]);
+  }, [currentWordIndex, words.length, streak, highScore, speak]);
 
   const handleGuessSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -103,20 +103,20 @@ export function DefinitionChallenge() {
         localStorage.setItem('learnmint-dc-highscore', newStreak.toString());
       }
       playCorrectSound();
-      if (!isSpeaking && !isPaused) speak("Correct!");
+      speak("Correct!", { priority: 'essential' });
       setTimeout(nextWord, 1500);
     } else {
       const newMistakes = mistakesMadeThisWord + 1;
       setMistakesMadeThisWord(newMistakes);
       setStreak(0);
       playIncorrectSound();
-      if (!isSpeaking && !isPaused) speak("Incorrect.");
+      speak("Incorrect.", { priority: 'essential' });
 
       if (newMistakes >= 3) {
         const failMsg = `Oops! The correct answer was: ${currentWord.term}`;
         setFeedback(failMsg);
         setWordFailedMessage(`The word was: ${currentWord.term}.`);
-        if (!isSpeaking && !isPaused) speak(`The correct word was ${currentWord.term}.`);
+        speak(`The correct word was ${currentWord.term}.`, { priority: 'essential' });
         setIsCorrect(false); 
         setTimeout(nextWord, 2500); 
       } else {
@@ -124,13 +124,14 @@ export function DefinitionChallenge() {
         setIsCorrect(false);
       }
     }
-  }, [playClickSound, currentWord, gameOver, isCorrect, guess, streak, highScore, mistakesMadeThisWord, nextWord, playCorrectSound, playIncorrectSound, speak, isSpeaking, isPaused]);
+  }, [playClickSound, currentWord, gameOver, isCorrect, guess, streak, highScore, mistakesMadeThisWord, nextWord, playCorrectSound, playIncorrectSound, speak]);
 
   const handleUseHint = () => {
     playClickSound();
     if (!currentWord || hintsUsed >= 3 || gameOver || isCorrect === true) return; 
     setShowHint(true);
     const newHintsUsed = hintsUsed + 1;
+    setHintsUsed(newHintsUsed);
     let hintText = "";
     if (newHintsUsed === 1) {
       hintText = `Hint: ${currentWord.hint}`;
@@ -141,14 +142,14 @@ export function DefinitionChallenge() {
       hintText = `Hint: Starts with "${currentWord.term.substring(0, lettersToShow)}..."`;
     }
     setFeedback(hintText);
-    if (!isSpeaking && !isPaused) speak(hintText);
+    speak(hintText, { priority: 'essential' });
   };
 
   const handleResetGameAndStreak = () => {
     playClickSound();
     setStreak(0); 
     initializeGame();
-    if (!isSpeaking && !isPaused) speak("New game started.");
+    speak("New game started.", { priority: 'essential' });
   }
   
   if (!currentWord && !gameOver) {

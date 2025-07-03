@@ -135,7 +135,7 @@ export default function NewsPage() {
   const readAllHeadlines = useCallback(() => {
     const headlines = articles.map(a => a.title).filter(Boolean).join('. ');
     if (headlines) {
-        speak(headlines);
+        speak(headlines, { priority: 'essential' });
     } else {
         toast({ title: "No Headlines", description: "No news headlines available to read." });
     }
@@ -143,9 +143,8 @@ export default function NewsPage() {
 
   const handlePlaybackControl = () => {
     playActionSound();
-    if (soundMode !== 'full') {
-        toast({ title: "Full Sound Muted", description: "Please enable full sound in settings to use this feature." });
-        return;
+    if (soundMode === 'full') {
+        toast({ title: "Full Sound Muted", description: "This is a manual action, so it works in Essential and Muted modes too." });
     }
     if (isSpeaking && !isPaused) {
         pauseTTS();
@@ -183,8 +182,8 @@ export default function NewsPage() {
         </CardHeader>
         <CardContent className="pt-0 pb-4">
           <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-2 border-t border-b py-3 border-border/50">
-              <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText} disabled={soundMode !== 'full'}>
-                  {soundMode !== 'full' ? <VolumeX className="h-4 w-4 mr-2" /> : playbackButtonIcon} {soundMode === 'full' ? playbackButtonText : "Enable Full Sound"}
+              <Button onClick={handlePlaybackControl} variant="outline" className="h-9 w-full sm:w-auto" title={playbackButtonText}>
+                  {playbackButtonIcon} {playbackButtonText}
               </Button>
               <Button onClick={handleStopTTS} variant="outline" size="icon" className="h-9 w-9" title="Stop Reading" disabled={!isSpeaking && !isPaused}>
                 <StopCircle className="h-5 w-5" />
