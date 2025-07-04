@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext'; // Custom hook to access authentication state
 import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, Sidebar)
 import { Loader2 } from 'lucide-react'; // Loading spinner icon
@@ -24,15 +24,16 @@ interface MainAppLayoutProps {
 export default function MainAppLayout({ children }: MainAppLayoutProps) {
   const { user, loading } = useAuth(); // Get user and loading state from AuthContext
   const pathname = usePathname();
+  const router = useRouter(); // Get router instance for smoother navigation
 
   // Effect to handle redirection based on authentication state
   useEffect(() => {
     // If authentication check is complete (not loading) and there's no user, redirect
     if (!loading && !user) {
-      // Use replace instead of push to prevent the user from navigating back to the protected page.
-      window.location.replace('/sign-in'); 
+      // Use router.replace for a client-side navigation without a full page reload.
+      router.replace('/sign-in'); 
     }
-  }, [user, loading]); // Dependencies for the effect
+  }, [user, loading, router]); // Dependencies for the effect
 
   // The primary loading screen is handled by AuthProvider. This guard handles the transition state
   // and ensures no content is rendered until the user session is fully verified.

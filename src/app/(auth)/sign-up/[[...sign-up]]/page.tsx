@@ -28,7 +28,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/');
+      router.replace('/');
     }
   }, [user, loading, router]);
 
@@ -60,7 +60,7 @@ export default function SignUpPage() {
       await createUserWithEmailAndPassword(auth, email, password);
       await updateUserCount();
       toast({ title: 'Account Created!', description: 'You have successfully signed up.' });
-      // Redirection is now handled by the useEffect hook watching the user state.
+      router.push('/');
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/email-already-in-use') {
@@ -87,9 +87,9 @@ export default function SignUpPage() {
         await updateUserCount();
       }
       toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
-      // Redirection is now handled by the useEffect hook watching the user state.
-    } catch (err: any) {
-      let description = 'An unknown error occurred. Please try again.';
+      router.push('/');
+    } catch (err: any)
+       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
         description = 'Your browser blocked the sign-in pop-up. Please allow pop-ups for this site and try again.';
       } else if (err.code === 'auth/popup-closed-by-user') {
@@ -106,7 +106,7 @@ export default function SignUpPage() {
     }
   };
 
-  if (loading || user) {
+  if (loading || (!loading && user)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
