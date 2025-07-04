@@ -11,7 +11,6 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { useSidebar } from '../ui/sidebar';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Logo } from '../icons/Logo';
-import { SidebarFooter } from './SidebarFooter';
 
 const navItemVariants = {
   expanded: { opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } },
@@ -67,7 +66,7 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
 }
 
 export function DesktopSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
 
@@ -76,21 +75,18 @@ export function DesktopSidebar() {
       initial={false}
       animate={{ width: isExpanded ? 256 : 80 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className="fixed top-0 left-0 z-50 h-full border-r bg-background/80 backdrop-blur-md flex-col hidden md:flex"
+      className="fixed top-0 left-0 z-50 h-full border-r bg-background/80 backdrop-blur-md flex-col hidden md:flex overflow-x-hidden"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
     >
       <div className="flex h-16 items-center shrink-0 px-4 border-b">
-         <Link href="/" className={cn("flex items-center gap-2.5 font-semibold", isExpanded ? 'justify-start w-full pl-1' : 'justify-center w-full')}>
+         <Link href="/" className={cn("flex items-center gap-2.5 font-semibold w-full justify-start pl-1")}>
             <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
                 <Logo size={32} />
             </motion.div>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isExpanded ? 1 : 0 }}
-              transition={{ delay: isExpanded ? 0.1 : 0, duration: 0.2 }}
-              className={cn("font-bold text-xl text-foreground whitespace-nowrap", !isExpanded && "sr-only")}
-            >
+            <span className={cn("font-bold text-xl text-foreground whitespace-nowrap")}>
               LearnMint
-            </motion.span>
+            </span>
         </Link>
       </div>
 
@@ -102,8 +98,8 @@ export function DesktopSidebar() {
         </nav>
       </ScrollArea>
       
-      <div className="mt-auto p-2 border-t border-border/20">
-        <SidebarFooter isExpanded={isExpanded} />
+      <div className="mt-auto p-2 border-t border-border/20 h-[52px]">
+        {/* This space is reserved for the removed toggle button */}
       </div>
     </motion.aside>
   );

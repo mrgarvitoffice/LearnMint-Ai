@@ -24,10 +24,9 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
-import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, User, LogOut, Loader2, Settings, ChevronsRightLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, User, LogOut, Loader2, Settings } from 'lucide-react';
 import { APP_LANGUAGES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useSidebar } from '@/components/ui/sidebar';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -67,12 +66,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-       <Button variant="ghost" size="icon" onClick={onSidebarToggle}>
-        {sidebarState === 'expanded' ? <PanelLeftClose className="h-5 w-5"/> : <PanelLeftOpen className="h-5 w-5"/>}
-        <span className="sr-only">Toggle Sidebar</span>
-       </Button>
-       
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-end gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
        <div className="flex items-center gap-4">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />

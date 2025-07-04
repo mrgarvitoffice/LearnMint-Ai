@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -42,16 +41,17 @@ const SidebarProvider = React.forwardRef<
         : setOpen((current) => !current)
     }, [isMobile])
 
-    React.useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === "b" && (event.metaKey || event.ctrlKey)) {
-          event.preventDefault()
-          toggleSidebar()
-        }
-      }
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar])
+    // Keyboard shortcut is removed as sidebar is now hover-based.
+    // React.useEffect(() => {
+    //   const handleKeyDown = (event: KeyboardEvent) => {
+    //     if (event.key === "b" && (event.metaKey || event.ctrlKey)) {
+    //       event.preventDefault()
+    //       toggleSidebar()
+    //     }
+    //   }
+    //   window.addEventListener("keydown", handleKeyDown)
+    //   return () => window.removeEventListener("keydown", handleKeyDown)
+    // }, [toggleSidebar])
 
     const state = open ? "expanded" : "collapsed"
 
