@@ -135,12 +135,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchLearnerCount = async () => {
-            if (user?.isAnonymous) {
-                setTotalLearners(null);
-                setLoadingLearners(false);
-                return;
-            }
-            
             setLoadingLearners(true);
             try {
                 const docRef = doc(db, "metadata", "userCount");
@@ -159,7 +153,7 @@ export default function DashboardPage() {
             }
         };
 
-        if (user) {
+        if (user && !user.isAnonymous) {
              fetchLearnerCount();
         } else {
              setLoadingLearners(false);
@@ -211,20 +205,41 @@ export default function DashboardPage() {
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
                         
-                        {loadingLearners ? (
-                             <div className="mt-3 h-6 flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-                        ) : totalLearners !== null ? (
-                            <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105">
-                               <Users className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
-                               <span className="font-semibold text-primary group-hover:text-primary/90 transition-colors">
-                                   {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
-                               </span>
-                            </div>
-                        ) : (
-                           <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-muted-foreground">
-                               {t('dashboard.totalLearnersGuestMessage')}
-                           </div>
-                        )}
+                        {(() => {
+                            if (!user || user.isAnonymous) {
+                                return (
+                                    <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-muted-foreground">
+                                        {t('dashboard.totalLearnersGuestMessage')}
+                                    </div>
+                                );
+                            }
+    
+                            if (loadingLearners) {
+                                return (
+                                    <div className="mt-3 h-6 flex justify-center items-center gap-2">
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                    </div>
+                                );
+                            }
+                            
+                            if (totalLearners !== null) {
+                                return (
+                                     <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105">
+                                        <Users className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
+                                        <span className="font-semibold text-primary group-hover:text-primary/90 transition-colors">
+                                            {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
+                                        </span>
+                                     </div>
+                                );
+                            }
+    
+                            // This case handles signed-in users where the fetch failed.
+                            return (
+                                <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-destructive">
+                                    Could not load learner count.
+                                </div>
+                            );
+                        })()}
 
                     </CardHeader>
                 </Card>
