@@ -104,7 +104,7 @@ function StudyPageContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current && activeTopic) {
-        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'essential' });
+        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);

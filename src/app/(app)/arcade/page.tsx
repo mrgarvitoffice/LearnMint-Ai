@@ -23,7 +23,7 @@ export default function ArcadePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE, { priority: 'essential' });
+        speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);

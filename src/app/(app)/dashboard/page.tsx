@@ -81,7 +81,6 @@ const DailyQuestItem = ({ isCompleted, text }: { isCompleted: boolean; text: str
 export default function DashboardPage() {
     const { t, isReady } = useTranslation();
     const { speak, setVoicePreference } = useTTS();
-    const { soundMode } = useSettings();
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
     const router = useRouter();
     const { quests } = useQuests();
@@ -145,15 +144,15 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
   
     useEffect(() => {
-        if (soundMode !== 'muted' && isReady && !pageTitleSpokenRef.current) {
+        if (isReady && !pageTitleSpokenRef.current) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
-                speak(PAGE_TITLE, { priority: 'essential' });
+                speak(PAGE_TITLE, { priority: 'optional' });
                 pageTitleSpokenRef.current = true;
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [speak, soundMode, t, isReady]);
+    }, [speak, t, isReady]);
 
     const handleRecentTopicClick = (topic: string) => {
         playClickSound();

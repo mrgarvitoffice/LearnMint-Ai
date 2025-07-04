@@ -188,13 +188,13 @@ export default function CustomTestPage() {
   
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!pageTitleSpokenRef.current && !testState && !isLoading && soundMode !== 'muted') {
-        speak(PAGE_TITLE, { priority: 'essential' });
+      if (!pageTitleSpokenRef.current && !testState && !isLoading) {
+        speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [speak, testState, isLoading, soundMode]);
+  }, [speak, testState, isLoading]);
 
   useEffect(() => { if (isLoading) speak("Creating custom test. Please wait.", { priority: 'essential' }); }, [isLoading, speak]);
 
