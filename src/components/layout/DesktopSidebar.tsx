@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -84,9 +85,14 @@ export function DesktopSidebar() {
             <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
                 <Logo size={32} />
             </motion.div>
-            <span className={cn("font-bold text-xl text-foreground whitespace-nowrap")}>
+             <motion.span
+                variants={navItemVariants}
+                animate={isExpanded ? "expanded" : "collapsed"}
+                initial="collapsed"
+                className={cn("font-bold text-xl text-foreground whitespace-nowrap")}
+            >
               LearnMint
-            </span>
+            </motion.span>
         </Link>
       </div>
 
@@ -99,7 +105,7 @@ export function DesktopSidebar() {
       </ScrollArea>
       
       <div className="mt-auto p-2 border-t border-border/20 h-[52px]">
-        {/* This space is reserved for the removed toggle button */}
+        {/* This space is reserved for UI elements if needed in the future */}
       </div>
     </motion.aside>
   );
