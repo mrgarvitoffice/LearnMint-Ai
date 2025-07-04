@@ -25,41 +25,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // This function handles the result of a redirect sign-in attempt.
-    // It runs once when the app loads after a user is redirected back from Google.
+    // This effect runs once on mount to handle both the redirect result
+    // and set up the permanent auth state listener.
+
+    // First, process any pending redirect result.
+    // This is for displaying toasts and tracking new user sign-ups.
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
           // User has just successfully signed in or signed up via redirect.
-          const additionalUserInfo = getAdditionalUserInfo(result);
-          if (additionalUserInfo?.isNewUser) {
-            toast({ title: 'Account Created!', description: 'Welcome to LearnMint! Redirecting...' });
+          const isNewUser = getAdditionalUserInfo(result)?.isNewUser;
+          if (isNewUser) {
+            toast({ title: 'Account Created!', description: 'Welcome to LearnMint! You are now being redirected.' });
             await updateUserCountOnSignup();
           } else {
             toast({ title: 'Signed In', description: 'Welcome back! Redirecting...' });
           }
-          // The onAuthStateChanged listener below will handle the actual state update.
         }
       })
       .catch((error) => {
         console.error("Error during sign-in redirect result processing:", error);
-        toast({
-          title: 'Sign In Failed',
-          description: error.message || 'An error occurred during the sign-in redirect.',
-          variant: 'destructive'
-        });
+        // Don't show a toast for common 'user cancelled' scenarios
+        if (error.code !== 'auth/cancelled-popup-request') {
+           toast({
+             title: 'Sign In Failed',
+             description: error.message || 'An error occurred during the sign-in redirect.',
+             variant: 'destructive'
+           });
+        }
       });
 
-    // This onAuthStateChanged listener is the single source of truth for the user's session state.
+    // The onAuthStateChanged listener is the single source of truth for the user's session state.
     // It will fire after a redirect is processed, after a normal email sign-in, or on initial page load.
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [toast]); // Added toast to dependency array
+    return () => unsubscribe(); // Cleanup the listener on unmount
+  }, [toast]);
 
+  // While the initial user state is being determined, show a loading screen.
+  // This prevents content flashing and ensures layouts don't redirect prematurely.
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">

@@ -17,8 +17,6 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -28,7 +26,7 @@ export default function SignInPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Signed In', description: 'Welcome back! Redirecting...' });
-      // Redirection is handled by the AuthLayout guard.
+      // Redirection is now handled by the AuthLayout and AuthProvider.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -46,43 +44,29 @@ export default function SignInPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
+    setIsLoading(true);
     setError(null);
     try {
-      // Switched to signInWithRedirect for better reliability
       await signInWithRedirect(auth, googleProvider);
-      // The browser will redirect, and the result will be handled by the AuthProvider.
+      // The browser will redirect. The result is handled by AuthProvider.
     } catch (err: any) {
-      let description = 'An unknown error occurred. Please try again.';
-       if (err.code === 'auth/operation-not-allowed') {
-        description = 'Google Sign-in is not enabled for this project. Please contact support.';
-      } else if (err.code === 'auth/account-exists-with-different-credential') {
-        description = 'An account with this email already exists with a different sign-in method. Please use the method you originally used.';
-      } else if (err.message) {
-        description = err.message;
-      }
-      setError(description);
-      toast({ title: 'Google Sign In Failed', description: description, variant: 'destructive', duration: 8000 });
-      setIsGoogleLoading(false); // Reset loading state only on immediate error
+      setError(err.message);
+      toast({ title: 'Google Sign In Failed', description: err.message, variant: 'destructive', duration: 8000 });
+      setIsLoading(false); // Only reset loading state on immediate error
     }
   };
 
   const handleGuestSignIn = async () => {
-    setIsGuestLoading(true);
+    setIsLoading(true);
     setError(null);
     try {
       await signInAnonymously(auth);
       toast({ title: 'Signed In as Guest', description: "Welcome! Some features may be limited for guest users." });
-      // Redirection is handled by the AuthLayout guard.
+      // Redirection is handled by the AuthLayout and AuthProvider.
     } catch (err: any) {
-      let description = 'An unknown error occurred while trying to sign in as a guest.';
-      if (err.message) {
-        description = err.message;
-      }
-      setError(description);
-      toast({ title: 'Guest Sign In Failed', description, variant: 'destructive' });
-    } finally {
-      setIsGuestLoading(false);
+      setError(err.message);
+      toast({ title: 'Guest Sign In Failed', description: err.message, variant: 'destructive' });
+      setIsLoading(false);
     }
   };
 
@@ -95,12 +79,12 @@ export default function SignInPage() {
       
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading || isGuestLoading}>
-            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
             Sign in with Google
           </Button>
-          <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={isLoading || isGoogleLoading || isGuestLoading}>
-              {isGuestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
+          <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
               Continue as Guest
           </Button>
         </div>
@@ -119,14 +103,14 @@ export default function SignInPage() {
         <form onSubmit={handleEmailSignIn} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading || isGoogleLoading || isGuestLoading} />
+            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading || isGoogleLoading || isGuestLoading} />
+            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} />
           </div>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading || isGuestLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
