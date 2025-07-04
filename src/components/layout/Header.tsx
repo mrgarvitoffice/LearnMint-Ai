@@ -10,6 +10,7 @@ import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
@@ -34,6 +35,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { soundMode, setSoundMode, fontSize, setFontSize, appLanguage, setAppLanguage } = useSettings();
+  const isMobile = useIsMobile();
   
   const handleSignOut = async () => {
     playClickSound();
@@ -88,7 +90,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           <Languages className="mr-2 h-4 w-4" />
           <span>{t('header.appLanguage')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
+        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
           <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
             {APP_LANGUAGES.map(lang => (
               <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
@@ -104,7 +106,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
           <span>{t('header.soundMode')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
+        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
           <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
             <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
@@ -118,7 +120,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           <CaseSensitive className="mr-2 h-4 w-4" />
           <span>{t('header.fontSize')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
+        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
           <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
             <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
@@ -132,7 +134,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
           <span>{t('header.theme')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
+        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
           <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
             <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
