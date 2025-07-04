@@ -49,7 +49,7 @@ const DropdownMenuSubContent = React.forwardRef<
     ref={ref}
     // Hardcoded props to force downward opening
     side="bottom"
-    align="end"
+    align="start"
     sideOffset={4}
     collisionPadding={10} // Ensures it stays in viewport
     className={cn(
