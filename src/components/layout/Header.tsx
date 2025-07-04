@@ -18,9 +18,12 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger, 
   DropdownMenuRadioGroup, 
-  DropdownMenuRadioItem 
+  DropdownMenuRadioItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, ChevronRight, LogOut, User, Loader2 } from 'lucide-react';
 import { APP_LANGUAGES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -67,83 +70,72 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
       <DropdownMenuLabel>{t('header.settings')}</DropdownMenuLabel>
       <DropdownMenuSeparator />
       
-      <Popover>
-        <PopoverTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="justify-between cursor-pointer">
-            <div className="flex items-center">
-              <Languages className="mr-2 h-4 w-4" />
-              <span>{t('header.appLanguage')}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 opacity-50" />
-          </DropdownMenuItem>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 p-1" side="bottom" align="end">
-          <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
-            {APP_LANGUAGES.map(lang => (
-              <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </PopoverContent>
-      </Popover>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Languages className="mr-2 h-4 w-4" />
+          <span>{t('header.appLanguage')}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
+              {APP_LANGUAGES.map(lang => (
+                <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuPortal>
+      </DropdownMenuSub>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="justify-between cursor-pointer">
-            <div className="flex items-center">
-              {soundMode === 'full' && <Volume2 className="mr-2 h-4 w-4" />}
-              {soundMode === 'essential' && <Volume1 className="mr-2 h-4 w-4" />}
-              {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
-              <span>{t('header.soundMode')}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 opacity-50" />
-          </DropdownMenuItem>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 p-1" side="bottom" align="end">
-          <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
-            <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="muted">Muted</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </PopoverContent>
-      </Popover>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          {soundMode === 'full' && <Volume2 className="mr-2 h-4 w-4" />}
+          {soundMode === 'essential' && <Volume1 className="mr-2 h-4 w-4" />}
+          {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
+          <span>{t('header.soundMode')}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
+              <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="muted">Muted</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuPortal>
+      </DropdownMenuSub>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="justify-between cursor-pointer">
-            <div className="flex items-center">
-              <CaseSensitive className="mr-2 h-4 w-4" />
-              <span>{t('header.fontSize')}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 opacity-50" />
-          </DropdownMenuItem>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 p-1" side="bottom" align="end">
-           <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
-            <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </PopoverContent>
-      </Popover>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <CaseSensitive className="mr-2 h-4 w-4" />
+          <span>{t('header.fontSize')}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+              <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuPortal>
+      </DropdownMenuSub>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="justify-between cursor-pointer">
-            <div className="flex items-center">
-              {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-              <span>{t('header.theme')}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 opacity-50" />
-          </DropdownMenuItem>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 p-1" side="bottom" align="end">
-          <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
-            <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </PopoverContent>
-      </Popover>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+          <span>{t('header.theme')}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
+              <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuPortal>
+      </DropdownMenuSub>
+
     </React.Fragment>
   );
 

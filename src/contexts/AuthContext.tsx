@@ -8,10 +8,12 @@ import {
   GoogleAuthProvider, 
   signOut, 
   signInAnonymously,
-  type User 
+  type User,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -31,51 +33,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleUser = async (rawUser: User | null) => {
-    if (rawUser) {
-      const userRef = doc(db, 'users', rawUser.uid);
-      const userDoc = await getDoc(userRef);
-      // Create user document only if it doesn't exist
-      if (!userDoc.exists() && !rawUser.isAnonymous) {
-        await setDoc(userRef, {
-          uid: rawUser.uid,
-          email: rawUser.email,
-          displayName: rawUser.displayName,
-          photoURL: rawUser.photoURL,
-          createdAt: new Date().toISOString(),
-        });
-      }
-      setUser(rawUser);
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, handleUser);
+    // This effect runs once on mount to check for a redirect result from Google.
+    // This is the crucial step to complete the signInWithRedirect flow.
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // This block runs when the user has successfully signed in with Google and is redirected back.
+          toast({ title: "Sign-in successful!", description: "Welcome to LearnMint." });
+          const userRef = doc(db, 'users', result.user.uid);
+          
+          // Check if it's a new user and create a document in Firestore.
+          getDoc(userRef).then(docSnap => {
+            if (!docSnap.exists()) {
+              setDoc(userRef, {
+                uid: result.user.uid,
+                email: result.user.email,
+                displayName: result.user.displayName,
+                photoURL: result.user.photoURL,
+                createdAt: serverTimestamp(), // Use server timestamp for accuracy
+              });
+            }
+          });
+        }
+        // If result is null, it means this was not a redirect sign-in, which is normal.
+      })
+      .catch((error) => {
+        console.error("Google Redirect Result Error:", error);
+        toast({ title: "Google Sign-in failed", description: "There was an issue completing your sign-in. Please try again.", variant: "destructive" });
+      });
+
+    // onAuthStateChanged is the primary listener for any auth changes.
+    // It will catch the user from the redirect, email sign-ins, sign-outs, and cached sessions.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Cleanup the listener on unmount
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
+
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the user state update and redirect
-      toast({ title: "Sign-in successful!", description: "Welcome to LearnMint." });
-    } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        console.error("Google Sign-In Error:", error);
-        toast({
-          title: "Google Sign-In Error",
-          description: "Could not sign in with Google. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
+    // Start the redirect process. The result is handled by getRedirectResult on page load.
+    await signInWithRedirect(auth, provider);
   };
 
   const signInAsGuest = async () => {
+    setLoading(true);
     try {
       await signInAnonymously(auth);
       toast({ title: "Signed in as Guest", description: "You can now explore the app." });
@@ -86,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Could not sign in as a guest. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
