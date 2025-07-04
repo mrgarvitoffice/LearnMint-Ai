@@ -136,31 +136,29 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchLearnerCount = async () => {
-            if (user && !user.isAnonymous) {
-                setLoadingLearners(true);
-                try {
-                    const docRef = doc(db, "metadata", "userCount");
-                    const docSnap = await getDoc(docRef);
+            setLoadingLearners(true);
+            try {
+                const docRef = doc(db, "metadata", "userCount");
+                const docSnap = await getDoc(docRef);
 
-                    if (docSnap.exists()) {
-                        setTotalLearners(docSnap.data().count);
-                    } else {
-                        console.warn("User count document does not exist in Firestore. Please create it at 'metadata/userCount' with a 'count' field of type number.");
-                        setTotalLearners(0);
-                    }
-                } catch (error) {
-                    console.error("Error fetching total learners (permissions error is likely):", error);
-                    setTotalLearners(null); 
-                } finally {
-                    setLoadingLearners(false);
+                if (docSnap.exists()) {
+                    setTotalLearners(docSnap.data().count);
+                } else {
+                    // If doc doesn't exist, show the initial base count of 21.
+                    setTotalLearners(21);
                 }
-            } else {
+            } catch (error) {
+                console.error("Error fetching total learners. Firestore rules may need adjustment for public read on 'metadata/userCount'.", error);
+                setTotalLearners(21); // Fallback to base count on error
+            } finally {
                 setLoadingLearners(false);
-                setTotalLearners(null);
             }
         };
 
-        fetchLearnerCount();
+        // Fetch count for all users, but only after auth state is known.
+        if (user !== undefined) {
+             fetchLearnerCount();
+        }
     }, [user]);
   
     useEffect(() => {
@@ -207,11 +205,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
                         
-                        {user?.isAnonymous ? (
-                             <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-muted-foreground">
-                                <span>Sign up to see community stats!</span>
-                            </div>
-                        ) : loadingLearners ? (
+                        {loadingLearners ? (
                              <div className="mt-3 h-6 flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                         ) : totalLearners !== null ? (
                             <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer">
@@ -221,7 +215,7 @@ export default function DashboardPage() {
                                </span>
                             </div>
                         ) : (
-                           <div className="h-6 mt-3" /> // Placeholder for error case to prevent layout shift
+                           <div className="h-6 mt-3" />
                         )}
 
                     </CardHeader>

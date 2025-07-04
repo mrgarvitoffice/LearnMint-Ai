@@ -3,8 +3,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase/config';
+import { createUserWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
+import { auth, googleProvider, db } from '@/lib/firebase/config';
+import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,21 @@ export default function SignUpPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const updateUserCount = async () => {
+    const userCountRef = doc(db, "metadata", "userCount");
+    try {
+        const docSnap = await getDoc(userCountRef);
+        if (docSnap.exists()) {
+            await updateDoc(userCountRef, { count: increment(1) });
+        } else {
+            await setDoc(userCountRef, { count: 21 });
+        }
+    } catch (e) {
+        console.error("Failed to update user count:", e);
+        // Do not block sign-up if this fails, just log it.
+    }
+  };
+
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -34,6 +50,7 @@ export default function SignUpPage() {
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
+      await updateUserCount();
       toast({ title: 'Account Created!', description: 'You have successfully signed up.' });
       router.push('/');
     } catch (err: any) {
@@ -56,7 +73,11 @@ export default function SignUpPage() {
     setIsGoogleLoading(true);
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const additionalInfo = getAdditionalUserInfo(result);
+      if (additionalInfo?.isNewUser) {
+        await updateUserCount();
+      }
       toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
       router.push('/');
     } catch (err: any) {
