@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -11,22 +12,21 @@ import { Loader2 } from 'lucide-react';
  *
  * This layout component is a client-side guard for authentication pages.
  * It ensures that if a user is already logged in, they are immediately redirected
- * to the main application dashboard. It also handles the loading state during
- * session verification and after a successful sign-in attempt.
+ * to the main application dashboard, preventing them from seeing the sign-in/sign-up forms.
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If the auth state is not loading and a user object exists, redirect them.
+    // If the auth state is not loading and a user object exists, redirect them away from auth pages.
     if (!loading && user) {
       router.replace('/');
     }
   }, [user, loading, router]);
 
-  // Show a loading screen while the initial auth check is running,
-  // or if a user has just logged in and we are waiting for the redirect.
+  // If we are still verifying the session, or if a user already exists (and we're waiting for the redirect),
+  // show a loading screen. This prevents the sign-in form from flashing on the screen for authenticated users.
   if (loading || user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">

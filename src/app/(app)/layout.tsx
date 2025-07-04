@@ -1,3 +1,4 @@
+
 "use client"; // This layout uses client-side hooks (useEffect, useRouter, useAuth).
 
 import type { ReactNode } from 'react';
@@ -15,27 +16,26 @@ interface MainAppLayoutProps {
 /**
  * MainAppLayout Component
  * 
- * This layout is the primary guard for all authenticated pages (e.g., Dashboard, Notes). It uses the AuthContext to:
- * 1. Redirect unauthenticated users to the sign-in page.
- * 2. Display a loading screen during the initial session verification.
- * This ensures that no authenticated content is ever displayed to an unauthorized user and provides a smooth transition from the initial app load.
+ * This layout is the primary guard for all authenticated pages (e.g., Dashboard, Notes).
+ * It ensures that only authenticated users can access the main application content.
  */
 export default function MainAppLayout({ children }: MainAppLayoutProps) {
   const { user, loading } = useAuth(); // Get user and loading state from AuthContext
   const pathname = usePathname();
-  const router = useRouter(); // Get router instance for smoother navigation
+  const router = useRouter();
 
-  // Effect to handle redirection based on authentication state
+  // Effect to handle redirection for unauthenticated users
   useEffect(() => {
-    // If authentication check is complete (not loading) and there's no user, redirect
+    // Once the initial auth check is complete, if there's no user, redirect to sign-in.
     if (!loading && !user) {
-      router.replace('/sign-in'); 
+      router.replace('/sign-in');
     }
   }, [user, loading, router]); // Dependencies for the effect
 
-  // The primary loading screen is handled by AuthProvider. This guard handles the transition state
-  // and ensures no content is rendered until the user session is fully verified.
-  if (loading) {
+  // If the session is still being verified OR if there is no user, show a full-page loader.
+  // This prevents the main app content from ever rendering for an unauthenticated user,
+  // and it provides a seamless loading experience.
+  if (loading || !user) {
     return (
        <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -43,20 +43,8 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
       </div>
     );
   }
-  
-  // A second check to make sure the user object is truly present before rendering.
-  // This can prevent flicker on initial load for authenticated users.
-  if (!user) {
-     return (
-       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Redirecting to sign-in...</p>
-      </div>
-    );
-  }
 
-
-  // If user is authenticated, render the main application layout with the page content
+  // If loading is complete and a user object exists, render the main application layout.
   return (
     <AppLayout>
       <AnimatePresence mode="wait">
