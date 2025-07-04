@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -25,6 +26,8 @@ export default function SignUpPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // This effect is the single source of truth for redirection.
+  // It redirects the user ONLY when the authentication state is confirmed.
   useEffect(() => {
     if (!loading && user) {
       router.replace('/');
@@ -56,10 +59,11 @@ export default function SignUpPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // The function's only job is to attempt authentication.
+      // Redirection is handled by the useEffect hook.
       await createUserWithEmailAndPassword(auth, email, password);
       await updateUserCount();
       toast({ title: 'Account Created!', description: 'You have successfully signed up.' });
-      // The useEffect hook will handle redirection once the user state is updated.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/email-already-in-use') {
@@ -80,13 +84,14 @@ export default function SignUpPage() {
     setIsGoogleLoading(true);
     setError(null);
     try {
+      // The function's only job is to attempt authentication.
+      // Redirection is handled by the useEffect hook.
       const result = await signInWithPopup(auth, googleProvider);
       const additionalInfo = getAdditionalUserInfo(result);
       if (additionalInfo?.isNewUser) {
         await updateUserCount();
       }
       toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
-      // The useEffect hook will handle redirection once the user state is updated.
     } catch (err: any) {
        let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
@@ -106,7 +111,6 @@ export default function SignUpPage() {
   };
 
   // If the initial auth state is loading, or if a user is found (and we're about to redirect), show a loader.
-  // This prevents the form from flashing on screen for already logged-in users.
   if (loading || (!loading && user)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
