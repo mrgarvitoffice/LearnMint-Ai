@@ -1,4 +1,3 @@
-
 "use client"; // This layout uses client-side hooks (useEffect, useRouter, useAuth).
 
 import type { ReactNode } from 'react';
@@ -30,7 +29,6 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
   useEffect(() => {
     // If authentication check is complete (not loading) and there's no user, redirect
     if (!loading && !user) {
-      // Use router.replace for a client-side navigation without a full page reload.
       router.replace('/sign-in'); 
     }
   }, [user, loading, router]); // Dependencies for the effect

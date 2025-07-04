@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -40,7 +39,7 @@ export default function SignInPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Signed In', description: 'Welcome back!' });
-      router.push('/');
+      // The useEffect hook will handle redirection once the user state is updated.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -63,7 +62,7 @@ export default function SignInPage() {
     try {
       await signInWithPopup(auth, googleProvider);
       toast({ title: 'Signed In with Google', description: 'Welcome back!' });
-      router.push('/');
+      // The useEffect hook will handle redirection once the user state is updated.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
@@ -88,7 +87,7 @@ export default function SignInPage() {
     try {
       await signInAnonymously(auth);
       toast({ title: 'Signed In as Guest', description: "Welcome! Some features may be limited for guest users." });
-      router.push('/');
+      // The useEffect hook will handle redirection once the user state is updated.
     } catch (err: any) {
       let description = 'An unknown error occurred while trying to sign in as a guest.';
       if (err.message) {
@@ -101,6 +100,8 @@ export default function SignInPage() {
     }
   };
 
+  // If the initial auth state is loading, or if a user is found (and we're about to redirect), show a loader.
+  // This prevents the form from flashing on screen for already logged-in users.
   if (loading || (!loading && user)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
