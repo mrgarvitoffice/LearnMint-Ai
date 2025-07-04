@@ -136,7 +136,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchLearnerCount = async () => {
-            // FIX: Only fetch if the user exists AND is not a guest.
             if (user && !user.isAnonymous) {
                 setLoadingLearners(true);
                 try {
@@ -151,12 +150,11 @@ export default function DashboardPage() {
                     }
                 } catch (error) {
                     console.error("Error fetching total learners (permissions error is likely):", error);
-                    setTotalLearners(null); // Set to null on error to hide the feature gracefully
+                    setTotalLearners(null); 
                 } finally {
                     setLoadingLearners(false);
                 }
             } else {
-                // If no user or user is a guest, don't attempt to fetch.
                 setLoadingLearners(false);
                 setTotalLearners(null);
             }
@@ -209,7 +207,11 @@ export default function DashboardPage() {
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
                         
-                        {loadingLearners ? (
+                        {user?.isAnonymous ? (
+                             <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-muted-foreground">
+                                <span>Sign up to see community stats!</span>
+                            </div>
+                        ) : loadingLearners ? (
                              <div className="mt-3 h-6 flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                         ) : totalLearners !== null ? (
                             <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer">
@@ -218,7 +220,9 @@ export default function DashboardPage() {
                                    {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
                                </span>
                             </div>
-                        ) : <div className="h-6 mt-3" /> /* Placeholder to prevent layout shift */ }
+                        ) : (
+                           <div className="h-6 mt-3" /> // Placeholder for error case to prevent layout shift
+                        )}
 
                     </CardHeader>
                 </Card>
