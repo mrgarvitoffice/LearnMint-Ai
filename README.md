@@ -47,7 +47,7 @@ LearnMint is built on the principles of efficiency, engagement, and elegance, a 
 
 **MrGarvit** has packed LearnMint with a suite of powerful, AI-driven tools:
 
-*   **Authentication Ready**: The app's authentication system has been removed to allow for easy integration of your preferred provider (e.g., Clerk, Auth0).
+*   **Firebase Authentication**: Robust and secure user authentication using Firebase (Email/Password and Google Sign-In).
 *   **AI Content Generation Suite**:
     *   **Unified Material Generation**: Enter a topic for AI-generated:
         *   📝 **Comprehensive Notes**: Markdown formatted, emojis, and embedded AI-generated images.
@@ -80,7 +80,7 @@ LearnMint leverages a modern, robust tech stack, carefully selected by **MrGarvi
 *   TypeScript
 *   Tailwind CSS
 *   ShadCN UI Components
-*   **Authentication**: Ready for your provider (e.g., Clerk)
+*   **Firebase Authentication** (Email/Password, Google)
 *   Genkit (Google Gemini for AI text & image generation)
 *   Lucide Icons
 *   `@tanstack/react-query`
@@ -111,11 +111,18 @@ Create `.env` in the **project root**. Populate with your API keys. **This is es
 **Key `AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc` is CRITICAL for image generation.**
 
 ```env
-# === Authentication ===
-# Firebase authentication has been removed.
-# Add your authentication provider's environment variables here (e.g., for Clerk).
-# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-# CLERK_SECRET_KEY=
+# === Firebase Authentication ===
+# These keys are required for user sign-in and sign-up.
+# Get them from your Firebase project settings.
+# CRITICAL: Ensure the Auth Domain (e.g., learnflow-go3hi.firebaseapp.com) is added
+# to the "Authorized domains" list in your Firebase project's Authentication settings.
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCNcktsyCTevZebTrc4aBnG4b0pRbYx4tk
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=learnflow-go3hi.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=learnflow-go3hi
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=learnflow-go3hi.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=245611903044
+NEXT_PUBLIC_FIREBASE_APP_ID=1:245611903044:web:007b0b6b76181d06c1a411
+
 
 # === Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI, Image Generation) ===
 # Get keys from Google AI Studio: https://aistudio.google.com/app/apikey
