@@ -94,5 +94,6 @@
   "audioFactory.imageTooLarge": "La imagen es demasiado grande. Por favor, suba una imagen de menos de 2MB.",
   "audioFactory.pdfTooLarge": "El PDF es demasiado grande. Por favor, suba un archivo de menos de 5MB.",
   "audioFactory.invalidFileType": "Tipo de archivo no válido.",
-  "audioFactory.pdfExtractError": "No se pudo extraer el texto del PDF."
+  "audioFactory.pdfExtractError": "No se pudo extraer el texto del PDF.",
+  "dashboard.totalLearnersGuestMessage": "¡Regístrate para ver las estadísticas de la comunidad!"
 }

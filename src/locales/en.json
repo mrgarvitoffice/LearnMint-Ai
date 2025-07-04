@@ -94,5 +94,6 @@
   "audioFactory.imageTooLarge": "Image is too large. Please upload an image under 2MB.",
   "audioFactory.pdfTooLarge": "PDF is too large. Please upload a file under 5MB.",
   "audioFactory.invalidFileType": "Invalid file type.",
-  "audioFactory.pdfExtractError": "Could not extract text from PDF."
+  "audioFactory.pdfExtractError": "Could not extract text from PDF.",
+  "dashboard.totalLearnersGuestMessage": "Sign up to see community stats!"
 }

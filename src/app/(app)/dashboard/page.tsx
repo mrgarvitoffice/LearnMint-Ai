@@ -96,7 +96,6 @@ export default function DashboardPage() {
     const [currentMathFact, setCurrentMathFact] = useState<MathFact | null>(null);
     const pageTitleSpokenRef = useRef(false);
 
-    // Fetch Math Fact for Daily Motivation
     const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
         queryKey: ['mathFactDashboard'],
         queryFn: fetchMathFact,
@@ -136,6 +135,12 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchLearnerCount = async () => {
+            if (user?.isAnonymous) {
+                setTotalLearners(null);
+                setLoadingLearners(false);
+                return;
+            }
+            
             setLoadingLearners(true);
             try {
                 const docRef = doc(db, "metadata", "userCount");
@@ -144,20 +149,21 @@ export default function DashboardPage() {
                 if (docSnap.exists()) {
                     setTotalLearners(docSnap.data().count);
                 } else {
-                    // If doc doesn't exist, show the initial base count of 21.
                     setTotalLearners(21);
                 }
             } catch (error) {
-                console.error("Error fetching total learners. Firestore rules may need adjustment for public read on 'metadata/userCount'.", error);
-                setTotalLearners(21); // Fallback to base count on error
+                console.error("Error fetching total learners:", error);
+                setTotalLearners(null); 
             } finally {
                 setLoadingLearners(false);
             }
         };
 
-        // Fetch count for all users, but only after auth state is known.
-        if (user !== undefined) {
+        if (user) {
              fetchLearnerCount();
+        } else {
+             setLoadingLearners(false);
+             setTotalLearners(null);
         }
     }, [user]);
   
@@ -208,14 +214,16 @@ export default function DashboardPage() {
                         {loadingLearners ? (
                              <div className="mt-3 h-6 flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                         ) : totalLearners !== null ? (
-                            <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer">
-                               <Users className="h-5 w-5 text-green-400/80 group-hover:text-green-400 transition-colors" />
-                               <span className="font-semibold text-green-400/90 group-hover:text-green-400 transition-colors">
+                            <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105">
+                               <Users className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
+                               <span className="font-semibold text-primary group-hover:text-primary/90 transition-colors">
                                    {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
                                </span>
                             </div>
                         ) : (
-                           <div className="h-6 mt-3" />
+                           <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-muted-foreground">
+                               {t('dashboard.totalLearnersGuestMessage')}
+                           </div>
                         )}
 
                     </CardHeader>

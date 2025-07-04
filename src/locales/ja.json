@@ -94,5 +94,6 @@
   "audioFactory.imageTooLarge": "画像が大きすぎます。2MB未満の画像をアップロードしてください。",
   "audioFactory.pdfTooLarge": "PDFが大きすぎます。5MB未満のファイルをアップロードしてください。",
   "audioFactory.invalidFileType": "無効なファイルタイプです。",
-  "audioFactory.pdfExtractError": "PDFからテキストを抽出できませんでした。"
+  "audioFactory.pdfExtractError": "PDFからテキストを抽出できませんでした。",
+  "dashboard.totalLearnersGuestMessage": "コミュニティの統計を見るにはサインアップしてください！"
 }
