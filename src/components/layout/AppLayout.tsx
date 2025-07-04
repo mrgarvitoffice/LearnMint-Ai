@@ -7,7 +7,6 @@ import { DesktopSidebar } from './DesktopSidebar';
 import { TopMobileNav } from './TopMobileNav';
 import { BottomMobileNav } from './BottomNavBar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useSidebar } from '@/components/ui/sidebar';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,12 +14,11 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
-  const { state: sidebarState, toggleSidebar } = useSidebar();
 
   const mainContent = (
     <div
       className="flex-1 p-4 sm:px-6 sm:py-4 transition-[margin-left] duration-300 ease-in-out"
-      style={{ marginLeft: !isMobile && sidebarState === 'expanded' ? '256px' : !isMobile ? '80px' : '0' }}
+      style={{ marginLeft: !isMobile ? '256px' : '0' }}
     >
       {children}
     </div>
@@ -42,7 +40,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="flex min-h-screen w-full bg-background/80">
       <DesktopSidebar />
       <div className="flex flex-1 flex-col">
-          <Header onSidebarToggle={toggleSidebar} sidebarState={sidebarState} />
+          <Header />
           {mainContent}
       </div>
     </div>
