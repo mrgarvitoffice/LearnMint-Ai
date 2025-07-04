@@ -34,7 +34,7 @@ export default function NewsPage() {
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
   const pageTitleSpokenRef = useRef(false);
   
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', { volume: 0.4, priority: 'essential' });
   const { toast } = useToast();
   
   const {

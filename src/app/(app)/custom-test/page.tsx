@@ -85,10 +85,10 @@ export default function CustomTestPage() {
   const notesImageInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3');
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3');
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', { priority: 'essential' });
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', { priority: 'essential' });
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', { volume: 0.4, priority: 'essential' });
 
   const { speak, setVoicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();

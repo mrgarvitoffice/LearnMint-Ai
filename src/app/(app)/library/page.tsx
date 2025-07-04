@@ -38,8 +38,8 @@ export default function LibraryPage() {
   const { speak, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
   const { toast } = useToast();
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', { volume: 0.4, priority: 'essential' });
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
 
   const { isListening, transcript, startListening, stopListening, error: voiceError, browserSupportsSpeechRecognition } = useVoiceRecognition();
   const [voiceSearchTarget, setVoiceSearchTarget] = useState<'youtube' | 'books' | null>(null);

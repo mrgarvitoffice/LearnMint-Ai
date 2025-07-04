@@ -4,7 +4,13 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 
-export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
+interface SoundOptions {
+  volume?: number;
+  priority?: 'essential' | 'incidental';
+}
+
+export function useSound(soundPath: string, options: SoundOptions = {}) {
+  const { volume = 0.5, priority = 'incidental' } = options;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [hasLoadError, setHasLoadError] = useState(false); 
   const { soundMode } = useSettings();
@@ -14,10 +20,10 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
 
     const specificErrorHandler = () => {
       console.warn(
-        `LearnMint Sound System: Failed to load sound from "${soundPathOrType}".\n` +
+        `LearnMint Sound System: Failed to load sound from "${soundPath}".\n` +
         `This usually means the file is missing from the 'public/sounds/' directory or the path is incorrect.\n` +
-        `Please check that the file exists (e.g., 'public/sounds/ting.mp3') and the path matches exactly.\n` +
-        `Refer to README instructions for required static assets. Sound playback for this specific sound will be disabled.`
+        `Please check that the file exists and the path matches exactly.\n` +
+        `Playback for this specific sound will be disabled.`
       );
       setHasLoadError(true);
     };
@@ -25,21 +31,19 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
     if (typeof window !== 'undefined') {
       setHasLoadError(false); 
 
-      // Use a single, persistent audio element
       if (!audioRef.current) {
         audioRef.current = new Audio();
       }
       currentAudio = audioRef.current;
-      currentAudio.volume = defaultVolume;
+      currentAudio.volume = volume;
 
-      // Only change src if it's different to avoid re-loading
-      const desiredSrc = new URL(soundPathOrType, window.location.origin).href;
+      const desiredSrc = new URL(soundPath, window.location.origin).href;
       if (currentAudio.src !== desiredSrc) {
-        currentAudio.src = soundPathOrType;
+        currentAudio.src = soundPath;
         currentAudio.load();
       }
 
-      currentAudio.removeEventListener('error', specificErrorHandler); // Clean up previous listener
+      currentAudio.removeEventListener('error', specificErrorHandler);
       currentAudio.addEventListener('error', specificErrorHandler);
     }
 
@@ -48,33 +52,29 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
         currentAudio.removeEventListener('error', specificErrorHandler);
       }
     };
-  }, [soundPathOrType, defaultVolume]);
+  }, [soundPath, volume]);
 
   const playSound = useCallback(() => {
-    // Incidental sounds should only play in 'full' mode.
-    if (soundMode !== 'full') {
-      return;
-    }
+    if (soundMode === 'muted') return;
+    if (soundMode === 'essential' && priority === 'incidental') return;
     
     if (hasLoadError || !audioRef.current) {
       return;
     }
 
-    // Play the sound
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(playError => {
-      // Don't log common abort errors, but flag others
       if (playError.name !== 'AbortError' && !hasLoadError) {
          console.warn(
-          `LearnMint Sound System: Playback failed for "${soundPathOrType}".\n`+
+          `LearnMint Sound System: Playback failed for "${soundPath}".\n`+
           `Error: ${playError.name} - ${playError.message}.\n`+
-          `This can happen if the browser blocks autoplay. Playback for this sound may be disabled until a user interaction.`
+          `This can happen if the browser blocks autoplay.`
          );
-         setHasLoadError(true); // Prevent future attempts for this sound
+         setHasLoadError(true);
       }
     });
     
-  }, [soundMode, hasLoadError, soundPathOrType]);
+  }, [soundMode, priority, hasLoadError, soundPath]);
   
   return { 
     playSound

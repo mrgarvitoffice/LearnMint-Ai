@@ -46,7 +46,7 @@ export default function GenerateNotesPage() {
   const { speak, setVoicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', { priority: 'essential' });
   const { soundMode } = useSettings();
 
   const pageTitleSpokenRef = useRef(false);

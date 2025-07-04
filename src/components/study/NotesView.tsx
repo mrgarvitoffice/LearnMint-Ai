@@ -29,7 +29,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
     isLoading: isTTSLoading,
     setVoicePreference,
   } = useTTS();
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const { toast } = useToast();
 
   const [cleanedNotesForTTS, setCleanedNotesForTTS] = useState<string>("");
@@ -165,7 +165,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notesContent, topic }) => {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-1 sm:p-4 bg-muted/20" >
-           <div>
+           <div className="min-w-0">
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={customRenderers}

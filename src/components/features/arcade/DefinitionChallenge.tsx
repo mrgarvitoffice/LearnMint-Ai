@@ -28,9 +28,9 @@ export function DefinitionChallenge() {
   const [highScore, setHighScore] = useState(0);
   const [wordFailedMessage, setWordFailedMessage] = useState('');
   
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5); 
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5); 
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', { volume: 0.5, priority: 'essential' }); 
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', { volume: 0.5, priority: 'essential' }); 
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   
   useEffect(() => {

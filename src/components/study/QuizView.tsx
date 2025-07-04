@@ -32,9 +32,9 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const [shortAnswerValue, setShortAnswerValue] = useState('');
   const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
   
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', { volume: 0.5, priority: 'essential' });
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', { volume: 0.5, priority: 'essential' });
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
   const { quests, completeQuest2 } = useQuests();
   

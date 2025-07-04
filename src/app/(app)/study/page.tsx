@@ -78,8 +78,8 @@ function StudyPageContent() {
   const [activeTab, setActiveTab] = useState<string>("notes");
 
   const { toast } = useToast();
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', { volume: 0.4, priority: 'essential' });
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const { speak, setVoicePreference } = useTTS();
   const queryClient = useQueryClient();
 
