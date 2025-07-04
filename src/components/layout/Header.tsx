@@ -63,7 +63,7 @@ export function Header() {
                   <span>{t('header.appLanguage')}</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
-                  <DropdownMenuSubContent sideOffset={-5} alignOffset={-5}>
+                  <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
                       {APP_LANGUAGES.map(lang => (
                         <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
@@ -81,7 +81,7 @@ export function Header() {
                   <span>{t('header.soundMode')}</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                  <DropdownMenuSubContent sideOffset={-5} alignOffset={-5}>
+                  <DropdownMenuSubContent>
                       <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
                       <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
                       <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
@@ -97,7 +97,7 @@ export function Header() {
                   <span>{t('header.fontSize')}</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                  <DropdownMenuSubContent sideOffset={-5} alignOffset={-5}>
+                  <DropdownMenuSubContent>
                       <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
                       <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
                       <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
@@ -113,7 +113,7 @@ export function Header() {
                   <span>{t('header.theme')}</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                  <DropdownMenuSubContent sideOffset={-5} alignOffset={-5}>
+                  <DropdownMenuSubContent>
                       <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
                       <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
                       <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>

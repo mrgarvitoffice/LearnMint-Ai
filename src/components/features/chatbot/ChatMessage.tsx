@@ -2,7 +2,7 @@
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bot, User, Loader2, Wand2 } from 'lucide-react';
+import { Bot, User, Loader2, Wand2, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 
@@ -60,7 +60,13 @@ export function ChatMessage({ message, character = 'gojo' }: ChatMessageProps) {
           <AvatarImage src={getAvatarSrc()} alt={getAvatarAlt()} data-ai-hint={getAvatarDataAiHint()} />
           <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
         </Avatar>
-        <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md', bubbleColor)}>
+        <div className={cn('max-w-[75%] rounded-lg px-4 py-3 shadow-md space-y-2', bubbleColor)}>
+          {message.pdfFileName && isUser && (
+            <div className="flex items-center gap-2 rounded-md border border-primary-foreground/20 bg-primary-foreground/10 p-2 text-xs text-primary-foreground/80">
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="truncate font-medium">Attached: {message.pdfFileName}</span>
+            </div>
+          )}
           {message.image && message.role === 'user' && (
             <div className="mb-2">
               <Image

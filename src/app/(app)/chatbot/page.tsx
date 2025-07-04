@@ -81,12 +81,19 @@ export default function ChatbotPage() {
     }
   }, [messages]);
 
-  const handleSendMessage = async (messageText: string, image?: string) => {
+  const handleSendMessage = async (messageText: string, image?: string, pdfFileName?: string) => {
     if (!messageText.trim() && !image) return;
     
     cancelTTS(); // Stop any currently playing speech before sending a new message.
 
-    const userMessage: ChatMessageType = { id: Date.now().toString() + '-user', role: 'user', content: messageText, image: image, timestamp: new Date() };
+    const userMessage: ChatMessageType = { 
+      id: Date.now().toString() + '-user', 
+      role: 'user', 
+      content: messageText, 
+      image: image,
+      pdfFileName: pdfFileName,
+      timestamp: new Date() 
+    };
     const typingIndicatorMessage = selectedCharacter === 'gojo'
       ? "Gojo is contemplating..."
       : "Holo is contemplating her wisdom...";

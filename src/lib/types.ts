@@ -151,6 +151,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   image?: string; 
+  pdfFileName?: string;
   timestamp: Date;
   type?: 'typing_indicator';
 }
