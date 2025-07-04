@@ -21,7 +21,7 @@ import {
   DropdownMenuRadioItem 
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, ChevronRight, LogOut, User } from 'lucide-react';
+import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, ChevronRight, LogOut, User, Loader2 } from 'lucide-react';
 import { APP_LANGUAGES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -147,29 +147,36 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
     </React.Fragment>
   );
 
-  const UserMenuContent = () => (
-    <React.Fragment>
-       <DropdownMenuLabel className="font-normal">
-        <div className="flex flex-col space-y-1">
-          <p className="text-sm font-medium leading-none">{user?.displayName || "User"}</p>
-          <p className="text-xs leading-none text-muted-foreground">
-            {user?.email}
-          </p>
-        </div>
-      </DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem asChild>
-        <Link href="/profile" className="cursor-pointer">
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign Out</span>
-      </DropdownMenuItem>
-    </React.Fragment>
-  );
+  const UserMenuContent = () => {
+    if (!user) return null;
+    return (
+      <React.Fragment>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user.isAnonymous ? "Guest User" : user.displayName || "User"}</p>
+            {!user.isAnonymous && (
+              <p className="text-xs leading-none text-muted-foreground">
+                {user.email}
+              </p>
+            )}
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {!user.isAnonymous && (
+          <DropdownMenuItem asChild>
+            <Link href="/profile" className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Sign Out</span>
+        </DropdownMenuItem>
+      </React.Fragment>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
@@ -197,15 +204,16 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {!loading && (
-          user ? (
+        {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+        ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
+                      <AvatarImage src={user.isAnonymous ? undefined : user.photoURL || undefined} alt={user.displayName || "User"} />
                       <AvatarFallback>
-                        {user.displayName ? user.displayName.charAt(0).toUpperCase() : <User />}
+                        {user.isAnonymous ? <User className="h-5 w-5"/> : user.displayName ? user.displayName.charAt(0).toUpperCase() : <User />}
                       </AvatarFallback>
                     </Avatar>
                 </Button>
@@ -222,8 +230,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
               </Link>
             </Button>
           )
-        )}
-
+        }
       </div>
     </header>
   );

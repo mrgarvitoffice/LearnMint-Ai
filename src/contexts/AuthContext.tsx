@@ -2,7 +2,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { onAuthStateChanged, getRedirectResult, signInWithRedirect, GoogleAuthProvider, signOut, type User } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut, 
+  signInAnonymously,
+  type User 
+} from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -11,8 +18,9 @@ import { useRouter } from 'next/navigation';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signOutUser: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInAsGuest: () => Promise<void>;
+  signOutUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,9 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (rawUser) {
       const userRef = doc(db, 'users', rawUser.uid);
       const userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) {
-        // New user, create a document for them
+      // Create user document only if it doesn't exist
+      if (!userDoc.exists() && !rawUser.isAnonymous) {
         await setDoc(userRef, {
+          uid: rawUser.uid,
           email: rawUser.email,
           displayName: rawUser.displayName,
           photoURL: rawUser.photoURL,
@@ -44,41 +53,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Handle redirect result from Google sign-in
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          toast({ title: "Sign-In Successful", description: "Welcome back to LearnMint!" });
-          handleUser(result.user);
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-        toast({ title: "Sign-In Error", description: error.message, variant: "destructive" });
-      });
-
-    // Listen for regular auth state changes
     const unsubscribe = onAuthStateChanged(auth, handleUser);
     return () => unsubscribe();
-  }, [toast]);
+  }, []);
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged will handle the user state update and redirect
+      toast({ title: "Sign-in successful!", description: "Welcome to LearnMint." });
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("Google Sign-In Error:", error);
+        toast({
+          title: "Google Sign-In Error",
+          description: "Could not sign in with Google. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const signInAsGuest = async () => {
+    try {
+      await signInAnonymously(auth);
+      toast({ title: "Signed in as Guest", description: "You can now explore the app." });
+    } catch (error: any) {
+      console.error("Guest Sign-In Error:", error);
+      toast({
+        title: "Guest Sign-In Error",
+        description: "Could not sign in as a guest. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const signOutUser = async () => {
     await signOut(auth);
-    setUser(null);
-    router.push('/sign-in');
+    // onAuthStateChanged will set user to null
     toast({ title: "Signed Out", description: "You have been successfully signed out." });
   };
   
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
-  };
-
   const contextValue = {
     user,
     loading,
-    signOutUser,
     signInWithGoogle,
+    signInAsGuest,
+    signOutUser,
   };
 
   return (

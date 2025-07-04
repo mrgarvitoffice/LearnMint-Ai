@@ -36,10 +36,10 @@ export const db = getFirestore(app);
 // It's a useful check during setup and debugging.
 if (typeof window === 'undefined') { // Only log on the server
     console.log("✅ Firebase Config Loaded on Server");
-    if (firebaseConfig.authDomain) {
+    if (firebaseConfig.apiKey && firebaseConfig.authDomain) {
       console.log(`🔑 Auth Domain: ${firebaseConfig.authDomain}`);
       console.log("-> Please ensure this domain is in your Firebase project's 'Authorized domains' list for authentication.");
     } else {
-      console.error("❌ CRITICAL: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is not configured in your .env file!");
+      console.error("❌ CRITICAL: NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is not configured in your .env file!");
     }
 }

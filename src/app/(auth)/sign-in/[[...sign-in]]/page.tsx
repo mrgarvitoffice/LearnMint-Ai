@@ -14,9 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, Chrome } from 'lucide-react';
+import { Loader2, LogIn, Chrome, User } from 'lucide-react';
 import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
+import { Logo } from '@/components/icons/Logo';
 
 const signInSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -27,18 +28,18 @@ type SignInFormData = z.infer<typeof signInSchema>;
 
 export default function SignInPage() {
   const { toast } = useToast();
-  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
-  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { signInWithGoogle, signInAsGuest } = useAuth();
   
   const { register, handleSubmit, formState: { errors } } = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
   });
 
   const onEmailSubmit = async (data: SignInFormData) => {
-    setIsLoadingEmail(true);
+    setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
+      toast({ title: "Sign-in successful!", description: "Welcome back to LearnMint." });
       // The AuthContext will handle the redirect.
     } catch (error: any) {
       console.error("Sign in error:", error);
@@ -46,66 +47,71 @@ export default function SignInPage() {
         title: "Sign In Failed",
         description: error.code === 'auth/invalid-credential' 
           ? "Invalid email or password. Please try again."
-          : error.message,
+          : "An unexpected error occurred during sign-in.",
         variant: "destructive",
       });
     } finally {
-      setIsLoadingEmail(false);
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoadingGoogle(true);
-    try {
-      await signInWithGoogle();
-      // The redirect will happen, so the loading state will resolve on page change.
-    } catch (error: any) {
-      console.error("Google sign in error:", error);
-      toast({
-        title: "Google Sign In Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsLoadingGoogle(false);
-    }
+    setIsLoading(true);
+    await signInWithGoogle();
+    setIsLoading(false);
   };
+  
+  const handleGuestSignIn = async () => {
+    setIsLoading(true);
+    await signInAsGuest();
+    setIsLoading(false);
+  }
 
   return (
-    <Card className="w-full max-w-sm shadow-xl">
+    <Card className="w-full max-w-sm shadow-xl border-border/50 bg-card/80 backdrop-blur-lg">
       <CardHeader className="text-center">
-        <LogIn className="mx-auto h-12 w-12 text-primary" />
-        <CardTitle className="text-2xl mt-4">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your LearnMint account.</CardDescription>
+        <Logo size={48} className="mx-auto mb-2" />
+        <CardTitle className="text-2xl mt-2">Welcome to LearnMint</CardTitle>
+        <CardDescription>Sign in to access your dashboard.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit(onEmailSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" {...register('email')} />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="••••••••" {...register('password')} />
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoadingEmail || isLoadingGoogle}>
-            {isLoadingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In
-          </Button>
-        </form>
+        
+        <div className="space-y-2">
+           <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
+              Sign In with Google
+            </Button>
+            <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <User className="mr-2 h-4 w-4" />}
+              Continue as Guest
+            </Button>
+        </div>
+        
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <Separator />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            <span className="bg-card px-2 text-muted-foreground">Or with Email</span>
           </div>
         </div>
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoadingEmail || isLoadingGoogle}>
-          {isLoadingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
-          Sign In with Google
-        </Button>
+
+        <form onSubmit={handleSubmit(onEmailSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" placeholder="you@example.com" {...register('email')} disabled={isLoading} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type="password" placeholder="••••••••" {...register('password')} disabled={isLoading} />
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Sign In
+          </Button>
+        </form>
       </CardContent>
       <CardFooter className="justify-center text-sm">
         <p>
