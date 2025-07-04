@@ -1,11 +1,8 @@
-
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup, signInAnonymously } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase/config';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,8 +12,6 @@ import Link from 'next/link';
 import { Loader2, Chrome, UserX } from 'lucide-react';
 
 export default function SignInPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +27,7 @@ export default function SignInPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Signed In', description: 'Welcome back!' });
-      router.replace('/'); // Redirect AFTER successful sign-in
+      // Redirection is handled by the AuthLayout guard.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -55,7 +50,7 @@ export default function SignInPage() {
     try {
       await signInWithPopup(auth, googleProvider);
       toast({ title: 'Signed In with Google', description: 'Welcome back!' });
-      router.replace('/'); // Redirect AFTER successful sign-in
+      // Redirection is handled by the AuthLayout guard.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
@@ -80,7 +75,7 @@ export default function SignInPage() {
     try {
       await signInAnonymously(auth);
       toast({ title: 'Signed In as Guest', description: "Welcome! Some features may be limited for guest users." });
-      router.replace('/'); // Redirect AFTER successful sign-in
+      // Redirection is handled by the AuthLayout guard.
     } catch (err: any) {
       let description = 'An unknown error occurred while trying to sign in as a guest.';
       if (err.message) {
@@ -92,15 +87,6 @@ export default function SignInPage() {
       setIsGuestLoading(false);
     }
   };
-
-  if (loading || (!loading && user)) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Checking session...</p>
-      </div>
-    );
-  }
 
   return (
     <Card className="w-full max-w-md shadow-xl">
