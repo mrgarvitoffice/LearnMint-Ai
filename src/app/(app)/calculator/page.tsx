@@ -60,7 +60,7 @@ export default function CalculatorPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current) {
-        speak(PAGE_TITLE, { priority: 'optional' });
+        speak(PAGE_TITLE, { priority: 'essential' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);

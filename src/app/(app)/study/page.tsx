@@ -15,7 +15,6 @@ import { BookOpenText, Brain, Layers, RefreshCw, AlertTriangle, Loader2, Home } 
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
-import { useSettings } from '@/contexts/SettingsContext';
 
 import { generateNotesAction, generateQuizAction, generateFlashcardsAction } from "@/lib/actions";
 import type { GenerateStudyNotesOutput, GenerateQuizQuestionsOutput, GenerateFlashcardsOutput, QueryError } from '@/lib/types';
@@ -105,7 +104,7 @@ function StudyPageContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current && activeTopic) {
-        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'optional' });
+        speak(`${PAGE_TITLE_BASE} for: ${activeTopic}`, { priority: 'essential' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);

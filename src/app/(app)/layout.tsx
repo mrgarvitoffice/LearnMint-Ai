@@ -1,3 +1,4 @@
+
 "use client"; // This layout uses client-side hooks (useEffect, useRouter, useAuth).
 
 import type { ReactNode } from 'react';
@@ -6,6 +7,7 @@ import { useRouter } from 'next/navigation'; // Next.js hook for programmatic na
 import { useAuth } from '@/contexts/AuthContext'; // Custom hook to access authentication state
 import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, Sidebar)
 import { Loader2 } from 'lucide-react'; // Loading spinner icon
+import { motion } from 'framer-motion';
 
 interface MainAppLayoutProps {
   children: ReactNode; // The content of the specific page being rendered within this layout
@@ -44,6 +46,16 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
 
   // If user is authenticated, render the main application layout with the page content
   return (
-    <AppLayout>{children}</AppLayout>
+    <AppLayout>
+      <motion.div
+        key={router.pathname}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      >
+        {children}
+      </motion.div>
+    </AppLayout>
   );
 }

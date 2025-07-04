@@ -113,11 +113,11 @@ export function useTTS(): TTSHook {
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     } else {
-        if (voices.length > 0) { // If no language match, just use the first available voice
+        if (voices.length > 0) { 
             utterance.voice = voices[0];
         } else {
-            console.warn("TTS: No synthesis voices available.");
-            toast({ title: "Voice Error", description: "No text-to-speech voices were found on your browser.", variant: "destructive" });
+            console.warn("TTS: No synthesis voices available on this browser.");
+            // Do not toast error to user, just log for developers
             return;
         }
     }
@@ -141,7 +141,7 @@ export function useTTS(): TTSHook {
     };
     utterance.onerror = (event) => {
       console.error("SpeechSynthesisUtterance.onerror", event);
-      toast({ title: "Voice Error", description: `An error occurred during speech synthesis: ${event.error}`, variant: "destructive" });
+      // Do not show a toast for this, as it can be noisy. Just log for developers.
       setIsSpeaking(false);
       setIsPaused(false);
     };

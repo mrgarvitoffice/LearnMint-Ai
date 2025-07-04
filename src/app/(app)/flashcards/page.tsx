@@ -8,13 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Sparkles, AudioLines, Mic, Volume2, Layers, FileText, Image as ImageIcon, XCircle, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { Loader2, Sparkles, AudioLines, Mic, Layers, FileText, Image as ImageIcon, XCircle, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { generateAudioFlashcardsAction, generateAudioSummaryAction } from '@/lib/actions';
-import type { GenerateAudioFlashcardsOutput, GenerateAudioSummaryOutput, Flashcard } from '@/lib/types';
+import type { GenerateAudioFlashcardsOutput, GenerateAudioSummaryOutput } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import FlashcardItem from '@/components/study/FlashcardItem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -362,8 +361,8 @@ export default function AudioFactoryPage() {
         </CardHeader>
       </Card>
       
-      <Tabs defaultValue="flashcards" orientation="vertical" className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] gap-16">
-        <TabsList className="grid w-full grid-cols-2 gap-8 md:w-full md:grid-cols-1 md:justify-start md:h-auto">
+      <Tabs defaultValue="flashcards" orientation="vertical" className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 md:gap-8">
+        <TabsList className="grid w-full grid-cols-1 justify-start h-auto gap-2">
           <TabsTrigger value="flashcards">{t('audioFactory.tabs.flashcards')}</TabsTrigger>
           <TabsTrigger value="text-summary">Text Summary</TabsTrigger>
           <TabsTrigger value="image-summary">{t('audioFactory.tabs.image')}</TabsTrigger>

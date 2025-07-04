@@ -215,7 +215,7 @@ export default function CustomTestPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current && !testState && !isLoading) {
-        speak(PAGE_TITLE, { priority: 'optional' });
+        speak(PAGE_TITLE, { priority: 'essential' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
@@ -415,7 +415,7 @@ export default function CustomTestPage() {
   const perQuestionTimeLeft = testState?.currentQuestionTimeLeft;
 
   const formatTime = (seconds?: number) => {
-    if (seconds === undefined || seconds < 0) return '00:00';
+    if (seconds === undefined || seconds < 0) return null;
     const mins = Math.floor(seconds / 60); const secs = seconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
@@ -629,8 +629,8 @@ export default function CustomTestPage() {
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                 <CardTitle className="text-xl sm:text-2xl text-primary font-bold truncate max-w-md">Test: {testState.settings.topics.join(', ').substring(0, 50)}{testState.settings.topics.join(', ').length > 50 ? "..." : ""} (Difficulty: {testState.settings.difficulty})</CardTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  {overallTimeLeft !== undefined && (<span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Total: {formatTime(overallTimeLeft)}</span>)}
-                  {perQuestionTimeLeft !== undefined && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0 && (<span className="flex items-center gap-1"><TimerIcon className="w-4 h-4 text-destructive animate-pulse" /> Q Time: {formatTime(perQuestionTimeLeft)}</span>)}
+                  {overallTimeLeft !== undefined && formatTime(overallTimeLeft) !== null && (<span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Total: {formatTime(overallTimeLeft)}</span>)}
+                  {perQuestionTimeLeft !== undefined && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0 && formatTime(perQuestionTimeLeft) !== null && (<span className="flex items-center gap-1"><TimerIcon className="w-4 h-4 text-destructive animate-pulse" /> Q Time: {formatTime(perQuestionTimeLeft)}</span>)}
                 </div>
               </div>
               <Progress value={((testState.currentQuestionIndex + 1) / testState.questions.length) * 100} className="w-full mt-3 h-2.5" />

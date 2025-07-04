@@ -30,7 +30,6 @@ interface NewsPageFilters {
 const initialFilters: NewsPageFilters = { query: '', country: '', stateOrRegion: '', city: '', category: 'top', language: 'en' };
 
 export default function NewsPage() {
-  const { soundMode } = useSettings();
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
   const pageTitleSpokenRef = useRef(false);
@@ -67,13 +66,13 @@ export default function NewsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-        if (soundMode === 'full' && !pageTitleSpokenRef.current) {
+        if (!pageTitleSpokenRef.current) {
             speak(PAGE_TITLE, { priority: 'essential' });
             pageTitleSpokenRef.current = true;
         }
     }, 500);
     return () => clearTimeout(timer);
-  }, [speak, soundMode]);
+  }, [speak]);
 
   const articles = useMemo(() => {
     const allArticlesFlat = data?.pages.flatMap(page => page?.results ?? []) ?? [];
@@ -198,7 +197,7 @@ export default function NewsPage() {
           </div>
         </CardContent>
         <CardContent>
-          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
+          <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={onApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
         </CardContent>
       </Card>
 
