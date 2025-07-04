@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
@@ -138,9 +137,9 @@ export default function CustomTestPage() {
       const percentage = totalPossibleScore > 0 ? Math.max(0, (currentScore / totalPossibleScore) * 100) : 0;
       const calculatedPerformanceTag = getPerformanceTag(percentage);
 
-      if (!resultAnnouncementSpokenRef.current) {
+      if (!resultAnnouncementSpokenRef.current && soundMode === 'full') {
         const ttsMessage = `Test ${autoSubmitted ? "auto-submitted" : "submitted"}! Your score is ${currentScore} out of ${totalPossibleScore}. Your performance is ${calculatedPerformanceTag}!`;
-        speak(ttsMessage, { priority: 'optional' });
+        speak(ttsMessage, { priority: 'essential' });
         resultAnnouncementSpokenRef.current = true;
       }
       if (!autoSubmitted || (autoSubmitted && !prevTestState.isAutoSubmitting)) {
@@ -153,7 +152,7 @@ export default function CustomTestPage() {
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, getPerformanceTag, playCorrectSound, playIncorrectSound, speak, toast]);
+  }, [playClickSound, getPerformanceTag, playCorrectSound, playIncorrectSound, speak, toast, soundMode]);
 
   useEffect(() => { setVoicePreference('holo'); }, [setVoicePreference]);
 
@@ -175,15 +174,15 @@ export default function CustomTestPage() {
   
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!pageTitleSpokenRef.current && !testState && !isLoading) {
+      if (!pageTitleSpokenRef.current && !testState && !isLoading && soundMode === 'full') {
         speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [speak, testState, isLoading]);
+  }, [speak, testState, isLoading, soundMode]);
 
-  useEffect(() => { if (isLoading) speak("Creating custom test. Please wait.", { priority: 'optional' }); }, [isLoading, speak]);
+  useEffect(() => { if (isLoading && soundMode === 'full') speak("Creating custom test. Please wait.", { priority: 'essential' }); }, [isLoading, speak, soundMode]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -217,34 +216,12 @@ export default function CustomTestPage() {
     }
   }, [testState?.timeLeft, testState?.showResults, handleSubmitTest, toast]);
 
-  useEffect(() => {
-    if (testState && !testState.showResults && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
-      const timerId = setInterval(() => {
-        setTestState(prev => {
-          if (!prev || prev.showResults || !prev.currentQuestionTimeLeft || prev.currentQuestionTimeLeft <= 0) {
-            clearInterval(timerId);
-            return prev;
-          }
-          const newTimeLeft = prev.currentQuestionTimeLeft - 1;
-          if (newTimeLeft <= 0) {
-            clearInterval(timerId);
-            toast({ title: "Time's up for this question!", variant: "default" });
-            handleNextQuestion();
-            return { ...prev, currentQuestionTimeLeft: 0 };
-          }
-          return { ...prev, currentQuestionTimeLeft: newTimeLeft };
-        });
-      }, 1000);
-      return () => clearInterval(timerId);
-    }
-  }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, handleNextQuestion, toast]);
-
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playActionSound();
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
-    pageTitleSpokenRef.current = true;
-    speak("Creating custom test. Please wait.", { priority: 'optional' });
+    pageTitleSpokenRef.current = true; // Prevent page title from re-announcing
+    if (soundMode === 'full') speak("Creating custom test. Please wait.", { priority: 'essential' });
 
     let topicForAI = ""; let topicsForSettings: string[] = []; let notesForAI = "";
     if (data.sourceType === 'topic' && data.topics) {
@@ -288,16 +265,16 @@ export default function CustomTestPage() {
           currentQuestionTimeLeft: settings.perQuestionTimer && settings.perQuestionTimer > 0 ? settings.perQuestionTimer : undefined,
         });
         toast({ title: 'Test Generated!', description: 'Your custom test is ready to start.' });
-        speak("Test Generated!", { priority: 'optional' });
+        if (soundMode === 'full') speak("Test Generated!", { priority: 'essential' });
       } else {
         toast({ title: 'No Questions', description: 'The AI returned no questions for this configuration.', variant: 'destructive' });
-        speak("Sorry, no questions were returned.", { priority: 'optional' });
+        if (soundMode === 'full') speak("Sorry, no questions were returned.", { priority: 'essential' });
       }
     } catch (error) {
       console.error('Error generating custom test:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate test. Please try again.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-      speak("Sorry, there was an error generating the test.", { priority: 'optional' });
+      if (soundMode === 'full') speak("Sorry, there was an error generating the test.", { priority: 'essential' });
     } finally { setIsLoading(false); }
   };
 
@@ -329,6 +306,30 @@ export default function CustomTestPage() {
       });
   }, [playClickSound, handleSubmitTest]);
 
+  // This useEffect hook depends on handleNextQuestion, so it must be defined after it.
+  useEffect(() => {
+    if (testState && !testState.showResults && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
+      const timerId = setInterval(() => {
+        setTestState(prev => {
+          if (!prev || prev.showResults || !prev.currentQuestionTimeLeft || prev.currentQuestionTimeLeft <= 0) {
+            clearInterval(timerId);
+            return prev;
+          }
+          const newTimeLeft = prev.currentQuestionTimeLeft - 1;
+          if (newTimeLeft <= 0) {
+            clearInterval(timerId);
+            toast({ title: "Time's up for this question!", variant: "default" });
+            handleNextQuestion();
+            return { ...prev, currentQuestionTimeLeft: 0 };
+          }
+          return { ...prev, currentQuestionTimeLeft: newTimeLeft };
+        });
+      }, 1000);
+      return () => clearInterval(timerId);
+    }
+  }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, handleNextQuestion, toast]);
+
+
   const handlePrevQuestion = () => {
     playClickSound();
     if (!testState || testState.currentQuestionIndex <= 0 || testState.isAutoSubmitting) return;
@@ -347,7 +348,7 @@ export default function CustomTestPage() {
     resultAnnouncementSpokenRef.current = false;
     pageTitleSpokenRef.current = true;
 
-    speak("Recreating test. Please wait.", { priority: 'optional' });
+    if (soundMode === 'full') speak("Recreating test. Please wait.", { priority: 'essential' });
     let topicForAI = "";
     if (originalSettings.sourceType === 'topic' && originalSettings.topics.length > 0) topicForAI = originalSettings.topics.join(', ');
     else if (originalSettings.sourceType === 'notes' && originalSettings.notes) topicForAI = `questions based on the following notes: ${originalSettings.notes}`;
@@ -362,10 +363,10 @@ export default function CustomTestPage() {
             timeLeft: originalSettings.timer && originalSettings.timer > 0 ? originalSettings.timer * 60 : undefined,
             currentQuestionTimeLeft: originalSettings.perQuestionTimer && originalSettings.perQuestionTimer > 0 ? originalSettings.perQuestionTimer : undefined,
           });
-          speak("Test ready for retake!", { priority: 'optional' });
+          if (soundMode === 'full') speak("Test ready for retake!", { priority: 'essential' });
         } else {
           toast({ title: 'Retake Error', description: 'Could not regenerate questions for retake.', variant: 'destructive' });
-          speak("Sorry, could not regenerate the test.", { priority: 'optional' });
+          if (soundMode === 'full') speak("Sorry, could not regenerate the test.", { priority: 'essential' });
         }
       })
       .catch(error => { console.error('Error retaking test:', error); const errorMessage = error instanceof Error ? error.message : 'Failed to retake test.'; toast({ title: 'Error', description: errorMessage, variant: 'destructive' }); })
