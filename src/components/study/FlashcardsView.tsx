@@ -5,10 +5,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
-import FlashcardItem from './FlashcardItem'; // Assuming FlashcardItem is correctly implemented
+import FlashcardItem from './FlashcardItem';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import type { Flashcard as FlashcardType } from '@/lib/types';
+import { useQuests } from '@/contexts/QuestContext';
 
 interface FlashcardsViewProps {
   flashcards: FlashcardType[] | null;
@@ -17,23 +18,36 @@ interface FlashcardsViewProps {
 
 const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [viewedIndices, setViewedIndices] = useState(new Set<number>());
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { quests, completeQuest3 } = useQuests();
 
   useEffect(() => {
     setCurrentCardIndex(0); 
+    setViewedIndices(new Set([0]));
   }, [flashcards]);
+
+  useEffect(() => {
+    if (viewedIndices.size >= 5 && !quests.quest3Completed) {
+      completeQuest3();
+    }
+  }, [viewedIndices, quests.quest3Completed, completeQuest3]);
 
   const handleNextCard = () => {
     playClickSound();
     if (flashcards && currentCardIndex < flashcards.length - 1) {
-      setCurrentCardIndex(prev => prev + 1);
+      const nextIndex = currentCardIndex + 1;
+      setCurrentCardIndex(nextIndex);
+      setViewedIndices(prev => new Set(prev).add(nextIndex));
     }
   };
 
   const handlePrevCard = () => {
     playClickSound();
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev - 1);
+      const prevIndex = currentCardIndex - 1;
+      setCurrentCardIndex(prevIndex);
+      setViewedIndices(prev => new Set(prev).add(prevIndex));
     }
   };
 

@@ -15,6 +15,7 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useQuests } from '@/contexts/QuestContext';
 
 import { generateNotesAction } from "@/lib/actions";
 import type { CombinedStudyMaterialsOutput } from '@/lib/types'; 
@@ -29,6 +30,7 @@ export default function GenerateNotesPage() {
   const router = useRouter(); 
   const { toast } = useToast(); 
   const { t } = useTranslation();
+  const { completeQuest1 } = useQuests();
 
   const [topic, setTopic] = useState<string>("");
   const [isLoadingAll, setIsLoadingAll] = useState<boolean>(false);
@@ -163,6 +165,7 @@ export default function GenerateNotesPage() {
         localStorage.setItem(getCacheKey("notes", trimmedTopic), JSON.stringify(combinedResult.notesOutput));
         toast({ title: t('generate.toast.notesSuccess'), description: t('generate.toast.notesSuccessDesc', { topic: trimmedTopic }) });
         navigationSuccess = true;
+        completeQuest1(); // Mark quest 1 as complete
       } else {
         setNotesError(t('generate.toast.notesErrorDesc'));
         toast({ title: t('generate.toast.notesError'), description: t('generate.toast.notesErrorDesc'), variant: 'destructive' });

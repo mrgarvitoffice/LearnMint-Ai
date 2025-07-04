@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Lightbulb, RotateCcw, Loader2 } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
+import { useQuests } from '@/contexts/QuestContext';
 import { cn } from '@/lib/utils';
 import type { QuizQuestion as QuizQuestionType } from '@/lib/types';
 
@@ -35,6 +36,7 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
   const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { speak, isSpeaking, isPaused, setVoicePreference } = useTTS();
+  const { quests, completeQuest2 } = useQuests();
   
   useEffect(() => {
     setVoicePreference('gojo');
@@ -127,6 +129,9 @@ const QuizView: React.FC<QuizViewProps> = ({ questions, topic, difficulty = 'med
     playClickSound();
     if (!questions) return;
     setQuizFinished(true);
+    if (!quests.quest2Completed) {
+      completeQuest2();
+    }
     const totalPossibleScore = questions.length * 4;
     const finalScoreMessage = `Quiz finished! Your final score is ${score} out of ${totalPossibleScore}.`;
     if (!isSpeaking && !isPaused) speak(finalScoreMessage);
