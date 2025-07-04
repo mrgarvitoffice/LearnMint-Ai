@@ -14,7 +14,7 @@ export function Logo({ size = 24, className, ...props }: LogoProps) {
       alt="LearnMint Logo"
       width={size}
       height={size}
-      className={cn(className)} // Removed rounded-sm for a sharper look
+      className={cn(className)}
       priority // Ensures logo loads quickly, good for LCP
       {...props}
     />

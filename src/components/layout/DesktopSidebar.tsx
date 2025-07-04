@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
@@ -11,25 +11,11 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Logo } from '../icons/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuPortal,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger
-} from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSidebar } from '../ui/sidebar';
 
-
-function SidebarNavItem({ item, pathname }: { item: NavItem, pathname: string }) {
+function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathname: string, isExpanded: boolean }) {
   const { t } = useTranslation();
   const Icon = item.icon;
   const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
@@ -43,9 +29,18 @@ function SidebarNavItem({ item, pathname }: { item: NavItem, pathname: string })
       )}
     >
       <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-      <span className="whitespace-nowrap font-medium">
-        {t(item.title)}
-      </span>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.span
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } }}
+            exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
+            className="whitespace-nowrap font-medium"
+          >
+            {t(item.title)}
+          </motion.span>
+        )}
+      </AnimatePresence>
        {isActive && (
         <motion.div
           layoutId="active-sidebar-indicator"
@@ -60,67 +55,73 @@ function SidebarNavItem({ item, pathname }: { item: NavItem, pathname: string })
 
 export function DesktopSidebar() {
   const pathname = usePathname();
-  const { user, signOutUser } = useAuth();
+  const { user } = useAuth();
+  const { open, setOpen } = useSidebar();
   
   return (
-    <aside
-      className="fixed top-0 left-0 z-50 h-full w-64 border-r bg-background/80 backdrop-blur-md flex-col hidden md:flex"
+    <motion.aside
+      className="fixed top-0 left-0 z-50 h-full border-r bg-background/80 backdrop-blur-md flex-col hidden md:flex"
+      initial={false}
+      animate={open ? "open" : "closed"}
+      variants={{
+        closed: { width: '5rem' },
+        open: { width: '16rem' },
+      }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      onHoverStart={() => setOpen(true)}
+      onHoverEnd={() => setOpen(false)}
     >
-      <div className="flex h-16 items-center shrink-0 px-4 border-b">
-         <motion.div whileTap={{ scale: 0.95 }}>
-            <Link href="/" className="flex items-center gap-2.5 font-semibold w-full">
-                <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
-                    <Logo size={32} />
-                </motion.div>
-                <span className="font-bold text-xl text-foreground whitespace-nowrap">
+      <div className="flex h-16 items-center shrink-0 px-4 border-b overflow-hidden">
+        <Link href="/" className="flex items-center gap-2.5 font-semibold w-full">
+            <Logo size={32} />
+            <AnimatePresence>
+              {open && (
+                <motion.span
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0, transition: { duration: 0.3, delay: 0.15 } }}
+                  exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                  className="font-bold text-xl text-foreground whitespace-nowrap"
+                 >
                   LearnMint
-                </span>
-            </Link>
-         </motion.div>
+                </motion.span>
+              )}
+            </AnimatePresence>
+        </Link>
       </div>
 
       <ScrollArea className="flex-1 mt-2">
         <nav className="grid items-start p-2 text-sm">
           {NAV_ITEMS.map((item) => (
-            <SidebarNavItem key={item.href || item.title} item={item} pathname={pathname} />
+            <SidebarNavItem key={item.href || item.title} item={item} pathname={pathname} isExpanded={open} />
           ))}
         </nav>
       </ScrollArea>
       
-      <div className="mt-auto p-2 border-t">
+      <div className="mt-auto p-2 border-t overflow-hidden">
         {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-               <button className="flex items-center w-full gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary">
-                 <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.isAnonymous ? undefined : user.photoURL || undefined} alt={user.displayName || "User"} />
-                    <AvatarFallback>
-                       {user.isAnonymous ? <User className="h-5 w-5"/> : user.displayName ? user.displayName.charAt(0).toUpperCase() : <User />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col items-start text-left">
-                    <span className="font-semibold leading-tight">{user.isAnonymous ? "Guest User" : user.displayName || "User"}</span>
-                     {!user.isAnonymous && <span className="text-xs text-muted-foreground/80 leading-tight truncate max-w-32">{user.email}</span>}
-                  </div>
-               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
-               {!user.isAnonymous && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={signOutUser} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign Out</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link href="/profile" className="flex items-center w-full gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary">
+            <Avatar className="h-8 w-8 shrink-0">
+              <AvatarImage src={user.isAnonymous ? undefined : user.photoURL || undefined} alt={user.displayName || "User"} />
+              <AvatarFallback>
+                  {user.isAnonymous ? <User className="h-5 w-5"/> : user.displayName ? user.displayName.charAt(0).toUpperCase() : <User />}
+              </AvatarFallback>
+            </Avatar>
+             <AnimatePresence>
+              {open && (
+                <motion.div
+                   initial={{ opacity: 0, x: -10 }}
+                   animate={{ opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } }}
+                   exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
+                   className="flex flex-col items-start text-left overflow-hidden"
+                 >
+                  <span className="font-semibold leading-tight whitespace-nowrap">{user.isAnonymous ? "Guest User" : user.displayName || "User"}</span>
+                    {!user.isAnonymous && <span className="text-xs text-muted-foreground/80 leading-tight truncate">{user.email}</span>}
+                </motion.div>
+              )}
+             </AnimatePresence>
+          </Link>
         )}
       </div>
-    </aside>
+    </motion.aside>
   );
 }

@@ -6,11 +6,10 @@ import { usePathname } from 'next/navigation';
 import { TOP_NAV_ITEMS } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
-import { NewslyIcon } from '../icons/NewslyIcon';
-import { Header } from './Header';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Logo } from '../icons/Logo';
 import { motion } from 'framer-motion';
+import { Header } from './Header'; // Re-importing Header for settings
 
 export function TopMobileNav() {
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
@@ -41,32 +40,13 @@ export function TopMobileNav() {
           const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
           const title = t(item.title);
           
-          if (item.title === 'sidebar.dailyNews') {
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors group",
-                  isActive ? "text-primary" : "hover:text-primary"
-                )}
-                onClick={playSound}
-              >
-                <div className="flex flex-col items-center justify-center -mt-1">
-                  <NewslyIcon className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="text-[10px] font-bold leading-tight mt-0.5">{title}</span>
-                </div>
-              </Link>
-            );
-          }
-
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary group",
-                isActive && "text-primary [text-shadow:0_0_8px_hsl(var(--primary))]"
+                "flex h-full flex-col items-center justify-center gap-1 rounded-md p-1 text-center text-muted-foreground transition-colors group",
+                isActive ? "text-primary" : "hover:text-primary"
               )}
               onClick={playSound}
             >

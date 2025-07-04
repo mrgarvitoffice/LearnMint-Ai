@@ -5,12 +5,9 @@ import React from 'react';
 import { useTheme } from "next-themes";
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSound } from '@/hooks/useSound';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuPortal,
@@ -18,7 +15,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
-import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Loader2, Settings } from 'lucide-react';
+import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, Settings } from 'lucide-react';
 import { APP_LANGUAGES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 import InstallPWAButton from '../features/pwa/InstallPWAButton';
@@ -29,7 +26,6 @@ export function Header() {
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const { theme, setTheme } = useTheme();
   const { soundMode, setSoundMode, fontSize, setFontSize, appLanguage, setAppLanguage } = useSettings();
-  const { loading } = useAuth();
   
   const handleSoundModeChange = (value: string) => {
     playClickSound();
@@ -55,84 +51,80 @@ export function Header() {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-end gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
        <div className="flex items-center gap-2">
           <InstallPWAButton />
-          {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuSub>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" side="bottom" forceMount>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Languages className="mr-2 h-4 w-4" />
+                  <span>{t('header.appLanguage')}</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
+                      {APP_LANGUAGES.map(lang => (
+                        <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              
+              <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Languages className="mr-2 h-4 w-4" />
-                    <span>{t('header.appLanguage')}</span>
+                  {soundMode === 'full' && <Volume2 className="mr-2 h-4 w-4" />}
+                  {soundMode === 'essential' && <Volume1 className="mr-2 h-4 w-4" />}
+                  {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
+                  <span>{t('header.soundMode')}</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
-                        {APP_LANGUAGES.map(lang => (
-                          <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
-                        ))}
+                  <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
+                      <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="muted">Muted</DropdownMenuRadioItem>
                       </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
+                  </DropdownMenuSubContent>
                   </DropdownMenuPortal>
-                </DropdownMenuSub>
-                
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                    {soundMode === 'full' && <Volume2 className="mr-2 h-4 w-4" />}
-                    {soundMode === 'essential' && <Volume1 className="mr-2 h-4 w-4" />}
-                    {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
-                    <span>{t('header.soundMode')}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                        <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
-                        <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="muted">Muted</DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                </DropdownMenuSub>
+              </DropdownMenuSub>
 
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                    <CaseSensitive className="mr-2 h-4 w-4" />
-                    <span>{t('header.fontSize')}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                        <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
-                        <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                </DropdownMenuSub>
+              <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                  <CaseSensitive className="mr-2 h-4 w-4" />
+                  <span>{t('header.fontSize')}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+                      <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="large">Large</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+              </DropdownMenuSub>
 
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                    {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                    <span>{t('header.theme')}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                        <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
-                        <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                  {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                  <span>{t('header.theme')}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
+                      <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
        </div>
     </header>
   );
