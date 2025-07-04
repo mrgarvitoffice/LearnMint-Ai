@@ -25,44 +25,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // This effect runs once on mount to handle both the redirect result
-    // and set up the permanent auth state listener.
+    // onAuthStateChanged is the primary listener for auth state.
+    // It handles logins, logouts, and token refreshes.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
 
-    // First, process any pending redirect result.
-    // This is for displaying toasts and tracking new user sign-ups.
+    // Separately, handle the result of a redirect operation.
+    // This is for giving feedback (toast) and tracking new users.
+    // This should run only once when the app loads after a redirect.
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
-          // User has just successfully signed in or signed up via redirect.
+          // A redirect was successfully completed.
           const isNewUser = getAdditionalUserInfo(result)?.isNewUser;
           if (isNewUser) {
-            toast({ title: 'Account Created!', description: 'Welcome to LearnMint! You are now being redirected.' });
+            toast({ title: 'Account Created!', description: 'Welcome to LearnMint! You have been signed in.' });
             await updateUserCountOnSignup();
           } else {
-            toast({ title: 'Signed In', description: 'Welcome back! Redirecting...' });
+            toast({ title: 'Signed In', description: 'Welcome back!' });
           }
         }
       })
       .catch((error) => {
-        console.error("Error during sign-in redirect result processing:", error);
-        // Don't show a toast for common 'user cancelled' scenarios
-        if (error.code !== 'auth/cancelled-popup-request') {
-           toast({
-             title: 'Sign In Failed',
-             description: error.message || 'An error occurred during the sign-in redirect.',
-             variant: 'destructive'
-           });
+        // Catch errors from the redirect, e.g., user cancels, account already exists.
+        console.error("Error from getRedirectResult:", error);
+        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+          toast({
+            title: 'Sign In Failed',
+            description: error.message || 'An error occurred during the sign-in process.',
+            variant: 'destructive',
+          });
         }
       });
 
-    // The onAuthStateChanged listener is the single source of truth for the user's session state.
-    // It will fire after a redirect is processed, after a normal email sign-in, or on initial page load.
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe(); // Cleanup the listener on unmount
+    return () => unsubscribe(); // Clean up the primary listener
   }, [toast]);
 
   // While the initial user state is being determined, show a loading screen.

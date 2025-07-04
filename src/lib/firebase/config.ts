@@ -20,18 +20,30 @@ const firebaseConfig: FirebaseOptions = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// --- CRITICAL VALIDATION ---
-// This check runs once when the app loads. If the API key is missing,
-// it logs a severe error to the server console, which is essential for debugging.
-if (!firebaseConfig.apiKey) {
-  console.error("************************************************************************************");
-  console.error("CRITICAL FIREBASE CONFIG ERROR: NEXT_PUBLIC_FIREBASE_API_KEY is MISSING.");
-  console.error("The application will not function correctly without it.");
-  console.error("Please ensure your .env file is in the project root and contains all the required");
-  console.error("NEXT_PUBLIC_FIREBASE_... variables from your Firebase project settings.");
-  console.error("After editing the .env file, you MUST restart your development server.");
-  console.error("************************************************************************************");
+// --- CRITICAL VALIDATION & LOGGING ---
+if (!firebaseConfig.apiKey || !firebaseConfig.authDomain) {
+  console.error(
+    '************************************************************************************\n' +
+    'CRITICAL FIREBASE CONFIG ERROR: One or more Firebase variables are MISSING.\n' +
+    'The application will not function correctly without them.\n' +
+    'Please ensure your .env file in the project root contains all the required\n' +
+    'NEXT_PUBLIC_FIREBASE_... variables from your Firebase project settings.\n' +
+    'After editing the .env file, you MUST restart your development server.\n' +
+    '************************************************************************************'
+  );
+} else {
+  // Add a success/info log so the user knows the keys ARE being read.
+  console.log(
+    '********************************************************\n' +
+    'Firebase config loaded successfully.\n' +
+    `Project ID: ${firebaseConfig.projectId}\n` +
+    `Auth Domain: ${firebaseConfig.authDomain}\n` +
+    'If sign-in fails, ensure this Auth Domain is added to\n' +
+    'the "Authorized domains" list in Firebase Authentication settings.\n' +
+    '********************************************************'
+  );
 }
+
 
 // --- Firebase Initialization ---
 // Initialize Firebase. If an app instance already exists, use it; otherwise, create a new one.

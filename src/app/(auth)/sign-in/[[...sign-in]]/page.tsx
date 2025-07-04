@@ -16,7 +16,9 @@ export default function SignInPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
+  const [isGuestLoading, setIsGuestLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -25,8 +27,7 @@ export default function SignInPage() {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: 'Signed In', description: 'Welcome back! Redirecting...' });
-      // Redirection is now handled by the AuthLayout and AuthProvider.
+      // Success toast is now handled by AuthContext after redirect state is confirmed.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -44,31 +45,32 @@ export default function SignInPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     setError(null);
     try {
       await signInWithRedirect(auth, googleProvider);
-      // The browser will redirect. The result is handled by AuthProvider.
+      // The browser will redirect. The result is handled by AuthContext.
     } catch (err: any) {
       setError(err.message);
       toast({ title: 'Google Sign In Failed', description: err.message, variant: 'destructive', duration: 8000 });
-      setIsLoading(false); // Only reset loading state on immediate error
+      setIsGoogleLoading(false); // Only reset loading state on immediate error
     }
   };
 
   const handleGuestSignIn = async () => {
-    setIsLoading(true);
+    setIsGuestLoading(true);
     setError(null);
     try {
       await signInAnonymously(auth);
-      toast({ title: 'Signed In as Guest', description: "Welcome! Some features may be limited for guest users." });
-      // Redirection is handled by the AuthLayout and AuthProvider.
+      // Success toast is now handled by AuthContext.
     } catch (err: any) {
       setError(err.message);
       toast({ title: 'Guest Sign In Failed', description: err.message, variant: 'destructive' });
-      setIsLoading(false);
+      setIsGuestLoading(false);
     }
   };
+  
+  const anyLoading = isLoading || isGoogleLoading || isGuestLoading;
 
   return (
     <Card className="w-full max-w-md shadow-xl">
@@ -79,12 +81,12 @@ export default function SignInPage() {
       
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={anyLoading}>
+            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
             Sign in with Google
           </Button>
-          <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
+          <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={anyLoading}>
+              {isGuestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
               Continue as Guest
           </Button>
         </div>
@@ -103,14 +105,14 @@ export default function SignInPage() {
         <form onSubmit={handleEmailSignIn} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} />
+            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={anyLoading} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} />
+            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={anyLoading} />
           </div>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={anyLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
