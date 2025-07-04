@@ -18,7 +18,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuests } from '@/contexts/QuestContext';
 import { db } from '@/lib/firebase/config';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMathFact } from '@/lib/math-fact-api';
@@ -135,27 +135,32 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
 
     useEffect(() => {
-        if (user) {
-            setLoadingLearners(true);
-            const unsubscribe = onSnapshot(doc(db, "metadata", "userCount"), (doc) => {
-                if (doc.exists()) {
-                    setTotalLearners(doc.data().count);
-                } else {
-                    console.warn("User count document does not exist in Firestore. Please create it at 'metadata/userCount' with a 'count' field of type number.");
-                    setTotalLearners(0);
-                }
-                setLoadingLearners(false);
-            }, (error) => {
-                console.error("Error fetching total learners (likely permissions for a new user, will retry):", error);
-                setTotalLearners(null);
-                setLoadingLearners(false);
-            });
+        const fetchLearnerCount = async () => {
+            if (user) {
+                setLoadingLearners(true);
+                try {
+                    const docRef = doc(db, "metadata", "userCount");
+                    const docSnap = await getDoc(docRef);
 
-            return () => unsubscribe();
-        } else {
-            setLoadingLearners(false);
-            setTotalLearners(null);
-        }
+                    if (docSnap.exists()) {
+                        setTotalLearners(docSnap.data().count);
+                    } else {
+                        console.warn("User count document does not exist in Firestore. Please create it at 'metadata/userCount' with a 'count' field of type number.");
+                        setTotalLearners(0);
+                    }
+                } catch (error) {
+                    console.error("Error fetching total learners (permissions error is likely):", error);
+                    setTotalLearners(null); // Set to null on error to hide the feature gracefully
+                } finally {
+                    setLoadingLearners(false);
+                }
+            } else {
+                setLoadingLearners(false);
+                setTotalLearners(null);
+            }
+        };
+
+        fetchLearnerCount();
     }, [user]);
   
     useEffect(() => {
