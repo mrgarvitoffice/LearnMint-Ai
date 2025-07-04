@@ -1,16 +1,15 @@
 
-"use client"; // This layout uses client-side hooks (useEffect, useRouter, useAuth).
+"use client";
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext'; // Custom hook to access authentication state
-import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, Sidebar)
-import { Loader2 } from 'lucide-react'; // Loading spinner icon
+import { useAuth } from '@/contexts/AuthContext';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MainAppLayoutProps {
-  children: ReactNode; // The content of the specific page being rendered within this layout
+  children: ReactNode;
 }
 
 /**
@@ -20,31 +19,37 @@ interface MainAppLayoutProps {
  * It ensures that only authenticated users can access the main application content.
  */
 export default function MainAppLayout({ children }: MainAppLayoutProps) {
-  const { user, loading } = useAuth(); // Get user and loading state from AuthContext
-  const pathname = usePathname();
+  const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Effect to handle redirection for unauthenticated users
-  useEffect(() => {
-    // Once the initial auth check is complete, if there's no user, redirect to sign-in.
-    if (!loading && !user) {
-      router.replace('/sign-in');
-    }
-  }, [user, loading, router]); // Dependencies for the effect
-
-  // If the session is still being verified OR if there is no user, show a full-page loader.
-  // This prevents the main app content from ever rendering for an unauthenticated user,
-  // and it provides a seamless loading experience.
-  if (loading || !user) {
+  // 1. If we are still determining the auth state, show a full-page loader.
+  // This prevents any rendering of the app or redirects until the user's session is confirmed.
+  if (loading) {
     return (
-       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-lg">Verifying your session...</p>
       </div>
     );
   }
 
-  // If loading is complete and a user object exists, render the main application layout.
+  // 2. If the auth check is complete and there is NO user, redirect to the sign-in page.
+  if (!user) {
+    // This check ensures router.replace is only called on the client-side.
+    if (typeof window !== 'undefined') {
+      router.replace('/sign-in');
+    }
+    // Return a loader to prevent rendering children while the redirect is in progress.
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-lg">Redirecting to sign-in...</p>
+      </div>
+    );
+  }
+
+  // 3. If we reach here, `loading` is false and `user` exists. Render the main application layout.
   return (
     <AppLayout>
       <AnimatePresence mode="wait">
