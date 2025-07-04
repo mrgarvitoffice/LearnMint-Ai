@@ -88,7 +88,7 @@ export default function SignUpPage() {
       }
       toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
       router.push('/');
-    } catch (err: any)
+    } catch (err: any) {
        let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
         description = 'Your browser blocked the sign-in pop-up. Please allow pop-ups for this site and try again.';
