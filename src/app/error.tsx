@@ -35,7 +35,7 @@ export default function GlobalError({
             {error.stack && <details className="mt-2 text-xs"><summary>Stack Trace</summary><pre className="whitespace-pre-wrap">{error.stack}</pre></details>}
           </div>
           <p className="text-sm text-muted-foreground">
-            This might be due to a misconfiguration. Please ensure all API keys (especially Clerk keys in your <code>.env</code> file: <code>NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> and <code>CLERK_SECRET_KEY</code>) are correctly set up and that you have restarted your server after any changes.
+            This might be due to a misconfiguration. Please ensure all API keys in your <code>.env</code> file (especially your Firebase project configuration) are correctly set up and that you have restarted your server after any changes.
           </p>
           <Button
             onClick={() => reset()}

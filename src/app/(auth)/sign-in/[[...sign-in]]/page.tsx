@@ -34,12 +34,14 @@ export default function SignInPage() {
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        description = 'Invalid email or password. Please try again.';
+        description = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (err.code === 'auth/too-many-requests') {
+        description = 'Access to this account has been temporarily disabled due to many failed login attempts. You can reset your password or try again later.';
       } else if (err.message) {
         description = err.message;
       }
       setError(description);
-      toast({ title: 'Sign In Failed', description: description, variant: 'destructive' });
+      toast({ title: 'Sign In Failed', description: description, variant: 'destructive', duration: 8000 });
     } finally {
       setIsLoading(false);
     }

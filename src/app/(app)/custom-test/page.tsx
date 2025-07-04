@@ -34,6 +34,7 @@ const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
 const PAGE_TITLE = "Advanced Test Configuration";
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
+const NOTES_TRUNCATION_LIMIT = 4000; // Character limit for notes sent to AI
 
 const formSchema = z.object({
   sourceType: z.enum(['topic', 'notes', 'recent']).default('topic'),
@@ -96,9 +97,6 @@ export default function CustomTestPage() {
   const pageTitleSpokenRef = useRef(false);
   const resultAnnouncementSpokenRef = useRef(false);
 
-  const currentQuestionTimerIdRef = useRef<NodeJS.Timeout | null>(null);
-  const overallTestTimerIdRef = useRef<NodeJS.Timeout | null>(null);
-
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -108,34 +106,7 @@ export default function CustomTestPage() {
 
   const sourceType = watch('sourceType');
   const selectedRecentTopicsWatch = watch('selectedRecentTopics');
-
-  useEffect(() => {
-    setVoicePreference('holo');
-  }, [setVoicePreference]);
-
-  useEffect(() => {
-    if (sourceType !== 'recent' || (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length === 0)) {
-      setRecentTopicsSelectionDone(false);
-    }
-  }, [sourceType, selectedRecentTopicsWatch]);
-
-  const handleConfirmRecentTopics = () => {
-    playClickSound();
-    if (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length > 0) {
-      setRecentTopicsSelectionDone(true);
-      toast({
-        title: "Topics Confirmed",
-        description: "Recent topics selection confirmed. Please proceed with other test settings.",
-      });
-    } else {
-      toast({
-        title: "No Topics Selected",
-        description: "Please select at least one recent topic to confirm.",
-        variant: "destructive",
-      });
-    }
-  };
-
+  
   const getPerformanceTag = useCallback((percentage: number): string => {
     if (percentage === 100) return "Conqueror";
     if (percentage >= 90) return "Ace";
@@ -145,21 +116,8 @@ export default function CustomTestPage() {
     return "Keep Practicing!";
   }, []);
 
-  const clearCurrentQuestionTimer = useCallback(() => {
-    if (currentQuestionTimerIdRef.current) clearInterval(currentQuestionTimerIdRef.current);
-    currentQuestionTimerIdRef.current = null;
-  }, []);
-
-  const clearOverallTestTimer = useCallback(() => {
-    if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
-    overallTestTimerIdRef.current = null;
-  }, []);
-
   const handleSubmitTest = useCallback((autoSubmitted = false) => {
     if (!autoSubmitted) playClickSound();
-    clearCurrentQuestionTimer();
-    clearOverallTestTimer();
-
     setTestState(prevTestState => {
       if (!prevTestState || prevTestState.showResults) return prevTestState;
 
@@ -195,24 +153,39 @@ export default function CustomTestPage() {
         performanceTag: calculatedPerformanceTag, currentQuestionTimeLeft: undefined,
       };
     });
-  }, [playClickSound, clearCurrentQuestionTimer, clearOverallTestTimer, getPerformanceTag, playCorrectSound, playIncorrectSound, speak, toast]);
+  }, [playClickSound, getPerformanceTag, playCorrectSound, playIncorrectSound, speak, toast]);
 
   const handleNextQuestion = useCallback(() => {
       playClickSound();
-      if (!testState || testState.currentQuestionIndex >= testState.questions.length - 1 || testState.isAutoSubmitting) {
-          if (!testState?.isAutoSubmitting) handleSubmitTest(false);
-          return;
-      }
-      clearCurrentQuestionTimer();
       setTestState(prev => {
-          if (!prev) return null;
+          if (!prev || prev.currentQuestionIndex >= prev.questions.length - 1 || prev.isAutoSubmitting) {
+              if (!prev?.isAutoSubmitting) handleSubmitTest(false);
+              return prev;
+          }
           const nextIndex = prev.currentQuestionIndex + 1;
           const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
           return { ...prev, currentQuestionIndex: nextIndex, currentQuestionTimeLeft: nextQuestionTime };
       });
-  }, [testState, playClickSound, clearCurrentQuestionTimer, handleSubmitTest]);
+  }, [playClickSound, handleSubmitTest]);
 
+  useEffect(() => { setVoicePreference('holo'); }, [setVoicePreference]);
 
+  useEffect(() => {
+    if (sourceType !== 'recent' || (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length === 0)) {
+      setRecentTopicsSelectionDone(false);
+    }
+  }, [sourceType, selectedRecentTopicsWatch]);
+
+  const handleConfirmRecentTopics = () => {
+    playClickSound();
+    if (selectedRecentTopicsWatch && selectedRecentTopicsWatch.length > 0) {
+      setRecentTopicsSelectionDone(true);
+      toast({ title: "Topics Confirmed", description: "Recent topics selection confirmed. Please proceed with other test settings." });
+    } else {
+      toast({ title: "No Topics Selected", description: "Please select at least one recent topic to confirm.", variant: "destructive" });
+    }
+  };
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current && !testState && !isLoading && soundMode !== 'muted') {
@@ -220,15 +193,10 @@ export default function CustomTestPage() {
         pageTitleSpokenRef.current = true;
       }
     }, 500);
-
     return () => clearTimeout(timer);
   }, [speak, testState, isLoading, soundMode]);
 
-  useEffect(() => {
-    if (isLoading) {
-      speak("Creating custom test. Please wait.", { priority: 'essential' });
-    }
-  }, [isLoading, speak]);
+  useEffect(() => { if (isLoading) speak("Creating custom test. Please wait.", { priority: 'essential' }); }, [isLoading, speak]);
 
   useEffect(() => {
     if (transcript && sourceType === 'topic') setValue('topics', transcript);
@@ -246,16 +214,16 @@ export default function CustomTestPage() {
   }, []);
 
   useEffect(() => {
-    if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
-    if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft > 0 && !testState.showResults && !testState.isAutoSubmitting) {
-      overallTestTimerIdRef.current = setInterval(() => {
+    if (testState && typeof testState.timeLeft === 'number' && testState.timeLeft > 0 && !testState.showResults) {
+      const timerId = setInterval(() => {
         setTestState(currentTestState => {
-          if (!currentTestState || typeof currentTestState.timeLeft !== 'number' || currentTestState.timeLeft <= 0 || currentTestState.showResults || currentTestState.isAutoSubmitting) {
-            if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current); return currentTestState;
+          if (!currentTestState || typeof currentTestState.timeLeft !== 'number' || currentTestState.timeLeft <= 0 || currentTestState.showResults) {
+            clearInterval(timerId);
+            return currentTestState;
           }
           const newTimeLeftVal = currentTestState.timeLeft - 1;
           if (newTimeLeftVal <= 0) {
-            if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current);
+            clearInterval(timerId);
             toast({ title: "Time's Up!", description: "Your test is being submitted automatically.", variant: "default" });
             handleSubmitTest(true);
             return { ...currentTestState, timeLeft: 0, isAutoSubmitting: true };
@@ -263,50 +231,58 @@ export default function CustomTestPage() {
           return { ...currentTestState, timeLeft: newTimeLeftVal };
         });
       }, 1000);
+      return () => clearInterval(timerId);
     }
-    return () => { if (overallTestTimerIdRef.current) clearInterval(overallTestTimerIdRef.current); };
-  }, [testState?.timeLeft, testState?.isAutoSubmitting, testState?.showResults, handleSubmitTest, toast]);
+  }, [testState?.timeLeft, testState?.showResults, handleSubmitTest, toast]);
 
   useEffect(() => {
-    clearCurrentQuestionTimer();
-    if (testState && !testState.showResults && !testState.isAutoSubmitting && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
-      const perQuestionDuration = testState.settings.perQuestionTimer;
-      if (testState.currentQuestionTimeLeft === undefined || testState.currentQuestionTimeLeft > perQuestionDuration || testState.currentQuestionTimeLeft <= 0) {
-        setTestState(prev => prev ? { ...prev, currentQuestionTimeLeft: perQuestionDuration } : null);
-      }
-      currentQuestionTimerIdRef.current = setInterval(() => {
+    if (testState && !testState.showResults && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
+      const timerId = setInterval(() => {
         setTestState(prev => {
-          if (!prev || prev.showResults || prev.isAutoSubmitting || !prev.currentQuestionTimeLeft || prev.currentQuestionTimeLeft <= 0) {
-            clearCurrentQuestionTimer(); return prev;
+          if (!prev || prev.showResults || !prev.currentQuestionTimeLeft || prev.currentQuestionTimeLeft <= 0) {
+            clearInterval(timerId);
+            return prev;
           }
           const newTimeLeft = prev.currentQuestionTimeLeft - 1;
           if (newTimeLeft <= 0) {
-            clearCurrentQuestionTimer();
+            clearInterval(timerId);
             toast({ title: "Time's up for this question!", variant: "default" });
-            if (prev.currentQuestionIndex < prev.questions.length - 1) handleNextQuestion();
-            else handleSubmitTest(true);
+            handleNextQuestion();
             return { ...prev, currentQuestionTimeLeft: 0 };
           }
           return { ...prev, currentQuestionTimeLeft: newTimeLeft };
         });
       }, 1000);
+      return () => clearInterval(timerId);
     }
-    return () => clearCurrentQuestionTimer();
-  }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, testState?.isAutoSubmitting, handleNextQuestion, handleSubmitTest, toast, clearCurrentQuestionTimer]);
+  }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, handleNextQuestion, toast]);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     playActionSound();
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
     pageTitleSpokenRef.current = true;
-
     speak("Creating custom test. Please wait.", { priority: 'essential' });
 
-    let topicForAI = ""; let topicsForSettings: string[] = [];
-    if (data.sourceType === 'topic' && data.topics) { topicForAI = data.topics; topicsForSettings = [data.topics]; }
-    else if (data.sourceType === 'notes' && data.notes) { topicForAI = `the following notes: ${data.notes}`; topicsForSettings = ["Notes-based Test"]; }
-    else if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > 0) { topicForAI = data.selectedRecentTopics.join(', '); topicsForSettings = data.selectedRecentTopics; }
-    else { toast({ title: "Error", description: "Please provide a topic, notes, or select recent topics.", variant: "destructive" }); setIsLoading(false); return; }
+    let topicForAI = ""; let topicsForSettings: string[] = []; let notesForAI = "";
+    if (data.sourceType === 'topic' && data.topics) {
+        topicForAI = data.topics; topicsForSettings = [data.topics];
+    } else if (data.sourceType === 'notes' && data.notes) {
+        notesForAI = data.notes;
+        if (notesForAI.length > NOTES_TRUNCATION_LIMIT) {
+          const truncatedNotes = `${notesForAI.substring(0, NOTES_TRUNCATION_LIMIT / 2)}... (content truncated) ...${notesForAI.substring(notesForAI.length - NOTES_TRUNCATION_LIMIT / 2)}`;
+          topicForAI = `questions based on the following notes: ${truncatedNotes}`;
+          toast({ title: "Notes Truncated", description: `Your notes were long and have been truncated to prevent errors.`, variant: "default"});
+        } else {
+          topicForAI = `questions based on the following notes: ${notesForAI}`;
+        }
+        topicsForSettings = ["Notes-based Test"];
+    } else if (data.sourceType === 'recent' && data.selectedRecentTopics && data.selectedRecentTopics.length > 0) {
+        topicForAI = data.selectedRecentTopics.join(', '); topicsForSettings = data.selectedRecentTopics;
+    } else {
+        toast({ title: "Error", description: "Please provide a topic, notes, or select recent topics.", variant: "destructive" });
+        setIsLoading(false); return;
+    }
 
     const settings: TestSettings = {
       topics: topicsForSettings, sourceType: data.sourceType, selectedRecentTopics: data.selectedRecentTopics,
@@ -315,9 +291,8 @@ export default function CustomTestPage() {
     };
 
     try {
-      const quizInputTopic = data.sourceType === 'notes' ? `questions based on the following notes: ${data.notes}` : topicForAI;
       const result: GenerateQuizQuestionsOutput = await generateQuizAction({
-        topic: `${quizInputTopic}`,
+        topic: topicForAI,
         numQuestions: settings.numQuestions,
         difficulty: settings.difficulty,
         image: data.sourceType === 'notes' ? data.notesImage : undefined
@@ -362,7 +337,6 @@ export default function CustomTestPage() {
   const handlePrevQuestion = () => {
     playClickSound();
     if (!testState || testState.currentQuestionIndex <= 0 || testState.isAutoSubmitting) return;
-    clearCurrentQuestionTimer();
     setTestState(prev => {
       if (!prev) return null;
       const prevQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
@@ -405,7 +379,7 @@ export default function CustomTestPage() {
 
   const handleNewTest = () => {
     playActionSound(); 
-    setTestState(null); clearCurrentQuestionTimer(); clearOverallTestTimer();
+    setTestState(null);
     pageTitleSpokenRef.current = false; resultAnnouncementSpokenRef.current = false;
     setValue('topics', ''); setValue('notes', ''); setValue('selectedRecentTopics', []);
     setValue('difficulty', 'medium'); setValue('numQuestions', 5); setValue('timer', 0); setValue('perQuestionTimer', 0);
