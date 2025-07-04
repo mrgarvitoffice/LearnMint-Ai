@@ -29,6 +29,10 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
   useEffect(() => { 
     if (transcript) {
       setInputValue(transcript);
