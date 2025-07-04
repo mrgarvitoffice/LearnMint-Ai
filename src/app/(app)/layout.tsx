@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -23,9 +23,16 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // 1. If we are still determining the auth state, show a full-page loader.
-  // This prevents any rendering of the app or redirects until the user's session is confirmed.
-  if (loading) {
+  useEffect(() => {
+    // This effect handles redirection safely after the component has rendered.
+    if (!loading && !user) {
+      router.replace('/sign-in');
+    }
+  }, [loading, user, router]);
+
+  // While loading or if there's no user, show a loader.
+  // The redirection will be handled by the useEffect hook.
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -34,22 +41,7 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
     );
   }
 
-  // 2. If the auth check is complete and there is NO user, redirect to the sign-in page.
-  if (!user) {
-    // This check ensures router.replace is only called on the client-side.
-    if (typeof window !== 'undefined') {
-      router.replace('/sign-in');
-    }
-    // Return a loader to prevent rendering children while the redirect is in progress.
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Redirecting to sign-in...</p>
-      </div>
-    );
-  }
-
-  // 3. If we reach here, `loading` is false and `user` exists. Render the main application layout.
+  // If loading is finished and a user exists, render the main application layout.
   return (
     <AppLayout>
       <AnimatePresence mode="wait">
