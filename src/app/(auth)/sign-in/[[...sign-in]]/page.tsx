@@ -57,14 +57,20 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    await signInWithGoogle();
-    setIsLoading(false);
+    try {
+      await signInWithGoogle();
+    } catch(error) {
+      console.error("Google sign in initiation failed", error);
+      toast({ title: "Could not start Google Sign-In", description: "Please check your internet connection and try again.", variant: "destructive"});
+      setIsLoading(false);
+    }
+    // No finally block to set loading false, as the page will redirect.
   };
   
   const handleGuestSignIn = async () => {
     setIsLoading(true);
     await signInAsGuest();
-    setIsLoading(false);
+    // No finally block to set loading false, as the context change will trigger a redirect.
   }
 
   return (

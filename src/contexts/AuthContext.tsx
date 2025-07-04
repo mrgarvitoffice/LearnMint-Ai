@@ -34,49 +34,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // This effect runs once on mount to check for a redirect result from Google.
-    // This is the crucial step to complete the signInWithRedirect flow.
-    getRedirectResult(auth)
-      .then((result) => {
+    // This effect runs once on mount to handle the redirect result from Google
+    // and to set up the primary authentication state listener.
+    const handleAuthChanges = async () => {
+      try {
+        const result = await getRedirectResult(auth);
         if (result) {
-          // This block runs when the user has successfully signed in with Google and is redirected back.
+          // User has successfully signed in with Google and is redirected back.
           toast({ title: "Sign-in successful!", description: "Welcome to LearnMint." });
           const userRef = doc(db, 'users', result.user.uid);
-          
-          // Check if it's a new user and create a document in Firestore.
-          getDoc(userRef).then(docSnap => {
-            if (!docSnap.exists()) {
-              setDoc(userRef, {
-                uid: result.user.uid,
-                email: result.user.email,
-                displayName: result.user.displayName,
-                photoURL: result.user.photoURL,
-                createdAt: serverTimestamp(), // Use server timestamp for accuracy
-              });
-            }
-          });
+          const docSnap = await getDoc(userRef);
+          if (!docSnap.exists()) {
+            // Create a new user document in Firestore if it's their first time.
+            await setDoc(userRef, {
+              uid: result.user.uid,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL,
+              createdAt: serverTimestamp(),
+            });
+          }
         }
-        // If result is null, it means this was not a redirect sign-in, which is normal.
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Google Redirect Result Error:", error);
         toast({ title: "Google Sign-in failed", description: "There was an issue completing your sign-in. Please try again.", variant: "destructive" });
+      }
+
+      // onAuthStateChanged is the primary listener for any auth changes.
+      // It will catch the user from the redirect, email sign-ins, sign-outs, and cached sessions.
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
       });
 
-    // onAuthStateChanged is the primary listener for any auth changes.
-    // It will catch the user from the redirect, email sign-ins, sign-outs, and cached sessions.
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+      // Cleanup the listener on unmount
+      return () => unsubscribe();
+    };
 
-    // Cleanup the listener on unmount
-    return () => unsubscribe();
+    handleAuthChanges();
   }, [toast]);
 
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+    setLoading(true);
+    const provider = new new GoogleAuthProvider();
     // Start the redirect process. The result is handled by getRedirectResult on page load.
     await signInWithRedirect(auth, provider);
   };
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      // loading will be set to false by onAuthStateChanged
     }
   };
 
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     // onAuthStateChanged will set user to null
     toast({ title: "Signed Out", description: "You have been successfully signed out." });
+    router.push('/sign-in');
   };
   
   const contextValue = {
