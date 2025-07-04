@@ -136,7 +136,8 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchLearnerCount = async () => {
-            if (user) {
+            // FIX: Only fetch if the user exists AND is not a guest.
+            if (user && !user.isAnonymous) {
                 setLoadingLearners(true);
                 try {
                     const docRef = doc(db, "metadata", "userCount");
@@ -155,6 +156,7 @@ export default function DashboardPage() {
                     setLoadingLearners(false);
                 }
             } else {
+                // If no user or user is a guest, don't attempt to fetch.
                 setLoadingLearners(false);
                 setTotalLearners(null);
             }
@@ -336,5 +338,3 @@ export default function DashboardPage() {
       </motion.div>
   );
 }
-
-    
