@@ -3,10 +3,11 @@
 
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, getRedirectResult, getAdditionalUserInfo, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Loader2 } from 'lucide-react';
 import { updateUserCountOnSignup } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -21,24 +22,43 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const creationTime = currentUser.metadata.creationTime ? new Date(currentUser.metadata.creationTime).getTime() : 0;
-        const lastSignInTime = currentUser.metadata.lastSignInTime ? new Date(currentUser.metadata.lastSignInTime).getTime() : 0;
-
-        // If the account was created in the last 10 seconds, it's a new user.
-        // This handles both email and Google sign-ups after redirect.
-        if (lastSignInTime > 0 && creationTime > 0 && (lastSignInTime - creationTime < 10000)) {
-          await updateUserCountOnSignup();
+    // This function handles the result of a redirect sign-in attempt.
+    // It runs once when the app loads after a user is redirected back from Google.
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          // User has just successfully signed in or signed up via redirect.
+          const additionalUserInfo = getAdditionalUserInfo(result);
+          if (additionalUserInfo?.isNewUser) {
+            toast({ title: 'Account Created!', description: 'Welcome to LearnMint! Redirecting...' });
+            await updateUserCountOnSignup();
+          } else {
+            toast({ title: 'Signed In', description: 'Welcome back! Redirecting...' });
+          }
+          // The onAuthStateChanged listener below will handle the actual state update.
         }
-      }
+      })
+      .catch((error) => {
+        console.error("Error during sign-in redirect result processing:", error);
+        toast({
+          title: 'Sign In Failed',
+          description: error.message || 'An error occurred during the sign-in redirect.',
+          variant: 'destructive'
+        });
+      });
+
+    // This onAuthStateChanged listener is the single source of truth for the user's session state.
+    // It will fire after a redirect is processed, after a normal email sign-in, or on initial page load.
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
+
     return () => unsubscribe();
-  }, []);
+  }, [toast]); // Added toast to dependency array
 
   if (loading) {
     return (
