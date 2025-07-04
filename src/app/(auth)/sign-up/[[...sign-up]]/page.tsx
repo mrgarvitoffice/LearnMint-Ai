@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { auth, googleProvider, db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { Loader2, Chrome } from 'lucide-react';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +25,12 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   const updateUserCount = async () => {
     const userCountRef = doc(db, "metadata", "userCount");
@@ -52,7 +60,7 @@ export default function SignUpPage() {
       await createUserWithEmailAndPassword(auth, email, password);
       await updateUserCount();
       toast({ title: 'Account Created!', description: 'You have successfully signed up.' });
-      router.push('/');
+      // Redirection is now handled by the useEffect hook watching the user state.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/email-already-in-use') {
@@ -79,7 +87,7 @@ export default function SignUpPage() {
         await updateUserCount();
       }
       toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
-      router.push('/');
+      // Redirection is now handled by the useEffect hook watching the user state.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
@@ -97,6 +105,15 @@ export default function SignUpPage() {
       setIsGoogleLoading(false);
     }
   };
+
+  if (loading || user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-lg">Checking session...</p>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md shadow-xl">
