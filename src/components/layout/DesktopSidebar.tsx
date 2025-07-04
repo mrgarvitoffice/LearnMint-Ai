@@ -35,6 +35,8 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
       <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
       <motion.span 
         variants={navItemVariants}
+        animate={isExpanded ? "expanded" : "collapsed"}
+        initial="collapsed"
         className={cn("whitespace-nowrap", !isExpanded && "sr-only")}
       >
         {t(item.title)}
@@ -76,7 +78,7 @@ export function DesktopSidebar() {
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className="fixed top-0 left-0 z-50 h-full border-r bg-background/80 backdrop-blur-md flex-col hidden md:flex"
     >
-      <div className="flex h-16 items-center shrink-0 px-4">
+      <div className="flex h-16 items-center shrink-0 px-4 border-b">
          <Link href="/" className={cn("flex items-center gap-2.5 font-semibold", isExpanded ? 'justify-start w-full pl-1' : 'justify-center w-full')}>
             <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
                 <Logo size={32} />
