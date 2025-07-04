@@ -382,13 +382,13 @@ export async function directYoutubeSearch(input: YoutubeSearchInput): Promise<Yo
  * Performs a direct search on the Google Books API.
  * This is used by the Library page to fetch books without involving a Genkit flow for this specific search.
  *
- * @param input - Contains the search query, maximum results, and optional country code.
+ * @param input - Contains the search query and maximum results.
  * @returns A promise that resolves to a list of Google Book items.
  * @throws Error if the GOOGLE_BOOKS_API_KEY is not configured or if the API request fails.
  */
 export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Promise<GoogleBooksSearchOutput> {
   const actionName = "directGoogleBooksSearch";
-  console.log(`[Server Action] ${actionName} called for query: ${input.query}, maxResults: ${input.maxResults}, country: ${input.country}`);
+  console.log(`[Server Action] ${actionName} called for query: ${input.query}, maxResults: ${input.maxResults}`);
 
   if (typeof input.query !== 'string') {
     console.error(`[Server Action Error - ${actionName}] Query is not a string, received:`, input.query);
@@ -409,10 +409,7 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   if (apiKey) { // API key is typically required
     params.append('key', apiKey);
   }
-  if (input.country) { // Optional country to restrict search
-    params.append('country', input.country);
-  }
-
+  
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`);
     if (!response.ok) {

@@ -210,7 +210,6 @@ export interface GoogleBookItem {
 export interface GoogleBooksSearchInput {
   query: string;
   maxResults?: number;
-  country?: string; // Added country parameter
 }
 export interface GoogleBooksSearchOutput {
   books: GoogleBookItem[];
