@@ -1,7 +1,6 @@
-
 // Root Layout for the LearnMint Application
 // This is the main layout component that wraps all pages.
-// It sets up global styles, fonts, theme provider, query provider, authentication provider, and toaster.
+// It sets up global styles, fonts, theme provider, query provider, and toaster.
 
 import type { Metadata, Viewport } from 'next'; // Type for page metadata
 import { Orbitron } from 'next/font/google'; // Switched to Orbitron font
@@ -10,7 +9,6 @@ import { AppProviders } from '@/components/providers/AppProviders'; // Context p
 import { Toaster } from "@/components/ui/toaster"; // Component for displaying toast notifications
 import { TopProgressBar } from '@/components/layout/TopProgressBar'; // Visual loading indicator for page transitions
 import { Suspense } from 'react'; // React Suspense for handling loading states
-import { AuthProvider } from '@/contexts/AuthContext'; // Authentication context provider
 
 // Initialize Orbitron font with variable for Tailwind CSS
 const orbitron = Orbitron({
@@ -67,8 +65,6 @@ export default function RootLayout({
       <body className={`${orbitron.variable} font-sans antialiased`}>
         {/* AppProviders wraps children with ThemeProvider and QueryClientProvider */}
         <AppProviders>
-          {/* AuthProvider manages user authentication state */}
-          <AuthProvider>
             {/* Suspense for TopProgressBar to allow it to use client-side hooks */}
             <Suspense fallback={null}>
               <TopProgressBar />
@@ -77,7 +73,6 @@ export default function RootLayout({
             {children}
             {/* Toaster component for displaying notifications */}
             <Toaster />
-          </AuthProvider>
         </AppProviders>
       </body>
     </html>

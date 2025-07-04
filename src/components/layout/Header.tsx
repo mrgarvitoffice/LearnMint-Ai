@@ -3,14 +3,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
-import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSound } from '@/hooks/useSound';
-import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase/config';
-import { signOut } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { 
@@ -25,9 +20,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Logo } from '@/components/icons/Logo';
-import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, LogIn, UserPlus, ChevronRight } from 'lucide-react';
+import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, ChevronRight } from 'lucide-react';
 import { APP_NAME, APP_LANGUAGES } from '@/lib/constants';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 
@@ -39,24 +33,9 @@ interface HeaderProps {
 export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
   const { t } = useTranslation();
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
-  const router = useRouter();
-  const { toast } = useToast();
-  const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { soundMode, setSoundMode, fontSize, setFontSize, appLanguage, setAppLanguage } = useSettings();
   
-  const handleSignOut = async () => {
-    playClickSound();
-    try {
-      await signOut(auth);
-      toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
-      router.push('/sign-in');
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      toast({ title: 'Sign Out Failed', description: 'Could not sign out. Please try again.', variant: 'destructive' });
-    }
-  };
-
   const handleSoundModeChange = (value: string) => {
     playClickSound();
     setSoundMode(value as any);
@@ -76,18 +55,6 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
     playClickSound();
     setAppLanguage(value);
   };
-
-  const getUserFirstName = () => {
-    if (!user) return "User";
-    if (user.displayName) return user.displayName.split(' ')[0];
-    if (user.email) {
-      const emailName = user.email.split('@')[0];
-      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
-    }
-    return "User";
-  };
-  const firstName = getUserFirstName();
-  const isGuest = user?.isAnonymous;
 
   const SettingsMenuContent = () => (
     <React.Fragment>
@@ -207,51 +174,12 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full group">
-                  <Avatar className="h-9 w-9 transition-transform duration-200 group-hover:scale-110">
-                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} data-ai-hint="profile picture" />
-                        <AvatarFallback className="bg-muted">
-                          {isGuest ? <UserCircle className="h-5 w-5" /> : firstName ? firstName.charAt(0).toUpperCase() : <UserCircle className="h-5 w-5" />}
-                        </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56" collisionPadding={10}>
-                <DropdownMenuLabel>
-                    <p className="font-semibold">{isGuest ? 'Guest User' : t('header.profile.greeting', { name: firstName })}</p>
-                    {user.email && <p className="text-xs text-muted-foreground font-normal">{user.email}</p>}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                
-                {isGuest ? (
-                    <>
-                        <DropdownMenuItem onClick={() => router.push('/sign-up')}>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            <span>Create Account</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/sign-in')}>
-                            <LogIn className="mr-2 h-4 w-4" />
-                            <span>Sign In</span>
-                        </DropdownMenuItem>
-                    </>
-                ) : (
-                    <DropdownMenuItem onClick={() => router.push('/profile')}>
-                      <UserCircle className="mr-2 h-4 w-4" />
-                      <span>{t('header.profile.profile')}</span>
-                    </DropdownMenuItem>
-                )}
-
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{isGuest ? 'Exit Guest Session' : t('header.profile.signOut')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-        )}
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/sign-in">
+            <UserCircle className="mr-2 h-4 w-4" />
+            Sign In
+          </Link>
+        </Button>
       </div>
     </header>
   );

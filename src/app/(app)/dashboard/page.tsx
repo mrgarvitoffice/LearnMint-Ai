@@ -15,7 +15,6 @@ import { Logo } from '@/components/icons/Logo';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAuth } from '@/contexts/AuthContext';
 import { useQuests } from '@/contexts/QuestContext';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';

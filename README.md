@@ -1,4 +1,3 @@
-
 # 🌱 LearnMint: Your AI-Powered Study Revolution! 🚀
 ## Made by **MrGarvit**!
 
@@ -27,7 +26,6 @@ With **LearnMint**, you're not just studying; you're minting knowledge with cutt
     *   [Run Genkit Dev Server](#7-run-genkit-dev-server-optional-but-recommended)
 *   [☁️ Deployment to Firebase Hosting](#️-deployment-to-firebase-hosting)
 *   [🎨 Customization](#-customization-)
-*   [🌌 Future Vision (Envisioned by MrGarvit)](#-future-vision-envisioned-by-mrgarvit)
 *   [💖 Creator's Note](#️-creators-note)
 
 ---
@@ -49,7 +47,7 @@ LearnMint is built on the principles of efficiency, engagement, and elegance, a 
 
 **MrGarvit** has packed LearnMint with a suite of powerful, AI-driven tools:
 
-*   **User Authentication**: Secure sign-up and sign-in (Email/Password, Google) via Firebase.
+*   **Authentication Ready**: The app's authentication system has been removed to allow for easy integration of your preferred provider (e.g., Clerk, Auth0).
 *   **AI Content Generation Suite**:
     *   **Unified Material Generation**: Enter a topic for AI-generated:
         *   📝 **Comprehensive Notes**: Markdown formatted, emojis, and embedded AI-generated images.
@@ -82,7 +80,7 @@ LearnMint leverages a modern, robust tech stack, carefully selected by **MrGarvi
 *   TypeScript
 *   Tailwind CSS
 *   ShadCN UI Components
-*   Firebase Authentication (Email/Password, Google)
+*   **Authentication**: Ready for your provider (e.g., Clerk)
 *   Genkit (Google Gemini for AI text & image generation)
 *   Lucide Icons
 *   `@tanstack/react-query`
@@ -101,30 +99,23 @@ Embark on your AI-enhanced learning adventure, crafted by **MrGarvit**!
 
 *   Node.js (LTS version recommended)
 *   `npm` or `yarn`
-*   A Firebase Project:
-    *   Create at [firebase.google.com](https://firebase.google.com/).
-    *   Enable **Email/Password** and **Google** sign-in providers in Authentication -> Sign-in method. (Ensure project support email is configured for Google).
 
 ### 2. CRITICAL: Set up Environment Variables using a `.env` file
 
 <details>
 <summary><strong>⚠️ Click here for DETAILED `.env` Configuration Guide ⚠️</strong></summary>
 
-Create `.env` in the **project root**. Populate with your Firebase config and API keys. **This is essential.**
+Create `.env` in the **project root**. Populate with your API keys. **This is essential.**
 
 **MrGarvit has provided Gemini API keys. Distribute as suggested or preferred.**
 **Key `AIzaSyAYMVP1amZ6fow3WMJ2XspN_8CfkJXpohc` is CRITICAL for image generation.**
 
 ```env
-# === Firebase Project Configuration (From Firebase project settings > General > Your apps > Web app SDK snippet) ===
-# IMPORTANT: Replace placeholders with your actual Firebase credentials.
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYOUR_FIREBASE_API_KEY_FROM_MRGARVIT_OR_YOURS
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=1:your-sender-id:web:your-app-id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-YOUR_MEASUREMENT_ID # Optional
+# === Authentication ===
+# Firebase authentication has been removed.
+# Add your authentication provider's environment variables here (e.g., for Clerk).
+# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+# CLERK_SECRET_KEY=
 
 # === Genkit AI Features (Notes, Quizzes, Flashcards, Chatbot AI, Image Generation) ===
 # Get keys from Google AI Studio: https://aistudio.google.com/app/apikey
@@ -169,8 +160,6 @@ GOOGLE_BOOKS_API_KEY=AIzaSyYOUR_GOOGLE_BOOKS_API_KEY
 **Important `.env` Notes:**
 *   🛑 **Valid API Keys are Mandatory!** Use provided keys or your own.
 *   ✅ No extra spaces/quotes around variable names/values.
-*   🔑 `NEXT_PUBLIC_FIREBASE_API_KEY` & `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` are essential.
-*   🔍 Server terminal logs in `src/lib/firebase/config.ts` indicate if key variables are `undefined`.
 *   🖼️ **CRITICAL for Image Gen:** Key for `GOOGLE_API_KEY_IMAGES` needs "Generative Language API" (Gemini API) enabled in its Google Cloud Project, billing enabled, and permissions for image models (e.g., `gemini-2.0-flash-exp`).
 
 </details>
@@ -220,77 +209,11 @@ Access Genkit UI at `http://localhost:4000`.
 
 ---
 
-> ▲ **Deployment to Vercel Hosting**▲
-
-LearnMint by MrGarvit is configured for Vercel Hosting.
-
-Prerequisites:
-
-Vercel account: https://vercel.com/signup
-
-Vercel CLI installed: npm install -g vercel
-
-Logged into Vercel: vercel login
-
-
-Deployment Steps:
-
-1. ✅ CRITICAL: Local .env for Build: Ensure local .env has valid production API keys.
-
-
-2. 🖼️ CRITICAL: Add Static Assets: As per step 5 in "Getting Started".
-
-
-3. ⚙️ Build for Production (optional): npm run build
-(Vercel auto-builds from Git, but local build helps test errors early.)
-
-
-4. 🚀 Deploy:
-Via CLI: Run vercel --prod in your project folder
-OR
-Push to GitHub → Vercel auto-deploys main branch.
-
-
-5. 🔑 CRITICAL: Set Environment Variables in Vercel Dashboard:
-Local .env is not used in production unless set in dashboard:
-
-Go to https://vercel.com/dashboard
-
-Open your project (e.g., learnmint)
-
-Go to Settings > Environment Variables
-
-Add ALL required production environment variables
-
-Click Deploy to apply changes
-
-
-
-
-> **Note by MrGarvit:** Set environment variables locally for build AND in Vercel dashboard for production!
->
----
-
 ## 🎨 Customization 🎨
 
 *   **Styling**: Modify `src/app/globals.css` and `tailwind.config.ts`.
 *   **AI Prompts**: Tweak prompts in `src/ai/flows/`.
 *   **Sound Effects**: Replace files in `public/sounds/`.
-
----
-
-## 🌌 Future Vision (Envisioned by MrGarvit) 🌌
-
-**MrGarvit** envisions LearnMint evolving to further empower learners:
-
-*   **Advanced Test Series & Analytics**: Comprehensive tests, performance analytics, personalized feedback.
-*   **Affordable & Accessible Education**: Strive for wide accessibility with free tiers and affordable premium features.
-*   **Community & Collaboration**: Share materials, create study groups, peer-to-peer learning.
-*   **More Interactive Learning Modules**: Expand "LearnMint Arcade" with more educational games.
-*   **Deeper Content Integration**: Seamlessly integrate YouTube, Google Books for richer context.
-*   **Enhanced PWA Features**: Robust offline capabilities for notes, flashcards, quizzes.
-*   **Personalized Learning Paths**: AI-suggested study plans based on individual styles and goals.
-*   **Enhanced AI Image Integration**: Refine AI image generation in notes for relevance and quality.!
 
 ---
 

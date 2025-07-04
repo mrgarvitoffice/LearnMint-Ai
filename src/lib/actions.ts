@@ -8,8 +8,6 @@ import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQu
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
 import { generateAudioFlashcards, type GenerateAudioFlashcardsInput, type GenerateAudioFlashcardsOutput } from "@/ai/flows/generate-audio-flashcards";
 import { generateAudioSummary, type GenerateAudioSummaryInput, type GenerateAudioSummaryOutput } from "@/ai/flows/generate-audio-summary";
-import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 
 import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
@@ -453,28 +451,5 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   } catch (error: any) {
     console.error(`[Server Action Error - ${actionName}] Error fetching from Google Books API:`, error);
     throw new Error(error.message || "Failed to fetch Google Books directly.");
-  }
-}
-
-/**
- * updateUserCountOnSignup
- *
- * A server action to increment the total user count in Firestore.
- * This is called from the AuthProvider when a new user is detected.
- */
-export async function updateUserCountOnSignup() {
-  const userCountRef = doc(db, "metadata", "userCount");
-  try {
-    const docSnap = await getDoc(userCountRef);
-    if (docSnap.exists()) {
-      await updateDoc(userCountRef, { count: increment(1) });
-    } else {
-      // If the document doesn't exist, create it with a starting value.
-      await setDoc(userCountRef, { count: 21 });
-    }
-    console.log("[Server Action] User count incremented successfully.");
-  } catch (e) {
-    console.error("[Server Action Error] Failed to update user count on signup:", e);
-    // Don't throw an error to the client, just log it. This is a non-critical operation.
   }
 }
