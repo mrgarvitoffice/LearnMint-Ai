@@ -405,6 +405,7 @@ export async function directGoogleBooksSearch(input: GoogleBooksSearchInput): Pr
   const params = new URLSearchParams({
     q: input.query.trim(),
     maxResults: (input.maxResults || 9).toString(), // Default to 9 results
+    country: 'US', // Explicitly setting country to fix server-side geo-restriction error
   });
   if (apiKey) { // API key is typically required
     params.append('key', apiKey);
