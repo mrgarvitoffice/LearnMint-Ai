@@ -34,8 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Only attach the listener if authentication is resolved (not loading)
-    if (!loading) {
+    // FIX: Only attach the listener if authentication is resolved AND there is a user.
+    // This prevents "Missing or insufficient permissions" errors for unauthenticated users.
+    // If the learner count should be public, the Firestore security rules for the
+    // 'metadata/userCount' document must be changed to `allow read: if true;`.
+    if (!loading && user) {
       const docRef = doc(db, 'metadata', 'userCount');
       const unsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -49,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Detach listener on cleanup
       return () => unsubscribe();
     }
-  }, [loading]); // This effect depends only on the loading state
+  }, [loading, user]); // Add `user` to the dependency array
 
   if (loading) {
     return (
