@@ -88,10 +88,10 @@ export function DesktopSidebar() {
              {isExpanded && (
                <motion.span
                   key="learnmint-text"
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto', transition: { delay: 0.1 } }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="font-bold text-xl text-foreground whitespace-nowrap overflow-hidden"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut", delay: 0.15 } }}
+                  exit={{ opacity: 0, x: -20, transition: { duration: 0.15, ease: "easeIn" } }}
+                  className="font-bold text-xl text-foreground whitespace-nowrap"
                 >
                   LearnMint
                 </motion.span>
