@@ -90,7 +90,12 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           <Languages className="mr-2 h-4 w-4" />
           <span>{t('header.appLanguage')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
+        <DropdownMenuSubContent 
+          side={isMobile ? 'bottom' : 'right'} 
+          align={isMobile ? 'center' : 'start'} 
+          sideOffset={isMobile ? 4 : 2}
+          alignOffset={isMobile ? 0 : -8}
+        >
           <DropdownMenuRadioGroup value={appLanguage} onValueChange={handleLanguageChange}>
             {APP_LANGUAGES.map(lang => (
               <DropdownMenuRadioItem key={lang.value} value={lang.value}>{lang.label}</DropdownMenuRadioItem>
@@ -106,7 +111,12 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           {soundMode === 'muted' && <VolumeX className="mr-2 h-4 w-4" />}
           <span>{t('header.soundMode')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
+        <DropdownMenuSubContent 
+          side={isMobile ? 'bottom' : 'right'} 
+          align={isMobile ? 'center' : 'start'} 
+          sideOffset={isMobile ? 4 : 2}
+          alignOffset={isMobile ? 0 : -8}
+        >
           <DropdownMenuRadioGroup value={soundMode} onValueChange={handleSoundModeChange}>
             <DropdownMenuRadioItem value="full">Full</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="essential">Essential</DropdownMenuRadioItem>
@@ -120,7 +130,12 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           <CaseSensitive className="mr-2 h-4 w-4" />
           <span>{t('header.fontSize')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
+        <DropdownMenuSubContent 
+          side={isMobile ? 'bottom' : 'right'} 
+          align={isMobile ? 'center' : 'start'} 
+          sideOffset={isMobile ? 4 : 2}
+          alignOffset={isMobile ? 0 : -8}
+        >
           <DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
             <DropdownMenuRadioItem value="small">Small</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
@@ -134,7 +149,12 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
           {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
           <span>{t('header.theme')}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent side={isMobile ? "bottom" : "right"} align="start">
+        <DropdownMenuSubContent 
+          side={isMobile ? 'bottom' : 'right'} 
+          align={isMobile ? 'center' : 'start'} 
+          sideOffset={isMobile ? 4 : 2}
+          alignOffset={isMobile ? 0 : -8}
+        >
           <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
             <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
