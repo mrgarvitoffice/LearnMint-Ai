@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -56,7 +55,7 @@ export function Header() {
                 <Settings className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" side="bottom" forceMount>
+            <DropdownMenuContent align="end" side="bottom" forceMount>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <Languages className="mr-2 h-4 w-4" />
