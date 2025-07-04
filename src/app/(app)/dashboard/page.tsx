@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Brain, CheckCircle, FileText, TestTubeDiagonal, Newspaper, Sparkles, BookHeart, History, Users } from "lucide-react";
+import { ArrowRight, Brain, CheckCircle, FileText, TestTubeDiagonal, Newspaper, Sparkles, BookHeart, History, Users, Quote, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useTTS } from '@/hooks/useTTS';
 import { useSound } from '@/hooks/useSound';
@@ -20,6 +19,10 @@ import { useQuests } from '@/contexts/QuestContext';
 import { db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchMathFact } from '@/lib/math-fact-api';
+import type { MathFact } from '@/lib/types';
+import { MATH_FACTS_FALLBACK } from '@/lib/constants';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
@@ -88,7 +91,32 @@ export default function DashboardPage() {
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [totalLearners, setTotalLearners] = useState<number | null>(null);
+    const [loadingLearners, setLoadingLearners] = useState(true);
+    const [currentMathFact, setCurrentMathFact] = useState<MathFact | null>(null);
     const pageTitleSpokenRef = useRef(false);
+
+    // Fetch Math Fact for Daily Motivation
+    const { data: mathFact, isLoading: isLoadingMathFact, refetch: refetchMathFact } = useQuery<MathFact>({
+        queryKey: ['mathFactDashboard'],
+        queryFn: fetchMathFact,
+        staleTime: 1000 * 60 * 60,
+        gcTime: 1000 * 60 * 65,
+        refetchOnWindowFocus: false,
+    });
+
+    useEffect(() => {
+        if (mathFact) {
+            setCurrentMathFact(mathFact);
+        } else if (!isLoadingMathFact) {
+            const randomIndex = Math.floor(Math.random() * MATH_FACTS_FALLBACK.length);
+            setCurrentMathFact({ text: MATH_FACTS_FALLBACK[randomIndex] });
+        }
+    }, [mathFact, isLoadingMathFact]);
+
+    const handleRefreshMathFact = () => {
+        playClickSound();
+        refetchMathFact();
+    };
 
     useEffect(() => {
         setVoicePreference('gojo');
@@ -107,6 +135,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (user) {
+            setLoadingLearners(true);
             const unsubscribe = onSnapshot(doc(db, "metadata", "userCount"), (doc) => {
                 if (doc.exists()) {
                     setTotalLearners(doc.data().count);
@@ -114,12 +143,17 @@ export default function DashboardPage() {
                     console.warn("User count document does not exist in Firestore. Please create it at 'metadata/userCount' with a 'count' field of type number.");
                     setTotalLearners(0);
                 }
+                setLoadingLearners(false);
             }, (error) => {
                 console.error("Error fetching total learners (likely permissions for a new user, will retry):", error);
                 setTotalLearners(null);
+                setLoadingLearners(false);
             });
 
             return () => unsubscribe();
+        } else {
+            setLoadingLearners(false);
+            setTotalLearners(null);
         }
     }, [user]);
   
@@ -166,14 +200,18 @@ export default function DashboardPage() {
                         </motion.div>
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
-                        {totalLearners !== null && (
-                            <div className="mt-3 flex justify-center items-center gap-2 group cursor-pointer">
+                        
+                        {loadingLearners ? (
+                             <div className="mt-3 h-6 flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                        ) : totalLearners !== null ? (
+                            <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer">
                                <Users className="h-5 w-5 text-green-400/80 group-hover:text-green-400 transition-colors" />
                                <span className="font-semibold text-green-400/90 group-hover:text-green-400 transition-colors">
                                    {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
                                </span>
                             </div>
-                        )}
+                        ) : <div className="h-6 mt-3" /> /* Placeholder to prevent layout shift */ }
+
                     </CardHeader>
                 </Card>
             </motion.div>
@@ -203,6 +241,31 @@ export default function DashboardPage() {
             </motion.div>
             
             <motion.div custom={2} variants={cardVariants}>
+                <Card className="bg-secondary/30 border-orange-500/30 hover:shadow-xl transition-shadow duration-300 group">
+                    <CardHeader className="pb-2 pt-4">
+                        <div className="flex items-center gap-3 mb-2">
+                            <Quote className="h-7 w-7 text-orange-500/80 group-hover:text-orange-600 transition-colors" />
+                            <CardTitle className="text-xl font-semibold text-orange-600 dark:text-orange-500">{t('dashboard.dailyMotivation.title')}</CardTitle>
+                        </div>
+                        {isLoadingMathFact && !currentMathFact ? (
+                            <div className="flex items-center space-x-2 text-muted-foreground py-3 h-[4.5rem]"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading fact...</span></div>
+                        ) : currentMathFact ? (
+                            <CardDescription className="text-lg text-orange-700 dark:text-orange-400 font-medium pt-1 italic py-3 h-[4.5rem] flex items-center justify-center">
+                            "{currentMathFact.text}"
+                            </CardDescription>
+                        ) : (
+                            <CardDescription className="text-lg text-muted-foreground py-3 h-[4.5rem] flex items-center justify-center">Could not load fact. Using a classic one!</CardDescription>
+                        )}
+                    </CardHeader>
+                    <CardFooter className="pt-2 pb-4">
+                        <Button onClick={handleRefreshMathFact} variant="outline" size="sm" disabled={isLoadingMathFact} className="bg-background/70 group-hover:border-orange-500/50 group-hover:text-orange-600 transition-colors">
+                            {isLoadingMathFact && <Loader2 className="h-4 w-4 animate-spin mr-2" />} New Fact
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </motion.div>
+
+            <motion.div custom={3} variants={cardVariants}>
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 group">
@@ -217,7 +280,7 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <motion.div custom={3} variants={cardVariants}>
+            <motion.div custom={4} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 group">
@@ -232,7 +295,7 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <motion.div custom={4} variants={cardVariants}>
+            <motion.div custom={5} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 group">
