@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup, signInAnonymously } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase/config';
@@ -25,24 +25,14 @@ export default function SignInPage() {
   const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // This effect is the single source of truth for redirection.
-  // It redirects the user ONLY when the authentication state is confirmed.
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace('/');
-    }
-  }, [user, loading, router]);
-
-
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      // The function's only job is to attempt authentication.
-      // Redirection is handled by the useEffect hook.
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Signed In', description: 'Welcome back!' });
+      router.replace('/'); // Redirect AFTER successful sign-in
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -63,10 +53,9 @@ export default function SignInPage() {
     setIsGoogleLoading(true);
     setError(null);
     try {
-      // The function's only job is to attempt authentication.
-      // Redirection is handled by the useEffect hook.
       await signInWithPopup(auth, googleProvider);
       toast({ title: 'Signed In with Google', description: 'Welcome back!' });
+      router.replace('/'); // Redirect AFTER successful sign-in
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
       if (err.code === 'auth/popup-blocked') {
@@ -89,10 +78,9 @@ export default function SignInPage() {
     setIsGuestLoading(true);
     setError(null);
     try {
-      // The function's only job is to attempt authentication.
-      // Redirection is handled by the useEffect hook.
       await signInAnonymously(auth);
       toast({ title: 'Signed In as Guest', description: "Welcome! Some features may be limited for guest users." });
+      router.replace('/'); // Redirect AFTER successful sign-in
     } catch (err: any) {
       let description = 'An unknown error occurred while trying to sign in as a guest.';
       if (err.message) {
@@ -105,8 +93,6 @@ export default function SignInPage() {
     }
   };
 
-  // If the initial auth state is loading, or if a user is found (and we're about to redirect), show a loader.
-  // This prevents the form from flashing on screen for already logged-in users.
   if (loading || (!loading && user)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
