@@ -59,7 +59,7 @@ export default function GenerateNotesPage() {
     const PAGE_TITLE = t('generate.title');
     const timer = setTimeout(() => {
       if (!pageTitleSpokenRef.current && !isLoadingAll && soundMode !== 'muted') {
-        speak(PAGE_TITLE, { priority: 'essential' });
+        speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
@@ -144,7 +144,7 @@ export default function GenerateNotesPage() {
     setIsLoadingAll(true);
     pageTitleSpokenRef.current = true; 
 
-    speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.", { priority: 'essential' });
+    speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.", { priority: 'optional' });
 
     const trimmedTopic = topic.trim();
     try {
@@ -189,7 +189,7 @@ export default function GenerateNotesPage() {
         toast({ title: t('generate.toast.flashcardsError'), description: fError, variant: 'default' });
       }
       
-      speak("Study materials generated and cached!", { priority: 'essential' });
+      speak("Study materials generated and cached!", { priority: 'optional' });
 
       if (navigationSuccess) {
         router.push(`/study?topic=${encodeURIComponent(trimmedTopic)}`);
@@ -200,7 +200,7 @@ export default function GenerateNotesPage() {
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
       toast({ title: t('generate.toast.generationFailed'), description: err.message, variant: 'destructive' });
-      speak("Sorry, failed to generate study materials.", { priority: 'essential' });
+      speak("Sorry, failed to generate study materials.", { priority: 'optional' });
     } finally {
       setIsLoadingAll(false);
       setTopic('');
