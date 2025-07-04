@@ -84,13 +84,14 @@ export default function CustomTestPage() {
   const notesImageInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
-  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3', 0.5);
-  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3', 0.5);
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const { playSound: playCorrectSound } = useSound('/sounds/correct-answer.mp3');
+  const { playSound: playIncorrectSound } = useSound('/sounds/incorrect-answer.mp3');
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
 
   const { speak, setVoicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
+  const { soundMode } = useSettings();
 
   const pageTitleSpokenRef = useRef(false);
   const resultAnnouncementSpokenRef = useRef(false);
@@ -214,14 +215,14 @@ export default function CustomTestPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!pageTitleSpokenRef.current && !testState && !isLoading) {
+      if (!pageTitleSpokenRef.current && !testState && !isLoading && soundMode !== 'muted') {
         speak(PAGE_TITLE, { priority: 'essential' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [speak, testState, isLoading]);
+  }, [speak, testState, isLoading, soundMode]);
 
   useEffect(() => {
     if (isLoading) {
@@ -508,7 +509,7 @@ export default function CustomTestPage() {
                     {browserSupportsSpeechRecognition && (<Button type="button" variant="outline" size="icon" onClick={handleMicClick} disabled={isLoading || isListening}><Mic className={`w-5 h-5 ${isListening ? 'text-destructive animate-pulse' : ''}`} /></Button>)}
                   </div>
                   {errors.topics && <p className="text-sm text-destructive">{errors.topics.message}</p>}
-                  {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
+                  {voiceError && <p className="text-sm text-destructive">Voice input error. Please try again.</p>}
                 </div>
               )}
               {sourceType === 'notes' && (
@@ -545,7 +546,7 @@ export default function CustomTestPage() {
                     </div>
                   )}
                   <input type="file" ref={notesImageInputRef} onChange={handleFileUpload} accept="image/*,application/pdf" className="hidden" />
-                  {voiceError && <p className="text-sm text-destructive">Voice input error: {voiceError}</p>}
+                  {voiceError && <p className="text-sm text-destructive">Voice input error. Please try again.</p>}
                 </div>
               )}
               {sourceType === 'recent' && (

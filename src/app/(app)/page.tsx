@@ -11,7 +11,6 @@ import { useSound } from '@/hooks/useSound';
 import { useRouter } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/icons/Logo';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
@@ -74,9 +73,8 @@ export default function DashboardPage() {
     const { t, isReady } = useTranslation();
     const { speak, setVoicePreference } = useTTS();
     const { soundMode } = useSettings();
-    const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+    const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
     const router = useRouter();
-    const { totalLearners } = useAuth();
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
@@ -108,7 +106,7 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
   
     useEffect(() => {
-        if (soundMode === 'full' && isReady && !pageTitleSpokenRef.current) {
+        if (soundMode !== 'muted' && isReady && !pageTitleSpokenRef.current) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
                 speak(PAGE_TITLE, { priority: 'essential' });
@@ -138,7 +136,7 @@ export default function DashboardPage() {
   
     return (
         <motion.div 
-            className="mx-auto max-w-6xl px-2 sm:px-4 md:px-6 py-4 sm:py-6 space-y-6 md:space-y-8"
+            className="mx-auto max-w-7xl px-4 md:px-6 py-4 sm:py-6 space-y-6 md:space-y-8"
             initial="hidden"
             animate="visible"
         >
@@ -150,13 +148,6 @@ export default function DashboardPage() {
                         </motion.div>
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
-                         <div className="flex items-center justify-center gap-2 mt-3 text-primary">
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                            </span>
-                            <span className="animate-pulse-status">{totalLearners.toLocaleString()} {t('dashboard.totalLearners')}</span>
-                        </div>
                     </CardHeader>
                 </Card>
             </motion.div>

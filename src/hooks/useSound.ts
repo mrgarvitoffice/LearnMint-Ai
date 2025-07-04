@@ -51,12 +51,11 @@ export function useSound(soundPathOrType: string, defaultVolume: number = 0.5) {
   }, [soundPathOrType, defaultVolume]);
 
   const playSound = useCallback(() => {
-    // In muted mode, no incidental sounds should play.
-    if (soundMode === 'muted') {
-        return;
+    // Incidental sounds should only play in 'full' mode.
+    if (soundMode !== 'full') {
+      return;
     }
     
-    // In 'full' or 'essential' mode, sounds are allowed.
     if (hasLoadError || !audioRef.current) {
       return;
     }

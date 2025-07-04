@@ -3,11 +3,11 @@
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Next.js hook for programmatic navigation
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext'; // Custom hook to access authentication state
 import { AppLayout } from '@/components/layout/AppLayout'; // The main application layout component (Header, Sidebar)
 import { Loader2 } from 'lucide-react'; // Loading spinner icon
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MainAppLayoutProps {
   children: ReactNode; // The content of the specific page being rendered within this layout
@@ -23,19 +23,20 @@ interface MainAppLayoutProps {
  */
 export default function MainAppLayout({ children }: MainAppLayoutProps) {
   const { user, loading } = useAuth(); // Get user and loading state from AuthContext
-  const router = useRouter(); // Initialize router for navigation
+  const pathname = usePathname();
 
   // Effect to handle redirection based on authentication state
   useEffect(() => {
     // If authentication check is complete (not loading) and there's no user, redirect
     if (!loading && !user) {
-      router.push('/sign-in'); 
+      // Use replace instead of push to prevent the user from navigating back to the protected page.
+      window.location.replace('/sign-in'); 
     }
-  }, [user, loading, router]); // Dependencies for the effect
+  }, [user, loading]); // Dependencies for the effect
 
   // The primary loading screen is handled by AuthProvider. This guard handles the transition state
   // and ensures no content is rendered until the user session is fully verified.
-  if (loading || !user?.uid) {
+  if (loading) {
     return (
        <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -43,19 +44,33 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
       </div>
     );
   }
+  
+  // A second check to make sure the user object is truly present before rendering.
+  // This can prevent flicker on initial load for authenticated users.
+  if (!user) {
+     return (
+       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-lg">Redirecting to sign-in...</p>
+      </div>
+    );
+  }
+
 
   // If user is authenticated, render the main application layout with the page content
   return (
     <AppLayout>
-      <motion.div
-        key={router.pathname}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-      >
-        {children}
-      </motion.div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -15 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
     </AppLayout>
   );
 }

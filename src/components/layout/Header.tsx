@@ -28,7 +28,6 @@ import { Logo } from '@/components/icons/Logo';
 import { LogOut, Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, LogIn, UserPlus, ChevronRight } from 'lucide-react';
 import { APP_NAME, APP_LANGUAGES } from '@/lib/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 
@@ -39,7 +38,7 @@ interface HeaderProps {
 
 export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
   const { t } = useTranslation();
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();

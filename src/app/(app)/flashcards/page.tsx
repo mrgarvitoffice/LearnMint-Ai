@@ -31,8 +31,8 @@ function AudioFlashcardsGenerator() {
   const [generatedContent, setGeneratedContent] = useState<GenerateAudioFlashcardsOutput | null>(null);
   
   const { toast } = useToast();
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition } = useVoiceRecognition();
   const { speak, cancelTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, isLoading: isTTSLoading } = useTTS();
 
@@ -159,7 +159,7 @@ function AudioSummarizer({
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
   const [generatedContent, setGeneratedContent] = useState<GenerateAudioSummaryOutput | null>(null);
 
   const { speak, cancelTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, isLoading: isTTSLoading } = useTTS();
@@ -361,15 +361,15 @@ export default function AudioFactoryPage() {
         </CardHeader>
       </Card>
       
-      <Tabs defaultValue="flashcards" orientation="vertical" className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 md:gap-8">
-        <TabsList className="grid w-full grid-cols-1 justify-start h-auto gap-2">
-          <TabsTrigger value="flashcards">{t('audioFactory.tabs.flashcards')}</TabsTrigger>
-          <TabsTrigger value="text-summary">Text Summary</TabsTrigger>
-          <TabsTrigger value="image-summary">{t('audioFactory.tabs.image')}</TabsTrigger>
-          <TabsTrigger value="pdf-summary">{t('audioFactory.tabs.pdf')}</TabsTrigger>
+      <Tabs defaultValue="flashcards" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 h-auto">
+          <TabsTrigger value="flashcards" className="text-xs sm:text-sm">{t('audioFactory.tabs.flashcards')}</TabsTrigger>
+          <TabsTrigger value="text-summary" className="text-xs sm:text-sm">Text Summary</TabsTrigger>
+          <TabsTrigger value="image-summary" className="text-xs sm:text-sm">{t('audioFactory.tabs.image')}</TabsTrigger>
+          <TabsTrigger value="pdf-summary" className="text-xs sm:text-sm">{t('audioFactory.tabs.pdf')}</TabsTrigger>
         </TabsList>
         
-        <div className="flex-1 min-w-0">
+        <div className="mt-6">
             <TabsContent value="flashcards" className="mt-0">
               <AudioFlashcardsGenerator />
             </TabsContent>

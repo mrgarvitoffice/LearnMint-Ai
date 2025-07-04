@@ -18,7 +18,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [soundMode, setSoundModeState] = useState<SoundMode>('essential'); // Default to essential
+  const [soundMode, setSoundModeState] = useState<SoundMode>('essential');
   const [fontSize, setFontSizeState] = useState<FontSize>('normal');
   const [appLanguage, setAppLanguageState] = useState<string>('en');
 
@@ -28,6 +28,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const savedLanguage = localStorage.getItem('learnmint-appLanguage');
     if (savedSoundMode && ['full', 'essential', 'muted'].includes(savedSoundMode)) {
       setSoundModeState(savedSoundMode);
+    } else {
+      setSoundModeState('essential'); // Set default if invalid or not found
     }
     if (savedFontSize && ['small', 'normal', 'large'].includes(savedFontSize)) {
       setFontSizeState(savedFontSize);

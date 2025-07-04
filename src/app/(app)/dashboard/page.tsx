@@ -73,9 +73,9 @@ const FeatureIcon = ({ item }: { item: NavItem }) => {
 export default function DashboardPage() {
     const { t, isReady } = useTranslation();
     const { speak, setVoicePreference } = useTTS();
-    const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
+    const { soundMode } = useSettings();
+    const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
     const router = useRouter();
-    const { totalLearners } = useAuth();
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
     const [dailyQuote, setDailyQuote] = useState('');
@@ -107,7 +107,7 @@ export default function DashboardPage() {
     }, [setVoicePreference]);
   
     useEffect(() => {
-        if (isReady && !pageTitleSpokenRef.current) {
+        if (soundMode !== 'muted' && isReady && !pageTitleSpokenRef.current) {
             const PAGE_TITLE = t('dashboard.welcome');
             const timer = setTimeout(() => {
                 speak(PAGE_TITLE, { priority: 'essential' });
@@ -115,7 +115,7 @@ export default function DashboardPage() {
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [speak, t, isReady]);
+    }, [speak, soundMode, t, isReady]);
 
     const handleRecentTopicClick = (topic: string) => {
         playClickSound();
@@ -149,13 +149,6 @@ export default function DashboardPage() {
                         </motion.div>
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
-                         <div className="flex items-center justify-center gap-2 mt-3 text-primary">
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                            </span>
-                            <span className="animate-pulse-status">{totalLearners.toLocaleString()} {t('dashboard.totalLearners')}</span>
-                        </div>
                     </CardHeader>
                 </Card>
             </motion.div>

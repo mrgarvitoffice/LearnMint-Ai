@@ -43,8 +43,9 @@ export default function GenerateNotesPage() {
 
   const { speak, setVoicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
-  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', 0.4);
+  const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
+  const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
+  const { soundMode } = useSettings();
 
   const pageTitleSpokenRef = useRef(false);
   
@@ -55,14 +56,14 @@ export default function GenerateNotesPage() {
   useEffect(() => {
     const PAGE_TITLE = t('generate.title');
     const timer = setTimeout(() => {
-      if (!pageTitleSpokenRef.current && !isLoadingAll) {
+      if (!pageTitleSpokenRef.current && !isLoadingAll && soundMode !== 'muted') {
         speak(PAGE_TITLE, { priority: 'essential' });
         pageTitleSpokenRef.current = true;
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [speak, isLoadingAll, t]);
+  }, [speak, isLoadingAll, t, soundMode]);
 
   useEffect(() => {
     if (transcript) setTopic(transcript);
@@ -250,7 +251,6 @@ export default function GenerateNotesPage() {
             )}
           </div>
           {fileError && <p className="text-sm text-destructive text-center">{fileError}</p>}
-          {voiceError && <p className="text-sm text-destructive text-center">{voiceError}</p>}
           
           {imagePreview && (
             <div className="relative w-28 h-28 mx-auto">
