@@ -17,8 +17,6 @@ import type { NavItem } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuests } from '@/contexts/QuestContext';
-import { db } from '@/lib/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMathFact } from '@/lib/math-fact-api';
@@ -87,12 +85,10 @@ export default function DashboardPage() {
     const { soundMode } = useSettings();
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
     const router = useRouter();
-    const { user } = useAuth();
     const { quests } = useQuests();
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
-    const [totalLearners, setTotalLearners] = useState<number | null>(null);
-    const [loadingLearners, setLoadingLearners] = useState(true);
+    const [totalLearners, setTotalLearners] = useState(137); // Fake fluctuating count
     const [currentMathFact, setCurrentMathFact] = useState<MathFact | null>(null);
     const pageTitleSpokenRef = useRef(false);
 
@@ -103,6 +99,22 @@ export default function DashboardPage() {
         gcTime: 1000 * 60 * 65,
         refetchOnWindowFocus: false,
     });
+    
+    // Fake fluctuating learner count effect
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTotalLearners(prevCount => {
+                const fluctuation = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+                let newCount = prevCount + fluctuation;
+                // Keep it within a believable range below 150
+                if (newCount > 148) newCount = 145;
+                if (newCount < 120) newCount = 123;
+                return newCount;
+            });
+        }, 3500); // Update every 3.5 seconds
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         if (mathFact) {
@@ -132,37 +144,6 @@ export default function DashboardPage() {
             }
         }
     }, [setVoicePreference]);
-
-    useEffect(() => {
-        const fetchLearnerCount = async () => {
-            setLoadingLearners(true);
-            try {
-                const docRef = doc(db, "metadata", "userCount");
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    setTotalLearners(docSnap.data().count);
-                } else {
-                    // Document doesn't exist, this is likely the first user. Set a default.
-                    setTotalLearners(21);
-                }
-            } catch (error) {
-                console.error("Error fetching total learners count. This is often due to Firestore security rules not allowing reads on '/metadata/userCount' for authenticated users. Falling back to default value. Error:", error);
-                // This gracefully handles permission errors or other fetch issues
-                // by showing a default value instead of an error message to the user.
-                setTotalLearners(21); // Fallback value
-            } finally {
-                setLoadingLearners(false);
-            }
-        };
-
-        if (user && !user.isAnonymous) {
-             fetchLearnerCount();
-        } else {
-             setLoadingLearners(false);
-             setTotalLearners(null);
-        }
-    }, [user]);
   
     useEffect(() => {
         if (soundMode !== 'muted' && isReady && !pageTitleSpokenRef.current) {
@@ -208,41 +189,12 @@ export default function DashboardPage() {
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
                         
-                        {(() => {
-                            if (!user || user.isAnonymous) {
-                                return (
-                                    <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-muted-foreground">
-                                        {t('dashboard.totalLearnersGuestMessage')}
-                                    </div>
-                                );
-                            }
-    
-                            if (loadingLearners) {
-                                return (
-                                    <div className="mt-3 h-6 flex justify-center items-center gap-2">
-                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                                    </div>
-                                );
-                            }
-                            
-                            if (totalLearners !== null) {
-                                return (
-                                     <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105">
-                                        <Users className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
-                                        <span className="font-semibold text-primary group-hover:text-primary/90 transition-colors">
-                                            {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
-                                        </span>
-                                     </div>
-                                );
-                            }
-    
-                            // This case handles signed-in users where the fetch failed. It should now be rare.
-                            return (
-                                <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-destructive">
-                                    Could not load learner count.
-                                </div>
-                            );
-                        })()}
+                         <div className="mt-3 h-6 flex justify-center items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105">
+                            <Users className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
+                            <span className="font-semibold text-primary group-hover:text-primary/90 transition-colors">
+                                {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
+                            </span>
+                         </div>
 
                     </CardHeader>
                 </Card>
