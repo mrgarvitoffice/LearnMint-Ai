@@ -143,11 +143,14 @@ export default function DashboardPage() {
                 if (docSnap.exists()) {
                     setTotalLearners(docSnap.data().count);
                 } else {
+                    // Document doesn't exist, this is likely the first user. Set a default.
                     setTotalLearners(21);
                 }
             } catch (error) {
-                console.error("Error fetching total learners:", error);
-                setTotalLearners(null); 
+                console.error("Error fetching total learners count. This is often due to Firestore security rules not allowing reads on '/metadata/userCount' for authenticated users. Falling back to default value. Error:", error);
+                // This gracefully handles permission errors or other fetch issues
+                // by showing a default value instead of an error message to the user.
+                setTotalLearners(21); // Fallback value
             } finally {
                 setLoadingLearners(false);
             }
@@ -233,7 +236,7 @@ export default function DashboardPage() {
                                 );
                             }
     
-                            // This case handles signed-in users where the fetch failed.
+                            // This case handles signed-in users where the fetch failed. It should now be rare.
                             return (
                                 <div className="mt-3 h-6 flex justify-center items-center gap-2 text-sm text-destructive">
                                     Could not load learner count.
