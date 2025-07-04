@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
@@ -81,18 +80,23 @@ export function DesktopSidebar() {
       onMouseLeave={() => setOpen(false)}
     >
       <div className="flex h-16 items-center shrink-0 px-4 border-b">
-         <Link href="/" className={cn("flex items-center gap-2.5 font-semibold w-full justify-start pl-1")}>
+         <Link href="/" className={cn("flex items-center gap-2.5 font-semibold w-full", isExpanded ? "justify-start" : "justify-center")}>
             <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
                 <Logo size={32} />
             </motion.div>
-             <motion.span
-                variants={navItemVariants}
-                animate={isExpanded ? "expanded" : "collapsed"}
-                initial="collapsed"
-                className={cn("font-bold text-xl text-foreground whitespace-nowrap")}
-            >
-              LearnMint
-            </motion.span>
+            <AnimatePresence>
+             {isExpanded && (
+               <motion.span
+                  key="learnmint-text"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto', transition: { delay: 0.1 } }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="font-bold text-xl text-foreground whitespace-nowrap overflow-hidden"
+                >
+                  LearnMint
+                </motion.span>
+             )}
+            </AnimatePresence>
         </Link>
       </div>
 
