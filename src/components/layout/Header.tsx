@@ -7,6 +7,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSound } from '@/hooks/useSound';
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
