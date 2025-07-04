@@ -16,19 +16,13 @@ import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuests } from '@/contexts/QuestContext';
 import { db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
-
-const dailyMotivationQuotes = [
-    "The secret of getting ahead is getting started.",
-    "The expert in anything was once a beginner.",
-    "The only way to do great work is to love what you do.",
-    "A little progress each day adds up to big results.",
-    "Believe you can and you're halfway there."
-];
 
 const ActionCard = ({ titleKey, descriptionKey, buttonTextKey, href, icon: Icon }: { titleKey: string, descriptionKey: string, buttonTextKey: string, href: string, icon: React.ElementType }) => {
     const { t } = useTranslation();
@@ -72,6 +66,17 @@ const FeatureIcon = ({ item }: { item: NavItem }) => {
     );
 };
 
+const DailyQuestItem = ({ isCompleted, text }: { isCompleted: boolean; text: string }) => (
+    <div className={cn("flex items-center gap-2", isCompleted && "text-muted-foreground line-through")}>
+        {isCompleted ? (
+            <CheckCircle className="text-green-500 h-4 w-4" />
+        ) : (
+            <div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground/50" />
+        )}
+        {text}
+    </div>
+);
+
 export default function DashboardPage() {
     const { t, isReady } = useTranslation();
     const { speak, setVoicePreference } = useTTS();
@@ -79,9 +84,9 @@ export default function DashboardPage() {
     const { playSound: playClickSound } = useSound('/sounds/ting.mp3');
     const router = useRouter();
     const { user } = useAuth();
+    const { quests } = useQuests();
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
-    const [dailyQuote, setDailyQuote] = useState('');
     const [totalLearners, setTotalLearners] = useState<number | null>(null);
     const pageTitleSpokenRef = useRef(false);
 
@@ -97,38 +102,26 @@ export default function DashboardPage() {
                     localStorage.removeItem(RECENT_TOPICS_LS_KEY);
                 }
             }
-            const today = new Date().toDateString();
-            const storedQuoteDate = localStorage.getItem('learnmint-quote-date');
-            if (storedQuoteDate === today) {
-                setDailyQuote(localStorage.getItem('learnmint-quote') || dailyMotivationQuotes[0]);
-            } else {
-                const newQuote = dailyMotivationQuotes[Math.floor(Math.random() * dailyMotivationQuotes.length)];
-                setDailyQuote(newQuote);
-                localStorage.setItem('learnmint-quote', newQuote);
-                localStorage.setItem('learnmint-quote-date', today);
-            }
         }
     }, [setVoicePreference]);
 
     useEffect(() => {
-        // Only attach the listener if the user is authenticated
         if (user) {
             const unsubscribe = onSnapshot(doc(db, "metadata", "userCount"), (doc) => {
                 if (doc.exists()) {
                     setTotalLearners(doc.data().count);
                 } else {
                     console.warn("User count document does not exist in Firestore. Please create it at 'metadata/userCount' with a 'count' field of type number.");
-                    setTotalLearners(0); // Gracefully handle non-existent doc
+                    setTotalLearners(0);
                 }
             }, (error) => {
                 console.error("Error fetching total learners (likely permissions for a new user, will retry):", error);
-                setTotalLearners(null); // Set to null on error
+                setTotalLearners(null);
             });
 
-            // Cleanup listener on component unmount
             return () => unsubscribe();
         }
-    }, [user]); // Dependency array ensures this runs when user state changes
+    }, [user]);
   
     useEffect(() => {
         if (soundMode !== 'muted' && isReady && !pageTitleSpokenRef.current) {
@@ -173,6 +166,14 @@ export default function DashboardPage() {
                         </motion.div>
                         <CardTitle className="text-4xl font-bold mt-4">{t('dashboard.welcome')}</CardTitle>
                         <CardDescription className="text-lg text-muted-foreground mt-1">{t('dashboard.description')}</CardDescription>
+                        {totalLearners !== null && (
+                            <div className="mt-3 flex justify-center items-center gap-2 group cursor-pointer">
+                               <Users className="h-5 w-5 text-green-400/80 group-hover:text-green-400 transition-colors" />
+                               <span className="font-semibold text-green-400/90 group-hover:text-green-400 transition-colors">
+                                   {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
+                               </span>
+                            </div>
+                        )}
                     </CardHeader>
                 </Card>
             </motion.div>
@@ -201,39 +202,7 @@ export default function DashboardPage() {
                />
             </motion.div>
             
-            <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                <motion.div custom={2} variants={cardVariants}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3 group">
-                                <Sparkles className="text-primary transition-transform duration-300 group-hover:scale-110"/>{t('dashboard.dailyMotivation.title')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-lg italic text-muted-foreground text-center">"{dailyQuote}"</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div custom={2.5} variants={cardVariants}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3 group">
-                                <Users className="text-primary transition-transform duration-300 group-hover:scale-110"/>{t('dashboard.totalLearners')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-center">
-                            {totalLearners !== null ? (
-                                <p className="text-4xl font-bold text-foreground">{totalLearners.toLocaleString()}</p>
-                            ) : (
-                                <p className="text-lg text-muted-foreground">Loading...</p>
-                            )}
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            </div>
-            
-            <motion.div custom={3} variants={cardVariants}>
+            <motion.div custom={2} variants={cardVariants}>
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 group">
@@ -241,14 +210,14 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2"><CheckCircle className="text-green-500 h-4 w-4"/> {t('dashboard.dailyQuests.quest1')}</div>
-                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> {t('dashboard.dailyQuests.quest2')}</div>
-                        <div className="flex items-center gap-2 opacity-60"><div className="w-4 h-4 rounded-full border-2 ml-px mr-px border-muted-foreground"/> {t('dashboard.dailyQuests.quest3')}</div>
+                       <DailyQuestItem isCompleted={quests.quest1Completed} text={t('dashboard.dailyQuests.quest1')} />
+                       <DailyQuestItem isCompleted={quests.quest2Completed} text={t('dashboard.dailyQuests.quest2')} />
+                       <DailyQuestItem isCompleted={quests.quest3Completed} text={t('dashboard.dailyQuests.quest3')} />
                     </CardContent>
                 </Card>
             </motion.div>
 
-            <motion.div custom={4} variants={cardVariants}>
+            <motion.div custom={3} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 group">
@@ -263,7 +232,7 @@ export default function DashboardPage() {
                 </Card>
             </motion.div>
 
-            <motion.div custom={5} variants={cardVariants}>
+            <motion.div custom={4} variants={cardVariants}>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 group">

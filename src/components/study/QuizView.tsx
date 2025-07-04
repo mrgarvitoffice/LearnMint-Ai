@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, Lightbulb, RotateCcw, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Lightbulb, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { useQuests } from '@/contexts/QuestContext';

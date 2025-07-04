@@ -24,14 +24,6 @@ import { cn } from '@/lib/utils';
 const RECENT_TOPICS_LS_KEY = 'learnmint-recent-topics';
 const MAX_RECENT_TOPICS_DISPLAY = 5;
 
-const dailyMotivationQuotes = [
-    "The secret of getting ahead is getting started.",
-    "The expert in anything was once a beginner.",
-    "The only way to do great work is to love what you do.",
-    "A little progress each day adds up to big results.",
-    "Believe you can and you're halfway there."
-];
-
 const ActionCard = ({ titleKey, descriptionKey, buttonTextKey, href, icon: Icon }: { titleKey: string, descriptionKey: string, buttonTextKey: string, href: string, icon: React.ElementType }) => {
     const { t } = useTranslation();
     return (
@@ -95,7 +87,6 @@ export default function DashboardPage() {
     const { quests } = useQuests();
     
     const [recentTopics, setRecentTopics] = useState<string[]>([]);
-    const [dailyQuote, setDailyQuote] = useState('');
     const [totalLearners, setTotalLearners] = useState<number | null>(null);
     const pageTitleSpokenRef = useRef(false);
 
@@ -111,38 +102,26 @@ export default function DashboardPage() {
                     localStorage.removeItem(RECENT_TOPICS_LS_KEY);
                 }
             }
-            const today = new Date().toDateString();
-            const storedQuoteDate = localStorage.getItem('learnmint-quote-date');
-            if (storedQuoteDate === today) {
-                setDailyQuote(localStorage.getItem('learnmint-quote') || dailyMotivationQuotes[0]);
-            } else {
-                const newQuote = dailyMotivationQuotes[Math.floor(Math.random() * dailyMotivationQuotes.length)];
-                setDailyQuote(newQuote);
-                localStorage.setItem('learnmint-quote', newQuote);
-                localStorage.setItem('learnmint-quote-date', today);
-            }
         }
     }, [setVoicePreference]);
 
     useEffect(() => {
-        // Only attach the listener if the user is authenticated
         if (user) {
             const unsubscribe = onSnapshot(doc(db, "metadata", "userCount"), (doc) => {
                 if (doc.exists()) {
                     setTotalLearners(doc.data().count);
                 } else {
                     console.warn("User count document does not exist in Firestore. Please create it at 'metadata/userCount' with a 'count' field of type number.");
-                    setTotalLearners(0); // Gracefully handle non-existent doc
+                    setTotalLearners(0);
                 }
             }, (error) => {
                 console.error("Error fetching total learners (likely permissions for a new user, will retry):", error);
-                setTotalLearners(null); // Set to null on error
+                setTotalLearners(null);
             });
 
-            // Cleanup listener on component unmount
             return () => unsubscribe();
         }
-    }, [user]); // Dependency array ensures this runs when user state changes
+    }, [user]);
   
     useEffect(() => {
         if (soundMode !== 'muted' && isReady && !pageTitleSpokenRef.current) {
@@ -191,7 +170,7 @@ export default function DashboardPage() {
                             <div className="mt-3 flex justify-center items-center gap-2 group cursor-pointer">
                                <Users className="h-5 w-5 text-green-400/80 group-hover:text-green-400 transition-colors" />
                                <span className="font-semibold text-green-400/90 group-hover:text-green-400 transition-colors">
-                                   Total Learners: {totalLearners.toLocaleString()}
+                                   {t('dashboard.totalLearners')}: {totalLearners.toLocaleString()}
                                </span>
                             </div>
                         )}
