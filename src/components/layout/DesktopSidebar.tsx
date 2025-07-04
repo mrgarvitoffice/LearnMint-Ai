@@ -1,9 +1,7 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSound } from '@/hooks/useSound';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from '@/lib/constants';
@@ -13,22 +11,21 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { useSidebar } from '../ui/sidebar';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Logo } from '../icons/Logo';
+import { SidebarFooter } from './SidebarFooter';
 
 const navItemVariants = {
   expanded: { opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } },
-  collapsed: { opacity: 0, x: -15, transition: { duration: 0.2 } },
+  collapsed: { opacity: 0, x: -15, transition: { duration:0.2 } },
 };
 
 function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathname: string, isExpanded: boolean }) {
   const { t } = useTranslation();
-  const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.2);
   const Icon = item.icon;
   const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
 
   const content = (
     <Link
       href={item.href}
-      onClick={playClickSound}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all duration-200 hover:text-primary group relative",
         isActive ? "text-primary" : "hover:bg-muted/50",
@@ -95,13 +92,17 @@ export function DesktopSidebar() {
         </Link>
       </div>
 
-      <ScrollArea className="flex-1 mt-5">
+      <ScrollArea className="flex-1 mt-2">
         <nav className="grid items-start p-2 text-sm font-medium">
           {NAV_ITEMS.map((item) => (
             <SidebarNavItem key={item.href || item.title} item={item} pathname={pathname} isExpanded={isExpanded} />
           ))}
         </nav>
       </ScrollArea>
+      
+      <div className="mt-auto p-2 border-t border-border/20">
+        <SidebarFooter isExpanded={isExpanded} />
+      </div>
     </motion.aside>
   );
 }
