@@ -19,11 +19,9 @@ import {
   DropdownMenuRadioItem 
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Logo } from '@/components/icons/Logo';
 import { Sun, Moon, Volume2, Volume1, VolumeX, Languages, CaseSensitive, UserCircle, Settings, ChevronRight } from 'lucide-react';
-import { APP_NAME, APP_LANGUAGES } from '@/lib/constants';
+import { APP_LANGUAGES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -144,14 +142,7 @@ export function Header({ onSidebarToggle, sidebarState }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
        <div className="flex items-center gap-2.5">
-          <Link href="/" className="flex items-center gap-2.5 font-semibold" onClick={() => playClickSound()}>
-              <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
-                  <Logo size={32} />
-              </motion.div>
-              <span className="hidden sm:inline-block font-bold text-xl text-foreground whitespace-nowrap">
-                {APP_NAME}
-              </span>
-          </Link>
+          {/* Empty div to balance flexbox */}
         </div>
       
         <div className="md:hidden">

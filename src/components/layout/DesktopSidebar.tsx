@@ -12,10 +12,11 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useSidebar } from '../ui/sidebar';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Logo } from '../icons/Logo';
 
 const navItemVariants = {
-  expanded: { opacity: 1, x: 0 },
-  collapsed: { opacity: 0, x: -10 },
+  expanded: { opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } },
+  collapsed: { opacity: 0, x: -15, transition: { duration: 0.2 } },
 };
 
 function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathname: string, isExpanded: boolean }) {
@@ -24,62 +25,75 @@ function SidebarNavItem({ item, pathname, isExpanded }: { item: NavItem, pathnam
   const Icon = item.icon;
   const isActive = (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href;
 
+  const content = (
+    <Link
+      href={item.href}
+      onClick={playClickSound}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all duration-200 hover:text-primary group relative",
+        isActive ? "text-primary" : "hover:bg-muted/50",
+        isExpanded ? "justify-start" : "justify-center"
+      )}
+    >
+      <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+      <motion.span 
+        variants={navItemVariants}
+        className={cn("whitespace-nowrap", !isExpanded && "sr-only")}
+      >
+        {t(item.title)}
+      </motion.span>
+       {isActive && (
+        <motion.div
+          layoutId="active-sidebar-indicator"
+          className="absolute inset-0 bg-primary/10 rounded-lg -z-10"
+          initial={false}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        />
+      )}
+    </Link>
+  );
+
   if (!isExpanded) {
     return (
       <TooltipProvider delayDuration={100}>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              href={item.href}
-              onClick={playClickSound}
-              className={cn(
-                "flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground transition-colors hover:text-primary hover:bg-muted group",
-                isActive && "bg-muted text-primary"
-              )}
-            >
-              <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
-              <span className="sr-only">{t(item.title)}</span>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>{t(item.title)}</p>
-          </TooltipContent>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipContent side="right"><p>{t(item.title)}</p></TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
   }
 
-  return (
-    <Link
-      href={item.href}
-      onClick={playClickSound}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary group",
-        isActive && "bg-muted text-primary"
-      )}
-    >
-      <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
-      <motion.span variants={navItemVariants}>
-        {t(item.title)}
-      </motion.span>
-    </Link>
-  );
+  return content;
 }
 
 export function DesktopSidebar() {
-  const { state, setOpen } = useSidebar();
+  const { state } = useSidebar();
   const isExpanded = state === 'expanded';
   const pathname = usePathname();
 
   return (
     <motion.aside
       initial={false}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
       animate={{ width: isExpanded ? 256 : 80 }}
-      className="fixed top-0 left-0 z-20 h-full border-r bg-background flex-col hidden md:flex"
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      className="fixed top-0 left-0 z-50 h-full border-r bg-background/80 backdrop-blur-md flex-col hidden md:flex"
     >
-      <div className="flex h-16 items-center shrink-0" />
+      <div className="flex h-16 items-center shrink-0 px-4">
+         <Link href="/" className={cn("flex items-center gap-2.5 font-semibold", isExpanded ? 'justify-start w-full pl-1' : 'justify-center w-full')}>
+            <motion.div whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Logo size={32} />
+            </motion.div>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isExpanded ? 1 : 0 }}
+              transition={{ delay: isExpanded ? 0.1 : 0, duration: 0.2 }}
+              className={cn("font-bold text-xl text-foreground whitespace-nowrap", !isExpanded && "sr-only")}
+            >
+              LearnMint
+            </motion.span>
+        </Link>
+      </div>
 
       <ScrollArea className="flex-1 mt-5">
         <nav className="grid items-start p-2 text-sm font-medium">

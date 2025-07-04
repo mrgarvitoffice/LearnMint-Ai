@@ -23,15 +23,16 @@ export default function MainAppLayout({ children }: MainAppLayoutProps) {
   return (
     <AppLayout>
       <AnimatePresence mode="wait">
-        <motion.div
+        <motion.main
           key={pathname}
+          className="flex-1"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -15 }}
           transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
           {children}
-        </motion.div>
+        </motion.main>
       </AnimatePresence>
     </AppLayout>
   );

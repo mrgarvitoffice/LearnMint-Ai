@@ -17,7 +17,7 @@ export default function ProfilePage() {
               </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-              <p>To add user profile management, you can integrate a component like Clerk's {'<UserProfile />'} here.</p>
+              <p>You can add a user profile management component here.</p>
           </CardContent>
       </Card>
     </div>

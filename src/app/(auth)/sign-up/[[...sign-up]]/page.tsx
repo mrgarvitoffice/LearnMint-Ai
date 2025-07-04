@@ -10,13 +10,12 @@ export default function SignUpPage() {
       <CardHeader>
         <UserPlus className="mx-auto h-16 w-16 text-primary" />
         <CardTitle className="text-2xl mt-4">Sign Up</CardTitle>
-        <CardDescription>Authentication has been removed.</CardDescription>
+        <CardDescription>Create your LearnMint account.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-muted-foreground">
-          This page is a placeholder. Please integrate your chosen authentication provider, such as Clerk, to enable sign-up functionality.
+         This page is a placeholder for your sign-up form. Integrate your authentication provider here.
         </p>
-         <p className="text-sm">You can add a component like Clerk's `{'<SignUp />'}` here.</p>
       </CardContent>
     </Card>
   );
