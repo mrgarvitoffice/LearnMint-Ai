@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, signInAnonymously } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithRedirect, signInAnonymously } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +27,7 @@ export default function SignInPage() {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: 'Signed In', description: 'Welcome back!' });
+      toast({ title: 'Signed In', description: 'Welcome back! Redirecting...' });
       // Redirection is handled by the AuthLayout guard.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please check your credentials.';
@@ -48,15 +49,13 @@ export default function SignInPage() {
     setIsGoogleLoading(true);
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
-      toast({ title: 'Signed In with Google', description: 'Welcome back!' });
-      // Redirection is handled by the AuthLayout guard.
+      // Switched to signInWithRedirect for better reliability
+      await signInWithRedirect(auth, googleProvider);
+      // The browser will redirect, and the result will be handled by the AuthProvider.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
-      if (err.code === 'auth/popup-blocked') {
-        description = 'Your browser blocked the sign-in pop-up. Please allow pop-ups for this site and try again.';
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        description = 'The sign-in window was closed before completing. Please try again. It is important to not close the pop-up window until sign-in is complete.';
+       if (err.code === 'auth/operation-not-allowed') {
+        description = 'Google Sign-in is not enabled for this project. Please contact support.';
       } else if (err.code === 'auth/account-exists-with-different-credential') {
         description = 'An account with this email already exists with a different sign-in method. Please use the method you originally used.';
       } else if (err.message) {
@@ -64,8 +63,7 @@ export default function SignInPage() {
       }
       setError(description);
       toast({ title: 'Google Sign In Failed', description: description, variant: 'destructive', duration: 8000 });
-    } finally {
-      setIsGoogleLoading(false);
+      setIsGoogleLoading(false); // Reset loading state only on immediate error
     }
   };
 

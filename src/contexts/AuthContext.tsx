@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Loader2 } from 'lucide-react';
+import { updateUserCountOnSignup } from '@/lib/actions';
 
 interface AuthContextType {
   user: User | null;
@@ -22,7 +23,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        const creationTime = currentUser.metadata.creationTime ? new Date(currentUser.metadata.creationTime).getTime() : 0;
+        const lastSignInTime = currentUser.metadata.lastSignInTime ? new Date(currentUser.metadata.lastSignInTime).getTime() : 0;
+
+        // If the account was created in the last 10 seconds, it's a new user.
+        // This handles both email and Google sign-ups after redirect.
+        if (lastSignInTime > 0 && creationTime > 0 && (lastSignInTime - creationTime < 10000)) {
+          await updateUserCountOnSignup();
+        }
+      }
       setUser(currentUser);
       setLoading(false);
     });

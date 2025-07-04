@@ -1,9 +1,9 @@
+
 "use client";
 
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
-import { auth, googleProvider, db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithRedirect } from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,20 +21,6 @@ export default function SignUpPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateUserCount = async () => {
-    const userCountRef = doc(db, "metadata", "userCount");
-    try {
-        const docSnap = await getDoc(userCountRef);
-        if (docSnap.exists()) {
-            await updateDoc(userCountRef, { count: increment(1) });
-        } else {
-            await setDoc(userCountRef, { count: 21 });
-        }
-    } catch (e) {
-        console.error("Failed to update user count:", e);
-    }
-  };
-
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -45,9 +31,9 @@ export default function SignUpPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // The user count update is now handled centrally by the AuthProvider.
       await createUserWithEmailAndPassword(auth, email, password);
-      await updateUserCount();
-      toast({ title: 'Account Created!', description: 'You have successfully signed up.' });
+      toast({ title: 'Account Created!', description: 'You have successfully signed up. Redirecting...' });
       // Redirection is handled by the AuthLayout guard.
     } catch (err: any) {
       let description = 'An unknown error occurred. Please try again.';
@@ -69,28 +55,19 @@ export default function SignUpPage() {
     setIsGoogleLoading(true);
     setError(null);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const additionalInfo = getAdditionalUserInfo(result);
-      if (additionalInfo?.isNewUser) {
-        await updateUserCount();
-      }
-      toast({ title: 'Signed Up with Google!', description: 'Welcome to LearnMint!' });
-      // Redirection is handled by the AuthLayout guard.
+      // Switched to signInWithRedirect for better reliability
+      await signInWithRedirect(auth, googleProvider);
+      // The browser will redirect, and the result (including new user detection) will be handled by the AuthProvider.
     } catch (err: any) {
-       let description = 'An unknown error occurred. Please try again.';
-      if (err.code === 'auth/popup-blocked') {
-        description = 'Your browser blocked the sign-in pop-up. Please allow pop-ups for this site and try again.';
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        description = 'The sign-in window was closed before completing. Please try again. It is important to not close the pop-up window until sign-up is complete.';
-      } else if (err.code === 'auth/account-exists-with-different-credential') {
-        description = 'An account with this email already exists. Please sign in using the method you originally used.';
+      let description = 'An unknown error occurred. Please try again.';
+      if (err.code === 'auth/operation-not-allowed') {
+        description = 'Google Sign-up is not enabled for this project. Please contact support.';
       } else if (err.message) {
         description = err.message;
       }
       setError(description);
       toast({ title: 'Google Sign Up Failed', description, variant: 'destructive', duration: 8000 });
-    } finally {
-      setIsGoogleLoading(false);
+      setIsGoogleLoading(false); // Reset loading state only on immediate error
     }
   };
 
@@ -120,15 +97,15 @@ export default function SignUpPage() {
         <form onSubmit={handleEmailSignUp} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading || isGoogleLoading}/>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading || isGoogleLoading}/>
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            <Input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={isLoading || isGoogleLoading}/>
           </div>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
           <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
