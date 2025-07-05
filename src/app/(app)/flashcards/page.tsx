@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Loader2, Sparkles, AudioLines, Mic, Layers, FileText, Image as ImageIcon, XCircle, PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { Loader2, Sparkles, AudioLines, Mic, Layers, FileText, Image as ImageIcon, XCircle, PlayCircle, PauseCircle, StopCircle, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
-import { generateAudioFlashcardsAction, generateAudioSummaryAction } from '@/lib/actions';
-import type { GenerateAudioFlashcardsOutput, GenerateAudioSummaryOutput } from '@/lib/types';
+import { generateAudioFlashcardsAction, generateAudioSummaryAction, generateDiscussionAudioAction } from '@/lib/actions';
+import type { GenerateAudioFlashcardsOutput, GenerateAudioSummaryOutput, GenerateDiscussionAudioOutput } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import FlashcardItem from '@/components/study/FlashcardItem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +29,7 @@ function AudioFlashcardsGenerator() {
   const [topic, setTopic] = useState('');
   const [numFlashcards, setNumFlashcards] = useState(10);
   const [generatedContent, setGeneratedContent] = useState<GenerateAudioFlashcardsOutput | null>(null);
+  const [discussionAudio, setDiscussionAudio] = useState<string | null>(null);
   
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
@@ -45,11 +46,23 @@ function AudioFlashcardsGenerator() {
         return;
       }
       setGeneratedContent(data);
+      setDiscussionAudio(null);
       toast({ title: "Generation Complete!", description: `${data.flashcards.length} flashcards created. You can now use the 'Read Aloud' feature.` });
     },
     onError: (error) => {
       toast({ title: "Generation Failed", description: error.message, variant: "destructive" });
       setGeneratedContent(null);
+    }
+  });
+
+  const { mutate: generateDiscussion, isPending: isGeneratingDiscussion } = useMutation({
+    mutationFn: generateDiscussionAudioAction,
+    onSuccess: (data) => {
+      setDiscussionAudio(data.audioDataUri);
+      toast({ title: "Discussion Generated!", description: "Multi-voice audio discussion is ready to play." });
+    },
+    onError: (error) => {
+      toast({ title: "Discussion Failed", description: error.message, variant: "destructive" });
     }
   });
 
@@ -61,6 +74,7 @@ function AudioFlashcardsGenerator() {
     }
     cancelTTS();
     setGeneratedContent(null);
+    setDiscussionAudio(null);
     generate({ topic, numFlashcards });
   };
   
@@ -77,6 +91,13 @@ function AudioFlashcardsGenerator() {
     if (!generatedContent || generatedContent.flashcards.length === 0) return;
     const textToRead = generatedContent.flashcards.map(fc => `Term: ${fc.term}. Definition: ${fc.definition}`).join('\n\n');
     speak(textToRead, { priority: 'essential' });
+  }
+  
+  const handleGenerateDiscussion = () => {
+    playActionSound();
+    if (!generatedContent || generatedContent.flashcards.length === 0) return;
+    const textToConvert = generatedContent.flashcards.map(fc => `Term: ${fc.term}. Definition: ${fc.definition}`).join('\n\n');
+    generateDiscussion({ content: textToConvert });
   }
 
   const handlePlaybackControl = () => {
@@ -109,29 +130,39 @@ function AudioFlashcardsGenerator() {
         </div>
       </CardContent>
       <CardFooter className="justify-center">
-        <Button size="lg" onClick={handleGenerate} disabled={isLoading}>
+        <Button size="lg" onClick={handleGenerate} disabled={isLoading || isGeneratingDiscussion}>
           {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
           {t('audioFactory.generate')} Flashcards
         </Button>
       </CardFooter>
-      {isLoading && (
+      {(isLoading || isGeneratingDiscussion) && (
         <CardContent className="text-center py-6">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="mt-3 text-muted-foreground">{t('audioFactory.generating')}</p>
+          <p className="mt-3 text-muted-foreground">{isLoading ? t('audioFactory.generating') : 'Generating discussion...'}</p>
         </CardContent>
       )}
       {generatedContent && (
         <CardContent>
           <CardTitle className="mb-4 text-lg">Generated Content</CardTitle>
           {generatedContent.flashcards.length > 0 && (
-            <div className="mb-6 flex items-center gap-2">
-              <Button onClick={handlePlaybackControl} disabled={isTTSLoading}>
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
+              <Button onClick={handlePlaybackControl} disabled={isTTSLoading || isGeneratingDiscussion}>
                 {isTTSLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4 mr-2"/> : <PlayCircle className="h-4 w-4 mr-2"/>}
                 {isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Read Aloud"}
               </Button>
               {(isSpeaking || isPaused) && (
                 <Button onClick={cancelTTS} variant="ghost" size="icon"><StopCircle className="h-5 w-5" /></Button>
               )}
+               <Button onClick={handleGenerateDiscussion} disabled={isGeneratingDiscussion || isLoading}>
+                {isGeneratingDiscussion ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <Users className="h-4 w-4 mr-2"/>}
+                Generate Discussion
+              </Button>
+            </div>
+          )}
+          {discussionAudio && (
+            <div className="my-4">
+              <h4 className="font-semibold mb-2">Discussion Audio:</h4>
+              <audio controls src={discussionAudio} className="w-full">Your browser does not support the audio element.</audio>
             </div>
           )}
           <ScrollArea className="h-[500px] w-full pr-4">
@@ -154,23 +185,37 @@ function AudioSummarizer({
   children
 }: {
   title: string, description: string, inputType: 'text' | 'image' | 'pdf',
-  generateAction: (input: any) => void, validateInput: () => boolean,
+  generateAction: (generateFn: (input: any) => void) => void, validateInput: () => boolean,
   children: React.ReactNode
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3');
   const [generatedContent, setGeneratedContent] = useState<GenerateAudioSummaryOutput | null>(null);
+  const [discussionAudio, setDiscussionAudio] = useState<string | null>(null);
 
   const { speak, cancelTTS, isSpeaking, isPaused, pauseTTS, resumeTTS, isLoading: isTTSLoading } = useTTS();
+  
   const { mutate: generate, isPending: isLoading } = useMutation({
     mutationFn: generateAudioSummaryAction,
     onSuccess: (data) => {
       setGeneratedContent(data);
+      setDiscussionAudio(null);
       toast({ title: "Summary Complete!", description: `AI has generated a summary for your ${inputType}.`});
     },
     onError: (error) => {
       toast({ title: "Summary Failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const { mutate: generateDiscussion, isPending: isGeneratingDiscussion } = useMutation({
+    mutationFn: generateDiscussionAudioAction,
+    onSuccess: (data) => {
+      setDiscussionAudio(data.audioDataUri);
+      toast({ title: "Discussion Generated!", description: "Multi-voice audio discussion is ready to play." });
+    },
+    onError: (error) => {
+      toast({ title: "Discussion Failed", description: error.message, variant: "destructive" });
     }
   });
 
@@ -185,6 +230,12 @@ function AudioSummarizer({
     if (!generatedContent?.summary) return;
     speak(generatedContent.summary, {priority: 'essential'});
   }
+  
+  const handleGenerateDiscussion = () => {
+    if (!generatedContent?.summary) return;
+    playActionSound();
+    generateDiscussion({ content: generatedContent.summary });
+  };
   
   const handlePlaybackControl = () => {
     if (isSpeaking && !isPaused) pauseTTS();
@@ -202,24 +253,34 @@ function AudioSummarizer({
         {children}
       </CardContent>
       <CardFooter className="flex-col items-center gap-4">
-        <Button onClick={handleGenerate} disabled={isLoading}>
+        <Button onClick={handleGenerate} disabled={isLoading || isGeneratingDiscussion}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
           {t('audioFactory.generate')} Summary
         </Button>
-        {isLoading && <p className="text-sm text-muted-foreground">{t('audioFactory.generating')}</p>}
+        {(isLoading || isGeneratingDiscussion) && <p className="text-sm text-muted-foreground">{isLoading ? t('audioFactory.generating') : 'Generating discussion...'}</p>}
         {generatedContent && (
           <div className="w-full space-y-4 pt-4 border-t">
             <h3 className="font-semibold">{t('audioFactory.summary')}</h3>
             <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">{generatedContent.summary}</p>
-            <div className="flex items-center gap-2">
-              <Button onClick={handlePlaybackControl} disabled={isTTSLoading}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button onClick={handlePlaybackControl} disabled={isTTSLoading || isGeneratingDiscussion}>
                 {isTTSLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : isSpeaking && !isPaused ? <PauseCircle className="h-4 w-4 mr-2"/> : <PlayCircle className="h-4 w-4 mr-2"/>}
                 {isSpeaking && !isPaused ? "Pause" : isPaused ? "Resume" : "Read Aloud"}
               </Button>
                {(isSpeaking || isPaused) && (
                 <Button onClick={cancelTTS} variant="ghost" size="icon"><StopCircle className="h-5 w-5" /></Button>
               )}
+               <Button onClick={handleGenerateDiscussion} disabled={isGeneratingDiscussion || isLoading}>
+                {isGeneratingDiscussion ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <Users className="h-4 w-4 mr-2"/>}
+                Generate Discussion
+              </Button>
             </div>
+             {discussionAudio && (
+              <div className="my-4">
+                <h4 className="font-semibold mb-2">Discussion Audio:</h4>
+                <audio controls src={discussionAudio} className="w-full">Your browser does not support the audio element.</audio>
+              </div>
+            )}
           </div>
         )}
       </CardFooter>
@@ -286,7 +347,13 @@ function ImageAudioSummarizer() {
       title={t('audioFactory.image.title')}
       description={t('audioFactory.image.description')}
       inputType="image"
-      validateInput={() => !!imageData}
+      validateInput={() => {
+         if (!imageData) {
+            toast({ title: "No Image", description: "Please upload an image first.", variant: "destructive"});
+            return false;
+         }
+         return true;
+      }}
       generateAction={(generate) => generate({ imageDataUri: imageData })}
     >
       <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
@@ -333,7 +400,13 @@ function PdfAudioSummarizer() {
       title={t('audioFactory.pdf.title')}
       description={t('audioFactory.pdf.description')}
       inputType="pdf"
-      validateInput={() => !!extractedText}
+      validateInput={() => {
+        if (!extractedText) {
+            toast({ title: "No PDF Content", description: "Please upload and process a PDF first.", variant: "destructive"});
+            return false;
+        }
+        return true;
+      }}
       generateAction={(generate) => generate({ text: extractedText })}
     >
       <input type="file" accept="application/pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" />

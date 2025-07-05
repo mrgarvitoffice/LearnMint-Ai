@@ -58,7 +58,7 @@ export default function GenerateNotesPage() {
   useEffect(() => {
     const PAGE_TITLE = t('generate.title');
     const timer = setTimeout(() => {
-      if (!pageTitleSpokenRef.current && !isLoadingAll && soundMode !== 'muted') {
+      if (!pageTitleSpokenRef.current && !isLoadingAll && soundMode === 'full') {
         speak(PAGE_TITLE, { priority: 'optional' });
         pageTitleSpokenRef.current = true;
       }
@@ -144,7 +144,7 @@ export default function GenerateNotesPage() {
     setIsLoadingAll(true);
     pageTitleSpokenRef.current = true; 
 
-    speak("Generating all study materials: notes, quiz, and flashcards. This may take a moment.", { priority: 'optional' });
+    if (soundMode === 'full') speak("Generating all study materials. This may take a moment.", { priority: 'optional' });
 
     const trimmedTopic = topic.trim();
     try {
@@ -161,38 +161,49 @@ export default function GenerateNotesPage() {
       const combinedResult: CombinedStudyMaterialsOutput = await generateNotesAction({ topic: trimmedTopic, image: imageData || undefined });
       let navigationSuccess = false;
 
+      // Handle notes
       if (combinedResult.notesOutput?.notes) {
         localStorage.setItem(getCacheKey("notes", trimmedTopic), JSON.stringify(combinedResult.notesOutput));
-        toast({ title: t('generate.toast.notesSuccess'), description: t('generate.toast.notesSuccessDesc', { topic: trimmedTopic }) });
         navigationSuccess = true;
         completeQuest1(); // Mark quest 1 as complete
       } else {
         setNotesError(t('generate.toast.notesErrorDesc'));
-        toast({ title: t('generate.toast.notesError'), description: t('generate.toast.notesErrorDesc'), variant: 'destructive' });
       }
 
-      if (combinedResult.quizOutput?.questions && combinedResult.quizOutput.questions.length > 0) {
+      // Handle quiz
+      const quizSuccess = combinedResult.quizOutput?.questions && combinedResult.quizOutput.questions.length > 0;
+      if (quizSuccess) {
         localStorage.setItem(getCacheKey("quiz", trimmedTopic), JSON.stringify(combinedResult.quizOutput));
-        toast({ title: t('generate.toast.quizSuccess'), description: t('generate.toast.quizSuccessDesc', { topic: trimmedTopic }) });
-      } else {
-        const qError = combinedResult.quizError || "AI returned no quiz questions.";
-        setQuizError(qError);
-        toast({ title: t('generate.toast.quizError'), description: qError, variant: 'default' });
+      } else if(combinedResult.quizError) {
+        setQuizError(combinedResult.quizError);
       }
 
-      if (combinedResult.flashcardsOutput?.flashcards && combinedResult.flashcardsOutput.flashcards.length > 0) {
+      // Handle flashcards
+      const flashcardsSuccess = combinedResult.flashcardsOutput?.flashcards && combinedResult.flashcardsOutput.flashcards.length > 0;
+      if (flashcardsSuccess) {
         localStorage.setItem(getCacheKey("flashcards", trimmedTopic), JSON.stringify(combinedResult.flashcardsOutput));
-        toast({ title: t('generate.toast.flashcardsSuccess'), description: t('generate.toast.flashcardsSuccessDesc', { topic: trimmedTopic }) });
-      } else {
-        const fError = combinedResult.flashcardsError || "AI returned no flashcards.";
-        setFlashcardsError(fError);
-        toast({ title: t('generate.toast.flashcardsError'), description: fError, variant: 'default' });
+      } else if(combinedResult.flashcardsError) {
+        setFlashcardsError(combinedResult.flashcardsError);
       }
-      
-      speak("Study materials generated and cached!", { priority: 'optional' });
 
+      // Final aggregated notification
       if (navigationSuccess) {
-        router.push(`/study?topic=${encodeURIComponent(trimmedTopic)}`);
+          const successfulParts = ['Notes'];
+          if (quizSuccess) successfulParts.push('Quiz');
+          if (flashcardsSuccess) successfulParts.push('Flashcards');
+          const successMessage = `${successfulParts.join(', ')} for "${trimmedTopic}" generated and cached.`;
+          
+          toast({
+            title: "Materials Generated!",
+            description: successMessage,
+          });
+
+          if (soundMode === 'full') speak("Study materials are ready!", { priority: 'optional' });
+          router.push(`/study?topic=${encodeURIComponent(trimmedTopic)}`);
+
+      } else {
+          // This block runs if notes (the primary content) failed.
+          toast({ title: t('generate.toast.notesError'), description: notesError || t('generate.toast.notesErrorDesc'), variant: 'destructive' });
       }
 
     } catch (err: any) { 
@@ -200,7 +211,7 @@ export default function GenerateNotesPage() {
       setQuizError("Could not attempt quiz generation due to initial notes failure.");
       setFlashcardsError("Could not attempt flashcard generation due to initial notes failure.");
       toast({ title: t('generate.toast.generationFailed'), description: err.message, variant: 'destructive' });
-      speak("Sorry, failed to generate study materials.", { priority: 'optional' });
+      if (soundMode !== 'muted') speak("Sorry, failed to generate study materials.", { priority: 'essential' });
     } finally {
       setIsLoadingAll(false);
       setTopic('');
@@ -296,8 +307,8 @@ export default function GenerateNotesPage() {
       {!isLoadingAll && (notesError || quizError || flashcardsError) && (
         <div className="space-y-4">
             {notesError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Notes Error</AlertTitle><AlertDescription>{notesError}</AlertDescription></Alert>}
-            {quizError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Quiz Error</AlertTitle><AlertDescription>{quizError}</AlertDescription></Alert>}
-            {flashcardsError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Flashcards Error</AlertTitle><AlertDescription>{flashcardsError}</AlertDescription></Alert>}
+            {quizError && <Alert variant="default" className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400 [&>svg]:text-yellow-500"><AlertTriangle className="h-4 w-4" /><AlertTitle>Quiz Info</AlertTitle><AlertDescription>{quizError}</AlertDescription></Alert>}
+            {flashcardsError && <Alert variant="default" className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400 [&>svg]:text-yellow-500"><AlertTriangle className="h-4 w-4" /><AlertTitle>Flashcards Info</AlertTitle><AlertDescription>{flashcardsError}</AlertDescription></Alert>}
         </div>
       )}
     </div>

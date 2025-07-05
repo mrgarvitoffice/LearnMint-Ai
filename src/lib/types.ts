@@ -72,6 +72,14 @@ export interface GenerateAudioSummaryOutput {
   audioDataUri?: string; // Changed to optional as it's no longer generated on the server
 }
 
+// For Audio Discussion Generation
+export interface GenerateDiscussionAudioInput {
+  content: string;
+}
+export interface GenerateDiscussionAudioOutput {
+  audioDataUri: string;
+}
+
 
 // For News API
 export interface NewsArticle {

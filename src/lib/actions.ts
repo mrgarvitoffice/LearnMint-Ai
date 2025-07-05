@@ -8,6 +8,7 @@ import { generateQuizQuestions, type GenerateQuizQuestionsInput, type GenerateQu
 import { generateFlashcards, type GenerateFlashcardsInput, type GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
 import { generateAudioFlashcards, type GenerateAudioFlashcardsInput, type GenerateAudioFlashcardsOutput } from "@/ai/flows/generate-audio-flashcards";
 import { generateAudioSummary, type GenerateAudioSummaryInput, type GenerateAudioSummaryOutput } from "@/ai/flows/generate-audio-summary";
+import { generateDiscussionAudio, type GenerateDiscussionAudioInput, type GenerateDiscussionAudioOutput } from "@/ai/flows/generate-discussion-audio";
 
 import type { YoutubeSearchInput, YoutubeSearchOutput, YoutubeVideoItem, GoogleBooksSearchInput, GoogleBooksSearchOutput, GoogleBookItem } from './types';
 
@@ -261,6 +262,37 @@ export async function generateAudioSummaryAction(input: GenerateAudioSummaryInpu
         clientErrorMessage = "Audio Summary: Failed due to an API key or configuration issue. Please check the GOOGLE_API_KEY_TTS key.";
     } else if (error.message) {
         clientErrorMessage = `Audio Summary: Failed. Error: ${error.message.substring(0, 150)}.`;
+    }
+    throw new Error(clientErrorMessage);
+  }
+}
+
+/**
+ * generateDiscussionAudioAction
+ *
+ * This server action takes text content and generates a multi-speaker audio discussion.
+ *
+ * @param input - Contains the text content to be converted.
+ * @returns A promise that resolves to the audio data URI.
+ * @throws Error if generation fails.
+ */
+export async function generateDiscussionAudioAction(input: GenerateDiscussionAudioInput): Promise<GenerateDiscussionAudioOutput> {
+  const actionName = "generateDiscussionAudioAction";
+  console.log(`[Server Action] ${actionName} called.`);
+
+  try {
+    const result = await generateDiscussionAudio(input);
+    if (!result || !result.audioDataUri) {
+      throw new Error("AI failed to generate discussion audio.");
+    }
+    return result;
+  } catch (error: any) {
+    console.error(`[Server Action Error - ${actionName}] Error generating discussion audio:`, error);
+    let clientErrorMessage = "Failed to generate discussion audio. Please try again.";
+    if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid"))) {
+        clientErrorMessage = "Audio Discussion: Failed due to an API key or configuration issue. Please check the GOOGLE_API_KEY_TTS key.";
+    } else if (error.message) {
+        clientErrorMessage = `Audio Discussion: Failed. Error: ${error.message.substring(0, 150)}.`;
     }
     throw new Error(clientErrorMessage);
   }
