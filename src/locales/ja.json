@@ -22,6 +22,7 @@
   "dashboard.recentTopics.description": "最近の学習セッションにすばやく戻ります。",
   "dashboard.recentTopics.empty": "最近のトピックはありません。ここで表示するには、学習教材を生成してください！",
   "dashboard.madeBy": "作成者",
+  "dashboard.totalLearnersGuestMessage": "コミュニティの統計を見るにはサインアップしてください！",
   "sidebar.dashboard": "ダッシュボード",
   "sidebar.aiChat": "AIチャット",
   "sidebar.generateNotes": "ノート生成",
@@ -94,6 +95,5 @@
   "audioFactory.imageTooLarge": "画像が大きすぎます。2MB未満の画像をアップロードしてください。",
   "audioFactory.pdfTooLarge": "PDFが大きすぎます。5MB未満のファイルをアップロードしてください。",
   "audioFactory.invalidFileType": "無効なファイルタイプです。",
-  "audioFactory.pdfExtractError": "PDFからテキストを抽出できませんでした。",
-  "dashboard.totalLearnersGuestMessage": "コミュニティの統計を見るにはサインアップしてください！"
+  "audioFactory.pdfExtractError": "PDFからテキストを抽出できませんでした。"
 }

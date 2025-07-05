@@ -22,6 +22,9 @@ import type { CombinedStudyMaterialsOutput } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
 import { extractTextFromPdf } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuestUsage } from '@/contexts/GuestUsageContext';
+import { GuestLock } from '@/components/features/auth/GuestLock';
 
 const RECENT_TOPICS_LS_KEY = "learnmint-recent-topics";
 const LOCALSTORAGE_KEY_PREFIX = "learnmint-study-";
@@ -31,6 +34,8 @@ export default function GenerateNotesPage() {
   const { toast } = useToast(); 
   const { t } = useTranslation();
   const { completeQuest1 } = useQuests();
+  const { user } = useAuth();
+  const { isNotesAllowed, incrementNotesGenerated } = useGuestUsage();
 
   const [topic, setTopic] = useState<string>("");
   const [isLoadingAll, setIsLoadingAll] = useState<boolean>(false);
@@ -135,6 +140,11 @@ export default function GenerateNotesPage() {
 
   const handleGenerateAllMaterials = async () => {
     playActionSound(); 
+    if (user?.isAnonymous && !isNotesAllowed) {
+      toast({ title: "Guest Limit Reached", description: "Please sign in to generate more notes.", variant: "destructive" });
+      return;
+    }
+
     if (topic.trim().length < 3) {
       toast({ title: t('generate.toast.invalidTopic'), description: t('generate.toast.invalidTopicDesc'), variant: "destructive" });
       return;
@@ -166,6 +176,9 @@ export default function GenerateNotesPage() {
         localStorage.setItem(getCacheKey("notes", trimmedTopic), JSON.stringify(combinedResult.notesOutput));
         navigationSuccess = true;
         completeQuest1(); // Mark quest 1 as complete
+        if (user?.isAnonymous) {
+          incrementNotesGenerated();
+        }
       } else {
         setNotesError(t('generate.toast.notesErrorDesc'));
       }
@@ -220,6 +233,10 @@ export default function GenerateNotesPage() {
     }
   };
   
+  if (user?.isAnonymous && !isNotesAllowed) {
+    return <GuestLock featureName="Note Generator" message="You have used your one free note generation for today as a guest." />;
+  }
+
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 space-y-8">
       <Card className="w-full shadow-xl bg-card/90 backdrop-blur-sm">

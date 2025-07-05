@@ -21,6 +21,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@
 import { useSound } from '@/hooks/useSound';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { GuestLock } from '@/components/features/auth/GuestLock';
 
 const PAGE_TITLE = "LearnMint Knowledge Hub";
 
@@ -43,6 +45,7 @@ export default function LibraryPage() {
 
   const { isListening, transcript, startListening, stopListening, error: voiceError, browserSupportsSpeechRecognition } = useVoiceRecognition();
   const [voiceSearchTarget, setVoiceSearchTarget] = useState<'youtube' | 'books' | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     setVoicePreference('holo');
@@ -174,6 +177,10 @@ export default function LibraryPage() {
     { title: "CK-12 Foundation", description: "Free K-12 STEM resources.", link: "https://www.ck12.org/", icon: Lightbulb },
     { title: "Project Gutenberg", description: "Over 70,000 free eBooks.", link: "https://www.gutenberg.org/", icon: Brain },
   ];
+
+  if (user?.isAnonymous) {
+    return <GuestLock featureName="Resource Library" />;
+  }
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-10">

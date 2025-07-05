@@ -12,6 +12,8 @@ import { Trash2, RotateCcw, Calculator as CalculatorIcon } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { useTTS } from '@/hooks/useTTS';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { GuestLock } from '@/components/features/auth/GuestLock';
 
 const LOCAL_STORAGE_HISTORY_KEY = 'learnmint-calculator-history';
 const PAGE_TITLE = "Precision Toolkit: Calculator & Converter";
@@ -52,6 +54,7 @@ export default function CalculatorPage() {
   const { playSound } = useSound('/sounds/ting.mp3', 0.2);
   const { speak, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     setVoicePreference('gojo');
@@ -185,6 +188,10 @@ export default function CalculatorPage() {
   };
   const deleteHistoryItem = (index: number) => { playSound(); setCalculationHistory(p => p.filter((_, i) => i !== index)); };
   const clearAllHistory = () => { playSound(); setCalculationHistory([]); }
+
+  if (user?.isAnonymous) {
+    return <GuestLock featureName="Calculator & Converter Toolkit" />;
+  }
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-8 space-y-6">

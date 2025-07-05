@@ -22,6 +22,7 @@
   "dashboard.recentTopics.description": "Vuelve rápidamente a tus sesiones de estudio recientes.",
   "dashboard.recentTopics.empty": "No hay temas recientes. ¡Genera materiales de estudio para verlos aquí!",
   "dashboard.madeBy": "Hecho por",
+  "dashboard.totalLearnersGuestMessage": "¡Regístrate para ver las estadísticas de la comunidad!",
   "sidebar.dashboard": "Panel",
   "sidebar.aiChat": "Chat IA",
   "sidebar.generateNotes": "Generar Notas",
@@ -94,6 +95,5 @@
   "audioFactory.imageTooLarge": "La imagen es demasiado grande. Por favor, suba una imagen de menos de 2MB.",
   "audioFactory.pdfTooLarge": "El PDF es demasiado grande. Por favor, suba un archivo de menos de 5MB.",
   "audioFactory.invalidFileType": "Tipo de archivo no válido.",
-  "audioFactory.pdfExtractError": "No se pudo extraer el texto del PDF.",
-  "dashboard.totalLearnersGuestMessage": "¡Regístrate para ver las estadísticas de la comunidad!"
+  "audioFactory.pdfExtractError": "No se pudo extraer el texto del PDF."
 }

@@ -22,6 +22,7 @@
   "dashboard.recentTopics.description": "Quickly jump back into your recent study sessions.",
   "dashboard.recentTopics.empty": "No recent topics. Generate some study materials to see them here!",
   "dashboard.madeBy": "Made by",
+  "dashboard.totalLearnersGuestMessage": "Sign up to see community stats!",
   "sidebar.dashboard": "Dashboard",
   "sidebar.aiChat": "AI Chat",
   "sidebar.generateNotes": "Generate Notes",
@@ -94,6 +95,5 @@
   "audioFactory.imageTooLarge": "Image is too large. Please upload an image under 2MB.",
   "audioFactory.pdfTooLarge": "PDF is too large. Please upload a file under 5MB.",
   "audioFactory.invalidFileType": "Invalid file type.",
-  "audioFactory.pdfExtractError": "Could not extract text from PDF.",
-  "dashboard.totalLearnersGuestMessage": "Sign up to see community stats!"
+  "audioFactory.pdfExtractError": "Could not extract text from PDF."
 }

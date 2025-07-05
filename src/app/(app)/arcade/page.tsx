@@ -9,12 +9,15 @@ import { useTTS } from '@/hooks/useTTS';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { GuestLock } from '@/components/features/auth/GuestLock';
 
 const PAGE_TITLE = "LearnMint Arcade";
 
 export default function ArcadePage() {
   const { speak, setVoicePreference } = useTTS();
   const pageTitleSpokenRef = useRef(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     setVoicePreference('holo');
@@ -30,6 +33,10 @@ export default function ArcadePage() {
 
     return () => clearTimeout(timer);
   }, [speak]);
+
+  if (user?.isAnonymous) {
+    return <GuestLock featureName="Arcade" />;
+  }
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">

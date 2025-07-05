@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
@@ -28,6 +29,9 @@ import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSettings } from '@/contexts/SettingsContext';
 import { extractTextFromPdf } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuestUsage } from '@/contexts/GuestUsageContext';
+import { GuestLock } from '@/components/features/auth/GuestLock';
 
 const MAX_RECENT_TOPICS_DISPLAY = 10;
 const MAX_RECENT_TOPICS_SELECT = 3;
@@ -92,6 +96,8 @@ export default function CustomTestPage() {
   const { speak, setVoicePreference } = useTTS();
   const { isListening, transcript, startListening, stopListening, browserSupportsSpeechRecognition, error: voiceError } = useVoiceRecognition();
   const { soundMode } = useSettings();
+  const { user } = useAuth();
+  const { isTestAllowed, incrementTestsCreated } = useGuestUsage();
 
   const pageTitleSpokenRef = useRef(false);
   const resultAnnouncementSpokenRef = useRef(false);
@@ -215,8 +221,49 @@ export default function CustomTestPage() {
       return () => clearInterval(timerId);
     }
   }, [testState?.timeLeft, testState?.showResults, handleSubmitTest, toast]);
+  
+  const handleNextQuestion = useCallback(() => {
+      playClickSound();
+      setTestState(prev => {
+          if (!prev || prev.currentQuestionIndex >= prev.questions.length - 1 || prev.isAutoSubmitting) {
+              if (!prev?.isAutoSubmitting) handleSubmitTest(false);
+              return prev;
+          }
+          const nextIndex = prev.currentQuestionIndex + 1;
+          const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
+          return { ...prev, currentQuestionIndex: nextIndex, currentQuestionTimeLeft: nextQuestionTime };
+      });
+  }, [playClickSound, handleSubmitTest]);
+
+  useEffect(() => {
+    if (testState && !testState.showResults && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
+      const timerId = setInterval(() => {
+        setTestState(prev => {
+          if (!prev || prev.showResults || !prev.currentQuestionTimeLeft || prev.currentQuestionTimeLeft <= 0) {
+            clearInterval(timerId);
+            return prev;
+          }
+          const newTimeLeft = prev.currentQuestionTimeLeft - 1;
+          if (newTimeLeft <= 0) {
+            clearInterval(timerId);
+            toast({ title: "Time's up for this question!", variant: "default" });
+            handleNextQuestion();
+            return { ...prev, currentQuestionTimeLeft: 0 };
+          }
+          return { ...prev, currentQuestionTimeLeft: newTimeLeft };
+        });
+      }, 1000);
+      return () => clearInterval(timerId);
+    }
+  }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, handleNextQuestion, toast]);
+
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    if (user?.isAnonymous && !isTestAllowed) {
+      toast({ title: "Guest Limit Reached", description: "Please sign in to create more tests.", variant: "destructive" });
+      return;
+    }
+    
     playActionSound();
     setIsLoading(true); setTestState(null);
     resultAnnouncementSpokenRef.current = false;
@@ -258,6 +305,9 @@ export default function CustomTestPage() {
       });
 
       if (result.questions && result.questions.length > 0) {
+        if (user?.isAnonymous) {
+          incrementTestsCreated();
+        }
         setTestState({
           settings, questions: result.questions, userAnswers: Array(result.questions.length).fill(undefined),
           currentQuestionIndex: 0, showResults: false, score: 0,
@@ -292,43 +342,6 @@ export default function CustomTestPage() {
     newUserAnswers[testState.currentQuestionIndex] = e.target.value;
     setTestState(prev => prev ? { ...prev, userAnswers: newUserAnswers } : null);
   };
-  
-  const handleNextQuestion = useCallback(() => {
-      playClickSound();
-      setTestState(prev => {
-          if (!prev || prev.currentQuestionIndex >= prev.questions.length - 1 || prev.isAutoSubmitting) {
-              if (!prev?.isAutoSubmitting) handleSubmitTest(false);
-              return prev;
-          }
-          const nextIndex = prev.currentQuestionIndex + 1;
-          const nextQuestionTime = prev.settings.perQuestionTimer && prev.settings.perQuestionTimer > 0 ? prev.settings.perQuestionTimer : undefined;
-          return { ...prev, currentQuestionIndex: nextIndex, currentQuestionTimeLeft: nextQuestionTime };
-      });
-  }, [playClickSound, handleSubmitTest]);
-
-  // This useEffect hook depends on handleNextQuestion, so it must be defined after it.
-  useEffect(() => {
-    if (testState && !testState.showResults && testState.settings.perQuestionTimer && testState.settings.perQuestionTimer > 0) {
-      const timerId = setInterval(() => {
-        setTestState(prev => {
-          if (!prev || prev.showResults || !prev.currentQuestionTimeLeft || prev.currentQuestionTimeLeft <= 0) {
-            clearInterval(timerId);
-            return prev;
-          }
-          const newTimeLeft = prev.currentQuestionTimeLeft - 1;
-          if (newTimeLeft <= 0) {
-            clearInterval(timerId);
-            toast({ title: "Time's up for this question!", variant: "default" });
-            handleNextQuestion();
-            return { ...prev, currentQuestionTimeLeft: 0 };
-          }
-          return { ...prev, currentQuestionTimeLeft: newTimeLeft };
-        });
-      }, 1000);
-      return () => clearInterval(timerId);
-    }
-  }, [testState?.currentQuestionIndex, testState?.settings.perQuestionTimer, testState?.showResults, handleNextQuestion, toast]);
-
 
   const handlePrevQuestion = () => {
     playClickSound();
@@ -447,6 +460,10 @@ export default function CustomTestPage() {
       notesImageInputRef.current.value = "";
     }
   };
+  
+  if (user?.isAnonymous && !isTestAllowed) {
+    return <GuestLock featureName="Custom Test Creator" message="You have used your one free custom test generation for today as a guest." />;
+  }
 
   if (!testState) {
     return (

@@ -22,6 +22,8 @@ import NextImage from 'next/image';
 import { extractTextFromPdf } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useTTS } from '@/hooks/useTTS';
+import { useAuth } from '@/contexts/AuthContext';
+import { GuestLock } from '@/components/features/auth/GuestLock';
 
 // Sub-component for Audio Flashcards
 function AudioFlashcardsGenerator() {
@@ -422,6 +424,12 @@ function PdfAudioSummarizer() {
 
 export default function AudioFactoryPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+
+  if (user?.isAnonymous) {
+    return <GuestLock featureName="Audio Factory" />;
+  }
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
       <Card className="shadow-xl bg-card/90 backdrop-blur-sm">

@@ -15,6 +15,8 @@ import { useSound } from '@/hooks/useSound';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuestUsage } from '@/contexts/GuestUsageContext';
 
 const PAGE_TITLE = "Global News Terminal";
 
@@ -33,6 +35,8 @@ export default function NewsPage() {
   const [filters, setFilters] = useState<NewsPageFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<NewsPageFilters>(initialFilters);
   const pageTitleSpokenRef = useRef(false);
+  const { user } = useAuth();
+  const { isNewsAllowed, incrementNewsSearches, usage } = useGuestUsage();
   
   const { playSound: playActionSound } = useSound('/sounds/custom-sound-2.mp3', { volume: 0.4, priority: 'essential' });
   const { toast } = useToast();
@@ -130,6 +134,13 @@ export default function NewsPage() {
   };
 
   const handleApplyFilters = () => {
+    if (user?.isAnonymous) {
+      if (!isNewsAllowed) {
+        toast({ title: "Guest Limit Reached", description: `You have used your ${usage.newsSearches} daily news searches. Please sign in for unlimited access.`, variant: "destructive" });
+        return;
+      }
+      incrementNewsSearches();
+    }
     playActionSound();
     cancelTTS();
     setAppliedFilters(filters);
@@ -200,6 +211,16 @@ export default function NewsPage() {
           <NewsFilters filters={filters} onFilterChange={handleFilterChange} onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} isLoading={isLoading || isFetchingNextPage} />
         </CardContent>
       </Card>
+      
+      {user?.isAnonymous && !isNewsAllowed && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Guest Daily Limit Reached</AlertTitle>
+          <AlertDescription>
+            You have used your {usage.newsSearches} free news searches for today. Please <a href="/sign-in" className="font-bold underline">sign in</a> or <a href="/sign-up" className="font-bold underline">sign up</a> for unlimited searches.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {isLoading && (
         <div className="flex justify-center items-center py-10">
@@ -232,7 +253,7 @@ export default function NewsPage() {
       )}
       {hasNextPage && (
         <div className="flex justify-center mt-8">
-          <Button onClick={() => { playActionSound(); fetchNextPage(); }} disabled={isFetchingNextPage}>
+          <Button onClick={() => { playActionSound(); fetchNextPage(); }} disabled={isFetchingNextPage || (user?.isAnonymous && !isNewsAllowed)}>
             {isFetchingNextPage && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Load More News
           </Button>
         </div>

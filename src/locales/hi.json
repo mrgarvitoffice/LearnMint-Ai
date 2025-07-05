@@ -22,6 +22,7 @@
   "dashboard.recentTopics.description": "अपने हाल के अध्ययन सत्रों में जल्दी से वापस जाएं।",
   "dashboard.recentTopics.empty": "कोई हालिया विषय नहीं। उन्हें यहां देखने के लिए कुछ अध्ययन सामग्री उत्पन्न करें!",
   "dashboard.madeBy": "द्वारा बनाया गया",
+  "dashboard.totalLearnersGuestMessage": "सामुदायिक आँकड़े देखने के लिए साइन अप करें!",
   "sidebar.dashboard": "डैशबोर्ड",
   "sidebar.aiChat": "एआई चैट",
   "sidebar.generateNotes": "नोट्स उत्पन्न करें",
@@ -94,6 +95,5 @@
   "audioFactory.imageTooLarge": "छवि बहुत बड़ी है। कृपया 2MB से छोटी छवि अपलोड करें।",
   "audioFactory.pdfTooLarge": "पीडीएफ बहुत बड़ा है। कृपया 5MB से छोटी फ़ाइल अपलोड करें।",
   "audioFactory.invalidFileType": "अमान्य फ़ाइल प्रकार।",
-  "audioFactory.pdfExtractError": "पीडीएफ से पाठ नहीं निकाला जा सका।",
-  "dashboard.totalLearnersGuestMessage": "सामुदायिक आँकड़े देखने के लिए साइन अप करें!"
+  "audioFactory.pdfExtractError": "पीडीएफ से पाठ नहीं निकाला जा सका।"
 }
