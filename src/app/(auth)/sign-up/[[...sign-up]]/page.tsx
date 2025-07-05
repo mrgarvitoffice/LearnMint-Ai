@@ -86,7 +86,7 @@ export default function SignUpPage() {
             <Separator />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or with Email</span>
+            <span className="bg-card px-2 text-muted-foreground">With Email</span>
           </div>
         </div>
 
