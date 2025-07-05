@@ -39,7 +39,7 @@ LearnMint is built on the principles of efficiency, engagement, and elegance, a 
 *   **Typography Excellence**: `GeistSans` for crisp readability and `GeistMono` for clean, technical text.
 *   **Iconography**: Consistent and modern visual language using `lucide-react` icons.
 *   **Built with the Best**: Tailwind CSS and ShadCN UI components for a polished, professional feel.
-*   **Responsive & Accessible**: Designed for all devices with accessibility in mind.
+*   **Responsive & Accessible**: Designed for all devices with accessibility in the  mind.
 
 ---
 
