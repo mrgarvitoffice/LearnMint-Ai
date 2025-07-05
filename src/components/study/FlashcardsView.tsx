@@ -2,14 +2,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import FlashcardItem from './FlashcardItem';
 import { Progress } from '@/components/ui/progress';
 import { useSound } from '@/hooks/useSound';
 import type { Flashcard as FlashcardType } from '@/lib/types';
 import { useQuests } from '@/contexts/QuestContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface FlashcardsViewProps {
   flashcards: FlashcardType[] | null;
@@ -19,11 +21,12 @@ interface FlashcardsViewProps {
 const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [viewedIndices, setViewedIndices] = useState(new Set<number>());
+  const [animationType, setAnimationType] = useState<'flip-y' | 'flip-x' | 'fade'>('flip-y');
   const { playSound: playClickSound } = useSound('/sounds/ting.mp3', 0.3);
   const { quests, completeQuest3 } = useQuests();
 
   useEffect(() => {
-    setCurrentCardIndex(0); 
+    setCurrentCardIndex(0);
     setViewedIndices(new Set([0]));
   }, [flashcards]);
 
@@ -53,7 +56,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
 
   if (!flashcards || flashcards.length === 0) {
     return (
-      <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> 
+      <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
         </CardHeader>
@@ -66,7 +69,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   
   const currentFlashcard = flashcards[currentCardIndex];
 
-  if (!currentFlashcard) { 
+  if (!currentFlashcard) {
     return (
         <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
             <CardHeader>
@@ -81,20 +84,37 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
   }
 
   return (
-    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0"> 
+    <Card className="mt-0 shadow-lg flex-1 flex flex-col min-h-0">
       <CardHeader>
-        <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
-        <CardDescription>
-          Card {currentCardIndex + 1} of {flashcards.length}
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex-1">
+                <CardTitle className="text-lg md:text-xl text-primary font-semibold">Flashcards for: {topic}</CardTitle>
+                <CardDescription>
+                  Card {currentCardIndex + 1} of {flashcards.length}
+                </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+                <Label htmlFor="animation-type" className="text-xs text-muted-foreground">Animation</Label>
+                <Select value={animationType} onValueChange={(value) => setAnimationType(value as any)}>
+                    <SelectTrigger id="animation-type" className="w-[140px] h-8 text-xs">
+                        <SelectValue placeholder="Animation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="flip-y">Flip Vertical</SelectItem>
+                        <SelectItem value="flip-x">Flip Horizontal</SelectItem>
+                        <SelectItem value="fade">Fade</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
         <Progress value={((currentCardIndex + 1) / flashcards.length) * 100} className="w-full mt-2 h-2" />
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <FlashcardItem
             key={currentCardIndex}
             flashcard={currentFlashcard}
-            isCurrent={true} 
-            className="w-full max-w-md h-64 sm:h-72 md:h-80" 
+            animationType={animationType}
+            className="w-full max-w-md h-64 sm:h-72 md:h-80"
         />
       </CardContent>
       <CardFooter className="flex justify-between p-4 sm:p-6 border-t">
