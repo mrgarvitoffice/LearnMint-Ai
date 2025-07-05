@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI agent that generates a text summary from content (text or image).
@@ -9,7 +8,7 @@
  * - GenerateAudioSummaryOutput - The return type for this function.
  */
 
-import { aiForNotes } from '@/ai/genkit';
+import { aiForNotes, aiForImages } from '@/ai/genkit';
 import { z } from 'zod';
 import type { GenerateAudioSummaryOutput } from '@/lib/types';
 
@@ -57,10 +56,10 @@ const generateAudioSummaryFlow = aiForNotes.defineFlow(
   async (input) => {
     let textToSummarize = input.text || "";
 
-    // Step 1: If an image is provided, generate a description of it first.
+    // Step 1: If an image is provided, generate a description of it first using the vision-enabled client.
     if (input.imageDataUri) {
       console.log("[AI Flow - Audio Summary] Describing provided image...");
-      const { output: imageDescriptionOutput, finishReason } = await aiForNotes.generate({
+      const { output: imageDescriptionOutput, finishReason } = await aiForImages.generate({
         model: 'googleai/gemini-1.5-flash-latest', // Vision model
         prompt: [
           { text: "Your task is to describe the contents of this image in detail. Focus on the key subjects, actions, and environment. This description will be used to create a summary." },
