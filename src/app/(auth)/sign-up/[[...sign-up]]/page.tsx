@@ -76,10 +76,10 @@ export default function SignUpPage() {
       </CardHeader>
       <CardContent className="space-y-4">
         
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+{/*         <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
           Sign Up with Google
-        </Button>
+        </Button> */}
         
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
