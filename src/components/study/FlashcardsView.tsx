@@ -91,6 +91,7 @@ const FlashcardsView: React.FC<FlashcardsViewProps> = ({ flashcards, topic }) =>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <FlashcardItem
+            key={currentCardIndex}
             flashcard={currentFlashcard}
             isCurrent={true} 
             className="w-full max-w-md h-64 sm:h-72 md:h-80" 
