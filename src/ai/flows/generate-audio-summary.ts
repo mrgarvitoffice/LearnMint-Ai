@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that generates a text summary from content (text or image).
@@ -30,13 +31,13 @@ export async function generateAudioSummary(input: GenerateAudioSummaryInput): Pr
   return generateAudioSummaryFlow(input);
 }
 
-// Define a prompt specifically for summarizing content.
+// Define a prompt specifically for summarizing TEXT content.
 const summaryPrompt = aiForNotes.definePrompt({
   name: 'generateSummaryForAudioPrompt',
   model: 'googleai/gemini-1.5-flash-latest', 
   input: { schema: z.object({ content: z.string() }) },
   output: { schema: z.object({ summary: z.string() }) },
-  prompt: `You are an expert summarizer. Your task is to provide a clear, concise, and informative summary of the provided content. The summary should capture the main points and be easy to understand when read aloud.
+  prompt: `You are an expert summarizer. Your task is to provide a clear, concise, and informative summary of the provided text content. The summary should capture the main points and be easy to understand when read aloud.
 
   Content to Summarize:
   ---
@@ -54,40 +55,40 @@ const generateAudioSummaryFlow = aiForNotes.defineFlow(
     outputSchema: GenerateAudioSummaryOutputSchema,
   },
   async (input) => {
-    let textToSummarize = input.text || "";
+    let summaryText: string | undefined;
 
-    // Step 1: If an image is provided, generate a description of it first using the vision-enabled client.
+    // Step 1: If an image is provided, generate a summary directly from it.
     if (input.imageDataUri) {
-      console.log("[AI Flow - Audio Summary] Describing provided image...");
-      const { output: imageDescriptionOutput, finishReason } = await aiForImages.generate({
+      console.log("[AI Flow - Audio Summary] Summarizing provided image directly...");
+      const { text, finishReason } = await aiForImages.generate({ // Use aiForImages here
         model: 'googleai/gemini-1.5-flash-latest', // Vision model
         prompt: [
-          { text: "Your task is to describe the contents of this image in detail. Focus on the key subjects, actions, and environment. This description will be used to create a summary." },
+          { text: "Directly summarize the contents of this image. Focus on the key subjects, actions, and environment. The summary should be clear, concise, and easy to understand when read aloud." },
           { media: { url: input.imageDataUri } }
         ],
       });
-      if (finishReason !== 'STOP' || !imageDescriptionOutput?.text) {
-        throw new Error('Failed to get a description from the image.');
+
+      if (finishReason !== 'STOP' || !text) {
+        throw new Error('Failed to get a summary from the image.');
       }
-      textToSummarize = imageDescriptionOutput.text;
-      console.log("[AI Flow - Audio Summary] Image description generated successfully.");
-    }
+      summaryText = text;
+      console.log("[AI Flow - Audio Summary] Image summary generated successfully.");
 
-    if (!textToSummarize) {
-      throw new Error("No content (from text or image) available to summarize.");
+    } else if (input.text) {
+      // Step 2: If text is provided, use the existing text summarization prompt.
+      console.log(`[AI Flow - Audio Summary] Summarizing text content (length: ${input.text.length})...`);
+      const { output: summaryOutput } = await summaryPrompt({ content: input.text });
+      summaryText = summaryOutput?.summary;
+      console.log(`[AI Flow - Audio Summary] Text summary generated successfully.`);
     }
-
-    // Step 2: Generate a text summary from the content (either original text or image description).
-    console.log(`[AI Flow - Audio Summary] Summarizing text content (length: ${textToSummarize.length})...`);
-    const { output: summaryOutput } = await summaryPrompt({ content: textToSummarize });
-    const summaryText = summaryOutput?.summary;
 
     if (!summaryText) {
-      throw new Error("Failed to generate a text summary from the content.");
+      throw new Error("No content available to summarize or summary generation failed.");
     }
-    console.log(`[AI Flow - Audio Summary] Text summary generated: "${summaryText.substring(0, 50)}..."`);
 
-    // Step 3: Return the final output. The audioDataUri is intentionally left undefined.
+    console.log(`[AI Flow - Audio Summary] Final summary generated: "${summaryText.substring(0, 50)}..."`);
+
+    // Step 3: Return the final output.
     return {
       summary: summaryText,
       audioDataUri: undefined,
