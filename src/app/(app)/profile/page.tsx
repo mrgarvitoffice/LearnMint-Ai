@@ -32,7 +32,7 @@ export default function ProfilePage() {
   const router = useRouter();
 
   if (!user || user.isAnonymous) {
-      // FIX: Redirect guest users to the sign-in page instead of the dashboard.
+      // FIX: Redirect guest users to the sign-in page.
       if (typeof window !== 'undefined') {
           router.replace('/sign-in');
       }
