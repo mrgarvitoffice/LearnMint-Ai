@@ -47,6 +47,22 @@ const summaryPrompt = aiForNotes.definePrompt({
   Please provide your summary below.`,
 });
 
+// Define a new, dedicated prompt for summarizing an IMAGE.
+// This is a more robust approach than a direct .generate() call.
+const imageSummaryPrompt = aiForTTS.definePrompt({ // Using aiForTTS as it appears to have working vision permissions
+  name: 'generateSummaryFromImagePrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
+  input: { schema: z.object({ imageDataUri: z.string() }) },
+  output: { schema: z.object({ summary: z.string() }) },
+  prompt: `You are an expert at describing and summarizing images. Your task is to provide a clear, concise, and informative summary of the provided image. The summary should capture the main subjects, actions, and environment, and be easy to understand when read aloud.
+
+  Image to Summarize:
+  {{media url=imageDataUri}}
+  
+  Please provide your summary below.`,
+});
+
+
 // The main Genkit flow definition.
 const generateAudioSummaryFlow = aiForNotes.defineFlow(
   {
@@ -57,22 +73,16 @@ const generateAudioSummaryFlow = aiForNotes.defineFlow(
   async (input) => {
     let summaryText: string | undefined;
 
-    // Step 1: If an image is provided, generate a summary directly from it.
+    // Step 1: If an image is provided, use the new dedicated image summarization prompt.
     if (input.imageDataUri) {
-      console.log("[AI Flow - Audio Summary] Summarizing provided image directly using TTS client...");
-      const { text, finishReason } = await aiForTTS.generate({ // Use aiForTTS as it has working vision permissions
-        model: 'googleai/gemini-1.5-flash-latest', // Vision model
-        prompt: [
-          { text: "Directly summarize the contents of this image. Focus on the key subjects, actions, and environment. The summary should be clear, concise, and easy to understand when read aloud." },
-          { media: { url: input.imageDataUri } }
-        ],
-      });
+      console.log("[AI Flow - Audio Summary] Summarizing provided image directly using dedicated prompt...");
+      const { output: imageSummaryOutput } = await imageSummaryPrompt({ imageDataUri: input.imageDataUri });
+      summaryText = imageSummaryOutput?.summary;
 
-      if (finishReason !== 'STOP' || !text) {
+      if (!summaryText) {
         throw new Error('Failed to get a summary from the image.');
       }
-      summaryText = text;
-      console.log("[AI Flow - Audio Summary] Image summary generated successfully.");
+      console.log("[AI Flow - Audio Summary] Image summary generated successfully via dedicated prompt.");
 
     } else if (input.text) {
       // Step 2: If text is provided, use the existing text summarization prompt.
