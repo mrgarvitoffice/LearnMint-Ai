@@ -85,7 +85,7 @@ export default function SignInPage() {
         <div className="space-y-2">
            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />}
-              Sign In with Google
+              USE E-MAIL TO LOGIN
             </Button>
             <Button variant="secondary" className="w-full" onClick={handleGuestSignIn} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <User className="mr-2 h-4 w-4" />}
