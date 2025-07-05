@@ -10,7 +10,8 @@ interface SoundOptions {
 }
 
 export function useSound(soundPath: string, options: SoundOptions = {}) {
-  const { volume = 0.5 } = options;
+  // Default priority is now 'essential'. This ensures sounds like UI clicks play in essential mode.
+  const { volume = 0.5, priority = 'essential' } = options;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [hasLoadError, setHasLoadError] = useState(false); 
   const { soundMode } = useSettings();
@@ -55,10 +56,19 @@ export function useSound(soundPath: string, options: SoundOptions = {}) {
   }, [soundPath, volume]);
 
   const playSound = useCallback(() => {
-    // This mode now only mutes sounds completely. 
-    // The distinction between 'full' and 'essential' is now handled by the TTS hook for announcements.
-    if (soundMode === 'muted') return;
+    // 'muted': no sounds play.
+    // 'essential': only sounds with 'essential' priority play (now the default).
+    // 'full': all sounds play.
     
+    if (soundMode === 'muted') {
+      return;
+    }
+    
+    if (soundMode === 'essential' && priority === 'incidental') {
+      // This is for sounds that should ONLY play in 'full' mode.
+      return;
+    }
+
     if (hasLoadError || !audioRef.current) {
       return;
     }
@@ -75,7 +85,7 @@ export function useSound(soundPath: string, options: SoundOptions = {}) {
       }
     });
     
-  }, [soundMode, hasLoadError, soundPath]);
+  }, [soundMode, priority, hasLoadError, soundPath]);
   
   return { 
     playSound
