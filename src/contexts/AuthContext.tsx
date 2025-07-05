@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     setLoading(true);
-    const provider = new new GoogleAuthProvider();
+    const provider = new GoogleAuthProvider();
     // Start the redirect process. The result is handled by getRedirectResult on page load.
     await signInWithRedirect(auth, provider);
   };
