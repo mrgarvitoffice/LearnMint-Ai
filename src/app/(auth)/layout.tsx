@@ -12,17 +12,16 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // This effect handles redirection *after* the initial render.
-    // It will only run when loading is complete.
-    if (!loading && user) {
+    // This effect handles redirection for fully authenticated (non-guest) users.
+    // It will only run when loading is complete and a non-anonymous user is found.
+    if (!loading && user && !user.isAnonymous) {
       router.replace('/');
     }
   }, [user, loading, router]);
 
-  // This block handles the initial render state.
-  // It shows a loader while authentication is in progress OR if a user already exists.
-  // The useEffect above will handle the redirect, so this just prevents rendering the sign-in page for a logged-in user.
-  if (loading || user) {
+  // Show a loader for fully authenticated users who land here, before they are redirected.
+  // Do NOT show a loader for guests, as they need to see the sign-in page.
+  if (loading || (user && !user.isAnonymous)) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -31,7 +30,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     );
   }
   
-  // Only render the sign-in/sign-up forms if loading is false and no user is found.
+  // Only render the sign-in/sign-up forms if loading is false and no user is found,
+  // or if the current user is a guest.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background/95 p-4"
          style={{
