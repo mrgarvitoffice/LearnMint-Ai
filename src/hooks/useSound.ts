@@ -10,7 +10,7 @@ interface SoundOptions {
 }
 
 export function useSound(soundPath: string, options: SoundOptions = {}) {
-  const { volume = 0.5, priority = 'incidental' } = options;
+  const { volume = 0.5 } = options;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [hasLoadError, setHasLoadError] = useState(false); 
   const { soundMode } = useSettings();
@@ -55,8 +55,9 @@ export function useSound(soundPath: string, options: SoundOptions = {}) {
   }, [soundPath, volume]);
 
   const playSound = useCallback(() => {
+    // This mode now only mutes sounds completely. 
+    // The distinction between 'full' and 'essential' is now handled by the TTS hook for announcements.
     if (soundMode === 'muted') return;
-    if (soundMode === 'essential' && priority === 'incidental') return;
     
     if (hasLoadError || !audioRef.current) {
       return;
@@ -74,7 +75,7 @@ export function useSound(soundPath: string, options: SoundOptions = {}) {
       }
     });
     
-  }, [soundMode, priority, hasLoadError, soundPath]);
+  }, [soundMode, hasLoadError, soundPath]);
   
   return { 
     playSound
