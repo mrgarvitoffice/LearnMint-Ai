@@ -9,7 +9,7 @@
  * - GenerateAudioSummaryOutput - The return type for this function.
  */
 
-import { aiForNotes, aiForImages } from '@/ai/genkit';
+import { aiForNotes, aiForTTS } from '@/ai/genkit';
 import { z } from 'zod';
 import type { GenerateAudioSummaryOutput } from '@/lib/types';
 
@@ -59,8 +59,8 @@ const generateAudioSummaryFlow = aiForNotes.defineFlow(
 
     // Step 1: If an image is provided, generate a summary directly from it.
     if (input.imageDataUri) {
-      console.log("[AI Flow - Audio Summary] Summarizing provided image directly...");
-      const { text, finishReason } = await aiForImages.generate({ // Use aiForImages here
+      console.log("[AI Flow - Audio Summary] Summarizing provided image directly using TTS client...");
+      const { text, finishReason } = await aiForTTS.generate({ // Use aiForTTS as it has working vision permissions
         model: 'googleai/gemini-1.5-flash-latest', // Vision model
         prompt: [
           { text: "Directly summarize the contents of this image. Focus on the key subjects, actions, and environment. The summary should be clear, concise, and easy to understand when read aloud." },

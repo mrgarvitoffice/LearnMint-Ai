@@ -259,7 +259,7 @@ export async function generateAudioSummaryAction(input: GenerateAudioSummaryInpu
     console.error(`[Server Action Error - ${actionName}] Error generating audio summary:`, error);
     let clientErrorMessage = "Failed to generate audio summary. Please try again.";
     if (error.message && (error.message.includes("GOOGLE_API_KEY") || error.message.includes("API key is invalid"))) {
-        clientErrorMessage = "Audio Summary: Failed due to an API key or configuration issue. Please check GOOGLE_API_KEY_NOTES (for text) or GOOGLE_API_KEY_IMAGES (for vision) keys.";
+        clientErrorMessage = "Audio Summary: Failed due to an API key or configuration issue. Please check the GOOGLE_API_KEY_NOTES (for text) or GOOGLE_API_KEY_TTS (for vision) keys.";
     } else if (error.message) {
         clientErrorMessage = `Audio Summary: Failed. Error: ${error.message.substring(0, 150)}.`;
     }
